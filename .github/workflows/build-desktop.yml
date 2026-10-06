@@ -132,6 +132,12 @@ jobs:
             "installed app NOT FOUND under $env:LOCALAPPDATA\Programs" | Tee-Object -FilePath $r -Append
           }
 
+      - name: Show the self-test report
+        if: always()
+        shell: bash
+        run: |
+          node -e "const fs=require('fs');const f=process.argv[1];if(!fs.existsSync(f))process.exit(0);const t=fs.readFileSync(f,'utf8').slice(0,60000);console.log('::notice title='+f+'::'+t.replace(/%/g,'%25').replace(/\r/g,'%0D').replace(/\n/g,'%0A'));" "report-${{ matrix.label }}.txt"
+
       - name: Keep the installers
         uses: actions/upload-artifact@v4
         with:
@@ -159,7 +165,9 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           set -eo pipefail
-          ls -la files
+          find files -type f | sort
+          mapfile -t assets < <(find files -type f \( -name '*.dmg' -o -name '*.zip' -o -name '*.exe' \) | sort)
+          echo "::notice title=release assets::${assets[*]}"
           tag="v3.0.0-build${{ github.run_number }}"
           {
             echo "Installers built on GitHub's own Mac and Windows machines. They are not code-signed, so the first launch needs the steps in the README."
@@ -168,10 +176,13 @@ jobs:
             echo
             echo "Self-test results from the build machines:"
             echo '```'
-            cat files/report-Mac.txt files/report-Windows.txt
+            find files -name 'report-*.txt' | sort | xargs cat
             echo '```'
           } > notes.md
-          gh release create "$tag" files/*.dmg files/*.zip files/*.exe \
+          if ! gh release create "$tag" "${assets[@]}" \
             --target "${{ github.sha }}" \
             --title "PFT Interpreter 3.0.0 (build ${{ github.run_number }})" \
-            --notes-file notes.md
+            --notes-file notes.md 2> err.txt; then
+            echo "::error title=release failed::$(tr '\n' ' ' < err.txt)"
+            exit 1
+          fi
