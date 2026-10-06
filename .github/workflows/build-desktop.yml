@@ -1,6 +1,7 @@
-# Builds the Windows and Mac apps on GitHub's own Windows and Mac machines.
-# Run it from the repository's Actions tab: Build desktop apps > Run workflow. The finished files appear at the
-# bottom of the run page under "Artifacts" about 5 to 10 minutes later.
+# Builds the Windows and Mac apps on GitHub's own Windows and Mac machines, launches each one once as a self-test,
+# and publishes the installers on the repository's Releases page.
+# Run it from the Actions tab: Build desktop apps > Run workflow. About 10 minutes later the Releases page (right-hand
+# side of the repository's front page) has the files. The release notes hold the self-test results.
 name: Build desktop apps
 
 on:
@@ -20,6 +21,7 @@ jobs:
             label: Windows
     runs-on: ${{ matrix.os }}
     name: ${{ matrix.label }}
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -33,6 +35,103 @@ jobs:
         run: npm run ${{ matrix.script }}
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+
+      # ---------------------------------------------------------------- Mac checks
+      - name: Check the Mac build
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -eo pipefail
+          test -d "dist/mac-arm64/PFT Interpreter.app"
+          {
+            echo "MAC BUILD ($(sw_vers -productName) $(sw_vers -productVersion), $(uname -m) runner)"
+            echo
+            ls -la dist/*.dmg dist/*.zip
+            for app in "dist/mac-arm64/PFT Interpreter.app" "dist/mac/PFT Interpreter.app"; do
+              [ -d "$app" ] || continue
+              echo; echo "--- $app"
+              codesign --verify --deep --strict "$app"
+              echo "signature: valid"
+              codesign -dv "$app" 2>&1 | grep -E "Identifier|Format|Signature|TeamIdentifier" || true
+              echo "architectures: $(lipo -archs "$app/Contents/MacOS/PFT Interpreter")"
+              echo "app.asar: $(ls -la "$app/Contents/Resources/app.asar" | awk '{print $5}') bytes"
+              /usr/libexec/PlistBuddy -c "Print :CFBundleName" -c "Print :CFBundleIdentifier" -c "Print :CFBundleShortVersionString" "$app/Contents/Info.plist"
+            done
+            echo; echo "--- inside the arm64 disk image"
+            hdiutil attach dist/PFT-Interpreter-*-mac-arm64.dmg -nobrowse -readonly -mountpoint /tmp/pftdmg >/dev/null
+            ls /tmp/pftdmg
+            codesign --verify --deep --strict "/tmp/pftdmg/PFT Interpreter.app" && echo "app in the disk image: signature valid"
+            hdiutil detach /tmp/pftdmg >/dev/null
+          } 2>&1 | tee report-Mac.txt
+
+      - name: Launch the built Mac app twice (self-test)
+        if: runner.os == 'macOS'
+        shell: bash
+        continue-on-error: true
+        timeout-minutes: 8
+        run: |
+          set +e
+          APP="$PWD/dist/mac-arm64/PFT Interpreter.app/Contents/MacOS/PFT Interpreter"
+          {
+            echo; echo "=== SELF-TEST: launch 1 (fresh data folder)"
+            PFT_SMOKE_OUT="$PWD/smoke1.json" "$APP"; echo "exit code: $?"
+            cat smoke1.json 2>/dev/null || echo "no result file written"
+            echo; echo "=== SELF-TEST: launch 2 (same data folder; storage and window size should persist)"
+            PFT_SMOKE_OUT="$PWD/smoke2.json" "$APP"; echo "exit code: $?"
+            cat smoke2.json 2>/dev/null || echo "no result file written"
+          } 2>&1 | tee -a report-Mac.txt
+
+      # ---------------------------------------------------------------- Windows checks
+      - name: Check the Windows build
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          set -eo pipefail
+          test -f "dist/win-unpacked/PFT Interpreter.exe"
+          {
+            echo "WINDOWS BUILD ($RUNNER_OS $RUNNER_ARCH)"
+            echo
+            ls -la dist/*.exe
+            echo "app.asar: $(ls -la "dist/win-unpacked/resources/app.asar" | awk '{print $5}') bytes"
+          } 2>&1 | tee report-Windows.txt
+
+      - name: Launch the built Windows app, then install and launch (self-test)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        continue-on-error: true
+        timeout-minutes: 12
+        run: |
+          $ErrorActionPreference = 'Continue'
+          function Run-App($exe, $out) {
+            $env:PFT_SMOKE_OUT = $out
+            $p = Start-Process -FilePath $exe -PassThru
+            if (-not $p.WaitForExit(120000)) { Stop-Process -Id $p.Id -Force; "TIMED OUT after 120 s" }
+            $p.WaitForExit()
+            "exit code: $($p.ExitCode)"
+            if (Test-Path $out) { Get-Content $out } else { "no result file written" }
+          }
+          $r = 'report-Windows.txt'
+          "" | Tee-Object -FilePath $r -Append
+          "=== SELF-TEST: unpacked app, launch 1 (fresh data folder)" | Tee-Object -FilePath $r -Append
+          Run-App "$PWD\dist\win-unpacked\PFT Interpreter.exe" "$PWD\smoke1.json" 2>&1 | Tee-Object -FilePath $r -Append
+          "" | Tee-Object -FilePath $r -Append
+          "=== SELF-TEST: unpacked app, launch 2 (same data folder; storage and window size should persist)" | Tee-Object -FilePath $r -Append
+          Run-App "$PWD\dist\win-unpacked\PFT Interpreter.exe" "$PWD\smoke2.json" 2>&1 | Tee-Object -FilePath $r -Append
+          "" | Tee-Object -FilePath $r -Append
+          "=== INSTALLER: silent per-user install" | Tee-Object -FilePath $r -Append
+          $setup = Get-ChildItem "$PWD\dist" -Filter "PFT-Interpreter-Setup-*.exe" | Select-Object -First 1
+          $inst = Start-Process -FilePath $setup.FullName -ArgumentList '/S' -PassThru
+          if (-not $inst.WaitForExit(240000)) { "installer TIMED OUT" | Tee-Object -FilePath $r -Append }
+          Start-Sleep -Seconds 5
+          $exe = Get-ChildItem "$env:LOCALAPPDATA\Programs" -Recurse -Filter "PFT Interpreter.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if ($exe) {
+            "installed at: $($exe.FullName)" | Tee-Object -FilePath $r -Append
+            "uninstaller present: $(Test-Path (Join-Path $exe.DirectoryName 'Uninstall PFT Interpreter.exe'))" | Tee-Object -FilePath $r -Append
+            Run-App $exe.FullName "$PWD\smoke3.json" 2>&1 | Tee-Object -FilePath $r -Append
+          } else {
+            "installed app NOT FOUND under $env:LOCALAPPDATA\Programs" | Tee-Object -FilePath $r -Append
+          }
+
       - name: Keep the installers
         uses: actions/upload-artifact@v4
         with:
@@ -41,4 +140,38 @@ jobs:
             dist/*.dmg
             dist/*.zip
             dist/*.exe
+            report-*.txt
           if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: files
+          merge-multiple: true
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -eo pipefail
+          ls -la files
+          tag="v3.0.0-build${{ github.run_number }}"
+          {
+            echo "Installers built on GitHub's own Mac and Windows machines. They are not code-signed, so the first launch needs the steps in the README."
+            echo
+            echo "Mac: use the arm64 .dmg for Apple silicon (M1 or later), the x64 .dmg for Intel. Windows: Setup is the installer, Portable is one file that needs no install."
+            echo
+            echo "Self-test results from the build machines:"
+            echo '```'
+            cat files/report-Mac.txt files/report-Windows.txt
+            echo '```'
+          } > notes.md
+          gh release create "$tag" files/*.dmg files/*.zip files/*.exe \
+            --target "${{ github.sha }}" \
+            --title "PFT Interpreter 3.0.0 (build ${{ github.run_number }})" \
+            --notes-file notes.md

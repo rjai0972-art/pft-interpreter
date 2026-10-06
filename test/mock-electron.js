@@ -13,6 +13,14 @@ function makeMock(opts) {
     constructor() { this.handlers = {}; this.printed = []; this.pdfs = 0; }
     setWindowOpenHandler(fn) { this.openHandler = fn; }
     on(ev, fn) { this.handlers[ev] = fn; }
+    getURL() { return 'pft://app/index.html'; }
+    async executeJavaScript(src) {
+      if (src.indexOf('securitypolicyviolation') !== -1) return 'blocked by policy: connect-src';
+      if (src.indexOf("'.ex'") !== -1) return true;
+      if (src.indexOf('.interp li') !== -1) return 7;
+      if (src.indexOf("'#doc'") !== -1) return true;
+      return { title: 'PFT Interpreter', tiles: 12, storageOk: true, storagePrevious: null, origin: 'pft://app' };
+    }
     print(o) { this.printed.push(o); }
     async printToPDF(o) { this.pdfs++; this.pdfOpts = o; return Buffer.from('%PDF-fake'); }
   }
@@ -32,7 +40,7 @@ function makeMock(opts) {
       name: 'PFT Interpreter', isPackaged: !!opts.packaged, dock: opts.mac ? { setIcon() {} } : undefined,
       getVersion() { return '3.0.0'; }, getPath(n) { return n === 'userData' ? userData : os.tmpdir(); },
       requestSingleInstanceLock() { return opts.noLock ? false : true; },
-      quit() { calls.quits++; }, whenReady() { return ready; },
+      quit() { calls.quits++; }, exit(c) { calls.exitCode = c; }, whenReady() { return ready; },
       on(ev, fn) { listeners[ev] = fn; }, setAboutPanelOptions(o) { calls.aboutPanel = o; }
     },
     BrowserWindow: BrowserWindow,

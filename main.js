@@ -37,6 +37,10 @@ const MIME = {
    Must be registered before the app is ready. */
 protocol.registerSchemesAsPrivileged([{ scheme: SCHEME, privileges: { standard: true, secure: true, supportFetchAPI: true } }]);
 
+/* Self-test used by the build machines: when PFT_SMOKE_OUT names a file, the app loads its page, checks a few things,
+   writes the result there and quits. It does nothing at all otherwise. */
+const SMOKE_OUT = process.env.PFT_SMOKE_OUT || '';
+
 let win = null;
 
 /* ------------------------------------------------------------------ files served to the page */
@@ -175,6 +179,46 @@ function buildMenu() {
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 }
 
+/* ------------------------------------------------------------------ self-test (build machines only) */
+function runSmoke(w) {
+  const out = { platform: process.platform, arch: process.arch, electron: process.versions.electron, chrome: process.versions.chrome,
+    packaged: app.isPackaged, windowStateFileBefore: fs.existsSync(stateFile()) };
+  let done = false;
+  function finish(code) {
+    if (done) return;
+    done = true;
+    try { fs.writeFileSync(SMOKE_OUT, JSON.stringify(out, null, 2)); } catch (e) { /* nothing more can be done */ }
+    saveWindowState();
+    app.exit(code);
+  }
+  setTimeout(function () { out.error = out.error || 'timed out'; finish(2); }, 90000);
+  w.webContents.on('did-finish-load', async function () {
+    try {
+      const wc = w.webContents;
+      out.url = wc.getURL();
+      out.page = await wc.executeJavaScript('(function(){' +
+        "var r={title:document.title,h1:(document.querySelector('h1')||{}).textContent||'',tiles:document.querySelectorAll('.tgrid > *').length," +
+        "origin:location.origin,secureContext:window.isSecureContext,engine:typeof window.PFT,education:typeof window.PFT_EDU};" +
+        "try{var k='pft.smoke',prev=localStorage.getItem(k);localStorage.setItem(k,String(Date.now()));r.storagePrevious=prev;r.storageOk=true;}" +
+        "catch(e){r.storageOk=false;r.storageError=String(e);}" +
+        'return r;})()');
+      out.externalRequest = await wc.executeJavaScript("new Promise(function(res){" +
+        "document.addEventListener('securitypolicyviolation',function(e){res('blocked by policy: '+e.violatedDirective);},{once:true});" +
+        "fetch('https://example.com/',{mode:'no-cors'}).then(function(){res('ALLOWED');},function(){setTimeout(function(){res('failed without a policy event');},800);});})");
+      await wc.executeJavaScript("(function(){var b=document.querySelector('.ex');if(b)b.click();return !!b;})()");
+      await new Promise(function (r) { setTimeout(r, 1200); });
+      out.reportShown = await wc.executeJavaScript("!!document.querySelector('#doc')");
+      out.interpretationLines = await wc.executeJavaScript("document.querySelectorAll('#doc .interp li').length");
+      const pdf = await wc.printToPDF({ printBackground: true, preferCSSPageSize: true });
+      out.pdfBytes = pdf.length;
+      out.pdfHeader = pdf.slice(0, 5).toString();
+      out.ok = out.url === START_URL && !!out.page && out.page.tiles > 0 && out.page.storageOk === true &&
+        /^blocked by policy/.test(out.externalRequest) && out.reportShown === true && out.interpretationLines > 0 && out.pdfHeader === '%PDF-';
+    } catch (e) { out.error = String((e && e.stack) || e); }
+    finish(out.ok ? 0 : 1);
+  });
+}
+
 /* ------------------------------------------------------------------ window */
 function createWindow() {
   const st = loadWindowState();
@@ -202,6 +246,7 @@ function createWindow() {
   win.webContents.on('did-fail-load', function (_e, code, desc, url, isMainFrame) {
     if (isMainFrame && code !== -3) dialog.showErrorBox('PFT Interpreter could not load', desc + ' (' + code + ')\n' + url);
   });
+  if (SMOKE_OUT) runSmoke(win);
   win.loadURL(START_URL);
 }
 

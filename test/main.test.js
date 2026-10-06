@@ -124,6 +124,18 @@ const rq = (u) => ({ url: u });
     const M = loadMain({ platform: 'darwin', mac: true }); M.listeners['window-all-closed'](); assert.strictEqual(M.calls.quits, 0);
   });
 
+  await t('no self-test unless asked for', () => { assert.strictEqual(w.webContents.handlers['did-finish-load'], undefined); });
+  await t('self-test mode loads, checks, writes a result and exits 0', async () => {
+    const out = path.join(L.userData, 'smoke.json'); process.env.PFT_SMOKE_OUT = out;
+    const S = loadMain({ platform: 'linux' }); delete process.env.PFT_SMOKE_OUT;
+    await S.whenReady(); await new Promise((r) => setTimeout(r, 20));
+    await S.calls.windows[0].webContents.handlers['did-finish-load']();
+    const j = JSON.parse(fs.readFileSync(out, 'utf8'));
+    assert.strictEqual(j.ok, true); assert.strictEqual(j.url, 'pft://app/index.html'); assert(/^blocked by policy/.test(j.externalRequest));
+    assert.strictEqual(j.pdfHeader, '%PDF-'); assert.strictEqual(S.calls.exitCode, 0);
+    assert(fs.existsSync(path.join(S.userData, 'window-state.json')), 'window state saved on the way out');
+  });
+
   console.log(pass + ' passed, ' + fail + ' failed');
   process.exit(fail ? 1 : 0);
 })();

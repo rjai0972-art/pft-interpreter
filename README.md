@@ -16,8 +16,10 @@ Added by the desktop version: **File > Print** and **File > Save as PDF** print 
    "Build desktop apps" workflow afterwards, use **Add file > Create new file**, type `.github/workflows/build-desktop.yml` as the name,
    paste in the contents of `build-on-github.yml` from this folder, and commit.
 3. Open the **Actions** tab, choose **Build desktop apps**, then **Run workflow**.
-4. After about 5 to 10 minutes both jobs turn green. Open the run and download **PFT-Interpreter-Mac** and **PFT-Interpreter-Windows**
-   from the **Artifacts** section at the bottom.
+4. After about 10 minutes the run turns green and the repository's front page shows a new entry under **Releases** (right-hand side).
+   Open it and download the files you need, for example `PFT-Interpreter-3.0.0-mac-arm64.dmg` and `PFT-Interpreter-Setup-3.0.0-win-x64.exe`.
+   The release notes also hold the build machines' self-test of each app (it launches the built app, checks it loads, stores data and
+   blocks network access, and prints a PDF).
 
 **B. Build on your own computer** (needs Node.js, a free one-time install from https://nodejs.org, choose "LTS")
 
