@@ -42,9 +42,9 @@ The first time, Windows SmartScreen may say "Windows protected your PC" because 
 
 **Mac.** Open the `.dmg` and drag **PFT Interpreter** into **Applications**.
 - Choose `...-mac-arm64.dmg` for Macs with Apple silicon (M1 or later) and `...-mac-x64.dmg` for Intel Macs. Apple menu > About This Mac shows which you have.
-- The app is not notarized by Apple (that needs a paid Apple developer account), so the first launch is blocked. Fix it once:
-  right-click the app, choose **Open**, then **Open** again. On newer macOS, if there is no Open button, go to
-  **System Settings > Privacy & Security**, scroll down, and click **Open Anyway** next to PFT Interpreter.
+- The app is not notarized by Apple (that needs a paid Apple developer account), so the first launch is blocked. Fix it once.
+  On macOS 15 (Sequoia) and later: double-click the app, click **Done** on the warning, then open **System Settings > Privacy & Security**,
+  scroll down and click **Open Anyway** next to PFT Interpreter, and confirm. On macOS 14 and earlier: right-click the app, choose **Open**, then **Open** again.
 - If macOS says the app "is damaged", run this once in Terminal and open it again:
   `xattr -cr "/Applications/PFT Interpreter.app"`
 
