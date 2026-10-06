@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0F8A93"/>
+      <stop offset="1" stop-color="#075A62"/>
+    </linearGradient>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="188" ry="188" fill="url(#bg)"/>
+  <!-- flow-volume loop: sharp expiratory peak with a tapering limb above the baseline, a rounded inspiratory limb below -->
+  <path d="M 262 548 C 292 340 350 262 424 262 C 540 274 650 410 770 548 C 748 742 330 742 262 548 Z"
+        fill="#FFFFFF" fill-opacity="0.16" stroke="#FFFFFF" stroke-width="40" stroke-linejoin="round"/>
+  <line x1="214" y1="548" x2="818" y2="548" stroke="#FFFFFF" stroke-opacity="0.55" stroke-width="14" stroke-linecap="round"/>
+</svg>
