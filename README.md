@@ -6,6 +6,18 @@ in its own window. It runs fully offline and never contacts the internet. Your c
 Added by the desktop version: **File > Print** and **File > Save as PDF** print the report alone on white paper
 (Learn pages print without the navigation), and **Help > Where is my data kept?** shows the storage folder.
 
+## Use it in a browser instead (no install)
+
+Once this repository is **public** and GitHub Pages is switched on, the app is a normal web page, the same app as the desktop one:
+**https://rjai0972-art.github.io/pft-interpreter/**
+
+One-time setup, three clicks in the repository on github.com:
+1. **Settings** (top row of tabs) > scroll to the bottom, **Danger Zone** > **Change visibility** > **Make public**.
+2. **Settings > Pages** > under **Build and deployment**, set **Source** to **GitHub Actions**.
+3. **Actions** tab > **Publish web app** > **Run workflow**. About a minute later the address above works. After that every update to `app/index.html` republishes it by itself.
+
+The page runs entirely in the visitor's browser. It stores nothing on GitHub and sends nothing anywhere; cases saved in the case bank stay in that browser on that device (use Case bank > Export and Import to move them). Anyone with the address can open it and read the code.
+
 ## Step 1. Get the installers (pick one way)
 
 **A. Let GitHub build both, with nothing to install on your computer (recommended)**

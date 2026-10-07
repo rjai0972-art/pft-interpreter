@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
 <title>PFT Interpreter</title>
+<link rel="icon" type="image/png" href="icon.png">
 <style>
 /* Layout: one working column. A stepper pins to the top, each test is one form card with a live
    "reads as" panel beneath it, and the report is a serif document followed by the heads-up list. */
@@ -499,13 +500,45 @@ details.optgrp > .fine { padding-bottom: 0; }
   }
   body { background: #FFFFFF; font-size: 12pt; }
   .app { max-width: none; padding: 0; }
-  .top, .steps, .toast, .pop, .noprint, .learn-side, .learn-go, .learn .nav, .bn { display: none !important; }
+  .top, .steps, .toast, .pop, .pv, .noprint, .learn-side, .learn-go, .learn .nav, .bn { display: none !important; }
   body:has(#doc) .main > :not(#doc) { display: none !important; }
   .doc { border: 0; border-radius: 0; padding: 0; }
   .doc .sec, .doc .interp li, .doc .codes-row { break-inside: avoid; }
   .doc .interp { break-inside: avoid-page; }
   .card { box-shadow: none; }
   a { color: inherit; text-decoration: none; }
+}
+
+/* ---- live report preview (wide screens): forms on the left, the report as it will read on the right ---- */
+.work { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
+.pv { display: none; }
+.pv-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.pv-head h2 { font-size: 13px; font-weight: 650; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+.pv-btns { display: flex; gap: 6px; }
+.pv-doc { padding: 16px 18px; border-radius: 10px; position: relative; }
+.pv-doc .dt { font-size: 11px; }
+.pv-doc .meta { font-size: 12px; padding-bottom: 10px; }
+.pv-doc .sec { margin-top: 12px; padding-left: 10px; border-left: 3px solid transparent; gap: 3px; }
+.pv-doc .sec.cur { border-left-color: var(--accent); }
+.pv-doc .sec h3 { font-size: 11px; }
+.pv-doc .sec p, .pv-doc .interp .pv-empty { font-size: 14.5px; line-height: 1.55; }
+.pv-doc .pv-empty { color: var(--muted); font-family: var(--font-ui); font-size: 13px; font-style: normal; }
+.pv-doc .interp { margin-top: 16px; padding-top: 10px; }
+.pv-doc .interp h3 { font-size: 11px; margin-bottom: 6px; }
+.pv-doc ol { gap: 6px; }
+.pv-doc ol li { font-size: 14.5px; line-height: 1.5; }
+.pv-doc .codes-row { margin-top: 10px; }
+@keyframes pvflash { from { background: var(--accent-soft); } to { background: transparent; } }
+.pv-doc .sec.chg p, .pv-doc li.chg { animation: pvflash 1.4s ease-out; border-radius: 4px; }
+@media (prefers-reduced-motion: reduce) { .pv-doc .sec.chg p, .pv-doc li.chg { animation: none; } }
+@media (min-width: 1120px) {
+  .app { max-width: 1360px; }
+  .work:not(.has-pv) > .main { max-width: 1048px; }
+  .work.has-pv { grid-template-columns: minmax(0, 1fr) minmax(360px, 420px); align-items: start; }
+  .work.has-pv .pv { display: flex; flex-direction: column; position: sticky; top: calc(var(--steps-h, 52px) + 8px + env(safe-area-inset-top, 0px));
+    height: calc(100vh - 150px); max-height: 900px; padding-top: 6px; }
+  .work.has-pv .pv-doc { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+  .work.has-pv .live { display: none; }
 }
 
 </style>
@@ -532,7 +565,10 @@ details.optgrp > .fine { padding-bottom: 0; }
     </div>
   </header>
   <nav class="steps" id="steps" aria-label="Steps"></nav>
-  <main class="main" id="main" tabindex="-1"></main>
+  <div class="work" id="work">
+    <main class="main" id="main" tabindex="-1"></main>
+    <aside class="pv" id="pv" aria-label="Report preview" hidden></aside>
+  </div>
 </div>
 <div class="pop" id="pop" role="dialog" aria-modal="false" hidden></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -4490,6 +4526,77 @@ function stepReport() {
   ]));
 }
 
+/* ------------------------------------------------- live report preview (right-hand panel) */
+/* While the forms are being clicked through, the report as it will read builds on the right. It is the same text as the
+   Report step (facts per test, then the synthesized Interpretation); the section for the current step is marked and
+   anything that just changed flashes once. Narrow screens keep the per-step "Findings as entered" box instead. */
+let pvPrev = null, pvScrollTo = true;
+function pvShown() { return mode === 'case' && step !== 'report'; }
+function reportMeta() {
+  const lines = R.text.split('\n'), meta = [];
+  for (let i = 1; i < lines.length && lines[i] !== ''; i++) meta.push(lines[i]);
+  return meta;
+}
+function paintPreview() {
+  const pv = $('pv'); if (!pv) return;
+  const cur = SECKEY[step] || step, prev = pvPrev || {}, next = { sec: {}, impr: [] };
+  const doc = h('div', { class: 'doc pv-doc' }, [
+    h('div', { class: 'dt', text: 'Pulmonary function test report' }),
+    h('div', { class: 'meta' }, reportMeta().map(t => h('span', { text: t })))
+  ]);
+  R.sections.forEach(s => {
+    const txt = s.empty ? '' : s.lines.join(' ');
+    next.sec[s.key] = txt;
+    const changed = !!txt && prev.sec && prev.sec[s.key] !== undefined && prev.sec[s.key] !== txt;
+    doc.appendChild(h('div', { class: 'sec' + (s.key === cur ? ' cur' : '') + (changed ? ' chg' : ''), 'data-sec': s.key }, [
+      h('h3', { text: s.title }),
+      txt ? h('p', { text: txt }) : h('p', { class: 'pv-empty', text: s.key === cur ? 'Waiting for values on this step.' : 'Not entered yet.' })
+    ]));
+  });
+  next.impr = R.impression.slice();
+  const codes = uniq(R.sections.reduce((a, s) => a.concat(s.codes || []), []));
+  const had = prev.impr || [];
+  doc.appendChild(h('div', { class: 'interp' }, [h('h3', { text: 'Interpretation' }),
+    R.impression.length
+      ? h('ol', {}, R.impression.map(t => h('li', { class: prev.impr && had.indexOf(t) < 0 ? 'chg' : '', text: t })))
+      : h('p', { class: 'pv-empty', text: 'The synthesis appears here once values are entered.' }),
+    codes.length ? h('div', { class: 'codes-row' }, [h('span', { class: 'fine', text: 'Annals ATS 2025 codes' }), h('span', { class: 'codes' }, codes.map(codeChip))]) : null]));
+  const oldDoc = pv.querySelector('.pv-doc'), keepTop = oldDoc ? oldDoc.scrollTop : 0;
+  pv.textContent = '';
+  pv.appendChild(h('div', { class: 'pv-head' }, [
+    h('h2', { text: 'Report preview' }),
+    h('div', { class: 'pv-btns' }, [
+      h('button', { type: 'button', class: 'btn sm', id: 'pv-copy', text: 'Copy', onclick: () => copyText(R.text, 'Report copied') }),
+      h('button', { type: 'button', class: 'btn sm', id: 'pv-open', text: 'Full report', onclick: () => goto('report') })
+    ])
+  ]));
+  pv.appendChild(doc);
+  pvPrev = next;
+  if (pvScrollTo) {
+    pvScrollTo = false;
+    const el = doc.querySelector('.sec.cur');
+    doc.scrollTop = el ? Math.max(0, el.offsetTop - 70) : 0;
+  } else doc.scrollTop = keepTop;
+}
+function renderPreview() {
+  const pv = $('pv'), work = $('work');
+  const show = pvShown();
+  pv.hidden = !show; work.classList.toggle('has-pv', show);
+  if (!show) { pv.textContent = ''; pvPrev = null; return; }
+  pvScrollTo = true;
+  widgets.push(paintPreview);
+}
+/* The panel is sticky; give it the height that is actually left on screen so it never runs off the bottom. */
+let fitQueued = false;
+function fitPreview() {
+  fitQueued = false;
+  const pv = $('pv'); if (!pv || pv.hidden || !pv.offsetParent) return;
+  pv.style.height = Math.max(240, window.innerHeight - Math.max(0, pv.getBoundingClientRect().top) - 16) + 'px';
+}
+function queueFit() { if (!fitQueued) { fitQueued = true; requestAnimationFrame(fitPreview); } }
+function wirePreview() { window.addEventListener('scroll', queueFit, { passive: true }); window.addEventListener('resize', queueFit); }
+function measureSteps() { const n = $('steps'); if (n && n.offsetHeight) document.documentElement.style.setProperty('--steps-h', n.offsetHeight + 'px'); }
+
 /* ---------------------------------------------------------------- dispatcher */
 function render() {
   if (!stepList().some(x => x.id === step)) step = 'tests';
@@ -4503,7 +4610,10 @@ function render() {
   else if (step === 'prior') stepPrior();
   else if (step === 'report') stepReport();
   else stepModule(step);
+  renderPreview();
   sync();
+  measureSteps();
+  fitPreview();
 }
 
 /* ------------------------------------------------------------------ new case */
@@ -5229,6 +5339,7 @@ function bankCaseEl(c, repaint) {
 /* ------------------------------------------------------------------------- boot */
 wirePop();
 wireHeader();
+wirePreview();
 render();
 window.__pft = { get state() { return S; }, get result() { return R; }, goto: goto, setMode: setMode, openLearn: openLearn, bank: bankLoad, signature: signature };
 })();
