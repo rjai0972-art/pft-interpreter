@@ -513,7 +513,7 @@ function stepModule(key) {
   const m = P.SCHEMA[key];
   const extra = [];
   if (key === 'fvl') extra.push(h('div', { class: 'learn-link' }, [h('button', { type: 'button', class: 'btn sm quiet', 'data-learn': 'loops', text: 'Learn: how to read a flow–volume loop and what each pattern means →', onclick: () => openLearn('loops') })]));
-  if (key === 'sixmw') extra.push(trendBlock());
+  if (key === 'sixmw') { extra.push(predCalcBlock()); extra.push(trendBlock()); }
   $('main').appendChild(h('div', { class: 'card' }, [stepHead(m.title, m.intro, m.src, 'test.' + key), h('p', { class: 'fine tapnote', text: 'Tap a choice to select it; tap it again to clear it. Typed values are optional and sit under the collapsed panels.' }), extra.filter(function (x) { return x.getAttribute('data-trend') !== '1'; }), m.groups.map(g => groupEl(key, g)), extra.filter(function (x) { return x.getAttribute('data-trend') === '1'; }), liveBox(key), navRow()]));
 }
 

@@ -81,7 +81,7 @@ and the single-file browser version (`PFT_Interpreter_standalone.html`) always w
 - Code signing is optional and not set up. For Windows add a signing certificate to the build; for Mac add an Apple Developer ID and notarization.
   Until then the first-launch steps above are needed.
 
-## How the reading is built (version 3.3)
+## How the reading is built (version 3.4)
 
 The report is assembled from a reviewed adult PFT phrase catalog (279 findings, 901 wording variants; original
 wording anchored to the ERS/ATS 2022 interpretive standard, ATS/ERS 2019 spirometry, ERS/ATS 2023 lung volumes,
@@ -97,4 +97,11 @@ high DLCO, low respiratory pressures, exertional desaturation, positive challeng
 symptomatic patient) the Report step also offers the differential considerations and the additional studies that
 sort them out, each as a tap: tapped differentials join the Interpretation as one sentence per finding, tapped
 studies are listed once under "Additional studies to consider", and nothing is inserted on its own (version 3.3).
+Each test section states its metrics in one composed sentence rather than one sentence per metric: metrics in the same
+state are grouped ("FEV1, FVC and FEV1/FVC are all within reference limits"; "FEV1/FVC is reduced (z = −2.3), with FEV1
+moderately reduced (z = −3.1); FVC is within reference limits"), the defining measurement leads when abnormal, and a
+metric that failed quality keeps its own sentence (version 3.4). When the laboratory reports no predicted 6MWD, the
+app calculates it with the Enright & Sherrill 1998 equation (the MDCalc 6-minute walk distance calculator) from age,
+sex, height and weight, with the LLN at predicted − 153 m (men) or − 139 m (women); a reported predicted value always
+takes precedence, and the report says which was used.
 Source code and tests: `web/`; the catalog and its rule specification: `web/catalog/`.

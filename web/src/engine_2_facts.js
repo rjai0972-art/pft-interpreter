@@ -26,6 +26,25 @@ function yearsBetween(a, b) { return (b.getTime() - a.getTime()) / (365.25 * 864
 function gradeRel(g) { return g === 'F' ? 'invalid' : ((g === 'U' || g === 'C' || g === 'D' || g === 'E') ? 'limited' : 'ok'); }
 function worse(a, b) { const r = { ok: 0, limited: 1, invalid: 2 }; return r[a] >= r[b] ? a : b; }
 
+/* Enright & Sherrill 1998 reference 6MWD (Am J Respir Crit Care Med 1998;158:1384–7), as implemented by the MDCalc
+   "6 Minute Walk Distance" calculator. Men: 7.57 × height(cm) − 5.02 × age − 1.76 × weight(kg) − 309; LLN = predicted − 153.
+   Women: 2.11 × height − 2.29 × weight − 5.78 × age + 667; LLN = predicted − 139. Healthy adults aged 40–80. */
+const ES_AGE = [40, 80];
+function enrightSherrill(ctx) {
+  const o = { ok: false, pred: NaN, lln: NaN, sub: NaN, missing: [], ageOut: false, sex: ctx.sex || '' };
+  if (!has(ctx.age)) o.missing.push('age');
+  if (ctx.sex !== 'M' && ctx.sex !== 'F') o.missing.push('sex');
+  if (!has(ctx.ht)) o.missing.push('height');
+  if (!has(ctx.wt)) o.missing.push('weight');
+  if (o.missing.length) return o;
+  const h_ = ctx.ht, a = ctx.age, w = ctx.wt;
+  if (ctx.sex === 'M') { o.pred = 7.57 * h_ - 5.02 * a - 1.76 * w - 309; o.sub = 153; }
+  else { o.pred = 2.11 * h_ - 2.29 * w - 5.78 * a + 667; o.sub = 139; }
+  o.lln = o.pred - o.sub;
+  o.ageOut = a < ES_AGE[0] || a > ES_AGE[1];
+  o.ok = isFinite(o.pred) && o.pred > 0;
+  return o;
+}
 /* 6MWD trend: saved walks (date + distance [+ nadir SpO2, oxygen]) plus today's walk from the 6MWT step. */
 const MID_6MWD = 30;            // minimal important difference, ERS/ATS 2014 (25-33 m)
 const IPF_DROP_6MWD = 50;       // du Bois 2011: > 50 m decline over 24 weeks predicts mortality in IPF
@@ -311,13 +330,23 @@ function buildFacts(st) {
     distCat: sx.dist_cat || '', desatSel: sx.desat || '', hrrSel: sx.hrr || ''
   };
   const x = f.six;
-  x.pctCalc = has(x.pct) ? x.pct : ((has(x.dist) && has(x.pred) && x.pred > 0) ? x.dist / x.pred * 100 : NaN);
+  // Enright & Sherrill 1998 predicted 6MWD (the MDCalc "6 Minute Walk Distance" calculator): used when the laboratory
+  // did not report a predicted value; a reported predicted value always takes precedence. LLN = predicted − 153 m (men)
+  // or − 139 m (women). Derived in healthy adults aged 40–80 (n = 290), explaining about 40% of the variance.
+  x.es = enrightSherrill(f.ctx);
+  x.predSrc = has(x.pred) ? 'lab' : (x.es.ok ? 'calc' : '');
+  x.predUse = has(x.pred) ? x.pred : (x.es.ok ? x.es.pred : NaN);
+  x.eqUse = x.eq || (x.predSrc === 'calc' ? 'Enright & Sherrill 1998' : '');
+  x.llnSrc = has(x.lln) ? 'lab' : (x.predSrc === 'calc' ? 'calc' : ((has(x.pred) && x.eq === 'Enright & Sherrill 1998' && x.es.sub) ? 'derived' : ''));
+  x.llnUse = has(x.lln) ? x.lln : (x.llnSrc === 'calc' ? x.es.lln : (x.llnSrc === 'derived' ? x.pred - x.es.sub : NaN));
+  x.pctCalc = has(x.pct) ? x.pct : ((has(x.dist) && has(x.predUse) && x.predUse > 0) ? x.dist / x.predUse * 100 : NaN);
+  x.predDiff = (x.predSrc === 'lab' && x.es.ok && x.eq === 'Enright & Sherrill 1998' && x.pred > 0) ? (x.pred - x.es.pred) / x.es.pred * 100 : NaN;
   x.drop = (has(x.s0) && has(x.sn)) ? x.s0 - x.sn : NaN;
   x.dsp = (has(x.dist) && has(x.sn)) ? x.dist * x.sn / 100 : NaN;
   x.hrr1 = (has(x.hp) && has(x.h1)) ? x.hp - x.h1 : NaN;
   x.hrPct = (has(x.hp) && has(f.ctx.hrMax) && f.ctx.hrMax > 0) ? x.hp / f.ctx.hrMax * 100 : NaN;
-  x.lowDist = (has(x.dist) && has(x.lln)) ? x.dist < x.lln : x.distCat === 'low';
-  x.wnlDist = (has(x.dist) && has(x.lln)) ? x.dist >= x.lln : x.distCat === 'wnl';
+  x.lowDist = (has(x.dist) && has(x.llnUse)) ? x.dist < x.llnUse : x.distCat === 'low';
+  x.wnlDist = (has(x.dist) && has(x.llnUse)) ? x.dist >= x.llnUse : x.distCat === 'wnl';
   x.desat88 = (has(x.sn) && x.sn <= 88) || x.desatSel === 'le88';
   x.desat = x.desat88 || (has(x.drop) && x.drop >= 4) || x.desatSel === 'fall';
   x.noDesat = !x.desat && ((has(x.sn) && (has(x.drop) ? x.drop < 4 : x.sn > 88)) || x.desatSel === 'none');

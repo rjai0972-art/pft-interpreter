@@ -259,7 +259,7 @@ Object.assign(FIELD, {
 });
 
 /* A few extra entries used by the six-minute walk equation field. */
-G.equations6 = { n: '6MWD reference equation', f: 'Predicted six-minute walk distance', w: 'Enright & Sherrill 1998, Casanova 2011 and Troosters 1999 predict the distance from age, height, weight and sex.', r: 'The reference changes the % predicted and the LLN, sometimes by 100 m or more for the same patient.', l: 'ERS/ATS 2014: reference equations applied to individuals show substantial variation; locally derived equations are preferred. Name the equation used.', t: 'sixmw' };
+G.equations6 = { n: '6MWD reference equation', f: 'Predicted six-minute walk distance', w: 'Enright & Sherrill 1998, Casanova 2011 and Troosters 1999 predict the distance from age, height, weight and sex. When the laboratory reports no predicted value, the app calculates it with Enright & Sherrill 1998 (the MDCalc 6-minute walk distance calculator) from the Details step: men 7.57 × height(cm) − 5.02 × age − 1.76 × weight(kg) − 309 m, LLN = predicted − 153 m; women 2.11 × height − 2.29 × weight − 5.78 × age + 667 m, LLN = predicted − 139 m.', r: 'The reference changes the % predicted and the LLN, sometimes by 100 m or more for the same patient.', l: 'ERS/ATS 2014: reference equations applied to individuals show substantial variation; locally derived equations are preferred. Name the equation used.', t: 'sixmw' };
 
 root.PFT_GLOSS = { terms: G, field: FIELD };
 if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_GLOSS;

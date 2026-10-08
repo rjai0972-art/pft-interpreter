@@ -71,7 +71,7 @@ function trendSvg(t, f) {
   const spanDays = (t1 - t0) / 86400000;
   if (t1 === t0) { t0 -= 20 * 86400000; t1 += 20 * 86400000; } else { const pad = (t1 - t0) * 0.04; t0 -= pad; t1 += pad; }
   let lo = Math.min.apply(null, pts.map(p => p.dist)), hi = Math.max.apply(null, pts.map(p => p.dist));
-  const lln = f.six.lln;
+  const lln = f.six.llnUse;
   const llnOn = typeof lln === 'number' && isFinite(lln) && lln > lo - 160 && lln < hi + 160;
   if (llnOn) { lo = Math.min(lo, lln); hi = Math.max(hi, lln); }
   const prev = n >= 2 ? pts[n - 2] : null;
@@ -187,6 +187,41 @@ function trendTable(t) {
     h('tbody', {}, rows)])]);
 }
 
+/* Predicted 6MWD by Enright & Sherrill 1998 (the MDCalc 6-minute walk distance calculator), from the Details step. The
+   laboratory's own predicted value, when entered below, takes precedence; this card shows what the equation gives. */
+function predCalcBlock() {
+  const has = (v) => typeof v === 'number' && isFinite(v), fmt = (v, d) => has(v) ? v.toFixed(d) : '?';
+  const vals = h('div', { class: 'stats es-stats' });
+  const body = h('p', { class: 'fine es-body' });
+  const goBtn = h('button', { type: 'button', class: 'btn sm', 'data-es-go': '1', text: 'Enter them on the Details step →', onclick: () => goto('ctx') });
+  const t6 = (label, value, sub) => h('div', { class: 'stat' }, [h('div', { class: 'sv', text: String(value) }), h('div', { class: 'sl', text: label }), sub ? h('div', { class: 'ss', text: sub }) : null]);
+  const card = h('section', { class: 'grp es-card', 'data-es': '1', 'aria-labelledby': 'es-h' }, [
+    h('div', { class: 'grp-head' }, [h('h3', { id: 'es-h', text: 'Predicted 6MWD calculator (Enright & Sherrill 1998, as on MDCalc)' })]),
+    vals, body
+  ]);
+  widgets.push(() => {
+    const x = R.facts.six, es = x.es, c = R.facts.ctx;
+    vals.textContent = ''; body.textContent = '';
+    if (!es || !es.ok) {
+      body.appendChild(h('span', { text: 'Needs ' + (es ? es.missing.join(', ') : 'age, sex, height and weight') + ' to calculate the predicted distance and the LLN. ' }));
+      body.appendChild(goBtn);
+      card.setAttribute('data-es-state', 'missing');
+      return;
+    }
+    const pct = has(x.dist) && x.stop !== 'early' ? x.dist / es.pred * 100 : NaN;
+    vals.appendChild(t6('Predicted 6MWD', Math.round(es.pred) + ' m', (es.sex === 'M' ? 'Men' : 'Women') + ', age ' + fmt(c.age, 0) + ', ' + fmt(c.ht, 0) + ' cm, ' + fmt(c.wt, 0) + ' kg'));
+    vals.appendChild(t6('LLN', Math.round(es.lln) + ' m', 'predicted − ' + es.sub + ' m'));
+    vals.appendChild(t6('% predicted', has(pct) ? Math.round(pct) + '%' : '—', has(x.dist) ? (x.stop === 'early' ? 'not applied: walk stopped early' : (x.dist < es.lln ? 'below the LLN' : 'at or above the LLN')) : 'enter the distance walked'));
+    const eqTxt = es.sex === 'M' ? '7.57 × height (cm) − 5.02 × age − 1.76 × weight (kg) − 309 m; LLN = predicted − 153 m' : '2.11 × height (cm) − 2.29 × weight (kg) − 5.78 × age + 667 m; LLN = predicted − 139 m';
+    let note = 'Equation (' + (es.sex === 'M' ? 'men' : 'women') + '): ' + eqTxt + '. Derived in healthy adults aged 40–80 (Am J Respir Crit Care Med 1998;158:1384–7); it explains about 40% of the variance in distance, so a locally derived or laboratory reference is preferred when one exists. ';
+    if (es.ageOut) note += 'Age ' + fmt(c.age, 0) + ' is outside the 40–80 range of the equation, so these are extrapolations. ';
+    note += x.predSrc === 'lab' ? 'The laboratory-reported predicted value entered below is used in the report; this calculation is shown for comparison' + (has(x.predDiff) && Math.abs(x.predDiff) > 5 ? ' (it differs by ' + fmt(Math.abs(x.predDiff), 0) + '%)' : '') + '.' : 'These values are used in the report because no laboratory predicted value was entered; enter one below to override.';
+    body.textContent = note;
+    card.setAttribute('data-es-state', x.predSrc === 'lab' ? 'lab' : 'calc');
+  });
+  return card;
+}
+
 function trendBlock() {
   const rowsBox = h('div', { class: 'tr-rows', 'data-trend-rows': '1' });
   const addBtn = h('button', { type: 'button', class: 'btn', id: 'tr-add', text: '+ Add an earlier walk', onclick: () => { S.trend6.list.push(P.blankTrendRow()); paintRows(); sync(); const last = rowsBox.querySelector('.tr-row:last-child input[type=date]'); if (last) last.focus(); } });
@@ -217,7 +252,7 @@ function trendBlock() {
     }
     if (sec && sec.trend && sec.trend.length) sum.appendChild(h('ul', { class: 'tr-lines' }, sec.trend.slice(1).map(l => h('li', { text: l }))));
     if (t.n >= 2) {
-      const L_ = [['dot', 'Room air'], t.pts.some(p => p.o2) ? ['sq', 'On oxygen'] : null, t.pts.some(p => p.src === 'current') ? ['ring', 'This study'] : null, ['band', '±' + MID6 + ' m around the previous walk (MID)'], (typeof R.facts.six.lln === 'number' && isFinite(R.facts.six.lln)) ? ['lln', 'LLN'] : null].filter(Boolean);
+      const L_ = [['dot', 'Room air'], t.pts.some(p => p.o2) ? ['sq', 'On oxygen'] : null, t.pts.some(p => p.src === 'current') ? ['ring', 'This study'] : null, ['band', '±' + MID6 + ' m around the previous walk (MID)'], (typeof R.facts.six.llnUse === 'number' && isFinite(R.facts.six.llnUse)) ? ['lln', 'LLN'] : null].filter(Boolean);
       L_.forEach(k => legend.appendChild(h('span', { class: 'lg' }, [h('i', { class: 'lg-' + k[0], 'aria-hidden': 'true' }), k[1]])));
     }
   }

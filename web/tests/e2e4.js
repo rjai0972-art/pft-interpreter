@@ -129,6 +129,29 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
   await page.waitForSelector('#differentials');
   await page.screenshot({ path: 'shots/44_differentials.png', fullPage: true });
 
+  // predicted 6MWD calculator on the 6MWT step (Enright & Sherrill 1998, as on MDCalc)
+  await page.evaluate(() => { const S = window.PFT.defaultState(); Object.keys(S.tests).forEach(k => { S.tests[k] = false; }); S.tests.sixmw = true; S.sixmw.dist = '420'; window.__pft.load(S, 'sixmw'); });
+  await page.waitForSelector('[data-es]');
+  ok(await page.locator('[data-es]').getAttribute('data-es-state') === 'missing' && /Needs age, sex, height, weight/.test(await page.locator('[data-es] .es-body').innerText()), 'calculator names the missing demographics');
+  await page.locator('[data-es-go]').click();
+  await page.waitForSelector('[data-field="settings.band"]');
+  ok(await page.locator('#main label', { hasText: /^Height/ }).count() === 1, 'the link leads to the Details step');
+  await page.evaluate(() => { const S = window.__pft.state; S.ctx.age = '65'; S.ctx.sex = 'M'; S.ctx.ht = '175'; S.ctx.wt = '80'; window.__pft.goto('sixmw'); });
+  await page.waitForSelector('[data-es][data-es-state="calc"]');
+  const esTiles = await page.locator('[data-es] .stat .sv').allInnerTexts();
+  ok(esTiles.join('|') === '549 m|396 m|77%', 'predicted, LLN and % predicted tiles: ' + esTiles.join('|'));
+  ok(/7\.57 × height/.test(await page.locator('[data-es] .es-body').innerText()) && /used in the report because no laboratory predicted value/.test(await page.locator('[data-es] .es-body').innerText()), 'equation and precedence note shown');
+  ok(/77% of the predicted 549 m by Enright & Sherrill 1998, calculated from age, sex, height and weight/.test(await page.locator('#pv .sec[data-sec="six"]').innerText()), 'the preview reports the calculated reference');
+  await page.screenshot({ path: 'shots/46_sixmw_calculator.png', fullPage: true });
+  await page.evaluate(() => { const S = window.__pft.state; S.sixmw.pred = '500'; S.sixmw.eq = 'Enright & Sherrill 1998'; window.__pft.goto('sixmw'); });
+  await page.waitForSelector('[data-es][data-es-state="lab"]');
+  ok(/laboratory-reported predicted value entered below is used/.test(await page.locator('[data-es] .es-body').innerText()), 'a reported predicted value takes precedence');
+
+  // composed section sentences
+  await page.evaluate(() => { const S = window.PFT.defaultState(); Object.keys(S.tests).forEach(k => { S.tests[k] = false; }); S.tests.spiro = true; S.spiro.ratio = { c: 'wnl', z: '' }; S.spiro.fev1 = { c: 'wnl', z: '' }; S.spiro.fvc = { c: 'wnl', z: '' }; window.__pft.load(S, 'report'); });
+  await page.waitForSelector('#doc');
+  ok(await page.locator('#doc .sec[data-sec="spiro"] p').innerText() === 'FEV1, FVC and FEV1/FVC are all within reference limits.', 'normal spirometry reads as one sentence');
+
   // report text never carries source keys
   await page.evaluate(() => { window.__pft.setMode('case'); window.__pft.goto('report'); });
   await page.waitForSelector('#plain', { state: 'attached' });

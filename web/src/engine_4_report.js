@@ -491,7 +491,11 @@ function buildHeadsUp(f, secs) {
     if (f.six.lowDist && normalSpiro && volNormal && (!dlOn || Dm.wnl))
       H('PH29', 'note', 'Physiology', 'Reduced 6MWD with normal resting PFTs', 'A reduced walk distance with normal pulmonary function points outside the airways and parenchyma (cardiac, muscular, deconditioning, motivation); CPET can discriminate.');
     if (f.six.onO2) H('PH30', 'note', 'Technique', '6MWT performed on oxygen', 'Saturations reflect ' + f.six.o2text + '; "no desaturation" on oxygen does not demonstrate normal room-air oxygenation. Repeat on room air to assess the oxygen requirement.');
-    if (has(f.six.dist) && !has(f.six.pred) && !has(f.six.pct) && !has(f.six.lln) && f.six.distCat === '') H('PH31', 'note', 'Missing data', 'No reference for the 6MWD', 'Enter the predicted distance, % predicted or the LLN, and name the reference equation; a distance can only be called reduced against a valid reference.');
+    const X = f.six;
+    if (has(X.dist) && !has(X.pred) && !has(X.pct) && !has(X.lln) && X.distCat === '' && X.predSrc !== 'calc') H('PH31', 'note', 'Missing data', 'No reference for the 6MWD', 'Enter the laboratory\u2019s predicted distance, % predicted or LLN, or enter ' + (X.es.missing.length ? X.es.missing.join(', ') + ' on the Details step' : 'the demographics') + ' so the predicted distance can be calculated (Enright & Sherrill 1998, as on MDCalc); a distance can only be called reduced against a valid reference.');
+    if (X.predSrc === 'calc' && X.es.ageOut) H('PH56', 'caution', 'Equations', 'Age ' + fmt(f.ctx.age, 0) + ' is outside the Enright & Sherrill range', 'The calculated predicted 6MWD and LLN come from an equation derived in healthy adults aged 40–80; outside that range the % predicted and the LLN are extrapolations. Prefer a laboratory or age-appropriate reference if one is available.');
+    if (X.predSrc === 'calc' && X.stop !== 'early' && has(X.dist)) H('PH57', 'note', 'Equations', 'Predicted 6MWD calculated, not reported', 'The laboratory did not report a predicted distance, so ' + fmt(X.es.pred, 0) + ' m (LLN ' + fmt(X.es.lln, 0) + ' m) was calculated from age, sex, height and weight with the Enright & Sherrill 1998 equation. Reference equations explain under half of the variance in walk distance (ERS/ATS 2014); a locally derived reference is preferred when the laboratory has one.');
+    if (has(X.predDiff) && Math.abs(X.predDiff) > 5) H('PH58', 'caution', 'Data entry', 'Reported predicted 6MWD differs from the Enright & Sherrill calculation', 'The entered predicted distance (' + fmt(X.pred, 0) + ' m) is ' + fmt(Math.abs(X.predDiff), 0) + '% ' + (X.predDiff > 0 ? 'higher' : 'lower') + ' than the equation gives for these demographics (' + fmt(X.es.pred, 0) + ' m). Check the entered height, weight, age and sex, or whether the laboratory used a different equation.');
     if (f.six.stop === 'early') H('PH49', 'note', 'Technique', 'Walk stopped before six minutes', 'The achieved time and distance are reported; they are not a completed six-minute result and are not compared with the predicted 6MWD.');
   }
   if (f.on.cpet && f.cp.any) {
@@ -785,7 +789,7 @@ function interpret(raw) {
 }
 
 const API = {
-  version: '2.1.0',
+  version: '2.2.0',
   catalogVersion: CATALOG.version,
   Z_LLN: Z_LLN, Z_ULN: Z_ULN, STYLES: STYLES,
   TESTS: TESTS, PRESETS: PRESETS, SCHEMA: SCHEMA, LOOPS: LOOPS, INDICATIONS: INDICATIONS, KIND_OPTS: KIND_OPTS, PRIOR_FIELDS: PRIOR_FIELDS, CUR_FIELDS: CUR_FIELDS, MAX_PRIORS: MAX_PRIORS, MAX_TREND: MAX_TREND,

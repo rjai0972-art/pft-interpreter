@@ -614,5 +614,79 @@ const hu = (r, idPrefix) => r.headsup.filter(h => h.id.indexOf(idPrefix) === 0)[
   ok(P.DX_GROUPS.length >= 19 && P.DX_GROUPS.every(g => /^[a-z_]+$/.test(g.key)), 'group keys are well formed');
 })();
 
+/* ---------- composed section sentences: same-state metrics are grouped ---------- */
+(function () {
+  const line = (r, key) => r.sections.filter(x => x.key === key)[0].lines.join(' ');
+  const lvl = (st, style) => { const c = JSON.parse(JSON.stringify(st)); c.settings.style = style; return run(c); };
+  let st = mk(['spiro', 'vol', 'dlco'], 'spiro.ratio=wnl', 'spiro.fev1=wnl', 'spiro.fvc=wnl', 'vol.tlc=wnl', 'vol.rv=wnl', 'vol.rvtlc=wnl', 'dlco.dlco=wnl', 'dlco.va=wnl', 'dlco.kco=wnl');
+  let r = run(st);
+  eq(line(r, 'spiro'), 'FEV1, FVC and FEV1/FVC are all within reference limits.', 'normal spirometry is one sentence');
+  eq(line(r, 'vol'), 'TLC, RV and RV/TLC are all within reference limits.', 'normal volumes are one sentence');
+  ok(/^DLCO, VA and KCO are all within reference limits\./.test(line(r, 'dlco')), 'normal gas transfer is one sentence: ' + line(r, 'dlco'));
+  r = run(mk(['spiro'], 'spiro.ratio=z-2.3', 'spiro.fev1=z-3.1', 'spiro.fvc=z-0.4'));
+  eq(line(r, 'spiro'), 'FEV1/FVC is reduced (z = -2.3), with FEV1 moderately reduced (z = -3.1); FVC is within reference limits (z = -0.4).', 'obstruction: the ratio leads and carries the FEV1 grade');
+  r = run(mk(['spiro'], 'spiro.ratio=z-2.3', 'spiro.fev1=z-4.5', 'spiro.fvc=z-2.6'));
+  eq(line(r, 'spiro'), 'FEV1/FVC is reduced (z = -2.3), with FEV1 severely reduced (z = -4.5) and FVC moderately reduced (z = -2.6).', 'two grades hang off the ratio');
+  r = run(mk(['spiro'], 'spiro.ratio=z0.3', 'spiro.fev1=z-2.0', 'spiro.fvc=z-1.9'));
+  eq(line(r, 'spiro'), 'FEV1 and FVC are mildly reduced (z = -2.0 and -1.9); FEV1/FVC is within reference limits (z = +0.3).', 'same grade merges with both z-scores; the preserved ratio closes the sentence');
+  r = run(mk(['spiro'], 'spiro.ratio=wnl', 'spiro.fev1=wnl', 'spiro.fvc=wnl', 'spiro.qual=D'));
+  ok(/FEV1, FVC and FEV1\/FVC are all within reference limits \(reduced confidence: see quality\)\./.test(line(r, 'spiro')), 'a quality limit on every metric is said once: ' + line(r, 'spiro'));
+  const band = (x) => { x.settings.band = 0.25; return x; };   // an earlier test turned the band off through the shared CFG
+  r = run(band(mk(['spiro'], 'spiro.ratio=z-1.5', 'spiro.fev1=z-1.0', 'spiro.fvc=z-0.5')));
+  eq(line(r, 'spiro'), 'FEV1, FVC and FEV1/FVC are all within reference limits (z = -1.0, -0.5 and -1.5); FEV1/FVC is near the LLN (a review flag, not a separate category).', 'near-LLN stays inside the normal group with its flag after');
+  r = run(band(mk(['spiro'], 'spiro.ratio=z-1.5', 'spiro.fev1=z-2.0', 'spiro.fvc=z-1.7')));
+  ok(/FEV1\/FVC is within reference limits \(z = -1.5\), near the LLN/.test(line(r, 'spiro')), 'a lone near-LLN metric carries the flag inline');
+  r = run(mk(['spiro'], 'spiro.ratio=z-1.5', 'spiro.fev1=z-1.0', 'spiro.fvc=z-2.5', 'spiro.qual_fvc=F'));
+  ok(/FVC and FEV1\/FVC are not interpretable \(the maneuver did not meet quality criteria; FVC z = -2.5, FEV1\/FVC z = -1.5\)\. FEV1 is within reference limits \(z = -1.0\)\./.test(line(r, 'spiro')), 'invalid metrics share one sentence and never join a state group: ' + line(r, 'spiro'));
+  r = run(mk(['vol'], 'vol.tlc=z2.1', 'vol.rv=z2.6', 'vol.rvtlc=z2.4', 'vol.frc=z0.5'));
+  eq(line(r, 'vol'), 'TLC, RV and RV/TLC are increased (z = +2.1, +2.6 and +2.4); FRC is within reference limits (z = +0.5).', 'hyperinflation volumes grouped');
+  r = run(mk(['dlco'], 'dlco.dlco=z-2.9', 'dlco.va=z-0.3', 'dlco.kco=z-2.2'));
+  ok(/^DLCO is moderately reduced \(z = -2.9\) and KCO is reduced \(z = -2.2\); VA is within reference limits \(z = -0.3\)\./.test(line(r, 'dlco')), 'gas transfer composed: ' + line(r, 'dlco'));
+  r = run(mk(['dlco'], 'dlco.dlco=mild', 'dlco.basis=un', 'dlco.dlco_adj=wnl', 'dlco.va=wnl', 'dlco.kco=wnl'));
+  ok(/^DLCO \(not adjusted for hemoglobin\) is mildly reduced; hemoglobin-adjusted DLCO, VA and KCO are within reference limits\./.test(line(r, 'dlco')), 'unadjusted and adjusted DLCO named in one sentence: ' + line(r, 'dlco'));
+  // levels
+  st = mk(['spiro'], 'spiro.ratio=z-2.3', 'spiro.fev1=z-3.1', 'spiro.fvc=z-0.4', 'spiro.fev1_abs=1.55', 'spiro.fvc_abs=3.2', 'spiro.fev1_pct=48');
+  const stdT = line(lvl(st, 'standard'), 'spiro'), numT = line(lvl(st, 'numeric'), 'spiro'), expT = line(lvl(st, 'expanded'), 'spiro'), conT = line(lvl(st, 'concise'), 'spiro');
+  ok(/^Measured: FEV1 1\.55 L \(48% predicted\); FVC 3\.20 L; FEV1\/FVC 0\.48\. FEV1\/FVC is reduced/.test(stdT), 'standard: measured line then the composed sentence: ' + stdT);
+  ok(/^FEV1\/FVC \(0\.48; z = -2\.3\) is reduced, with FEV1 \(1\.55 L, 48% predicted; z = -3\.1\) moderately reduced; FVC \(3\.20 L; z = -0\.4\) is within reference limits\.$/.test(numT), 'numeric: values inline, no separate measured line: ' + numT);
+  ok(expT.length > stdT.length && /supports an obstructive ventilatory impairment/.test(expT) && !/grading scheme/.test(expT), 'detailed: adds the catalog caveats, not grade restatements: ' + expT);
+  ok(conT === stdT, 'concise and standard share the composed sentence');
+  ok(!/\bIts\b/.test(line(lvl(mk(['spiro'], 'spiro.ratio=wnl', 'spiro.fev1=wnl', 'spiro.fvc=wnl'), 'expanded'), 'spiro')), 'no dangling pronoun caveat at the detailed level');
+})();
+
+/* ---------- predicted 6MWD: Enright & Sherrill 1998 (the MDCalc calculator) ---------- */
+(function () {
+  const six = (r) => r.sections.filter(x => x.key === 'six')[0].lines.join(' ');
+  // man 65 y, 175 cm, 80 kg: 7.57*175 - 5.02*65 - 1.76*80 - 309 = 548.65; LLN 395.65
+  let r = run(mk(['sixmw'], 'ctx.age=65', 'ctx.sex=M', 'ctx.ht=175', 'ctx.wt=80', 'sixmw.dist=420'));
+  ok(Math.abs(r.facts.six.es.pred - 548.65) < 0.01 && Math.abs(r.facts.six.es.lln - 395.65) < 0.01 && r.facts.six.es.sub === 153, 'male equation and LLN');
+  eq(r.facts.six.predSrc, 'calc', 'calculated predicted used when none was reported');
+  ok(Math.abs(r.facts.six.pctCalc - 76.6) < 0.1 && r.facts.six.lowDist === false, '% predicted from the calculated value; above the LLN');
+  ok(/6MWD was 420 m \(77% of the predicted 549 m by Enright & Sherrill 1998, calculated from age, sex, height and weight\); the LLN is 396 m \(predicted − 153 m for men\), so the distance is at or above the LLN\./.test(six(r)), 'section names the calculation: ' + six(r));
+  ok(hasHU(r, 'PH57') && !hasHU(r, 'PH31') && !hasHU(r, 'PH56'), 'note that the predicted value was calculated; no missing-reference note');
+  // woman 70 y, 160 cm, 58 kg: 2.11*160 - 2.29*58 - 5.78*70 + 667 = 467.18; LLN 328.18
+  r = run(mk(['sixmw'], 'ctx.age=70', 'ctx.sex=F', 'ctx.ht=160', 'ctx.wt=58', 'sixmw.dist=300'));
+  ok(Math.abs(r.facts.six.es.pred - 467.18) < 0.01 && Math.abs(r.facts.six.es.lln - 328.18) < 0.01 && r.facts.six.es.sub === 139, 'female equation and LLN');
+  ok(r.facts.six.lowDist === true && /below the LLN/.test(r.impression.join(' ')) && r.F['observations.walk.distance_low'] === true, 'distance below the calculated LLN is read as reduced');
+  // a reported predicted value wins; its LLN is derived only when the equation is Enright & Sherrill
+  r = run(mk(['sixmw'], 'ctx.age=70', 'ctx.sex=F', 'ctx.ht=160', 'ctx.wt=58', 'sixmw.dist=300', 'sixmw.pred=500', 'sixmw.eq=Enright & Sherrill 1998'));
+  ok(r.facts.six.predSrc === 'lab' && r.facts.six.llnSrc === 'derived' && r.facts.six.llnUse === 361 && Math.round(r.facts.six.pctCalc) === 60, 'laboratory predicted takes precedence; LLN = predicted − 139');
+  ok(hasHU(r, 'PH58') && /7% higher/.test(hu(r, 'PH58').text), 'a reported predicted value that disagrees with the equation is flagged: ' + (hu(r, 'PH58') || {}).text);
+  r = run(mk(['sixmw'], 'ctx.age=70', 'ctx.sex=F', 'ctx.ht=160', 'ctx.wt=58', 'sixmw.dist=300', 'sixmw.pred=480', 'sixmw.eq=Casanova 2011'));
+  ok(r.facts.six.llnSrc === '' && !has2(r.facts.six.llnUse) && !hasHU(r, 'PH58'), 'no LLN is derived for another equation and no disagreement check');
+  r = run(mk(['sixmw'], 'ctx.age=70', 'ctx.sex=F', 'ctx.ht=160', 'ctx.wt=58', 'sixmw.dist=300', 'sixmw.pred=480', 'sixmw.lln=350'));
+  ok(r.facts.six.llnSrc === 'lab' && r.facts.six.llnUse === 350, 'a reported LLN is used as entered');
+  // missing inputs: the note says which
+  r = run(mk(['sixmw'], 'ctx.age=70', 'sixmw.dist=300'));
+  ok(r.facts.six.predSrc === '' && hasHU(r, 'PH31') && /sex, height, weight on the Details step/.test(hu(r, 'PH31').text), 'missing demographics named in the note');
+  // age outside 40–80 is a caution, still calculated
+  r = run(mk(['sixmw'], 'ctx.age=30', 'ctx.sex=M', 'ctx.ht=175', 'ctx.wt=80', 'sixmw.dist=420'));
+  ok(hasHU(r, 'PH56') && r.facts.six.predSrc === 'calc', 'age 30 flagged as outside the derivation range');
+  // a walk stopped early is not compared with the predicted distance
+  r = run(mk(['sixmw'], 'ctx.age=65', 'ctx.sex=M', 'ctx.ht=175', 'ctx.wt=80', 'sixmw.dist=250', 'sixmw.stop=early', 'sixmw.time_min=4'));
+  ok(!/% of the predicted/.test(six(r)) && !hasHU(r, 'PH57'), 'early stop: no % predicted');
+  function has2(x) { return typeof x === 'number' && isFinite(x); }
+})();
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 if (fail) { failures.forEach(f => console.log('FAIL: ' + f)); process.exit(1); }

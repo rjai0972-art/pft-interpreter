@@ -82,6 +82,77 @@ function metricLine(f, base, r, name) {
   return t;
 }
 
+/* One composed sentence for the metrics of a section instead of one sentence per metric: metrics in the same state are
+   grouped ("FEV1, FVC and FEV1/FVC are all within reference limits"; "FEV1/FVC is reduced (z = −2.3) and FEV1 is
+   moderately reduced (z = −3.1); FVC is within reference limits"). Abnormal groups lead, in the reasoning order the
+   items were given; the normal group closes the sentence. A metric that failed quality keeps its own sentence. The
+   detailed level adds the catalog's caveat for each metric; the numeric level prints the measured values. */
+const STATE_PRED = { normal: 'within reference limits', bl: 'within reference limits but near the LLN (a review flag, not a separate category)', low: 'reduced', mild: 'mildly reduced', moderate: 'moderately reduced', severe: 'severely reduced', high: 'increased' };
+function joinNames(a) { return a.length <= 2 ? a.join(' and ') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1]; }
+function metricState(r) { return r.low ? (r.sev || 'low') : (r.high ? 'high' : (r.bl ? 'bl' : 'normal')); }
+function metricItem(name, r, base, num, lead) { return { name: name, r: r, base: base, num: num || null, lead: !!lead }; }
+function metricGroup(f, items) {
+  const style = f.style, V = f.vals, out = [];
+  const live = items.filter(it => it.r && it.r.measured);
+  const inv = live.filter(it => it.r.invalid);
+  if (inv.length) out.push(joinNames(inv.map(it => it.name)) + (inv.length > 1 ? ' are' : ' is') + ' not interpretable (the maneuver did not meet quality criteria' + (inv.some(it => it.r.zTxt) ? '; ' + inv.filter(it => it.r.zTxt).map(it => (inv.length > 1 ? it.name + ' ' : '') + it.r.zTxt).join(', ') : '') + ').');
+  const ok = live.filter(it => !it.r.invalid);
+  if (!ok.length) return out;
+  const groups = [], idx = {};
+  ok.forEach(it => { let k = metricState(it.r); if (k === 'bl') k = 'normal'; if (idx[k] === undefined) { idx[k] = groups.length; groups.push({ k: k, items: [] }); } groups[idx[k]].items.push(it); });
+  // the defining measurement (FEV1/FVC) leads when it is abnormal; otherwise groups keep the order the items were given
+  const abn = groups.filter(g => g.k !== 'normal').sort((a, b) => (b.items.some(it => it.lead) ? 1 : 0) - (a.items.some(it => it.lead) ? 1 : 0));
+  const nl = groups.filter(g => g.k === 'normal');
+  const near = ok.filter(it => it.r.bl);
+  const single = groups.length === 1;
+  groups.forEach(g => { if (g.k !== 'normal') g.items.sort((a, b) => (b.lead ? 1 : 0) - (a.lead ? 1 : 0)); });
+  const clause = (g, noVerb) => {
+    const n = g.items.length, verb = noVerb ? ' ' : (n > 1 ? ' are ' : ' is ');
+    const all = single ? (n >= 3 ? 'all ' : (n === 2 ? 'both ' : '')) : '';
+    const allLimited = g.items.every(it => it.r.limited), someLimited = g.items.some(it => it.r.limited);
+    const pred = STATE_PRED[g.k];
+    const tail = allLimited ? ' (reduced confidence: see quality)' : '';
+    const perItem = style === 'numeric' || (someLimited && !allLimited);
+    if (perItem) {
+      const parts = g.items.map(it => {
+        const d = [];
+        if (style === 'numeric' && it.num) { const t = it.num(V); if (t) d.push(t); }
+        if (it.r.zTxt) d.push(it.r.zTxt);
+        if (it.r.limited && !allLimited) d.push('reduced confidence: see quality');
+        return it.name + (d.length ? ' (' + d.join('; ') + ')' : '');
+      });
+      return joinNames(parts) + verb + all + pred + tail;
+    }
+    const zs = g.items.map(it => it.r.zTxt).filter(Boolean);
+    let t = joinNames(g.items.map(it => it.name)) + verb + all + pred;
+    if (zs.length === 1) t += ' (' + zs[0] + ')';
+    else if (zs.length > 1) t += ' (z = ' + joinNames(zs.map(z => z.replace(/^z = /, ''))) + ')';
+    return t + tail;
+  };
+  // "FEV1/FVC is reduced (z = −2.3), with FEV1 moderately reduced (z = −3.1)": the defining measurement carries the others
+  const leadFirst = abn.length > 1 && abn[0].items.some(it => it.lead);
+  const abnTxt = leadFirst ? clause(abn[0]) + ', with ' + abn.slice(1).map(g => clause(g, true)).join(' and ') : abn.map(g => clause(g)).join(abn.length === 2 ? ' and ' : '; ');
+  const nlCount = nl.reduce((a, g) => a + g.items.length, 0);
+  const nearAll = near.length > 0 && near.length === nlCount;
+  const nlTxt = nl.map(clause).join('; ') + (nearAll ? (nlCount > 1 ? ', all' : ',') + ' near the LLN (a review flag, not a separate category)' : '');
+  const nearTxt = near.length && !nearAll ? joinNames(near.map(it => it.name)) + (near.length > 1 ? ' are' : ' is') + ' near the LLN (a review flag, not a separate category)' : '';
+  out.push(cap([abnTxt, nlTxt, nearTxt].filter(Boolean).join('; ')) + '.');
+  if (style === 'expanded') {
+    const seen = {};
+    ok.forEach(it => {
+      const k = metricState(it.r), id = it.base + '.' + (k === 'bl' ? 'normal' : k);
+      const full = ptext(id, 'expanded', V) || (k !== 'normal' && k !== 'high' ? ptext(it.base + '.low', 'expanded', V) : '');
+      if (!full) return;
+      const m = /^[^.;]+[.;]\s+(.+)$/.exec(full.trim());
+      // a two-part template contributes its caveat (the part after the finding); a one-sentence template is kept whole
+      // unless it only restates the grade
+      const tail = m ? cap(m[1].trim()).replace(/\.?$/, '.') : (/grading scheme/.test(full) ? '' : full.trim());
+      if (tail && tail.length > 40 && !seen[tail] && !/^Its\b/.test(tail)) { seen[tail] = 1; out.push(tail); }
+    });
+  }
+  return out;
+}
+
 /* ------------------------------------------------------------- prior facts */
 function priorFacts(st, f) {
   const out = [];
@@ -164,13 +235,18 @@ function qualLines(f) {
   if (f.poorEffort) out.push(s.effort === 'weak' ? 'Effort: muscle weakness suspected from the maneuver (no sharp peak flow)' : 'Effort: submaximal effort or cooperation concern noted');
   return out;
 }
+function inlineNum(f, r) { return f.style === 'numeric' && r && r.measured && !r.invalid; }
 function measuredLine(f) {
   const s = f.sp, a = [];
-  if (has(s.fev1L)) a.push('FEV1 ' + fmt(s.fev1L, 2) + ' L' + (has(s.fev1pct) ? ' (' + Math.round(s.fev1pct) + '% predicted)' : ''));
-  else if (has(s.fev1pct)) a.push('FEV1 ' + Math.round(s.fev1pct) + '% predicted');
-  if (has(s.fvcL)) a.push('FVC ' + fmt(s.fvcL, 2) + ' L' + (has(s.fvcpct) ? ' (' + Math.round(s.fvcpct) + '% predicted)' : ''));
-  else if (has(s.fvcpct)) a.push('FVC ' + Math.round(s.fvcpct) + '% predicted');
-  if (has(s.ratioCalc)) a.push('FEV1/FVC ' + fmt(s.ratioCalc, 2));
+  if (!inlineNum(f, s.fev1)) {
+    if (has(s.fev1L)) a.push('FEV1 ' + fmt(s.fev1L, 2) + ' L' + (has(s.fev1pct) ? ' (' + Math.round(s.fev1pct) + '% predicted)' : ''));
+    else if (has(s.fev1pct)) a.push('FEV1 ' + Math.round(s.fev1pct) + '% predicted');
+  }
+  if (!inlineNum(f, s.fvc)) {
+    if (has(s.fvcL)) a.push('FVC ' + fmt(s.fvcL, 2) + ' L' + (has(s.fvcpct) ? ' (' + Math.round(s.fvcpct) + '% predicted)' : ''));
+    else if (has(s.fvcpct)) a.push('FVC ' + Math.round(s.fvcpct) + '% predicted');
+  }
+  if (has(s.ratioCalc) && !inlineNum(f, s.ratio)) a.push('FEV1/FVC ' + fmt(s.ratioCalc, 2));
   return a.length ? 'Measured: ' + a.join('; ') : '';
 }
 
@@ -179,9 +255,12 @@ function secSpiro(f) {
   if (!s.any && !s.anyQ) { sec.empty = true; sec.lines.push('No spirometry values entered.'); return sec; }
   qualLines(f).forEach(l => put(sec, l));
   put(sec, measuredLine(f));
-  put(sec, metricLine(f, 'metric.ratio', s.ratio, 'FEV1/FVC'));
-  put(sec, metricLine(f, 'metric.fev1', s.fev1, 'FEV1'));
-  put(sec, metricLine(f, 'metric.fvc', s.fvc, 'FVC'));
+  const nv = (L, pct) => (V) => [has(L) ? fmt(L, 2) + ' L' : '', has(pct) ? Math.round(pct) + '% predicted' : ''].filter(Boolean).join(', ');
+  metricGroup(f, [
+    metricItem('FEV1', s.fev1, 'metric.fev1', nv(s.fev1L, s.fev1pct)),
+    metricItem('FVC', s.fvc, 'metric.fvc', nv(s.fvcL, s.fvcpct)),
+    metricItem('FEV1/FVC', s.ratio, 'metric.ratio', () => has(s.ratioCalc) ? fmt(s.ratioCalc, 2) : '', true)
+  ]).forEach(l => put(sec, l));
   const fx = f.F['spirometry.fixed_ratio_discordance'];
   if (fx === 'fixed_only') put(sec, ptext('metric.ratio.fixed_only', 'standard', f.vals));
   else if (fx === 'lln_only') put(sec, ptext('metric.ratio.lln_only', 'standard', f.vals));
@@ -287,22 +366,25 @@ function secVol(f) {
   if (mth) put(sec, 'Lung volumes were measured by ' + mth);
   if (v.qc === 'limited') put(sec, ptext('quality.volume_limited', 'standard'));
   if (v.qc === 'inv') put(sec, 'The lung-volume measurements are not interpretable');
-  const vals = [];
-  if (has(v.tlcL)) vals.push('TLC ' + fmt(v.tlcL, 2) + ' L');
-  if (has(v.rvL)) vals.push('RV ' + fmt(v.rvL, 2) + ' L');
-  if (has(v.rvtlcCalc)) vals.push('RV/TLC ' + fmt(v.rvtlcCalc, 0) + '%');
-  if (has(v.frcL)) vals.push('FRC ' + fmt(v.frcL, 2) + ' L');
-  if (has(v.svcL)) vals.push('SVC ' + fmt(v.svcL, 2) + ' L');
+  const vals = [], inl = (r) => inlineNum(f, r) && v.qc !== 'inv';
+  if (has(v.tlcL) && !inl(v.tlc)) vals.push('TLC ' + fmt(v.tlcL, 2) + ' L');
+  if (has(v.rvL) && !inl(v.rv)) vals.push('RV ' + fmt(v.rvL, 2) + ' L');
+  if (has(v.rvtlcCalc) && !inl(v.rvtlc)) vals.push('RV/TLC ' + fmt(v.rvtlcCalc, 0) + '%');
+  if (has(v.frcL) && !inl(v.frc)) vals.push('FRC ' + fmt(v.frcL, 2) + ' L');
+  if (has(v.svcL) && !inl(v.svc)) vals.push('SVC ' + fmt(v.svcL, 2) + ' L');
   if (vals.length) put(sec, 'Measured: ' + vals.join('; '));
   if (v.qc !== 'inv') {
-    put(sec, metricLine(f, 'volume.tlc', v.tlc, 'TLC'));
-    put(sec, metricLine(f, 'volume.rv', v.rv, 'RV'));
-    put(sec, metricLine(f, 'volume.rv_tlc', v.rvtlc, 'RV/TLC'));
-    put(sec, metricLine(f, 'volume.frc', v.frc, 'FRC'));
-    put(sec, metricLine(f, 'volume.frc_tlc', v.frctlc, 'FRC/TLC'));
-    put(sec, metricLine(f, 'metric.svc', v.svc, 'SVC'));
-    put(sec, metricLine(f, 'volume.erv', v.erv, 'ERV'));
-    put(sec, metricLine(f, 'volume.ic', v.ic, 'IC'));
+    const L_ = (x) => () => has(x) ? fmt(x, 2) + ' L' : '';
+    metricGroup(f, [
+      metricItem('TLC', v.tlc, 'volume.tlc', L_(v.tlcL)),
+      metricItem('RV', v.rv, 'volume.rv', L_(v.rvL)),
+      metricItem('RV/TLC', v.rvtlc, 'volume.rv_tlc', () => has(v.rvtlcCalc) ? fmt(v.rvtlcCalc, 0) + '%' : ''),
+      metricItem('FRC', v.frc, 'volume.frc', L_(v.frcL)),
+      metricItem('FRC/TLC', v.frctlc, 'volume.frc_tlc'),
+      metricItem('SVC', v.svc, 'metric.svc', L_(v.svcL)),
+      metricItem('ERV', v.erv, 'volume.erv'),
+      metricItem('IC', v.ic, 'volume.ic')
+    ]).forEach(l => put(sec, l));
   }
   if (vp.code) sec.codes.push(vp.code);
   if (has(f.sp.fvcL) && has(v.svcL)) {
@@ -320,22 +402,25 @@ function secDlco(f) {
   if (d.qc === 'limited') put(sec, ptext('quality.dlco_limited', 'standard'));
   if (d.qc === 'inv') put(sec, ptext('dlco.invalid', 'standard'));
   if (d.single) put(sec, ptext('quality.dlco_single', 'standard'));
-  const vals = [];
-  if (has(d.abs)) vals.push('DLCO ' + fmt(d.abs, 1) + ' mL/min/mmHg' + (has(d.pct) ? ' (' + Math.round(d.pct) + '% predicted' + (d.reportedAdjusted ? ', Hb-adjusted' : (d.basis === 'un' ? ', not Hb-adjusted' : '')) + ')' : ''));
-  else if (has(d.pct)) vals.push('DLCO ' + Math.round(d.pct) + '% predicted' + (d.reportedAdjusted ? ' (Hb-adjusted)' : (d.basis === 'un' ? ' (not Hb-adjusted)' : '')));
-  if (has(d.vaL)) vals.push('VA ' + fmt(d.vaL, 2) + ' L');
+  const vals = [], inlD = inlineNum(f, d.dlco) && d.qc !== 'inv';
+  if (!inlD) {
+    if (has(d.abs)) vals.push('DLCO ' + fmt(d.abs, 1) + ' mL/min/mmHg' + (has(d.pct) ? ' (' + Math.round(d.pct) + '% predicted' + (d.reportedAdjusted ? ', Hb-adjusted' : (d.basis === 'un' ? ', not Hb-adjusted' : '')) + ')' : ''));
+    else if (has(d.pct)) vals.push('DLCO ' + Math.round(d.pct) + '% predicted' + (d.reportedAdjusted ? ' (Hb-adjusted)' : (d.basis === 'un' ? ' (not Hb-adjusted)' : '')));
+  }
+  if (has(d.vaL) && !(inlineNum(f, d.va) && d.qc !== 'inv')) vals.push('VA ' + fmt(d.vaL, 2) + ' L');
   if (has(d.vatlc)) vals.push('VA/TLC ' + fmt(d.vatlc, 2));
   if (vals.length) put(sec, 'Measured: ' + vals.join('; '));
-  if (d.dlco.measured && d.qc !== 'inv') {
+  if (d.qc !== 'inv') {
     const lab = dlcoLabel(f);
-    let t = metricLine(f, 'dlco', d.dlco, lab);
-    if (t && lab !== 'DLCO') t = t.replace(/^(Diffusing capacity|DLCO)/, lab);
-    put(sec, t);
-    if (d.adj.measured && !d.reportedAdjusted) put(sec, metricLine(f, 'dlco', d.adj, 'Hemoglobin-adjusted DLCO').replace(/^(Diffusing capacity|DLCO)/, 'Hemoglobin-adjusted DLCO'));
-    // basis sentence: only when the two lines above have not already said it
-    if (d.reportedAdjusted) put(sec, ptext('dlco.hb_adjusted', 'standard', V));
-    else if (!d.adj.measured && f.F['observations.dlco.hb_unadjusted']) put(sec, ptext('dlco.hb_unadjusted', 'concise', V));
-    else if (!d.adj.measured && f.F['observations.dlco.hb_unknown']) put(sec, ptext('dlco.hb_unknown', 'standard', V));
+    const items = [metricItem(lab, d.dlco, 'dlco', () => [has(d.abs) ? fmt(d.abs, 1) + ' mL/min/mmHg' : '', has(d.pct) ? Math.round(d.pct) + '% predicted' : ''].filter(Boolean).join(', '))];
+    if (d.adj.measured && !d.reportedAdjusted) items.push(metricItem('hemoglobin-adjusted DLCO', d.adj, 'dlco', () => has(d.adjPct) ? Math.round(d.adjPct) + '% predicted' : ''));
+    items.push(metricItem('VA', d.va, 'diffusion.va', () => has(d.vaL) ? fmt(d.vaL, 2) + ' L' : ''));
+    items.push(metricItem('KCO', d.kco, 'diffusion.kco'));
+    metricGroup(f, items).forEach(l => put(sec, l));
+    // basis sentence: only when the line above has not already said it
+    if (d.dlco.measured && d.reportedAdjusted) put(sec, ptext('dlco.hb_adjusted', 'standard', V));
+    else if (d.dlco.measured && !d.adj.measured && f.F['observations.dlco.hb_unadjusted']) put(sec, ptext('dlco.hb_unadjusted', 'concise', V));
+    else if (d.dlco.measured && !d.adj.measured && f.F['observations.dlco.hb_unknown']) put(sec, ptext('dlco.hb_unknown', 'standard', V));
   }
   if (has(d.hb)) {
     put(sec, 'Hemoglobin is ' + fmt(d.hb, 1) + ' g/dL' + (d.anemic ? ' (below the usual lower limit)' : ''));
@@ -343,8 +428,7 @@ function secDlco(f) {
   } else if (d.hbcat) put(sec, 'Hemoglobin is ' + ({ low: 'low (anemia)', nl: 'normal', high: 'high' })[d.hbcat] + ' per the report');
   if (has(d.cohb)) put(sec, 'Carboxyhemoglobin is ' + fmt(d.cohb, 1) + '%');
   else if (d.cohbcat === 'hi') put(sec, 'Carboxyhemoglobin is 2% or higher');
-  put(sec, metricLine(f, 'diffusion.va', d.va, 'VA'));
-  put(sec, metricLine(f, 'diffusion.kco', d.kco, 'KCO'));
+  if (d.qc === 'inv') metricGroup(f, [metricItem('VA', d.va, 'diffusion.va'), metricItem('KCO', d.kco, 'diffusion.kco')]).forEach(l => put(sec, l));
   if (has(d.vatlc)) put(sec, 'VA/TLC is ' + fmt(d.vatlc, 2) + (d.vatlc < 0.85 ? ' (below the 0.85 convention)' : ''));
   else if (d.vatlcSel === 'low') put(sec, 'VA/TLC is below 0.85');
   pat.codes.forEach(c => sec.codes.push(c));
@@ -555,10 +639,15 @@ function secSix(f) {
   const early = x.stop === 'early';
   if (has(x.dist)) {
     let t = (early ? 'Distance walked before stopping' : '6MWD') + ' was ' + fmt(x.dist, 0) + ' m' + (early && has(x.timeMin) ? ' in ' + fmt(x.timeMin, 1) + ' minutes' : '');
-    if (!early && has(x.pctCalc)) t += ' (' + Math.round(x.pctCalc) + '% predicted' + (x.eq ? ', ' + x.eq : '') + ')';
-    if (!early && has(x.lln)) t += '; the LLN is ' + fmt(x.lln, 0) + ' m, so the distance is ' + (x.dist < x.lln ? 'below' : 'at or above') + ' the LLN';
+    if (!early && has(x.pctCalc)) {
+      t += ' (' + Math.round(x.pctCalc) + '% of ' + (has(x.predUse) ? 'the predicted ' + fmt(x.predUse, 0) + ' m' : 'predicted');
+      if (x.predSrc === 'calc') t += ' by ' + x.eqUse + ', calculated from age, sex, height and weight';
+      else if (x.eqUse) t += ', ' + x.eqUse;
+      t += ')';
+    }
+    if (!early && has(x.llnUse)) t += '; the LLN is ' + fmt(x.llnUse, 0) + ' m' + (x.llnSrc === 'calc' || x.llnSrc === 'derived' ? ' (predicted − ' + x.es.sub + ' m for ' + (x.es.sex === 'M' ? 'men' : 'women') + ')' : '') + ', so the distance is ' + (x.dist < x.llnUse ? 'below' : 'at or above') + ' the LLN';
     put(sec, t);
-    if (!x.eq && has(x.pctCalc)) put(sec, 'The reference equation is not named');
+    if (!x.eqUse && has(x.pctCalc)) put(sec, 'The reference equation is not named');
   }
   if (!has(x.dist) && x.distCat) put(sec, 'The walk distance is ' + (x.distCat === 'low' ? 'below the LLN' : 'within normal limits') + ' per the report');
   if (x.onO2) put(sec, 'The walk was performed on ' + x.o2text + '; saturations below are on oxygen');
