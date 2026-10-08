@@ -543,5 +543,76 @@ const hu = (r, idPrefix) => r.headsup.filter(h => h.id.indexOf(idPrefix) === 0)[
   ok(hasHU(run(mk(['spiro'], 'ctx.age=97', 'spiro.ratio=wnl')), 'TQ17') && hu(run(mk(['spiro'], 'ctx.age=97', 'spiro.ratio=wnl')), 'TQ17').lvl === 'caution', 'age 97 is outside the spirometry range');
 })();
 
+/* ---------- differential considerations and additional studies (tap to include) ---------- */
+(function () {
+  const grp = (r, key) => (r.differentials || []).filter(g => g.key === key)[0];
+  const keys = (r) => (r.differentials || []).map(g => g.key);
+  const withReview = (st, ids) => { const c = JSON.parse(JSON.stringify(st)); c.review = {}; ids.forEach(id => { c.review[id] = true; }); return c; };
+  // isolated low DLCO: the group is offered, nothing is inserted until tapped
+  let st = mk(['spiro', 'vol', 'dlco'], 'spiro.ratio=wnl', 'spiro.fev1=wnl', 'spiro.fvc=wnl', 'vol.tlc=wnl', 'vol.rvtlc=wnl', 'dlco.dlco=mild', 'dlco.va=wnl', 'dlco.kco=mild');
+  let r = run(st);
+  ok(keys(r).join() === 'dlco_isolated', 'isolated low DLCO offers exactly its own group: ' + keys(r).join());
+  let g = grp(r, 'dlco_isolated');
+  ok(g && g.dx.map(d => d.id).join() === ['pvd', 'ild_early', 'emph_preserved', 'anemia', 'cohb', 'hps'].map(x => 'dx.dlco_isolated.' + x).join(), 'the isolated-DLCO differential lists vascular, early interstitial, emphysema, anemia, smoking/COHb and shunt');
+  ok(g.dx.every(d => !d.on) && g.studies.every(s => !s.on) && r.studies.length === 0, 'nothing is selected by default');
+  ok(!/Differential considerations/.test(r.text) && !/ADDITIONAL STUDIES/.test(r.text), 'report carries no differential or study text until tapped');
+  r = run(withReview(st, ['dx.dlco_isolated.ild_early', 'dx.dlco_isolated.pvd', 'dx.dlco_isolated.anemia', 'dx.dlco_isolated.cohb']));
+  const sent = r.impression.filter(t => /^Differential considerations for the isolated reduction in DLCO include /.test(t));
+  ok(sent.length === 1 && /pulmonary vascular disease/.test(sent[0]) && /early interstitial lung disease \(gas transfer can fall before FVC or TLC\)/.test(sent[0]) && /anemia/.test(sent[0]) && /recent smoking or elevated carboxyhemoglobin/.test(sent[0]) && /which the physiologic pattern alone does not distinguish\.$/.test(sent[0]), 'tapped differentials join the interpretation as one sentence: ' + (sent[0] || '').slice(0, 160));
+  ok(!/ADDITIONAL STUDIES/.test(r.text), 'differentials alone add no study block');
+  r = run(withReview(st, ['study.hb', 'study.hrct', 'study.hrct']));
+  ok(/\nADDITIONAL STUDIES TO CONSIDER: Hemoglobin \(to adjust the DLCO\) and carboxyhemoglobin; high-resolution CT of the chest\.$/.test(r.text), 'tapped studies are listed once after the interpretation: ' + r.text.split('\n').slice(-1)[0]);
+  ok(r.studies.length === 2 && !/Differential considerations/.test(r.text), 'studies alone add no differential sentence');
+  // a tapped study supersedes the generic catalog follow-up phrase that says the same thing
+  r = run(withReview(st, ['followup.hb', 'dlco.isolated_differential']));
+  ok(r.impression.some(t => /hemoglobin-adjusted comparison/i.test(t)) && r.suggestions.some(x => x.id === 'followup.hb' && x.on && !x.superseded), 'catalog follow-up wording still works on its own');
+  r = run(withReview(st, ['followup.hb', 'dlco.isolated_differential', 'study.hb', 'dx.dlco_isolated.pvd']));
+  ok(r.suggestions.some(x => x.id === 'followup.hb' && x.superseded) && r.suggestions.some(x => x.id === 'dlco.isolated_differential' && x.superseded), 'itemized selections supersede the generic catalog phrases');
+  ok(!r.impression.some(t => /may clarify the gas-transfer finding/.test(t)) && r.impression.filter(t => /pulmonary vascular/.test(t)).length === 1, 'superseded catalog wording is withheld so nothing is said twice');
+  // the ids survive a round trip through normalizeState
+  const n = P.normalizeState(withReview(st, ['dx.dlco_isolated.hps', 'study.echo']));
+  ok(n.review['dx.dlco_isolated.hps'] === true && n.review['study.echo'] === true, 'differential and study ids are accepted review keys');
+  // other findings get their own groups
+  r = run(mk(['spiro', 'dlco'], 'spiro.ratio=wnl', 'spiro.fev1=mild', 'spiro.fvc=mild', 'dlco.dlco=mod'));
+  ok(keys(r).indexOf('low_fvc_unconfirmed') >= 0 && keys(r).indexOf('dlco_low_other') >= 0 && keys(r).indexOf('dlco_isolated') < 0, 'low FVC without volumes plus low DLCO: unconfirmed-restriction and general low-DLCO groups, not the isolated one: ' + keys(r).join());
+  ok(grp(r, 'low_fvc_unconfirmed').studies.map(s => s.id).indexOf('study.volumes') === 0, 'lung volumes lead the studies for an unconfirmed low FVC');
+  r = run(mk(['spiro', 'vol', 'dlco'], 'spiro.ratio=low', 'spiro.fev1=mod', 'spiro.fvc=wnl', 'vol.tlc=high', 'vol.rvtlc=high', 'dlco.dlco=mod'));
+  ok(keys(r).join() === 'dlco_low_obstruction,obstruction', 'obstruction with low DLCO: the obstruction group and the low-DLCO-with-obstruction group: ' + keys(r).join());
+  ok(grp(r, 'obstruction').studies.every(s => s.id !== 'study.dlco' && s.id !== 'study.volumes'), 'studies already performed are not suggested');
+  r = run(mk(['spiro', 'vol', 'dlco'], 'spiro.ratio=wnl', 'spiro.fev1=mod', 'spiro.fvc=mod', 'vol.tlc=mod', 'dlco.dlco=wnl', 'dlco.kco=high'));
+  ok(keys(r).join() === 'restriction_preserved_dlco', 'restriction with preserved transfer: extrapulmonary group only: ' + keys(r).join());
+  ok(grp(r, 'restriction_preserved_dlco').dx.some(d => /respiratory-muscle weakness/.test(d.text)) && grp(r, 'restriction_preserved_dlco').studies.some(s => s.id === 'study.mip'), 'extrapulmonary differential offers muscle pressures');
+  r = run(mk(['spiro', 'vol', 'dlco'], 'spiro.ratio=wnl', 'spiro.fev1=mod', 'spiro.fvc=mod', 'vol.tlc=mod', 'dlco.dlco=mod', 'dlco.kco=mild'));
+  ok(keys(r).join() === 'dlco_low_restriction', 'restriction with low DLCO: parenchymal group only');
+  r = run(mk(['spiro', 'vol'], 'spiro.ratio=wnl', 'spiro.fev1=mod', 'spiro.fvc=mod', 'vol.tlc=mod'));
+  ok(keys(r).join() === 'restriction_no_dlco' && grp(r, 'restriction_no_dlco').studies[0].id === 'study.dlco', 'restriction without DLCO suggests DLCO first');
+  r = run(mk(['spiro', 'vol'], 'spiro.ratio=low', 'spiro.fev1=mod', 'spiro.fvc=mild', 'vol.tlc=mild', 'vol.method=he'));
+  ok(keys(r).join() === 'mixed' && grp(r, 'mixed').dx.some(d => d.id === 'dx.mixed.dilution') && grp(r, 'mixed').studies.some(s => s.id === 'study.pleth'), 'mixed pattern on gas dilution offers the dilution caveat and plethysmography');
+  r = run(mk(['spiro', 'vol'], 'spiro.ratio=low', 'spiro.fev1=mod', 'spiro.fvc=mild', 'vol.tlc=mild', 'vol.method=pleth'));
+  ok(!grp(r, 'mixed').dx.some(d => d.id === 'dx.mixed.dilution'), 'no dilution caveat for plethysmographic volumes');
+  r = run(mk(['spiro', 'fvl'], 'spiro.ratio=wnl', 'spiro.fev1=wnl', 'spiro.fvc=wnl', 'fvl.loop=inspflat', 'fvl.loop_repro=1'));
+  ok(keys(r).indexOf('upper_airway') >= 0 && grp(r, 'upper_airway').dx[0].id === 'dx.upper_airway.extrathoracic', 'inspiratory flattening leads with variable extrathoracic obstruction');
+  r = run(mk(['spiro', 'fvl'], 'spiro.ratio=wnl', 'spiro.fev1=wnl', 'spiro.fvc=wnl', 'fvl.loop=inspflat'));
+  ok(keys(r).indexOf('upper_airway') < 0, 'a non-reproducible loop does not offer the upper-airway differential');
+  r = run(mk(['spiro', 'dlco'], 'spiro.ratio=wnl', 'spiro.fev1=wnl', 'spiro.fvc=wnl', 'dlco.dlco=high'));
+  ok(keys(r).join() === 'dlco_high' && grp(r, 'dlco_high').dx.some(d => /polycythemia/.test(d.text)), 'high DLCO group');
+  r = run(mk(['spiro', 'mip'], 'spiro.ratio=wnl', 'spiro.fev1=wnl', 'spiro.fvc=wnl', 'mip.mip=low'));
+  ok(keys(r).join() === 'muscle_low', 'low pressures group');
+  r = run(mk(['spiro'], 'ctx.indic=dyspnea', 'spiro.ratio=wnl', 'spiro.fev1=wnl', 'spiro.fvc=wnl'));
+  ok(keys(r).join() === 'normal_symptomatic' && grp(r, 'normal_symptomatic').studies.some(s => s.id === 'study.mch'), 'normal spirometry with dyspnea offers the symptomatic-normal differential and challenge testing');
+  r = run(mk(['spiro'], 'spiro.ratio=wnl', 'spiro.fev1=wnl', 'spiro.fvc=wnl'));
+  ok(keys(r).length === 0, 'a normal study without an indication offers no differential');
+  r = run(mk(['spiro', 'bronch'], 'spiro.ratio=wnl', 'spiro.fev1=wnl', 'spiro.fvc=wnl', 'bronch.type=mch', 'bronch.unit=pc20', 'bronch.mch_val=2'));
+  ok(keys(r).indexOf('mch_positive') >= 0, 'positive methacholine group');
+  r = run(mk(['spiro', 'sixmw'], 'spiro.ratio=wnl', 'spiro.fev1=wnl', 'spiro.fvc=wnl', 'sixmw.spo2_base=97', 'sixmw.spo2_nadir=86'));
+  ok(keys(r).indexOf('desat_normal_rest') >= 0, 'exertional desaturation with normal resting tests');
+  // invalid data never offers a differential built on it
+  r = run(mk(['spiro', 'vol', 'dlco'], 'spiro.ratio=wnl', 'spiro.fev1=wnl', 'spiro.fvc=wnl', 'vol.tlc=wnl', 'dlco.dlco=mild', 'dlco.qc=inv'));
+  ok(keys(r).length === 0, 'an unacceptable DLCO offers no DLCO differential');
+  // every study id named by a group exists and every text is a sentence fragment without a trailing period
+  ok(Object.keys(P.STUDIES).every(k => /^study\.[a-z0-9_]+$/.test(k) && !/\.$/.test(P.STUDIES[k])), 'study ids and texts are well formed');
+  ok(P.DX_GROUPS.length >= 19 && P.DX_GROUPS.every(g => /^[a-z_]+$/.test(g.key)), 'group keys are well formed');
+})();
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 if (fail) { failures.forEach(f => console.log('FAIL: ' + f)); process.exit(1); }

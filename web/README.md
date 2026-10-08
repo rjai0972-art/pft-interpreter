@@ -28,6 +28,12 @@ node tests/e2e.js; node tests/e2e2.js; node tests/e2e3.js; node tests/e2e4.js; n
    the gas-transfer mechanism, bronchodilator response, adjunct tests, serial change, and what would clarify the picture.
    Review-only wording (disease context, differentials, follow-up) is offered as *suggested additions* and included
    only when tapped.
+6. **Differentials and additional studies** (`engine_1c_differentials.js`): each verified finding has a group with
+   the physiologic causes that produce it and the studies that sort them out. Groups are offered on the Report step
+   and stored by id in `state.review` (`dx.<group>.<item>`, `study.<id>`); tapped differentials become one
+   Interpretation sentence per finding, tapped studies one deduplicated "Additional studies to consider" line. A
+   generic catalog phrase that says the same thing (for example `followup.hb` once `study.hb` is chosen) is withheld
+   so nothing is stated twice.
 
 `catalog/` holds the handoff package: the phrase catalog (source of truth), its schema, the rules specification, the
 human-readable reference and the test vectors. `PFT_Rules_and_Integration.txt` is the rule specification the engine

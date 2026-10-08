@@ -91,6 +91,44 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
   ok(await page.locator('.srcs li').count() === 16, '16 primary sources listed');
   await page.screenshot({ path: 'shots/43_learn_catalog.png', fullPage: true });
 
+  // differentials and additional studies: offered per finding, included only when tapped
+  await page.evaluate(() => { const S = window.PFT.defaultState(); Object.keys(S.tests).forEach(k => { S.tests[k] = false; }); S.tests.spiro = true; S.tests.vol = true; S.tests.dlco = true;
+    S.spiro.ratio = { c: 'wnl', z: '' }; S.spiro.fev1 = { c: 'wnl', z: '' }; S.spiro.fvc = { c: 'wnl', z: '' }; S.vol.tlc = { c: 'wnl', z: '' }; S.vol.rvtlc = { c: 'wnl', z: '' };
+    S.dlco.dlco = { c: 'nm', z: '-2.4' }; S.dlco.va = { c: 'wnl', z: '' }; S.dlco.kco = { c: 'mild', z: '' }; window.__pft.load(S, 'report'); });
+  await page.waitForSelector('#differentials');
+  ok(await page.locator('#differentials .dx-group').count() === 1 && await page.locator('#differentials .dx-group[data-dx-group="dlco_isolated"]').count() === 1, 'isolated low DLCO offers one differential group');
+  ok(await page.locator('#differentials .dx-group h3').innerText() === 'For the isolated reduction in DLCO', 'group is titled by the finding');
+  ok(await page.locator('#differentials .dx[data-dx^="dx."]').count() === 6 && await page.locator('#differentials .dx[data-dx^="study."]').count() === 6, 'six differentials and six studies offered');
+  ok(await page.locator('#differentials .dx.on').count() === 0 && !/Differential considerations/.test(await page.locator('#doc').innerText()) && await page.locator('#doc .studies').count() === 0, 'nothing included by default');
+  ok(await page.locator('#suggest .sug[data-sug="dlco.isolated_differential"]').count() === 1 && await page.locator('#suggest .sug[data-sug="followup.hb"]').count() === 1, 'the generic catalog wording is offered while nothing itemized overlaps it');
+  await page.locator('#differentials .dx[data-dx="dx.dlco_isolated.ild_early"]').click(); await page.waitForTimeout(100);
+  await page.locator('#differentials .dx[data-dx="dx.dlco_isolated.cohb"]').click(); await page.waitForTimeout(100);
+  const interp = await page.locator('#doc .interp').innerText();
+  ok(/Differential considerations for the isolated reduction in DLCO include early interstitial lung disease \(gas transfer can fall before FVC or TLC\) and recent smoking or elevated carboxyhemoglobin before the test, which the physiologic pattern alone does not distinguish\./.test(interp), 'two tapped differentials make one sentence: ' + interp.slice(-220));
+  ok(await page.locator('#differentials .dx[data-dx="dx.dlco_isolated.ild_early"]').getAttribute('aria-pressed') === 'true', 'tapped differential shows included');
+  await page.locator('#differentials .dx[data-dx="study.hb"]').click(); await page.waitForTimeout(100);
+  await page.locator('#differentials .dx[data-dx="study.hrct"]').click(); await page.waitForTimeout(100);
+  const stTxt = await page.locator('#doc .studies').innerText();
+  ok(/Additional studies to consider/i.test(stTxt) && /Hemoglobin \(to adjust the DLCO\) and carboxyhemoglobin; high-resolution CT of the chest\./.test(stTxt), 'tapped studies appear in the report: ' + stTxt.slice(0, 160));
+  const plainDx = await page.evaluate(() => document.getElementById('plain').textContent);
+  ok(/\nADDITIONAL STUDIES TO CONSIDER: Hemoglobin/.test(plainDx) && /3\. Differential considerations/.test(plainDx), 'copy-ready text carries the differential sentence and the study line');
+  ok(await page.locator('#suggest .sug[data-sug="dlco.isolated_differential"]').count() === 0 && await page.locator('#suggest .sug[data-sug="followup.hb"]').count() === 0, 'the generic catalog chips are withdrawn once an itemized differential or the hemoglobin study covers them');
+  ok(await page.locator('#differentials .chip').innerText().then(t => /2 differentials, 2 studies included/.test(t)), 'summary chip counts both kinds: ' + await page.locator('#differentials .chip').innerText());
+  await page.locator('#differentials [data-dx-none="dlco_isolated:dx"]').click(); await page.waitForTimeout(100);
+  ok(await page.locator('#differentials .dx[data-dx^="dx."].on').count() === 0 && !/Differential considerations/.test(await page.locator('#doc .interp').innerText()), '"None" clears the differentials and the sentence leaves');
+  await page.locator('#differentials [data-dx-all="dlco_isolated:study"]').click(); await page.waitForTimeout(100);
+  ok(await page.locator('#differentials .dx[data-dx^="study."].on').count() === 6, '"All" selects every study');
+  const stAll = await page.locator('#doc .studies p').innerText();
+  ok((stAll.match(/;/g) || []).length === 5 && /^Hemoglobin/.test(stAll), 'six studies listed once each: ' + stAll.slice(0, 80));
+  ok(JSON.stringify(await page.evaluate(() => Object.keys(window.__pft.state.review).sort())) === JSON.stringify(['study.cpet', 'study.dlco_repeat', 'study.echo', 'study.hb', 'study.hrct', 'study.sixmwt']), 'selection is stored by id in the case state');
+  // the live preview on an entry step notes the offer and shows the studies block
+  await page.evaluate(() => window.__pft.goto('dlco'));
+  await page.waitForSelector('#pv .studies');
+  ok(/differentials and additional studies for 1 finding/.test(await page.locator('#pv .pv-sug').innerText()), 'preview points to the differentials on the Report step');
+  await page.evaluate(() => { window.__pft.state.review = {}; window.__pft.goto('report'); });
+  await page.waitForSelector('#differentials');
+  await page.screenshot({ path: 'shots/44_differentials.png', fullPage: true });
+
   // report text never carries source keys
   await page.evaluate(() => { window.__pft.setMode('case'); window.__pft.goto('report'); });
   await page.waitForSelector('#plain', { state: 'attached' });

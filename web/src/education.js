@@ -426,6 +426,7 @@ T.app = { title: 'About this app and the case bank', kicker: 'How the reading wo
   { h: 'How the interpretation is built', ol: [
     'Each test section reports facts only: what was entered, its reliability, and what it is relative to the LLN, in the wording level you choose.',
     'The Interpretation synthesizes: the ventilatory pattern, lung volumes and gas transfer are read together in one statement, then the bronchodilator response, the adjunct tests, the comparison with prior studies, and what would clarify the picture. Interpretive context that needs judgement is offered as suggested additions and included only when tapped.',
+    'For each verified finding the Report step also offers its differential considerations and the studies that sort them out (for an isolated low DLCO: pulmonary vascular disease, early interstitial disease before FVC or TLC fall, emphysema with preserved volumes, anemia, recent smoking or carboxyhemoglobin; hemoglobin and COHb, HRCT, echocardiography, exertional oximetry). Tapped differentials join the Interpretation as one sentence per finding; tapped studies are listed once under "Additional studies to consider". None is inserted on its own.',
     'The heads-up box compares tests with each other and with the tracing: alerts and cautions for inconsistency and data-entry problems, look-for tips with example loops, and notes for missing tests that would change the reading.',
     'Annals ATS 2025 S, V and D codes appear with the interpretation; tap one for its meaning.'] },
   { h: 'The case bank', ul: [

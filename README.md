@@ -81,7 +81,7 @@ and the single-file browser version (`PFT_Interpreter_standalone.html`) always w
 - Code signing is optional and not set up. For Windows add a signing certificate to the build; for Mac add an Apple Developer ID and notarization.
   Until then the first-launch steps above are needed.
 
-## How the reading is built (version 3.2)
+## How the reading is built (version 3.3)
 
 The report is assembled from a reviewed adult PFT phrase catalog (279 findings, 901 wording variants; original
 wording anchored to the ERS/ATS 2022 interpretive standard, ATS/ERS 2019 spirometry, ERS/ATS 2023 lung volumes,
@@ -91,4 +91,10 @@ quality criteria drives no pattern or severity statement; a low FVC is "restrict
 a preserved KCO never cancels a low DLCO; the hemoglobin basis is stated, not assumed. The Interpretation reads the
 ventilatory pattern, lung volumes and gas transfer together, then the bronchodilator response, the adjunct tests and
 the serial change. Interpretive context (disease names, differentials, follow-up) is offered as suggested additions
-and included only when tapped. Source code and tests: `web/`; the catalog and its rule specification: `web/catalog/`.
+and included only when tapped. For each verified finding (isolated low DLCO, restriction with or without preserved
+gas transfer, unconfirmed low FVC, nonspecific pattern, obstruction, mixed pattern, air trapping, upper-airway loop,
+high DLCO, low respiratory pressures, exertional desaturation, positive challenge, high FeNO, a normal study in a
+symptomatic patient) the Report step also offers the differential considerations and the additional studies that
+sort them out, each as a tap: tapped differentials join the Interpretation as one sentence per finding, tapped
+studies are listed once under "Additional studies to consider", and nothing is inserted on its own (version 3.3).
+Source code and tests: `web/`; the catalog and its rule specification: `web/catalog/`.

@@ -552,6 +552,25 @@ details.optgrp > .fine { padding-bottom: 0; }
 .sug .sug-t { font-size: 13px; color: var(--muted); line-height: 1.4; }
 .sug.on .sug-t { color: var(--ink); }
 .pv-sug { margin-top: 10px; }
+/* differentials and additional studies */
+.dxs .dx-group { padding: 12px 0 4px; border-top: 1px solid var(--line); }
+.dxs .dx-group:first-of-type { border-top: 0; }
+.dxs .dx-group h3 { margin: 0 0 8px; font-size: 15px; font-weight: 650; }
+.dx-row { margin-bottom: 10px; }
+.dx-row-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.dx-l { font-size: 12px; font-weight: 650; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+.dx-tools { display: inline-flex; gap: 10px; }
+.lnk { background: none; border: 0; padding: 0; font: inherit; font-size: 12px; color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.lnk[disabled] { color: var(--muted); text-decoration: none; cursor: default; }
+.dx-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.dx { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; line-height: 1.3; text-align: left; cursor: pointer; }
+.dx::before { content: '+'; color: var(--muted); font-weight: 600; }
+.dx:hover { border-color: var(--accent); }
+.dx.on { border-color: var(--accent); background: var(--accent-soft); }
+.dx.on::before { content: '✓'; color: var(--accent); }
+.doc .studies { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); }
+.doc .studies h3 { font-family: var(--font-ui); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 650; color: var(--accent); margin: 0 0 4px; }
+.doc .studies p { margin: 0; font-size: 16px; line-height: 1.6; max-width: 80ch; }
 .cat-sec > summary { cursor: pointer; }
 .cat-sec > summary .tf { margin-left: 8px; color: var(--muted); font-weight: 400; }
 .cat-ph .tf.mode-review { color: var(--accent); }
@@ -1340,6 +1359,256 @@ function dedupeGroups(list) {
   const seen = {}; const out = [];
   list.forEach(p => { if (p.group) { if (seen[p.group]) return; seen[p.group] = true; } out.push(p); });
   return out;
+}
+
+/* ==========================================================================
+   PFT Interpreter engine — part 1c: differential considerations and
+   additional studies, offered per finding and included only when tapped.
+   Each group is keyed to a verified finding. The lists name the physiologic
+   causes the standards and reviews associate with the pattern (ERS/ATS 2022
+   §classification; ERS/ATS 2017 DLCO; ERS 2019 respiratory muscle; Kaminsky
+   2018). None is ever inserted automatically; the clinician chooses which
+   fit the patient, and the sentence always says the PFT alone does not
+   distinguish them. Study ids are shared across groups, so a study chosen
+   for one finding is listed once.
+   ========================================================================== */
+
+const STUDIES = {
+  'study.volumes': 'lung volumes by plethysmography (TLC, RV/TLC) to confirm or exclude restriction',
+  'study.pleth': 'plethysmographic lung volumes (gas dilution can underestimate TLC when gas mixing is impaired)',
+  'study.dlco': 'DLCO with VA and KCO',
+  'study.bd': 'post-bronchodilator spirometry',
+  'study.hb': 'hemoglobin (to adjust the DLCO) and carboxyhemoglobin',
+  'study.dlco_repeat': 'repeat DLCO after smoking abstinence, or with carboxyhemoglobin correction',
+  'study.hrct': 'high-resolution CT of the chest',
+  'study.hrct_exp': 'high-resolution CT of the chest with expiratory images (air trapping, small-airway disease)',
+  'study.echo': 'echocardiogram for right-heart pressures (with a bubble study if a shunt is suspected)',
+  'study.sixmwt': '6-minute walk test with continuous oximetry',
+  'study.cpet': 'cardiopulmonary exercise test',
+  'study.mip': 'respiratory muscle pressures (MIP/MEP or SNIP) with an upright–supine vital capacity',
+  'study.diaph': 'diaphragm ultrasound or fluoroscopic sniff test',
+  'study.neuro': 'neurology evaluation with electrodiagnostic testing',
+  'study.abg': 'arterial blood gas (hypoventilation, A–a gradient)',
+  'study.overnight': 'overnight oximetry or transcutaneous capnography for nocturnal hypoventilation',
+  'study.ctd': 'connective-tissue disease serologies and an exposure and occupational history',
+  'study.a1at': 'alpha-1 antitrypsin level',
+  'study.feno': 'FeNO and blood eosinophils',
+  'study.eos': 'blood eosinophil count',
+  'study.allergy': 'allergy evaluation (skin testing or specific IgE)',
+  'study.mch': 'bronchoprovocation (methacholine) if asthma remains a question with normal spirometry',
+  'study.ics_trial': 'therapeutic trial of inhaled corticosteroid with repeat assessment',
+  'study.laryngo': 'laryngoscopy during symptoms and dynamic inspiratory–expiratory airway CT; bronchoscopy if a fixed lesion is suspected',
+  'study.repeat': 'repeat spirometry with attention to effort, inspiration and end of test',
+  'study.osc': 'oscillometry or airway resistance (airway mechanics when spirometry is nonspecific)',
+  'study.cxr': 'chest radiograph or CT for pleural, chest-wall or parenchymal disease',
+  'study.cbc': 'complete blood count (polycythemia)',
+  'study.sleep': 'sleep study if sleep-disordered breathing is suspected'
+};
+
+/* Each group: key, when(f) -> boolean, title (used in "Differential considerations for <title>"), dx: [[id, text]], studies: [study id] */
+const DX_GROUPS = [
+  { key: 'dlco_isolated', title: 'the isolated reduction in DLCO',
+    when: (f) => f.F['patterns.isolated_low_dlco'] === true,
+    dx: [['pvd', 'pulmonary vascular disease (pulmonary arterial hypertension, chronic thromboembolic disease)'],
+         ['ild_early', 'early interstitial lung disease (gas transfer can fall before FVC or TLC)'],
+         ['emph_preserved', 'emphysema with preserved spirometry and lung volumes'],
+         ['anemia', 'anemia (when the value is not hemoglobin-adjusted)'],
+         ['cohb', 'recent smoking or elevated carboxyhemoglobin before the test'],
+         ['hps', 'intrapulmonary shunting (hepatopulmonary syndrome) in liver disease']],
+    studies: ['study.hb', 'study.hrct', 'study.echo', 'study.sixmwt', 'study.cpet', 'study.dlco_repeat'] },
+  { key: 'dlco_low_obstruction', title: 'the reduced DLCO with airflow obstruction',
+    when: (f) => f.F['patterns.obstruction'] === true && !f.F['patterns.mixed'] && f.on.dlco && f.dl.dlco.low,
+    dx: [['emph', 'emphysema (parenchymal destruction) rather than airway-predominant disease'],
+         ['cpfe', 'combined pulmonary fibrosis and emphysema when lung volumes are relatively preserved'],
+         ['pvd', 'pulmonary vascular disease out of proportion to the airflow limitation'],
+         ['anemia', 'anemia (when the value is not hemoglobin-adjusted)'],
+         ['cohb', 'recent smoking or elevated carboxyhemoglobin before the test']],
+    studies: ['study.hrct', 'study.hb', 'study.a1at', 'study.echo', 'study.sixmwt'] },
+  { key: 'dlco_low_restriction', title: 'the reduced DLCO with restriction',
+    when: (f) => f.on.vol && f.vol.pat.restriction && !f.F['patterns.obstruction'] && f.on.dlco && f.dl.dlco.low,
+    dx: [['ild', 'interstitial lung disease (idiopathic, connective-tissue disease–associated, hypersensitivity pneumonitis, sarcoidosis, pneumoconiosis)'],
+         ['drug', 'drug- or radiation-induced lung injury'],
+         ['chf', 'chronic heart failure with pulmonary venous congestion'],
+         ['resection', 'prior lung resection'],
+         ['anemia', 'anemia contributing to the gas-transfer reduction (when the value is not hemoglobin-adjusted)']],
+    studies: ['study.hrct', 'study.ctd', 'study.echo', 'study.sixmwt', 'study.hb'] },
+  { key: 'dlco_low_other', title: 'the reduced DLCO',
+    when: (f) => f.on.dlco && f.dl.dlco.low && f.F['patterns.isolated_low_dlco'] !== true && !(f.F['patterns.obstruction'] === true && !f.F['patterns.mixed']) && !(f.on.vol && f.vol.pat.restriction && !f.F['patterns.obstruction']),
+    dx: [['ild_early', 'interstitial lung disease, including early disease (gas transfer can fall before FVC or TLC)'],
+         ['pvd', 'pulmonary vascular disease (pulmonary arterial hypertension, chronic thromboembolic disease)'],
+         ['emph', 'emphysema'],
+         ['anemia', 'anemia (when the value is not hemoglobin-adjusted)'],
+         ['cohb', 'recent smoking or elevated carboxyhemoglobin before the test'],
+         ['chf', 'heart failure with pulmonary venous congestion']],
+    studies: ['study.hb', 'study.hrct', 'study.echo', 'study.sixmwt', 'study.dlco_repeat'] },
+  { key: 'restriction_preserved_dlco', title: 'the restriction with preserved gas transfer',
+    when: (f) => f.on.vol && f.vol.pat.restriction && !f.F['patterns.obstruction'] && f.on.dlco && f.dl.dlco.measured && !f.dl.dlco.invalid && (f.dl.dlco.wnl || f.dl.dlco.high || f.dl.kco.high),
+    dx: [['nmd', 'respiratory-muscle weakness (neuromuscular disease, diaphragm dysfunction)'],
+         ['chestwall', 'chest-wall disease (kyphoscoliosis, ankylosing spondylitis)'],
+         ['obesity', 'obesity (TLC falls mainly at very high BMI; ERV falls first)'],
+         ['pleural', 'pleural disease (effusion, fibrothorax)'],
+         ['effort', 'incomplete inspiration or submaximal effort'],
+         ['resection', 'prior lung resection with preserved transfer per unit volume']],
+    studies: ['study.mip', 'study.cxr', 'study.diaph', 'study.abg', 'study.overnight'] },
+  { key: 'restriction_no_dlco', title: 'the restriction',
+    when: (f) => f.on.vol && f.vol.pat.restriction && !f.F['patterns.obstruction'] && !(f.on.dlco && f.dl.dlco.measured),
+    dx: [['parenchymal', 'parenchymal disease (interstitial lung disease, pneumoconiosis, drug or radiation injury)'],
+         ['nmd', 'respiratory-muscle weakness or diaphragm dysfunction'],
+         ['chestwall', 'chest-wall or pleural disease'],
+         ['obesity', 'obesity'],
+         ['effort', 'incomplete inspiration or submaximal effort']],
+    studies: ['study.dlco', 'study.hrct', 'study.mip'] },
+  { key: 'low_fvc_unconfirmed', title: 'the reduced FVC with a preserved ratio',
+    when: (f) => f.sp.pat.lowFvcUnconfirmed,
+    dx: [['restr_early', 'early restriction (parenchymal or extrapulmonary)'],
+         ['effort', 'submaximal effort or incomplete inspiration'],
+         ['obesity', 'obesity'],
+         ['trapping', 'air trapping from small-airway disease (a nonspecific pattern once TLC is known to be normal)'],
+         ['nmd', 'respiratory-muscle weakness']],
+    studies: ['study.volumes', 'study.dlco', 'study.bd', 'study.repeat', 'study.mip'] },
+  { key: 'nonspecific', title: 'the nonspecific pattern',
+    when: (f) => f.sp.pat.nonspecific,
+    dx: [['obesity', 'obesity'],
+         ['effort', 'suboptimal effort or incomplete inspiration'],
+         ['small_airway', 'early or occult small-airway disease with air trapping'],
+         ['nmd', 'respiratory-muscle weakness'],
+         ['restr_early', 'early restrictive disease not yet reducing TLC']],
+    studies: ['study.bd', 'study.osc', 'study.dlco', 'study.repeat', 'study.mip'] },
+  { key: 'obstruction', title: 'the airflow obstruction',
+    when: (f) => f.F['patterns.obstruction'] === true && !f.F['patterns.mixed'],
+    dx: [['asthma', 'asthma'],
+         ['copd', 'COPD (chronic bronchitis, emphysema)'],
+         ['bronchiectasis', 'bronchiectasis'],
+         ['bronchiolitis', 'bronchiolitis (constrictive or obliterative)'],
+         ['central', 'central or upper-airway obstruction (review the loop contour)'],
+         ['cf', 'cystic fibrosis in the appropriate clinical setting']],
+    studies: (f) => ['study.bd', 'study.dlco', 'study.volumes', 'study.hrct_exp', 'study.feno', 'study.a1at'].filter(id => !((id === 'study.bd' && f.on.bd) || (id === 'study.dlco' && f.on.dlco) || (id === 'study.volumes' && f.on.vol))) },
+  { key: 'mixed', title: 'the mixed pattern',
+    when: (f) => f.F['patterns.mixed'] === true,
+    dx: (f) => [['combined', 'combined obstructive and restrictive disease (COPD with interstitial lung disease; combined pulmonary fibrosis and emphysema)'],
+         ['sarcoid', 'sarcoidosis'],
+         ['bronchiectasis_fibrosis', 'bronchiectasis with fibrosis'],
+         ['obesity_obstruction', 'obesity with airflow obstruction'],
+         ['chf_airway', 'heart failure with airway disease']].concat(f.vol.dilution ? [['dilution', 'TLC underestimated by gas dilution in obstruction (not true restriction)']] : []),
+    studies: (f) => ['study.hrct', 'study.dlco', 'study.echo'].concat(f.vol.dilution ? ['study.pleth'] : []).filter(id => !(id === 'study.dlco' && f.on.dlco)) },
+  { key: 'airtrap_preserved_ratio', title: 'the air trapping with a preserved FEV1/FVC',
+    when: (f) => f.on.vol && f.vol.pat.airTrapping && !f.F['patterns.obstruction'] && f.sp.ratio.measured && !f.sp.ratio.invalid,
+    dx: [['small_airway', 'early small-airway disease (asthma, early COPD)'],
+         ['bronchiolitis', 'bronchiolitis'],
+         ['exp_weak', 'incomplete emptying from expiratory-muscle weakness']],
+    studies: ['study.bd', 'study.osc', 'study.hrct_exp', 'study.mip'] },
+  { key: 'upper_airway', title: 'the central or upper-airway pattern',
+    when: (f) => f.on.fvl && ((/^(expflat|inspflat|bothflat)$/.test(f.fvl.loop) && f.fvl.repro) || f.fvl.fevPefHi === true),
+    dx: (f) => {
+      const L = f.fvl.loop;
+      const ex = ['extrathoracic', 'variable extrathoracic obstruction (inducible laryngeal obstruction / vocal-cord dysfunction, vocal-cord paralysis, goiter)'];
+      const inr = ['intrathoracic', 'variable intrathoracic obstruction (tracheomalacia, intrathoracic tracheal tumour)'];
+      const fx = ['fixed', 'fixed obstruction (post-intubation tracheal stenosis, fixed tumour, bilateral vocal-cord paralysis)'];
+      return L === 'inspflat' ? [ex, inr, fx] : (L === 'expflat' ? [inr, ex, fx] : (L === 'bothflat' ? [fx, ex, inr] : [ex, inr, fx]));
+    },
+    studies: ['study.laryngo'] },
+  { key: 'dlco_high', title: 'the increased DLCO',
+    when: (f) => f.on.dlco && f.dl.dlco.high,
+    dx: [['asthma', 'asthma'],
+         ['obesity', 'obesity'],
+         ['polycythemia', 'polycythemia or elevated hemoglobin'],
+         ['flow', 'increased pulmonary blood flow (left-to-right shunt, exercise shortly before the test, supine position)'],
+         ['hemorrhage', 'alveolar hemorrhage']],
+    studies: ['study.cbc', 'study.echo', 'study.hrct'] },
+  { key: 'muscle_low', title: 'the reduced respiratory pressures',
+    when: (f) => f.on.mip && (f.mp.mip === 'low' || f.mp.mep === 'low' || f.mp.snip === 'low'),
+    dx: [['nmd', 'neuromuscular disease (motor neuron disease, myopathy, neuromuscular-junction disorders)'],
+         ['diaphragm', 'diaphragm paralysis or dysfunction'],
+         ['hyperinflation', 'hyperinflation (mechanical disadvantage of the inspiratory muscles)'],
+         ['effort', 'submaximal effort, poor mouth seal or bulbar weakness'],
+         ['deconditioning', 'deconditioning or critical-illness myopathy']],
+    studies: (f) => ['study.mip', 'study.diaph', 'study.abg', 'study.overnight', 'study.neuro'].filter(id => !(id === 'study.mip' && f.on.post && f.post.any)) },
+  { key: 'desat_normal_rest', title: 'the exertional desaturation with normal resting tests',
+    when: (f) => f.on.sixmw && f.six.desat && f.sp.pat.normal && (!f.on.vol || f.vol.pat.normal) && (!f.on.dlco || !f.dl.dlco.low),
+    dx: [['pvd', 'pulmonary vascular disease'],
+         ['shunt', 'right-to-left shunt (patent foramen ovale, hepatopulmonary syndrome)'],
+         ['ild_early', 'early interstitial disease below the sensitivity of resting tests'],
+         ['artifact', 'oximetry artifact (motion, poor signal)']],
+    studies: ['study.echo', 'study.cpet', 'study.hrct', 'study.abg'] },
+  { key: 'mch_positive', title: 'the airway hyperresponsiveness',
+    when: (f) => f.on.bronch && f.br.type === 'mch' && f.br.mch.state === 'positive',
+    dx: [['asthma', 'asthma'],
+         ['rhinitis', 'allergic rhinitis'],
+         ['postinfectious', 'post-infectious hyperresponsiveness'],
+         ['copd', 'COPD'],
+         ['bronchiectasis', 'bronchiectasis'],
+         ['chf', 'heart failure']],
+    studies: ['study.feno', 'study.allergy', 'study.ics_trial'] },
+  { key: 'feno_high', title: 'the elevated FeNO',
+    when: (f) => f.on.feno && f.feno.any && fenoBand(f).cat === 'high' && !f.feno.confound,
+    dx: [['eos_asthma', 'eosinophilic asthma'],
+         ['atopy', 'allergic rhinitis or atopy'],
+         ['neb', 'non-asthmatic eosinophilic bronchitis']],
+    studies: ['study.eos', 'study.allergy'] },
+  { key: 'normal_symptomatic', title: 'the normal study in a symptomatic patient',
+    when: (f) => f.sp.pat.normal && !f.sp.pat.indeterminate && (!f.on.vol || f.vol.pat.normal) && (!f.on.dlco || (f.dl.dlco.measured && f.dl.dlco.wnl)) && (f.ctx.hasInd('dyspnea') || f.ctx.hasInd('cough') || f.ctx.hasInd('wheeze')),
+    dx: [['asthma_variable', 'asthma with normal baseline spirometry (variable airflow)'],
+         ['dysfunctional', 'dysfunctional breathing'],
+         ['deconditioning', 'deconditioning'],
+         ['cardiac', 'cardiac disease'],
+         ['laryngeal', 'inducible laryngeal obstruction'],
+         ['early', 'early parenchymal or pulmonary vascular disease below the sensitivity of resting tests']],
+    studies: (f) => ['study.bd', 'study.mch', 'study.feno', 'study.dlco', 'study.volumes', 'study.cpet', 'study.echo'].filter(id => !((id === 'study.bd' && f.on.bd) || (id === 'study.mch' && f.on.bronch) || (id === 'study.feno' && f.on.feno) || (id === 'study.dlco' && f.on.dlco) || (id === 'study.volumes' && f.on.vol) || (id === 'study.cpet' && f.on.cpet))) },
+  { key: 'low_rv_isolated', title: 'the isolated low RV',
+    when: (f) => f.on.vol && f.vol.pat.lowRV,
+    dx: [['chestwall', 'chest-wall or pleural disease limiting the end-expiratory position'],
+         ['parenchymal', 'parenchymal disease with increased recoil'],
+         ['effort', 'maximal expiratory effort beyond the usual end point (technical)']],
+    studies: ['study.cxr'] }
+];
+
+/* Offered groups for this study: each with its differential items and study items and whether each is selected. */
+function differentialGroups(f) {
+  const rv = f.review || {}, out = [];
+  DX_GROUPS.forEach(g => {
+    let on = false; try { on = !!g.when(f); } catch (e) { on = false; }
+    if (!on) return;
+    const dxList = (typeof g.dx === 'function' ? g.dx(f) : g.dx).map(d => ({ id: 'dx.' + g.key + '.' + d[0], text: d[1], on: !!rv['dx.' + g.key + '.' + d[0]] }));
+    const stList = (typeof g.studies === 'function' ? g.studies(f) : g.studies).filter(id => STUDIES[id]).map(id => ({ id: id, text: STUDIES[id], on: !!rv[id] }));
+    out.push({ key: g.key, title: g.title, dx: dxList, studies: stList });
+  });
+  return out;
+}
+/* Sentences for the interpretation (one per group with a selected differential) and the deduplicated study list. */
+function differentialText(groups) {
+  const sentences = [], studies = [], seen = {};
+  groups.forEach(g => {
+    const on = g.dx.filter(d => d.on).map(d => d.text);
+    if (on.length) sentences.push('Differential considerations for ' + g.title + ' include ' + joinList(on) + ', which the physiologic pattern alone does not distinguish.');
+    g.studies.forEach(s => { if (s.on && !seen[s.id]) { seen[s.id] = 1; studies.push(s.text); } });
+  });
+  return { sentences: sentences, studies: studies };
+}
+function joinList(items) {
+  if (items.length <= 1) return items.join('');
+  // items may carry commas inside parentheses, so the list is joined with semicolons when any item has one
+  const semi = items.some(t => /,/.test(t));
+  if (items.length === 2) return items[0] + (semi ? '; and ' : ' and ') + items[1];
+  const sep = semi ? '; ' : ', ';
+  return items.slice(0, -1).join(sep) + sep + 'and ' + items[items.length - 1];
+}
+
+/* Generic catalog wording that an itemized selection replaces: when any of the listed differential or study ids is
+   selected, the catalog phrase is withheld from the interpretation so the same idea is not stated twice. */
+const SUPERSEDED_BY = {
+  'dlco.isolated_differential': (ids) => ids.some(id => /^dx\.dlco_isolated\./.test(id)),
+  'dlco.elevated_context': (ids) => ids.some(id => /^dx\.dlco_high\./.test(id)),
+  'followup.volumes': (ids) => ids.indexOf('study.volumes') >= 0 || ids.indexOf('study.pleth') >= 0,
+  'followup.hb': (ids) => ids.indexOf('study.hb') >= 0,
+  'followup.airway': (ids) => ids.indexOf('study.laryngo') >= 0,
+  'followup.muscle': (ids) => ids.indexOf('study.mip') >= 0 || ids.indexOf('study.diaph') >= 0 || ids.indexOf('study.neuro') >= 0,
+  'followup.challenge': (ids) => ids.indexOf('study.mch') >= 0
+};
+function markSuperseded(suggest, groups) {
+  const ids = [];
+  groups.forEach(g => { g.dx.forEach(d => { if (d.on) ids.push(d.id); }); g.studies.forEach(s => { if (s.on) ids.push(s.id); }); });
+  (suggest || []).forEach(sg => { const t = SUPERSEDED_BY[sg.id]; sg.superseded = !!(t && t(ids)); });
+  return ids;
 }
 
 /* ==========================================================================
@@ -3378,7 +3647,7 @@ function bdImpression(f) {
 function reviewAdditions(f) {
   const out = [];
   (f.suggest || []).forEach(sg => {
-    if (!sg.on) return;
+    if (!sg.on || sg.superseded) return;
     const t = ptext(sg.id, f.style === 'concise' ? 'standard' : 'expanded', f.vals) || ptext(sg.id, 'standard', f.vals) || sg.text;
     if (t) out.push({ id: sg.id, section: sg.section, text: t });
   });
@@ -3413,6 +3682,8 @@ function buildImpression(f, secs) {
   // 5. clinician-selected review wording (interpretive context)
   const rv = reviewAdditions(f);
   rv.filter(r => r.section !== 'followup' && r.section !== 'serial').forEach(r => add(r.text));
+  // 5b. clinician-selected differential considerations, one sentence per finding
+  differentialText(f.dx || []).sentences.forEach(add);
   // 6. loop and adjunct tests
   if (by.fvl) by.fvl.impr.forEach(add);
   ['raw', 'osc', 'mip', 'post', 'feno', 'bronch', 'six', 'cpet', 'gas'].forEach(k => { if (by[k]) by[k].impr.forEach(add); });
@@ -3558,7 +3829,7 @@ function buildHeadsUp(f, secs) {
 
   if (dlOn) {
     if (F['patterns.isolated_low_dlco'])
-      H('PH11', 'caution', 'Physiology', 'Low DLCO with normal spirometry and lung volumes', 'Isolated gas-transfer reduction. Check hemoglobin and COHb; the differential (pulmonary vascular disease, emphysema with preserved volumes, early parenchymal disease, anemia) is available as a reviewed addition on the Report step. Exertional oximetry/6MWT, CPET and imaging or echocardiography can follow, as clinically appropriate.');
+      H('PH11', 'caution', 'Physiology', 'Low DLCO with normal spirometry and lung volumes', 'Isolated gas-transfer reduction. Check hemoglobin and COHb; the differential (pulmonary vascular disease, early parenchymal disease, emphysema with preserved volumes, anemia, recent smoking) and the studies that sort it out can be itemized under Differentials and additional studies on the Report step. Exertional oximetry/6MWT, CPET and imaging or echocardiography can follow, as clinically appropriate.');
     if (Dm.low && R.low && (vp.airTrapping || vp.hyperinflation))
       H('PH12', 'note', 'Physiology', 'Obstruction with hyperinflation or trapping and reduced gas transfer', 'Loss of gas transfer on top of obstruction and hyperinflation is the physiology seen with emphysema; the wording "compatible with emphysema in the appropriate setting" is available as a reviewed addition once imaging and history support it.');
     if (Dm.wnl && R.low && (vp.airTrapping || vp.hyperinflation) && A.grade >= 2)
@@ -3850,6 +4121,8 @@ function buildText(f, secs, impression, headsup, withHeadsup) {
   L.push('INTERPRETATION:');
   if (impression.length) impression.forEach((s, i) => L.push((i + 1) + '. ' + s));
   else L.push('No interpretable data entered.');
+  const studies = f.studies || [];
+  if (studies.length) { L.push(''); L.push('ADDITIONAL STUDIES TO CONSIDER: ' + cap(studies.join('; ')) + '.'); }
   if (withHeadsup && headsup.length) {
     L.push('');
     L.push('HEADS-UP FOR THE INTERPRETER (not part of the final report):');
@@ -3873,28 +4146,31 @@ function interpret(raw) {
   add('spiro', secSpiro); add('fvl', secFvl); add('bd', secBD); add('vol', secVol); add('dlco', secDlco);
   add('raw', secRaw); add('osc', secOsc); add('mip', secMip); add('post', secPost); add('feno', secFeno);
   add('bronch', secBronch); add('sixmw', secSix); add('cpet', secCpet); add('gas', secGas); add('prior', secPrior);
+  f.dx = differentialGroups(f);
+  markSuperseded(f.suggest, f.dx);
+  f.studies = differentialText(f.dx).studies;
   const impression = buildImpression(f, secs);
   const headsup = buildHeadsUp(f, secs);
   const counts = { alert: 0, caution: 0, note: 0, tip: 0 };
   headsup.forEach(h => { counts[h.lvl]++; });
   const anyData = secs.some(s => !s.empty);
   return {
-    state: st, facts: f, F: f.F, suggestions: f.suggest, style: f.style, sections: secs, impression: impression, headsup: headsup, counts: counts, anyData: anyData,
+    state: st, facts: f, F: f.F, suggestions: f.suggest, differentials: f.dx, studies: f.studies, style: f.style, sections: secs, impression: impression, headsup: headsup, counts: counts, anyData: anyData,
     text: buildText(f, secs, impression, headsup, false),
     textWithHeadsup: buildText(f, secs, impression, headsup, true)
   };
 }
 
 const API = {
-  version: '2.0.0',
+  version: '2.1.0',
   catalogVersion: CATALOG.version,
   Z_LLN: Z_LLN, Z_ULN: Z_ULN, STYLES: STYLES,
   TESTS: TESTS, PRESETS: PRESETS, SCHEMA: SCHEMA, LOOPS: LOOPS, INDICATIONS: INDICATIONS, KIND_OPTS: KIND_OPTS, PRIOR_FIELDS: PRIOR_FIELDS, CUR_FIELDS: CUR_FIELDS, MAX_PRIORS: MAX_PRIORS, MAX_TREND: MAX_TREND,
-  CATALOG: CATALOG, REVIEW_PHRASES: REVIEW_PHRASES.map(r => r.id),
+  CATALOG: CATALOG, REVIEW_PHRASES: REVIEW_PHRASES.map(r => r.id), STUDIES: STUDIES, DX_GROUPS: DX_GROUPS.map(g => ({ key: g.key, title: g.title })),
   defaultState: defaultState, normalizeState: normalizeState, blankPrior: blankPrior, blankTrendRow: blankTrendRow,
   interpret: interpret, res: res, num: num, catFromZ: catFromZ, fz: fz,
   phrase: phrase, eligiblePhrases: eligiblePhrases, factMatches: factMatches, catPhrase: catPhrase,
-  _internal: { spiroPattern: spiroPattern, volPattern: volPattern, dlcoPattern: dlcoPattern, buildFacts: buildFacts, deriveFacts: deriveFacts, cpetEval: cpetEval, abgEval: abgEval, mchCategory: mchCategory, methacholineFacts: methacholineFacts, mchAutoCategory: mchAutoCategory, fenoBand: fenoBand, exerciseState: exerciseState, placeholderValues: placeholderValues, CFG: CFG }
+  _internal: { spiroPattern: spiroPattern, volPattern: volPattern, dlcoPattern: dlcoPattern, buildFacts: buildFacts, deriveFacts: deriveFacts, cpetEval: cpetEval, abgEval: abgEval, mchCategory: mchCategory, methacholineFacts: methacholineFacts, mchAutoCategory: mchAutoCategory, fenoBand: fenoBand, exerciseState: exerciseState, placeholderValues: placeholderValues, differentialGroups: differentialGroups, differentialText: differentialText, CFG: CFG }
 };
 
 if (typeof module !== 'undefined' && module.exports) module.exports = API;
@@ -4600,6 +4876,7 @@ T.app = { title: 'About this app and the case bank', kicker: 'How the reading wo
   { h: 'How the interpretation is built', ol: [
     'Each test section reports facts only: what was entered, its reliability, and what it is relative to the LLN, in the wording level you choose.',
     'The Interpretation synthesizes: the ventilatory pattern, lung volumes and gas transfer are read together in one statement, then the bronchodilator response, the adjunct tests, the comparison with prior studies, and what would clarify the picture. Interpretive context that needs judgement is offered as suggested additions and included only when tapped.',
+    'For each verified finding the Report step also offers its differential considerations and the studies that sort them out (for an isolated low DLCO: pulmonary vascular disease, early interstitial disease before FVC or TLC fall, emphysema with preserved volumes, anemia, recent smoking or carboxyhemoglobin; hemoglobin and COHb, HRCT, echocardiography, exertional oximetry). Tapped differentials join the Interpretation as one sentence per finding; tapped studies are listed once under "Additional studies to consider". None is inserted on its own.',
     'The heads-up box compares tests with each other and with the tracing: alerts and cautions for inconsistency and data-entry problems, look-for tips with example loops, and notes for missing tests that would change the reading.',
     'Annals ATS 2025 S, V and D codes appear with the interpretation; tap one for its meaning.'] },
   { h: 'The case bank', ul: [
@@ -4785,7 +5062,8 @@ function h(tag, a, kids) {
 }
 let uidN = 0; const uid = (p) => (p || 'f') + (++uidN);
 const hasNum = (v) => { const n = P.num(v); return typeof n === 'number' && isFinite(n); };
-const plural = (n, w) => n + ' ' + w + (n === 1 ? '' : 's');
+const plural = (n, w, ws) => n + ' ' + (n === 1 ? w : (ws || w + 's'));
+const cap = (t) => t ? t.charAt(0).toUpperCase() + t.slice(1) : t;
 
 /* ------------------------------------------------------------------- toast */
 function toast(msg) {
@@ -5329,7 +5607,7 @@ function styleRow() {
 }
 /* Review-only catalog wording: offered when the findings make it relevant, included only when tapped. */
 function suggestCard() {
-  const list = R.suggestions || [];
+  const list = (R.suggestions || []).filter(sg => !sg.superseded);
   if (!list.length) return null;
   const chips = list.map(sg => h('button', { type: 'button', class: 'sug' + (sg.on ? ' on' : ''), 'aria-pressed': String(sg.on), 'data-sug': sg.id,
     onclick: () => { if (S.review[sg.id]) delete S.review[sg.id]; else S.review[sg.id] = true; sync(); } },
@@ -5340,6 +5618,45 @@ function suggestCard() {
     h('p', { class: 'fine', text: 'Interpretive wording that needs your judgement: the numbers make it relevant, but it is never inserted on its own. Tapped sentences join the Interpretation; tap again to remove.' }),
     h('div', { class: 'sug-list' }, chips)
   ]);
+}
+
+/* Differential considerations and additional studies, offered per verified finding and included only when tapped. */
+function dxToggle(id) { if (S.review[id]) delete S.review[id]; else S.review[id] = true; sync(); }
+function dxSet(ids, on) { ids.forEach(id => { if (on) S.review[id] = true; else delete S.review[id]; }); sync(); }
+function dxRow(label, items, kind, gkey) {
+  const ids = items.map(x => x.id), nOn = items.filter(x => x.on).length;
+  return h('div', { class: 'dx-row', 'data-kind': kind }, [
+    h('div', { class: 'dx-row-head' }, [
+      h('span', { class: 'dx-l', text: label }),
+      h('span', { class: 'dx-tools' }, [
+        h('button', { type: 'button', class: 'lnk', 'data-dx-all': gkey + ':' + kind, text: 'All', disabled: nOn === items.length ? 'true' : null, onclick: () => dxSet(ids, true) }),
+        h('button', { type: 'button', class: 'lnk', 'data-dx-none': gkey + ':' + kind, text: 'None', disabled: nOn === 0 ? 'true' : null, onclick: () => dxSet(ids, false) })
+      ])
+    ]),
+    h('div', { class: 'dx-chips' }, items.map(x => h('button', { type: 'button', class: 'dx' + (x.on ? ' on' : ''), 'aria-pressed': String(x.on), 'data-dx': x.id, text: x.text, onclick: () => dxToggle(x.id) })))
+  ]);
+}
+function dxCard() {
+  const groups = R.differentials || [];
+  if (!groups.length) return null;
+  const nDx = groups.reduce((a, g) => a + g.dx.filter(x => x.on).length, 0);
+  const nSt = (R.studies || []).length;
+  const sum = h('span', { class: 'chip ' + (nDx || nSt ? 'ok' : 'note'), text: nDx || nSt ? [nDx ? plural(nDx, 'differential') : '', nSt ? plural(nSt, 'study', 'studies') : ''].filter(Boolean).join(', ') + ' included' : 'none included' });
+  const card = h('section', { class: 'card dxs', id: 'differentials', 'aria-labelledby': 'dx-h' }, [
+    h('div', { class: 'hu-head' }, [h('h2', { id: 'dx-h', text: 'Differentials and additional studies (tap to include)' }), sum]),
+    h('p', { class: 'fine', text: 'For each verified finding: the physiologic causes that produce it and the studies that sort them out. Nothing is inserted on its own. Tapped differentials join the Interpretation as one sentence per finding; tapped studies are listed once under "Additional studies to consider". Tap again to remove.' })
+  ]);
+  groups.forEach(g => card.appendChild(h('div', { class: 'dx-group', 'data-dx-group': g.key }, [
+    h('h3', { text: 'For ' + g.title }),
+    g.dx.length ? dxRow('Differential considerations', g.dx, 'dx', g.key) : null,
+    g.studies.length ? dxRow('Additional studies', g.studies, 'study', g.key) : null
+  ])));
+  return card;
+}
+function studiesBlock(cls) {
+  const st = R.studies || [];
+  if (!st.length) return null;
+  return h('div', { class: 'studies' + (cls ? ' ' + cls : ''), 'data-studies': String(st.length) }, [h('h3', { text: 'Additional studies to consider' }), h('p', { text: cap(st.join('; ')) + '.' })]);
 }
 
 /* ------------------------------------------------------------- step: report */
@@ -5358,6 +5675,7 @@ function reportDoc() {
   doc.appendChild(h('div', { class: 'interp' }, [h('h3', { text: 'Interpretation' }),
     R.impression.length ? h('ol', {}, R.impression.map(t => h('li', { text: t }))) : h('p', { class: 'fine', text: 'No interpretable data entered.' }),
     codes.length ? h('div', { class: 'codes-row', 'data-codes': codes.join(',') }, [h('span', { class: 'fine' }, ['Annals ATS 2025 codes', h('span', { class: 'noprint', text: ' (tap for meaning)' })]), h('span', { class: 'codes' }, codes.map(codeChip))]) : null]));
+  const sb = studiesBlock(); if (sb) doc.appendChild(sb);
   return doc;
 }
 /* A small picture of each loop named in a "look for" tip, drawn with the same shapes as the gallery. */
@@ -5415,12 +5733,14 @@ function stepReport() {
   const live = h('div', { id: 'report-live' });
   let liveKey = null;
   widgets.push(() => {
-    const key = R.text + '|' + (R.suggestions || []).map(x => x.id + (x.on ? '1' : '0')).join(',') + '|' + R.headsup.map(x => x.id).join(',');
+    const dxKey = (R.differentials || []).map(g => g.key + ':' + g.dx.concat(g.studies).map(x => x.on ? '1' : '0').join('')).join(',');
+    const key = R.text + '|' + (R.suggestions || []).map(x => x.id + (x.on ? '1' : '0') + (x.superseded ? 's' : '')).join(',') + '|' + dxKey + '|' + R.headsup.map(x => x.id).join(',');
     if (key === liveKey) return;
     liveKey = key;
     live.textContent = '';
     live.appendChild(reportDoc());
     const sc = suggestCard(); if (sc) live.appendChild(sc);
+    const dc = dxCard(); if (dc) live.appendChild(dc);
     live.appendChild(headsupCard());
     const pl = $('plain'); if (pl) pl.textContent = R.text;
   });
@@ -5478,6 +5798,7 @@ function paintPreview() {
       ? h('ol', {}, R.impression.map(t => h('li', { class: prev.impr && had.indexOf(t) < 0 ? 'chg' : '', text: t })))
       : h('p', { class: 'pv-empty', text: 'The synthesis appears here once values are entered.' }),
     codes.length ? h('div', { class: 'codes-row' }, [h('span', { class: 'fine', text: 'Annals ATS 2025 codes' }), h('span', { class: 'codes' }, codes.map(codeChip))]) : null]));
+  const sbp = studiesBlock(); if (sbp) doc.appendChild(sbp);
   const oldDoc = pv.querySelector('.pv-doc'), keepTop = oldDoc ? oldDoc.scrollTop : 0;
   pv.textContent = '';
   pv.appendChild(h('div', { class: 'pv-head' }, [
@@ -5487,8 +5808,12 @@ function paintPreview() {
       h('button', { type: 'button', class: 'btn sm', id: 'pv-open', text: 'Full report', onclick: () => goto('report') })
     ])
   ]));
-  const nSug = (R.suggestions || []).length, nOn = (R.suggestions || []).filter(x => x.on).length;
-  if (nSug) doc.appendChild(h('p', { class: 'fine pv-sug', text: (nOn ? nOn + ' of ' : '') + plural(nSug, 'suggested addition') + ' on the Report step (tap to include).' }));
+  const nSug = (R.suggestions || []).filter(x => !x.superseded).length, nOn = (R.suggestions || []).filter(x => x.on && !x.superseded).length;
+  const nGrp = (R.differentials || []).length;
+  const notes = [];
+  if (nSug) notes.push((nOn ? nOn + ' of ' : '') + plural(nSug, 'suggested addition'));
+  if (nGrp) notes.push('differentials and additional studies for ' + plural(nGrp, 'finding'));
+  if (notes.length) doc.appendChild(h('p', { class: 'fine pv-sug', text: cap(notes.join('; ')) + ' on the Report step (tap to include).' }));
   pv.appendChild(doc);
   pvPrev = next;
   if (pvScrollTo) {
@@ -6294,7 +6619,7 @@ wirePop();
 wireHeader();
 wirePreview();
 render();
-window.__pft = { get state() { return S; }, get result() { return R; }, goto: goto, setMode: setMode, openLearn: openLearn, bank: bankLoad, signature: signature };
+window.__pft = { get state() { return S; }, get result() { return R; }, goto: goto, setMode: setMode, openLearn: openLearn, bank: bankLoad, signature: signature, load: loadState };
 })();
 
 </script>

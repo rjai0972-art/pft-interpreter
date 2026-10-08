@@ -270,7 +270,7 @@ function bdImpression(f) {
 function reviewAdditions(f) {
   const out = [];
   (f.suggest || []).forEach(sg => {
-    if (!sg.on) return;
+    if (!sg.on || sg.superseded) return;
     const t = ptext(sg.id, f.style === 'concise' ? 'standard' : 'expanded', f.vals) || ptext(sg.id, 'standard', f.vals) || sg.text;
     if (t) out.push({ id: sg.id, section: sg.section, text: t });
   });
@@ -305,6 +305,8 @@ function buildImpression(f, secs) {
   // 5. clinician-selected review wording (interpretive context)
   const rv = reviewAdditions(f);
   rv.filter(r => r.section !== 'followup' && r.section !== 'serial').forEach(r => add(r.text));
+  // 5b. clinician-selected differential considerations, one sentence per finding
+  differentialText(f.dx || []).sentences.forEach(add);
   // 6. loop and adjunct tests
   if (by.fvl) by.fvl.impr.forEach(add);
   ['raw', 'osc', 'mip', 'post', 'feno', 'bronch', 'six', 'cpet', 'gas'].forEach(k => { if (by[k]) by[k].impr.forEach(add); });
@@ -450,7 +452,7 @@ function buildHeadsUp(f, secs) {
 
   if (dlOn) {
     if (F['patterns.isolated_low_dlco'])
-      H('PH11', 'caution', 'Physiology', 'Low DLCO with normal spirometry and lung volumes', 'Isolated gas-transfer reduction. Check hemoglobin and COHb; the differential (pulmonary vascular disease, emphysema with preserved volumes, early parenchymal disease, anemia) is available as a reviewed addition on the Report step. Exertional oximetry/6MWT, CPET and imaging or echocardiography can follow, as clinically appropriate.');
+      H('PH11', 'caution', 'Physiology', 'Low DLCO with normal spirometry and lung volumes', 'Isolated gas-transfer reduction. Check hemoglobin and COHb; the differential (pulmonary vascular disease, early parenchymal disease, emphysema with preserved volumes, anemia, recent smoking) and the studies that sort it out can be itemized under Differentials and additional studies on the Report step. Exertional oximetry/6MWT, CPET and imaging or echocardiography can follow, as clinically appropriate.');
     if (Dm.low && R.low && (vp.airTrapping || vp.hyperinflation))
       H('PH12', 'note', 'Physiology', 'Obstruction with hyperinflation or trapping and reduced gas transfer', 'Loss of gas transfer on top of obstruction and hyperinflation is the physiology seen with emphysema; the wording "compatible with emphysema in the appropriate setting" is available as a reviewed addition once imaging and history support it.');
     if (Dm.wnl && R.low && (vp.airTrapping || vp.hyperinflation) && A.grade >= 2)
@@ -742,6 +744,8 @@ function buildText(f, secs, impression, headsup, withHeadsup) {
   L.push('INTERPRETATION:');
   if (impression.length) impression.forEach((s, i) => L.push((i + 1) + '. ' + s));
   else L.push('No interpretable data entered.');
+  const studies = f.studies || [];
+  if (studies.length) { L.push(''); L.push('ADDITIONAL STUDIES TO CONSIDER: ' + cap(studies.join('; ')) + '.'); }
   if (withHeadsup && headsup.length) {
     L.push('');
     L.push('HEADS-UP FOR THE INTERPRETER (not part of the final report):');
@@ -765,28 +769,31 @@ function interpret(raw) {
   add('spiro', secSpiro); add('fvl', secFvl); add('bd', secBD); add('vol', secVol); add('dlco', secDlco);
   add('raw', secRaw); add('osc', secOsc); add('mip', secMip); add('post', secPost); add('feno', secFeno);
   add('bronch', secBronch); add('sixmw', secSix); add('cpet', secCpet); add('gas', secGas); add('prior', secPrior);
+  f.dx = differentialGroups(f);
+  markSuperseded(f.suggest, f.dx);
+  f.studies = differentialText(f.dx).studies;
   const impression = buildImpression(f, secs);
   const headsup = buildHeadsUp(f, secs);
   const counts = { alert: 0, caution: 0, note: 0, tip: 0 };
   headsup.forEach(h => { counts[h.lvl]++; });
   const anyData = secs.some(s => !s.empty);
   return {
-    state: st, facts: f, F: f.F, suggestions: f.suggest, style: f.style, sections: secs, impression: impression, headsup: headsup, counts: counts, anyData: anyData,
+    state: st, facts: f, F: f.F, suggestions: f.suggest, differentials: f.dx, studies: f.studies, style: f.style, sections: secs, impression: impression, headsup: headsup, counts: counts, anyData: anyData,
     text: buildText(f, secs, impression, headsup, false),
     textWithHeadsup: buildText(f, secs, impression, headsup, true)
   };
 }
 
 const API = {
-  version: '2.0.0',
+  version: '2.1.0',
   catalogVersion: CATALOG.version,
   Z_LLN: Z_LLN, Z_ULN: Z_ULN, STYLES: STYLES,
   TESTS: TESTS, PRESETS: PRESETS, SCHEMA: SCHEMA, LOOPS: LOOPS, INDICATIONS: INDICATIONS, KIND_OPTS: KIND_OPTS, PRIOR_FIELDS: PRIOR_FIELDS, CUR_FIELDS: CUR_FIELDS, MAX_PRIORS: MAX_PRIORS, MAX_TREND: MAX_TREND,
-  CATALOG: CATALOG, REVIEW_PHRASES: REVIEW_PHRASES.map(r => r.id),
+  CATALOG: CATALOG, REVIEW_PHRASES: REVIEW_PHRASES.map(r => r.id), STUDIES: STUDIES, DX_GROUPS: DX_GROUPS.map(g => ({ key: g.key, title: g.title })),
   defaultState: defaultState, normalizeState: normalizeState, blankPrior: blankPrior, blankTrendRow: blankTrendRow,
   interpret: interpret, res: res, num: num, catFromZ: catFromZ, fz: fz,
   phrase: phrase, eligiblePhrases: eligiblePhrases, factMatches: factMatches, catPhrase: catPhrase,
-  _internal: { spiroPattern: spiroPattern, volPattern: volPattern, dlcoPattern: dlcoPattern, buildFacts: buildFacts, deriveFacts: deriveFacts, cpetEval: cpetEval, abgEval: abgEval, mchCategory: mchCategory, methacholineFacts: methacholineFacts, mchAutoCategory: mchAutoCategory, fenoBand: fenoBand, exerciseState: exerciseState, placeholderValues: placeholderValues, CFG: CFG }
+  _internal: { spiroPattern: spiroPattern, volPattern: volPattern, dlcoPattern: dlcoPattern, buildFacts: buildFacts, deriveFacts: deriveFacts, cpetEval: cpetEval, abgEval: abgEval, mchCategory: mchCategory, methacholineFacts: methacholineFacts, mchAutoCategory: mchAutoCategory, fenoBand: fenoBand, exerciseState: exerciseState, placeholderValues: placeholderValues, differentialGroups: differentialGroups, differentialText: differentialText, CFG: CFG }
 };
 
 if (typeof module !== 'undefined' && module.exports) module.exports = API;

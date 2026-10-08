@@ -51,7 +51,8 @@ function h(tag, a, kids) {
 }
 let uidN = 0; const uid = (p) => (p || 'f') + (++uidN);
 const hasNum = (v) => { const n = P.num(v); return typeof n === 'number' && isFinite(n); };
-const plural = (n, w) => n + ' ' + w + (n === 1 ? '' : 's');
+const plural = (n, w, ws) => n + ' ' + (n === 1 ? w : (ws || w + 's'));
+const cap = (t) => t ? t.charAt(0).toUpperCase() + t.slice(1) : t;
 
 /* ------------------------------------------------------------------- toast */
 function toast(msg) {
@@ -595,7 +596,7 @@ function styleRow() {
 }
 /* Review-only catalog wording: offered when the findings make it relevant, included only when tapped. */
 function suggestCard() {
-  const list = R.suggestions || [];
+  const list = (R.suggestions || []).filter(sg => !sg.superseded);
   if (!list.length) return null;
   const chips = list.map(sg => h('button', { type: 'button', class: 'sug' + (sg.on ? ' on' : ''), 'aria-pressed': String(sg.on), 'data-sug': sg.id,
     onclick: () => { if (S.review[sg.id]) delete S.review[sg.id]; else S.review[sg.id] = true; sync(); } },
@@ -606,6 +607,45 @@ function suggestCard() {
     h('p', { class: 'fine', text: 'Interpretive wording that needs your judgement: the numbers make it relevant, but it is never inserted on its own. Tapped sentences join the Interpretation; tap again to remove.' }),
     h('div', { class: 'sug-list' }, chips)
   ]);
+}
+
+/* Differential considerations and additional studies, offered per verified finding and included only when tapped. */
+function dxToggle(id) { if (S.review[id]) delete S.review[id]; else S.review[id] = true; sync(); }
+function dxSet(ids, on) { ids.forEach(id => { if (on) S.review[id] = true; else delete S.review[id]; }); sync(); }
+function dxRow(label, items, kind, gkey) {
+  const ids = items.map(x => x.id), nOn = items.filter(x => x.on).length;
+  return h('div', { class: 'dx-row', 'data-kind': kind }, [
+    h('div', { class: 'dx-row-head' }, [
+      h('span', { class: 'dx-l', text: label }),
+      h('span', { class: 'dx-tools' }, [
+        h('button', { type: 'button', class: 'lnk', 'data-dx-all': gkey + ':' + kind, text: 'All', disabled: nOn === items.length ? 'true' : null, onclick: () => dxSet(ids, true) }),
+        h('button', { type: 'button', class: 'lnk', 'data-dx-none': gkey + ':' + kind, text: 'None', disabled: nOn === 0 ? 'true' : null, onclick: () => dxSet(ids, false) })
+      ])
+    ]),
+    h('div', { class: 'dx-chips' }, items.map(x => h('button', { type: 'button', class: 'dx' + (x.on ? ' on' : ''), 'aria-pressed': String(x.on), 'data-dx': x.id, text: x.text, onclick: () => dxToggle(x.id) })))
+  ]);
+}
+function dxCard() {
+  const groups = R.differentials || [];
+  if (!groups.length) return null;
+  const nDx = groups.reduce((a, g) => a + g.dx.filter(x => x.on).length, 0);
+  const nSt = (R.studies || []).length;
+  const sum = h('span', { class: 'chip ' + (nDx || nSt ? 'ok' : 'note'), text: nDx || nSt ? [nDx ? plural(nDx, 'differential') : '', nSt ? plural(nSt, 'study', 'studies') : ''].filter(Boolean).join(', ') + ' included' : 'none included' });
+  const card = h('section', { class: 'card dxs', id: 'differentials', 'aria-labelledby': 'dx-h' }, [
+    h('div', { class: 'hu-head' }, [h('h2', { id: 'dx-h', text: 'Differentials and additional studies (tap to include)' }), sum]),
+    h('p', { class: 'fine', text: 'For each verified finding: the physiologic causes that produce it and the studies that sort them out. Nothing is inserted on its own. Tapped differentials join the Interpretation as one sentence per finding; tapped studies are listed once under "Additional studies to consider". Tap again to remove.' })
+  ]);
+  groups.forEach(g => card.appendChild(h('div', { class: 'dx-group', 'data-dx-group': g.key }, [
+    h('h3', { text: 'For ' + g.title }),
+    g.dx.length ? dxRow('Differential considerations', g.dx, 'dx', g.key) : null,
+    g.studies.length ? dxRow('Additional studies', g.studies, 'study', g.key) : null
+  ])));
+  return card;
+}
+function studiesBlock(cls) {
+  const st = R.studies || [];
+  if (!st.length) return null;
+  return h('div', { class: 'studies' + (cls ? ' ' + cls : ''), 'data-studies': String(st.length) }, [h('h3', { text: 'Additional studies to consider' }), h('p', { text: cap(st.join('; ')) + '.' })]);
 }
 
 /* ------------------------------------------------------------- step: report */
@@ -624,6 +664,7 @@ function reportDoc() {
   doc.appendChild(h('div', { class: 'interp' }, [h('h3', { text: 'Interpretation' }),
     R.impression.length ? h('ol', {}, R.impression.map(t => h('li', { text: t }))) : h('p', { class: 'fine', text: 'No interpretable data entered.' }),
     codes.length ? h('div', { class: 'codes-row', 'data-codes': codes.join(',') }, [h('span', { class: 'fine' }, ['Annals ATS 2025 codes', h('span', { class: 'noprint', text: ' (tap for meaning)' })]), h('span', { class: 'codes' }, codes.map(codeChip))]) : null]));
+  const sb = studiesBlock(); if (sb) doc.appendChild(sb);
   return doc;
 }
 /* A small picture of each loop named in a "look for" tip, drawn with the same shapes as the gallery. */
@@ -681,12 +722,14 @@ function stepReport() {
   const live = h('div', { id: 'report-live' });
   let liveKey = null;
   widgets.push(() => {
-    const key = R.text + '|' + (R.suggestions || []).map(x => x.id + (x.on ? '1' : '0')).join(',') + '|' + R.headsup.map(x => x.id).join(',');
+    const dxKey = (R.differentials || []).map(g => g.key + ':' + g.dx.concat(g.studies).map(x => x.on ? '1' : '0').join('')).join(',');
+    const key = R.text + '|' + (R.suggestions || []).map(x => x.id + (x.on ? '1' : '0') + (x.superseded ? 's' : '')).join(',') + '|' + dxKey + '|' + R.headsup.map(x => x.id).join(',');
     if (key === liveKey) return;
     liveKey = key;
     live.textContent = '';
     live.appendChild(reportDoc());
     const sc = suggestCard(); if (sc) live.appendChild(sc);
+    const dc = dxCard(); if (dc) live.appendChild(dc);
     live.appendChild(headsupCard());
     const pl = $('plain'); if (pl) pl.textContent = R.text;
   });
@@ -744,6 +787,7 @@ function paintPreview() {
       ? h('ol', {}, R.impression.map(t => h('li', { class: prev.impr && had.indexOf(t) < 0 ? 'chg' : '', text: t })))
       : h('p', { class: 'pv-empty', text: 'The synthesis appears here once values are entered.' }),
     codes.length ? h('div', { class: 'codes-row' }, [h('span', { class: 'fine', text: 'Annals ATS 2025 codes' }), h('span', { class: 'codes' }, codes.map(codeChip))]) : null]));
+  const sbp = studiesBlock(); if (sbp) doc.appendChild(sbp);
   const oldDoc = pv.querySelector('.pv-doc'), keepTop = oldDoc ? oldDoc.scrollTop : 0;
   pv.textContent = '';
   pv.appendChild(h('div', { class: 'pv-head' }, [
@@ -753,8 +797,12 @@ function paintPreview() {
       h('button', { type: 'button', class: 'btn sm', id: 'pv-open', text: 'Full report', onclick: () => goto('report') })
     ])
   ]));
-  const nSug = (R.suggestions || []).length, nOn = (R.suggestions || []).filter(x => x.on).length;
-  if (nSug) doc.appendChild(h('p', { class: 'fine pv-sug', text: (nOn ? nOn + ' of ' : '') + plural(nSug, 'suggested addition') + ' on the Report step (tap to include).' }));
+  const nSug = (R.suggestions || []).filter(x => !x.superseded).length, nOn = (R.suggestions || []).filter(x => x.on && !x.superseded).length;
+  const nGrp = (R.differentials || []).length;
+  const notes = [];
+  if (nSug) notes.push((nOn ? nOn + ' of ' : '') + plural(nSug, 'suggested addition'));
+  if (nGrp) notes.push('differentials and additional studies for ' + plural(nGrp, 'finding'));
+  if (notes.length) doc.appendChild(h('p', { class: 'fine pv-sug', text: cap(notes.join('; ')) + ' on the Report step (tap to include).' }));
   pv.appendChild(doc);
   pvPrev = next;
   if (pvScrollTo) {
