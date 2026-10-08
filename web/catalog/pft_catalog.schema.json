@@ -1,0 +1,218 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PFT Phrase Catalog v1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "catalog_version",
+    "title",
+    "sections",
+    "sources",
+    "phrases",
+    "selection_contract"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "catalog_version": {
+      "type": "string"
+    },
+    "reviewed_on": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "scope": {
+      "type": "string"
+    },
+    "default_style": {
+      "enum": [
+        "concise",
+        "standard",
+        "expanded",
+        "numeric"
+      ]
+    },
+    "authorship": {
+      "type": "string"
+    },
+    "selection_contract": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "sections": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "title",
+          "note"
+        ],
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "year",
+          "url",
+          "role"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "year": {
+            "type": "integer"
+          },
+          "doi": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "phrases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "section",
+          "label",
+          "when",
+          "selection_mode",
+          "exclusive_group",
+          "source_ids",
+          "evidence_kind",
+          "templates",
+          "required_placeholders",
+          "notes"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9_.]+$"
+          },
+          "section": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "when": {
+            "type": "object",
+            "required": [
+              "fact",
+              "op",
+              "value"
+            ],
+            "properties": {
+              "fact": {
+                "type": "string"
+              },
+              "op": {
+                "const": "eq"
+              },
+              "value": {
+                "type": [
+                  "string",
+                  "boolean",
+                  "number"
+                ]
+              }
+            },
+            "additionalProperties": false
+          },
+          "selection_mode": {
+            "enum": [
+              "automatic",
+              "documented_observation",
+              "review"
+            ]
+          },
+          "exclusive_group": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "evidence_kind": {
+            "type": "string"
+          },
+          "templates": {
+            "type": "object",
+            "required": [
+              "concise",
+              "standard",
+              "expanded"
+            ],
+            "properties": {
+              "concise": {
+                "type": "string"
+              },
+              "standard": {
+                "type": "string"
+              },
+              "expanded": {
+                "type": "string"
+              },
+              "numeric": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          },
+          "required_placeholders": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

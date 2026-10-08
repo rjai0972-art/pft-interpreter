@@ -1,0 +1,588 @@
+ADULT PFT RULES AND REPOSITORY INTEGRATION SPECIFICATION
+Version 1.0.0 | Reviewed 2026-10-08
+
+1. PURPOSE AND EVIDENCE BOUNDARIES
+
+The application should turn an observed or calculated finding into a selectable report phrase.
+It should distinguish three operations: reading a measured value, determining a physiologic finding,
+and offering a clinical interpretation. Clicking a number does not establish a diagnosis.
+
+The phrase catalog is original writing. It provides several useful ways to express each clinically
+distinct finding; it cannot exhaust all possible synonyms or every clinical context. Some expanded
+phrases explain limitations and will be too long for a routine report. Concise is the recommended
+default; standard and numeric are usually the most useful alternatives for final laboratory reports.
+
+Source keys refer to the primary standards listed in pft_phrases.json. Official definitions and
+thresholds are evidence anchors. Choice of IDs, UI behavior, continuous boundary handling,
+near-LLN flags, report-assembly priorities, and wording are proposed implementation conventions.
+
+2. DATA MODEL: STORE THE MEASUREMENTS BEFORE THE WORDING
+
+For each metric, retain:
+- measured numeric value and units;
+- predicted value, percent predicted, LLN, ULN, and z-score when available;
+- reference equation name/version and whether it applies to this person/method;
+- test date, posture, method/device, pre/post-bronchodilator state, and medication timing;
+- acceptability, repeatability, laboratory quality grade, usability, and reviewer-confirmed reliability;
+- source of the value and any correction/adjustment metadata.
+
+The fields below must remain distinct:
+- FEV1/FVC measured ratio: 0.62, often displayed as 62%.
+- FEV1/FVC percent predicted: a different number; never use it as the measured ratio.
+- Change as percent of predicted: (post − pre)/predicted × 100.
+- Relative change from baseline: (post − pre)/pre × 100.
+- Absolute difference in percent-predicted values: current % predicted − prior % predicted,
+  reported as percentage points.
+
+Use a canonical ratio fraction internally and explicit display conversions. RV/TLC, FRC/TLC,
+and VA/TLC are also fractions internally. Never apply a percent-predicted threshold to a raw ratio.
+Use liters for canonical spirometric volumes and mL for displayed small volume changes.
+Use one explicit DLCO unit system per computation. Do not mix mL/min/mmHg with mmol/min/kPa.
+Use PD20 units explicitly; micrograms and micromoles are not interchangeable numbers.
+Keep FeNO in ppb and its exhalation flow in mL/s. Preserve oxygen device and setting as structured
+fields; pulse-dose settings do not represent a universal number of L/min.
+
+For MIP and SNIP, retain signed pressure if supplied and use the magnitude for strength comparisons.
+For example, −60 cm H2O is weaker than −100 cm H2O. The algebraically smaller number is not the
+weaker effort. MEP is ordinarily displayed as a positive pressure. Use method-appropriate magnitude
+references; never compare a signed negative MIP directly with a positive LLN.
+
+Null means unknown. Missing, not measured, invalid, usable with limitations, and reliable are
+different states. Never convert unknown to zero, normal, absent, or a negative test.
+Do not calculate z-scores from percent predicted using an assumed standard deviation. Use the
+validated reference implementation or the laboratory-supplied z-score. Reference equations can be
+nonlinear and include transformations. Record domain-specific references rather than assuming
+one equation covers spirometry, lung volumes, DLCO, and pressures.
+
+For spirometry, the 2023 ATS statement supports race-neutral references. Apply a valid implemented
+reference and record it. Do not retrofit a race-neutral conversion by multiplying historical values
+by an improvised factor. Reference changes can affect classification and normalized serial comparisons.
+
+3. QUALITY COMES BEFORE PHYSIOLOGIC CLASSIFICATION
+
+Use documented maneuver quality, not apparent plausibility of the result, to establish reliability.
+FEV1 and FVC can have different quality. A maneuver unsuitable for FVC may still yield a usable
+FEV1; a cough in the first second can invalidate FEV1 while leaving another component usable.
+Low repeatability is a limitation, not automatic proof that all available data are useless.
+An inability to meet ideal criteria should be reported with component-specific uncertainty.
+
+Spirometry, lung volumes, DLCO, pressures, challenge measurements, and oximetry each require their
+own quality assessment. Do not propagate one global “good quality” flag to every domain.
+The 2019 spirometry standard grades FEV1 and FVC separately. For individuals older than six years,
+the usual repeatability target is a difference of no more than 150 mL between the two largest
+acceptable FEV1 values and separately the two largest acceptable FVC values. This package does
+not reproduce the entire acceptability/grading algorithm. Import validated laboratory grades or
+implement that algorithm directly from the standard.
+
+For DLCO, repeated high-quality measurements are preferred. Standardized reporting describes at
+least two grade-A measurements repeatable within 2 mL/min/mmHg (0.67 mmol/min/kPa). A single usable
+effort must be identified as such. These within-session requirements are not thresholds for
+longitudinal clinical change. Apply the full current DLCO criteria if computing grades; do not
+reduce the algorithm to a single inspired-volume cutoff.
+
+If a component is invalid, suppress definitive pattern/severity language driven by that component.
+If values are usable but limited, allow an explicitly reviewed descriptive phrase and attach the
+relevant limitation. If a low FVC may result from early termination, do not infer a reliably preserved
+ratio or restriction until that concern is resolved.
+
+4. LLN, ULN, BORDERLINE VALUES, AND SEVERITY
+
+Core statistical reference convention: LLN is the fifth percentile (approximately z = −1.645),
+and ULN is the 95th percentile (approximately z = +1.645) for an appropriate reference distribution.
+Use the actual provided LLN/ULN or validated z-score. Compare unrounded numbers.
+
+Proposed continuous implementation of the 2022 three-level low-value grading:
+- not reduced: z ≥ −1.645;
+- mild reduction: −2.5 ≤ z < −1.645;
+- moderate reduction: −4.0 ≤ z < −2.5;
+- severe reduction: z < −4.0.
+
+The published categories are presented with rounded values. The continuous intervals above are a
+documented implementation convention to eliminate rounding gaps; do not create an unclassified
+interval between −4.0 and −4.1 or between −2.50 and −2.51. Exact equality to the provided LLN is
+not “below LLN.” If a laboratory uses a different explicit boundary policy, retain that policy.
+
+Apply this low-value impairment grading to FEV1, FVC, and DLCO with valid references. It grades the
+measurement and physiology, not the overall severity of COPD, asthma, ILD, or symptoms. Do not
+grade obstruction from FEV1/FVC z-score magnitude. For obstruction, use FEV1 impairment; if the
+ratio is low but FEV1 is preserved, say “obstruction with preserved FEV1.” For restriction, the
+default should say “restriction with a moderate reduction in FVC,” or state the TLC directly,
+rather than silently presenting an unvalidated TLC severity scheme as ATS/ERS grading.
+
+Do not apply these low-value categories to RV/TLC elevations, TLC increases, MIP/MEP deficits,
+FeNO, Raw, or oscillometry. Use a separately declared scheme if a specialist laboratory grades them.
+Do not define normality with a universal 80% predicted rule. Percent-predicted severity profiles
+and GOLD COPD grades can be supported only as named, separate options with their prerequisites;
+they are not interchangeable with the default z-score framework.
+
+For historical wording, the 2005 interpretation framework used five FEV1 percent-predicted labels:
+mild (>70), moderate (60–69), moderately severe/moderate-to-severe (50–59), severe (35–49), and very
+severe (<35). Its printed integer bands require an explicit local convention for unrounded values
+and shared/boundary cases. A historically mild label still requires actual abnormality rather than
+grading a physiologically normal test merely because percent predicted falls in a band. The
+historical DLCO scheme used mild reduction above 60% predicted but below LLN, moderate 40–60%, and
+severe below 40%. These are included for interpreting existing lab reports and offering named
+legacy wording, not as the default calculations. The legacy-only “moderately severe” and “very
+severe” phrases require that their declared FEV1 profile was deliberately selected.
+
+“Near LLN” or “borderline low” is a review flag, not a new official category. The app can make a
+near-limit band configurable, but must label it as a local convention and retain the exact
+low/normal/high classification. Avoid a border flag that changes a value below LLN to normal.
+
+5. SPIROMETRIC PATTERN RULES
+
+Required: a reliable measured FEV1/FVC with its valid LLN, plus reliable FEV1 and FVC for component
+statements. A ratio can be within or above the reference range and still be “preserved” for the
+purpose of excluding measured airflow obstruction.
+
+- Obstruction: reliable FEV1/FVC < LLN.
+- Normal spirometry: FEV1, FVC, and FEV1/FVC are within their reference ranges, with adequate quality.
+- Low FVC with preserved ratio, TLC absent: possible restrictive pattern; restriction unconfirmed.
+- Nonspecific pattern: reduced FEV1 and/or FVC, preserved ratio, and TLC within reference limits.
+- Low FEV1 alone: report reduced FEV1; do not infer obstruction without the ratio.
+- Low ratio with preserved FEV1: obstructive impairment with preserved FEV1; do not infer reduced FEV1.
+- High ratio alone: describe the measurement; it does not establish restriction.
+- Low ratio plus low FVC, TLC absent: obstruction with reduced FVC; a restrictive component unconfirmed.
+- Low ratio plus low FVC, reliable TLC at/above LLN: obstruction without demonstrated restriction.
+- Low ratio plus reliable TLC below LLN: mixed obstructive and restrictive impairment.
+
+PRISm is a named phenotype. The frequently used epidemiologic definition uses a fixed preserved
+ratio and FEV1 <80% predicted, but definitions differ. A LLN-based descriptive preserved-ratio
+finding is not silently equivalent to that definition. Enable the PRISm sentence only when its
+declared profile is met. Potential dysanapsis is a reviewed inference, not automatic dismissal of
+a low ratio. FEV1/SVC and FEV1/FEV6 require their own validated ratio references and cannot reuse
+FEV1/FVC thresholds without justification.
+
+FEF25–75, FEF50/75, or isolated peak-flow deficits should not independently generate a diagnosis
+of small airway disease. Changes in FEF25–75 after bronchodilator are not the accepted FEV1/FVC
+volume-response test. SVC exceeding FVC may support airway closure after quality and consistency
+review, but no disease-defining SVC–FVC difference is hard-coded here.
+
+6. BRONCHODILATOR RESPONSE
+
+Current technical profile, source I22:
+  FEV1_response_pct_pred = 100 × (post FEV1 − pre FEV1) / predicted FEV1
+  FVC_response_pct_pred  = 100 × (post FVC − pre FVC) / predicted FVC
+  A positive increase in either measure greater than 10% of its predicted value qualifies.
+  Exactly 10.0% does not satisfy the strictly greater-than criterion.
+
+Use one appropriate predicted value per metric and a valid matched pre/post comparison. Do not
+use relative baseline change as the denominator for this criterion. An increase from 60% to
+72% predicted is 12 percentage points predicted, whereas 12% relative improvement from a
+baseline of 60% predicted is only 7.2 percentage points predicted.
+
+Classify both positive when both metrics qualify; FEV1 or FVC response when that metric qualifies.
+If one metric qualifies and the other is unavailable, a positive response is still supported by
+the valid metric, but do not say “only FEV1” or “only FVC.” A negative response needs adequate
+evaluations of both relevant metrics; incomplete data cannot establish that neither responded.
+Numerical dual-metric wording requires all of its listed values. A significant FVC response
+alone is a valid response. Its suggested airway-closure mechanism requires review.
+
+Legacy profile: maintain it as a labeled configuration. The historical interpretation standard
+describes a ≥12% baseline increase with an absolute increase greater than 200 mL; many subsequent
+clinical implementations use ≥200 mL. Store the exact operator and label, rather than silently
+collapsing the two boundary policies. Do not combine legacy and current criteria into one test.
+Disease-specific diagnostic guidance may use another criterion and belongs in a separate profile.
+
+Post-bronchodilator ratio normalization is independent of the volume-response definition:
+- pre ratio < LLN and post ratio ≥ LLN: obstruction is no longer demonstrated after bronchodilator;
+- pre and post ratios < LLN: obstruction persists, even if FEV1/FVC volume response is significant.
+
+No measured response does not exclude asthma or medication benefit. A positive response does not
+independently establish asthma. A decrease after bronchodilator should prompt review of technique,
+fatigue, and timing before “paradoxical bronchospasm” is considered. A recent bronchodilator dose
+can alter the result and must be documented when relevant.
+
+7. LUNG VOLUMES
+
+Reliable TLC < LLN confirms restriction. TLC ≥ LLN does not demonstrate restriction in that study.
+Never substitute FVC, VA, single-breath TLC estimates, or CT impression for the required reliable
+TLC classification. If the method may underestimate total volume or quality is poor, qualify the
+finding rather than automatically excluding or confirming restriction.
+
+With restriction, consider the volume fractions and ratio:
+- ratio preserved and RV/TLC and FRC/TLC not elevated: simple restrictive pattern is supported;
+- ratio preserved and elevated volume fractions/disproportionate retained RV: complex restriction
+  can be supported; inspect which fraction is abnormal and select wording that actually fits it;
+- ratio below LLN and TLC below LLN: mixed impairment, whether fractions are elevated or normal.
+
+For the specific catalog phrase “complex restriction,” require the increased residual-volume
+fraction it mentions. A case with only high FRC/TLC needs reviewed customized wording rather than
+a sentence falsely asserting high RV/TLC. Complex restriction can have multiple contributors,
+including reduced thoracic expansion or airway closure; no cause is assigned automatically.
+
+With non-reduced TLC and adequate quality:
+- high RV/TLC, with FRC/TLC not elevated: an air-trapping volume pattern is supported;
+- high FRC/TLC and RV/TLC: hyperinflation is supported, even when TLC is within reference limits;
+- high TLC plus elevated fractions: hyperinflation with increased TLC is supported;
+- high TLC with preserved fractions: large lungs is a useful descriptive option.
+
+High absolute RV or FRC can support a descriptive abnormal-volume statement when fractions are
+missing, but the app should not claim that an unmeasured fraction is normal or high. High RV/TLC
+can arise when TLC falls more than RV, or with weakness/limited emptying. With a low TLC, default
+to “elevated RV/TLC in restriction,” not automatic air trapping. This conservative default does
+not mean air trapping cannot coexist with restriction; it means the mechanism needs review.
+
+Low ERV can relate to body habitus or posture but is not specific for obesity. Low IC can reflect
+an elevated resting volume, restriction, or incomplete inspiration; it is not proof of dynamic
+hyperinflation. Static PFTs cannot establish exertional dynamic hyperinflation without an
+appropriate change-in-IC or other exercise assessment.
+
+Preserve plethysmography, helium dilution, nitrogen washout, and other method metadata. Dilution
+may omit poorly communicating gas; plethysmography also has technical limitations. A method
+discrepancy is not an automatic quantification of trapped gas or an indication that one result
+is always correct. Interpret with test quality and the clinical question.
+
+8. DLCO, HEMOGLOBIN, VA, AND KCO
+
+Classify reliable DLCO using its own valid reference and adjustment basis. Store measured DLCO,
+reference-normalized values, the hemoglobin value/date, the method, and exactly what was adjusted.
+Standards may adjust the reference comparison rather than simply multiply the measured value.
+“Hemoglobin-adjusted DLCO” is useful wording if this accurately describes the lab output. Do not
+apply a second correction to already adjusted results.
+
+- A low unadjusted DLCO with documented anemia can partly reflect hemoglobin availability.
+- A low hemoglobin-adjusted DLCO remains a gas-transfer deficit on that comparison.
+- If adjustment status is unknown, state it is unspecified; do not invent normal hemoglobin.
+- Recent smoking, COHb, oxygen conditions, incomplete inspiration, and maneuver quality can
+  affect the measurement; assert them only when documented.
+- A high DLCO is not proof of asthma, obesity, polycythemia, or hemorrhage.
+
+VA is the sampled single-breath alveolar volume. It is not interchangeable with measured TLC.
+KCO is the transfer coefficient, numerically related to DLCO/VA in consistent units; its
+reference behavior changes with volume. Do not calculate its predicted value or percent predicted
+by dividing the separate DLCO and VA percent-predicted values unless the validated reference
+method explicitly defines that calculation.
+
+Permissible component patterns:
+- low DLCO + preserved VA + low KCO: lower measured transfer efficiency with preserved sampled volume;
+- low DLCO + low VA + low KCO: lower sampled volume and transfer coefficient both contribute;
+- low DLCO + low VA + preserved KCO: total transfer remains low despite a preserved coefficient;
+- low DLCO + low VA + high KCO: smaller sampled volume with increased coefficient; cause unconfirmed.
+
+Never say a low DLCO “corrects to normal for VA” merely because KCO is normal. Preserve the low
+DLCO finding. A normal KCO does not rule out ILD. Low VA does not by itself prove restriction or
+extrapulmonary disease. VA/TLC requires an independently measured reliable TLC in comparable
+conditions; use an appropriate laboratory reference or reviewed comparison. No universal numeric
+VA/TLC cutoff is hard-coded here. A low ratio can indicate incomplete sampling or ventilation
+maldistribution, but poor inspiration and method differences must also be considered.
+
+An isolated low DLCO requires preserved valid spirometry and lung volumes; “isolated” cannot be
+claimed if either domain is missing. Etiologic suggestions such as pulmonary vascular disease,
+emphysema, early parenchymal disease, or anemia require contextual review.
+
+9. RESPIRATORY MUSCLE TESTING
+
+Low pressure magnitude relative to an appropriate reference is a descriptive finding. It can
+reflect weakness, effort, mouth seal, technique, posture, or lung-volume mechanics. A normal
+measurement is reassuring for that tested function but does not exclude all intermittent or
+specific muscle dysfunction. MIP is not an anatomic diaphragm test and MEP is not a complete cough
+assessment. In obstructive disease, lung-volume mechanics can affect inspiratory pressures.
+
+Use MIP/MEP/SNIP references appropriate to the method. Do not automatically label them mildly,
+moderately, or severely reduced by borrowing FEV1 or DLCO cutoffs. Low MIP plus preserved MEP,
+low MEP plus preserved MIP, and low values in both are useful reviewed pattern options. A low
+pressure plus restriction can suggest a muscle contribution if both domains are reliable.
+
+Postural VC decrease:
+  decrease (%) = 100 × (upright VC − supine VC) / upright VC
+Use the same type of VC measurement and reliable efforts. A greater-than-expected fall can
+support diaphragmatic dysfunction but does not prove it. The 2019 statement discusses a 15%
+fall as a screening clue; baseline mechanics and the clinical question alter its interpretation.
+Report the measured percentage and make the concerning/not-excessive clinical comment review-only.
+A negative change is an increase when supine; do not print it as a “decrease.”
+
+Peak cough flow needs method and assisted/unassisted status. Disease-specific values commonly
+used for airway-clearance reserve are not universal healthy-adult LLNs. Do not automatically
+prescribe cough assistance, oxygen, or NIV from a pressure or cough-flow click. ICU NIF thresholds
+for ventilator decisions should not be silently repurposed as outpatient MIP reference limits.
+
+10. METHACHOLINE AND INDIRECT CHALLENGE
+
+Methacholine response uses a valid protocol and serial FEV1 measurements, usually with a
+post-diluent baseline. Record PD20 when the delivered dose is known and PC20 only with the
+documented concentration protocol. Percent fall uses the protocol baseline as the denominator:
+  fall (%) = 100 × (baseline FEV1 − dose FEV1) / baseline FEV1
+Reached, not reached at maximum dose, incomplete, and technically indeterminate are different states.
+If not reached, report PD20/PC20 greater than the completed maximum; do not invent an exact value.
+
+The 2017 table gives these protocol-dependent AHR ranges:
+- normal: PD20 >400 micrograms; PC20 >16 mg/mL;
+- borderline: PD20 100–400 micrograms; PC20 4–16 mg/mL;
+- mild: PD20 25–100 micrograms; PC20 1–4 mg/mL;
+- moderate: PD20 6–25 micrograms; PC20 0.25–1 mg/mL;
+- marked: PD20 <6 micrograms; PC20 <0.25 mg/mL.
+PC20 categories specifically apply to the documented English Wright two-minute tidal protocol;
+PD20 requires calculated delivered dose. The printed adjoining ranges share endpoints. Use the
+laboratory category or explicitly choose a non-overlapping endpoint policy after validation;
+this package deliberately does not auto-assign a category at a shared printed endpoint.
+Do not use these categories to grade clinical asthma severity. A borderline AHR category and
+a laboratory binary positive result can coexist under the selected definition; avoid contradictory
+wording by stating the exact result and criterion. An incomplete study is not a completed negative.
+
+A positive challenge demonstrates hyperresponsiveness, not an independent asthma diagnosis.
+A completed appropriate negative test can lower the likelihood of current asthma; dose delivery,
+withholding of relevant medication, symptom timing, and the specific phenotype matter. A diluent
+response or unstable baseline can make interpretation unreliable. Document recovery with the
+actual post-challenge value when it is available.
+
+For exercise/EVH, import the protocol-specific laboratory criterion and document stimulus adequacy,
+timing, and serial acceptable FEV1 measurements. The adult ATS exercise framework uses a fall in
+FEV1 of at least 10% as the basic diagnostic response, with additional protocol and severity
+considerations. Do not label symptoms alone as exercise-induced bronchoconstriction.
+Mannitol commonly uses a fall of at least 15% from baseline or 10% between consecutive doses;
+verify the adopted protocol. PD15 is a mannitol measure and must not be mislabeled PD20.
+
+11. OPTIONAL ADJUNCT MODULES
+
+FeNO (adult ATS F11 categories, appropriate technique):
+- low: <25 ppb;
+- intermediate: 25–50 ppb, including the endpoints;
+- high: >50 ppb.
+Record exhalation flow and test quality. These are clinical interpretation categories, not generic
+population LLN/ULN z-score categories. FeNO supports assessment of eosinophilic airway inflammation;
+treatment, smoking, atopy, and exposure influence it. Do not diagnose asthma or nonadherence from
+FeNO alone. Children require a separate age-appropriate module.
+
+Raw/sGaw: use method-specific references and recorded lung-volume conditions. Describe increased
+resistance or reduced conductance; do not use them as independent diagnostic criteria.
+
+Oscillometry: preserve the device, frequencies, reference equation, units, artifact review, and
+valid acquisition quality. R5, R5–R20, X5, AX, and resonant frequency have different meanings and
+reference limits. A low X5 means more negative reactance, not a simple positive pressure deficit.
+R5–R20 is not a direct anatomic peripheral-resistance measurement. No universal device-independent
+abnormality or bronchodilator cutoffs are hard-coded here. Import the validated laboratory profile.
+
+Multiple-breath washout: only basic LCI wording is provided. Require tracer/device, quality,
+validated reference, and the specialist method standard before implementing calculations.
+No universal LCI threshold or Scond/Sacin interpretation algorithm is included.
+
+Walk test: record completed time/distance, oxygen device and setting, aid, stops, symptoms,
+continuous SpO2 trace/nadir, and signal quality. A low distance requires a valid reference if stated
+as below normal; reduced distance is nonspecific. Exertional desaturation is descriptive and must
+not automatically create a diagnosis or oxygen prescription. If stopped before six minutes,
+report achieved time and distance rather than a completed six-minute result. “No desaturation”
+on supplemental oxygen does not demonstrate normal room-air oxygenation. Resting or exertional
+oxygen thresholds should be chosen for the clinical purpose; this package supplies no universal
+qualification/treatment cutoff. Full CPET interpretation is outside this handoff.
+
+12. SERIAL COMPARISON AND DISEASE-SPECIFIC CONTEXT
+
+Compare reliable measurements in matched conditions. Use the observed measured change first;
+separately state percentage-point predicted change and relative baseline change when useful.
+For example, 80% to 74% predicted is a decrease of six percentage points and a 7.5% relative
+decrease in the percent-predicted number. Age-related predicted changes mean a relative change
+in measured liters may differ from a relative change in percent predicted; identify the denominator.
+
+Do not label every direction of change “significant.” The within-session 150 mL spirometry or
+2 mL/min/mmHg DLCO repeatability targets are not universal serial progression criteria. The
+bronchodilator >10% predicted threshold is also not a generic longitudinal cutoff. Use a validated
+local longitudinal framework or a clinician-reviewed statement of importance.
+
+Check prior/current bronchodilator states, posture, methods, reference equations, hemoglobin
+adjustment, and test quality. If these differ, state the comparison limit. A difference in percent
+predicted due to a new equation should not be presented as a measured physiologic decline.
+An exact or near-exact change can be reported descriptively; “stable/no meaningful change”
+requires reviewed comparable data and a declared clinical judgment.
+
+PPF context (P22): in an adult with fibrotic ILD other than IPF, the physiologic progression domain
+can be met by an absolute FVC decline of at least five percentage points predicted or an absolute
+hemoglobin-adjusted DLCO decline of at least ten percentage points predicted within one year.
+PPF requires at least two of the symptom, physiologic, and radiologic domains, with no alternative
+explanation. FVC and DLCO changes are both within the same physiologic domain; they do not count
+as two distinct PPF domains. Enable the threshold phrases only after the condition, time window,
+comparability, and alternative causes are reviewed. An isolated threshold crossing is not PPF.
+
+13. DERIVED FACT CONTRACT FOR pft_phrases.json
+
+The catalog's when predicate is a lookup against the normalized findings object, not raw input.
+The repository should implement the preceding rules in a dedicated calculation layer and pass
+the findings into a deterministic phrase-selection layer. Conditions use an exact eq comparison.
+Unknown facts fail matching. Do not use eval(), implicit truthiness, or free-form LLM inference
+to decide a medical threshold. Strings such as “False” are not boolean false.
+
+Required state families:
+- spirometry.{fev1,fvc,svc}_state: normal, low, high, not_measured, invalid, or unknown.
+- spirometry.{fev1,fvc}_severity: preserved, mild, moderate, severe, or unknown.
+- spirometry.ratio_state: normal, low, high, not_measured, invalid, or unknown.
+- spirometry.ratio_near_lln: reviewed local flag; fixed_ratio_discordance: fixed_only, lln_only, none, unknown.
+- patterns.*: true only when every prerequisite for that pattern is reliable and satisfied.
+- patterns.obstruction_severity: preserved, mild, moderate, severe, or unknown, from FEV1.
+- bronchodilator.response: fev1, fvc, both, negative, not_performed, indeterminate.
+- bronchodilator.current_computable: true only when both metrics' required numeric data are reliable.
+- bronchodilator.obstruction_status: normalized, persistent, absent_at_baseline, unknown.
+- volumes.{tlc,rv,frc,erv,ic,rv_tlc,frc_tlc}_state: metric-specific state with valid reference.
+- volume_patterns.*: compute only from the required reliable absolute volumes/fractions.
+- diffusion.{dlco,va,kco}_state: normal, low, high, not_measured, invalid, or unknown.
+- diffusion.dlco_severity: preserved, mild, moderate, severe, or unknown.
+- diffusion_patterns.*: component combinations with every named state established.
+- muscle.{mip,mep,snip}_state: normal, low, not_measured, invalid, or unknown using magnitudes.
+- muscle_patterns.*: reliable conjunctions of the named pressure states.
+- muscle.supine_drop_computable: same VC type, reliable measurements, positive upright VC, and supine ≤ upright;
+  a supine increase requires a separate reviewed sentence rather than the catalog's decrease template.
+- challenge.methacholine_state: positive, negative, incomplete, indeterminate, or diluent_response.
+- challenge.{pd20,pc20}_reportable and *_exceeds_max: protocol-verified numerical states.
+- challenge.{exercise,evh,mannitol}_state: protocol-reviewed positive, negative, or incomplete.
+- challenge.exercise_fall_reportable and mannitol_pd15_reportable: validated numerical outputs.
+- feno.adult_category: low, intermediate, high, or unknown in an eligible adult measurement.
+- integrated.*: conjunctions of the underlying verified pattern/component facts.
+- observations.*: only populate from a documented technician/laboratory finding or explicit clinician review.
+
+For compound facts, preserve every qualifier in the actual phrase. Examples:
+- patterns.normal_baseline_bd_positive requires normal baseline spirometry and a valid positive response.
+- patterns.isolated_low_dlco requires normal reliable spirometry and lung volumes, with low reliable DLCO.
+- integrated.all_normal requires the routine test domains actually obtained, reliable, and within reference
+  limits, with no contradictory abnormal measured component. If only spirometry was obtained, use
+  integrated.spiro_only_normal; the low-DLCO or muscle domains must not be assumed normal.
+- volume_patterns.large_lungs requires high TLC and known preserved RV/TLC and FRC/TLC.
+- diffusion_patterns.low_dlco_low_va_normal_kco requires low DLCO, low VA, and KCO within reference limits;
+  missing KCO is not preserved KCO.
+
+A fact value marks eligibility, not an instruction to insert every matching phrase. Multiple
+descriptive options may be eligible for the same underlying finding. Selection and assembly should
+choose one useful wording level and suppress redundant statements.
+
+14. METRIC-CLICK UI DESIGN
+
+Map each clicked metric to useful domains:
+- FEV1: measured-value options, impairment grade, obstruction pattern only with a valid ratio,
+  bronchodilator change if both testing states exist, and comparable serial change.
+- FVC/SVC: component wording, low-FVC uncertainty, TLC-supported restriction/nonspecific pattern,
+  reviewed SVC–FVC comments, response, and serial change.
+- FEV1/FVC: normal/low/high comparison, near-LLN and fixed-ratio discordance review,
+  obstruction with preserved/reduced FEV1, and pre/post normalization.
+- TLC: confirmed/non-demonstrated restriction, simple/complex/mixed patterns, large lungs,
+  high-TLC hyperinflation only with the additional volume evidence, and method/serial limitations.
+- RV, RV/TLC, FRC, FRC/TLC: descriptive values, air-trapping/hyperinflation combinations,
+  elevated fractions in restriction, and caution about missing denominators or references.
+- DLCO: measured value, reference classification, impairment grade, adjustment qualifiers,
+  true isolated deficit, VA/KCO patterns, and matched serial comparisons.
+- VA/KCO: component value and combined diffusion patterns; never a “corrected to normal” shortcut.
+- MIP/MEP/SNIP: magnitude comparison, documented quality limitation, and reviewed pressure patterns.
+- upright/supine VC: measured relative postural change and reviewed interpretation.
+- challenge: protocol, baseline, maximum delivered dose, reached/not reached/completion status,
+  laboratory category, medication limit, and recovery.
+- adjuncts: only show their optional modules if that test and a valid profile are present.
+
+Suggested interaction:
+1. Click a metric or named pattern.
+2. Show supported phrases first, with concise/standard/expanded/numeric choices.
+3. Show review-only options in a distinct area with their missing prerequisites or review requirement.
+4. Preview the sentence with actual values before adding it to the report.
+5. Select a phrase by stable ID and variant; remember that selection, not an arbitrary template string.
+6. If an input, quality flag, equation, or profile changes, recompute eligibility and flag invalidated selections.
+7. Keep the clinician in control of the assembled report and final wording.
+
+Do not make clinical categories editable only through prose: store the underlying finding, source
+profile, variant, inserted values, and review status. A saved report should retain the rule/catalog
+version and actual values used, so a later update does not silently rewrite a signed prior report.
+Allow ordinary clinician edits, but show that the edited text no longer has guaranteed template consistency.
+
+15. REPORT ASSEMBLY AND SEMANTIC CONFLICTS
+
+Typical report order: quality/limits; spirometry; bronchodilator response; lung volumes; DLCO and
+adjustment; additional tests; serial comparison; integrated impression. Omit unperformed optional
+tests unless their absence is relevant. Prefer a compact integrated impression with the necessary
+component detail rather than inserting every matching metric sentence.
+
+Use the catalog's exclusive_group as one check, not the entire conflict engine. Cross-group rules:
+- suppress normal complete PFT/normal spirometry when a relevant reliable abnormality is selected;
+- never claim normal complete PFT when only spirometry is available;
+- mixed impairment replaces separate primary pure-pattern conclusions, while component values may remain;
+- a generic restriction statement can be refined to simple/complex; do not also add “restriction unconfirmed”;
+- nonspecific pattern excludes confirmed restriction and requires normal TLC;
+- low-TLC/elevated-RV-fraction wording replaces automatic air-trapping wording unless a clinician reviewed coexistence;
+- “large lungs with preserved fractions” conflicts with a hyperinflation statement asserting elevated fractions;
+- “no significant bronchodilator response” conflicts with a positive response under the same selected profile;
+- persistent obstruction may coexist with a significant response; it does not conflict with that response;
+- ratio normalization may occur without meeting a volume-response criterion; do not force them to agree;
+- a low DLCO cannot be erased by preserved KCO; “normal gas transfer” conflicts with low DLCO on the same basis;
+- unadjusted/adjusted/unknown hemoglobin bases must not be simultaneously asserted for the same DLCO comparison;
+- a completed negative challenge conflicts with incomplete or indeterminate challenge wording;
+- limited reliability cannot coexist with unqualified statements that its invalid component is normal;
+- do not attach a normal muscle-strength statement to a valid low MIP or MEP;
+- near-LLN review language can accompany low/normal classification; it must not overwrite it;
+- a local near-limit label, legacy grade, and z-score grade need their profile labels if shown together.
+
+Specificity priorities for the same finding:
+- mixed > simple/complex restriction > generic restriction;
+- obstruction with reduced FVC and known TLC > generic obstruction;
+- obstruction with preserved FEV1 or a declared FEV1 severity > generic obstruction;
+- integrated compound impression > repeated component impression sentences, unless numerical detail is requested.
+These are proposed assembly choices. They do not authorize omitting a clinically important abnormal domain.
+
+16. TEMPLATE RENDERING, AUDITABILITY, AND CHECKS
+
+Catalog variants use named placeholders such as {fev1_L}. The required_placeholders map is
+variant-specific. Do not insert a numeric template unless every required value and unit is available.
+If z-score is absent but the actual value/LLN support classification, choose a nonnumeric phrase
+or a clinician-approved simplified numeric variant; do not invent z or print “None.”
+
+Use full-precision values for decisions, then format for display. Displayed rounding must not
+change the result: a response slightly above 10% can round to 10.0%, so provide extra precision
+or retain an explanatory comparator when needed. Never describe a raw ratio as percent predicted.
+Never put source keys, tool filenames, placeholders, hidden fact paths, or implementation instructions
+into the copy-ready report. Sources belong in help/reference views or developer documentation.
+
+Verification must cover:
+- schema validity, unique IDs, real section/source references, and exact placeholder lists;
+- null/unknown behavior, per-metric quality, and unit conversions;
+- LLN equality and z-score grading endpoints;
+- response at exactly 10%, above 10%, legacy/current discordance, and one missing response metric;
+- low FVC with no TLC, normal TLC, and low TLC;
+- high RV/TLC with low TLC, high TLC with normal fractions, and hyperinflation with normal TLC;
+- low DLCO with normal KCO, unknown hemoglobin status, and missing volume domain;
+- signed negative inspiratory pressures and incomplete postural testing;
+- PC20/PD20 units, incomplete challenge, and a censored “greater than maximum” response;
+- FeNO 25/50 ppb boundaries, age scope, and measurement quality;
+- reference/method/correction changes in serial comparisons;
+- semantic conflicts and reevaluation after a metric or quality flag is edited.
+
+Fixtures in pft_test_vectors.json specify representative expectations. Integrate them with the
+repository's real calculation layer and renderer; do not merely snapshot the JSON catalog.
+Any unresolved clinical profile, device reference, boundary policy, or quality algorithm should
+remain explicit and disable the corresponding automatic inference until implemented and reviewed.
+
+17. EXAMPLE COMPACT ASSEMBLED REPORTS
+
+A. Normal measured routine domains:
+“Acceptable, repeatable spirometry. Spirometry, lung volumes, and DLCO are within reference limits.”
+
+B. Obstruction, retained residual volume, low gas transfer:
+“Moderate obstructive ventilatory impairment. No significant bronchodilator response. Lung volumes
+show air trapping without restriction. Hemoglobin-adjusted DLCO is moderately reduced.”
+
+C. Low FVC with absent volumes:
+“FVC is reduced with a preserved FEV1/FVC. Restriction is unconfirmed without lung-volume measurement.
+DLCO is within reference limits.”
+
+D. Low FVC with preserved TLC:
+“Reduced FVC with preserved FEV1/FVC and normal TLC, consistent with a nonspecific ventilatory pattern.
+DLCO is within reference limits.”
+
+E. Confirmed restriction with a measured impairment grade:
+“Restrictive ventilatory impairment with a moderate reduction in FVC. DLCO is moderately reduced.”
+
+F. Response with persistent obstruction:
+“Obstructive ventilatory impairment with a significant FEV1 bronchodilator response. Obstruction
+persists after bronchodilator. Lung volumes show hyperinflation.”
+
+G. Low total transfer with preserved transfer coefficient:
+“DLCO and VA are reduced, with KCO within reference limits. Preserved KCO does not negate the
+reduction in total gas transfer.”
+
+H. Low volitional pressures:
+“MIP and MEP magnitudes are below their reference limits. This raises concern for respiratory muscle
+weakness, although the measurements are effort dependent and technique may contribute.”
+
+I. Incomplete challenge:
+“Methacholine challenge was stopped before the planned maximum dose. A fully negative study cannot
+be established.”
+
+J. Serial change with explicit basis:
+“Compared with the prior study, FVC decreases from 80% to 74% predicted, a decrease of six percentage
+points. Hemoglobin-adjusted DLCO is unchanged. The clinical importance of the FVC change requires
+review of comparability and the clinical setting.”
+
+All examples assume the named measurements, quality, methods, references, and review findings are
+actually available. They illustrate assembly and do not supply findings for any individual patient.

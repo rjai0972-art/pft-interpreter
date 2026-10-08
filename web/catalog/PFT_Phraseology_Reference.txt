@@ -1,0 +1,2193 @@
+PFT PHRASEOLOGY REFERENCE — v1.0
+Reviewed 2026-10-08
+
+Purpose: give another language model a complete, structured starting point for adding metric-dependent PFT phrase selection to an existing repository.
+All phrases below are original examples. They are not official society-mandated wording. Core thresholds and physiologic definitions are tied to the listed primary standards; etiologic comments are clinical inferences requiring review.
+Scope: adult reports in English. This covers clinically distinct routine findings and common adjunct tests, rather than every possible sentence or pediatric/CPET reporting.
+Read START_HERE.txt and PFT_Rules_and_Integration.txt before wiring the catalog to a UI. Evidence metadata belongs in the application reference/help layer, not in the copy-ready clinical report.
+Catalog: 279 finding options and 901 written phrase variants.
+
+TEST QUALITY AND LIMITATIONS
+Use observed or laboratory-supplied quality findings. Grade FEV1 and FVC separately; report quality for each test component. Quality states must never be inferred from the numerical result alone.
+
+quality.acceptable — Acceptable and repeatable
+Eligibility: documented_observation; observations.quality.acceptable = True
+Concise: Acceptable, repeatable spirometry.
+Standard: Spirometry meets acceptability and repeatability criteria.
+Expanded: The spirometry maneuvers meet laboratory acceptability and repeatability criteria; reported values are suitable for interpretation.
+Rule note: Use only when the corresponding limitation or quality status is documented.
+Evidence anchors: S19, L23, D17, M19
+
+quality.limited_repeatability — Repeatability limitation
+Eligibility: documented_observation; observations.quality.limited_repeatability = True
+Concise: Spirometry is not repeatable.
+Standard: Spirometry repeatability criteria were not met.
+Expanded: Variation between efforts limits confidence in the reported spirometric values and in classification near the reference limits.
+Rule note: Use only when the corresponding limitation or quality status is documented.
+Evidence anchors: S19, L23, D17, M19
+
+quality.usable — Usable, incompletely acceptable
+Eligibility: documented_observation; observations.quality.usable = True
+Concise: Spirometry is usable with limitations.
+Standard: Usable spirometry was obtained, although full acceptability criteria were not met.
+Expanded: The available maneuvers support a cautious interpretation; technical limitations should be considered when assessing the size of an abnormality.
+Rule note: Use only when the corresponding limitation or quality status is documented.
+Evidence anchors: S19, L23, D17, M19
+
+quality.invalid — Uninterpretable spirometry
+Eligibility: documented_observation; observations.quality.invalid = True
+Concise: Spirometry is not interpretable.
+Standard: No interpretable spirometry was obtained.
+Expanded: The available maneuvers do not support reliable spirometric classification; repeat testing may be appropriate if clinically useful.
+Rule note: Use only when the corresponding limitation or quality status is documented.
+Evidence anchors: S19, L23, D17, M19
+
+quality.cough_first_second — Cough affecting FEV1
+Eligibility: documented_observation; observations.quality.cough_first_second = True
+Concise: Cough limits FEV1 assessment.
+Standard: Cough during the first second affects interpretation of FEV1.
+Expanded: Cough during the first second compromises FEV1; FVC must be assessed independently for usability.
+Rule note: Use only when the corresponding limitation or quality status is documented.
+Evidence anchors: S19, L23, D17, M19
+
+quality.early_termination — Early termination
+Eligibility: documented_observation; observations.quality.early_termination = True
+Concise: Early termination limits FVC.
+Standard: Premature termination may underestimate FVC.
+Expanded: Early termination limits FVC measurement and may artificially increase FEV1/FVC; apparent ratio preservation should be interpreted cautiously.
+Rule note: Use only when the corresponding limitation or quality status is documented.
+Evidence anchors: S19, L23, D17, M19
+
+quality.incomplete_inspiration — Incomplete inspiration
+Eligibility: documented_observation; observations.quality.incomplete_inspiration = True
+Concise: Incomplete inspiration limits testing.
+Standard: Incomplete inspiration may underestimate measured volumes.
+Expanded: Failure to start at maximal inspiration may underestimate FEV1 and FVC and can affect the interpretation of the overall pattern.
+Rule note: Use only when the corresponding limitation or quality status is documented.
+Evidence anchors: S19, L23, D17, M19
+
+quality.slow_start — Suboptimal start
+Eligibility: documented_observation; observations.quality.slow_start = True
+Concise: The start of expiration is suboptimal.
+Standard: A suboptimal start limits assessment of early expiratory flow.
+Expanded: The initial expiratory effort does not meet laboratory start-of-test criteria; FEV1 and peak flow require caution.
+Rule note: Use only when the corresponding limitation or quality status is documented.
+Evidence anchors: S19, L23, D17, M19
+
+quality.leak — Mouth leak
+Eligibility: documented_observation; observations.quality.leak = True
+Concise: Mouth leak limits testing.
+Standard: A leak at the mouthpiece affects measured flows or volumes.
+Expanded: The observed mouthpiece leak limits the reliability of affected measurements; interpretation should identify which components remain usable.
+Rule note: Use only when the corresponding limitation or quality status is documented.
+Evidence anchors: S19, L23, D17, M19
+
+quality.glottic_closure — Glottic closure
+Eligibility: documented_observation; observations.quality.glottic_closure = True
+Concise: Glottic closure interrupts the maneuver.
+Standard: The maneuver is interrupted by apparent glottic closure.
+Expanded: Observed glottic closure limits the affected portion of the maneuver and may make FVC or inspiratory-loop interpretation unreliable.
+Rule note: Use only when the corresponding limitation or quality status is documented.
+Evidence anchors: S19, L23, D17, M19
+
+quality.variable_effort — Variable effort
+Eligibility: documented_observation; observations.quality.variable_effort = True
+Concise: Variable effort limits interpretation.
+Standard: Effort varies across maneuvers.
+Expanded: Observed variation in effort limits confidence in measured flows and volumes; the report should distinguish usable values from uninterpretable components.
+Rule note: Use only when the corresponding limitation or quality status is documented.
+Evidence anchors: S19, L23, D17, M19
+
+quality.fatigue — Fatigue limitation
+Eligibility: documented_observation; observations.quality.fatigue = True
+Concise: Testing was limited by fatigue.
+Standard: Fatigue limited completion of the test session.
+Expanded: The technician documented fatigue during testing, limiting the number or quality of available maneuvers.
+Rule note: Use only when the corresponding limitation or quality status is documented.
+Evidence anchors: S19, L23, D17, M19
+
+quality.symptoms — Symptom limitation
+Eligibility: documented_observation; observations.quality.symptoms = True
+Concise: Testing was limited by symptoms.
+Standard: Testing was limited by {limiting_symptom}.
+Expanded: The test session was limited by {limiting_symptom}; affected measurements should be interpreted in that context.
+Rule note: Use only when the corresponding limitation or quality status is documented.
+Evidence anchors: S19, L23, D17, M19
+
+quality.volume_limited — Lung-volume quality limitation
+Eligibility: documented_observation; observations.quality.volume_limited = True
+Concise: Lung volumes require caution.
+Standard: Technical limitations reduce confidence in lung-volume measurements.
+Expanded: Lung-volume quality criteria were not fully met; confirmation of restriction or hyperinflation is limited.
+Rule note: Use only when the corresponding limitation or quality status is documented.
+Evidence anchors: S19, L23, D17, M19
+
+quality.dlco_limited — DLCO quality limitation
+Eligibility: documented_observation; observations.quality.dlco_limited = True
+Concise: DLCO requires caution.
+Standard: Technical limitations reduce confidence in DLCO.
+Expanded: DLCO maneuver quality is limited, which may affect the reported value and its severity classification.
+Rule note: Use only when the corresponding limitation or quality status is documented.
+Evidence anchors: S19, L23, D17, M19
+
+quality.dlco_single — Single DLCO maneuver
+Eligibility: documented_observation; observations.quality.dlco_single = True
+Concise: DLCO is based on one maneuver.
+Standard: Only one usable DLCO maneuver was obtained.
+Expanded: DLCO is based on a single usable maneuver; within-session repeatability could not be established.
+Rule note: Use only when the corresponding limitation or quality status is documented.
+Evidence anchors: S19, L23, D17, M19
+
+quality.dlco_low_vi — Low inspired volume during DLCO
+Eligibility: documented_observation; observations.quality.dlco_low_vi = True
+Concise: Low inspired volume limits DLCO.
+Standard: The DLCO maneuver was performed at a reduced inspired volume.
+Expanded: Incomplete inspiration during the DLCO maneuver may reduce VA and affect DLCO and KCO interpretation.
+Rule note: Use only when the corresponding limitation or quality status is documented.
+Evidence anchors: S19, L23, D17, M19
+
+quality.pressure_limited — Respiratory-pressure quality limitation
+Eligibility: documented_observation; observations.quality.pressure_limited = True
+Concise: Pressure measurements are effort limited.
+Standard: Respiratory-pressure measurements have technical or effort limitations.
+Expanded: Volitional pressure measurements are limited by the documented technique or effort and cannot establish muscle weakness on their own.
+Rule note: Use only when the corresponding limitation or quality status is documented.
+Evidence anchors: S19, L23, D17, M19
+
+quality.grade — Reported quality grades
+Eligibility: documented_observation; observations.quality.grade = True
+Concise: Spirometry grades: FEV1 {fev1_grade}, FVC {fvc_grade}.
+Standard: Spirometry quality is graded separately: FEV1 {fev1_grade}; FVC {fvc_grade}.
+Expanded: Laboratory quality grades are FEV1 {fev1_grade} and FVC {fvc_grade}; interpretation should account for the limitations associated with each grade.
+Rule note: Use only when the corresponding limitation or quality status is documented.
+Evidence anchors: S19, L23, D17, M19
+
+INDIVIDUAL SPIROMETRY METRICS
+A metric statement describes the measurement. Physiologic pattern statements use combinations of valid metrics. A low FEV1 is not synonymous with obstruction, and a high FEV1/FVC is not a diagnosis.
+
+metric.fev1.normal — FEV1 within reference limits
+Eligibility: automatic; spirometry.fev1_state = normal
+Concise: FEV1 is within reference limits.
+Standard: FEV1 is within the expected reference range.
+Expanded: FEV1 is within reference limits for the selected equation; its relationship to other measurements determines the physiologic pattern.
+Numeric: FEV1 is {fev1_L} L ({fev1_pct_pred}% predicted; z-score {fev1_z}).
+Evidence anchors: I22
+
+metric.fev1.low — FEV1 below LLN
+Eligibility: automatic; spirometry.fev1_state = low
+Concise: FEV1 is reduced.
+Standard: FEV1 is below the lower limit of normal.
+Expanded: FEV1 is reduced relative to the selected reference equation; this finding alone does not establish its cause.
+Numeric: FEV1 is {fev1_L} L ({fev1_pct_pred}% predicted; z-score {fev1_z}).
+Evidence anchors: I22
+
+metric.fev1.high — FEV1 above ULN
+Eligibility: automatic; spirometry.fev1_state = high
+Concise: FEV1 is above reference limits.
+Standard: FEV1 exceeds the upper limit of normal.
+Expanded: FEV1 is above the reference range; a large measured volume is not, by itself, evidence of obstructive lung disease.
+Numeric: FEV1 is {fev1_L} L ({fev1_pct_pred}% predicted; z-score {fev1_z}).
+Evidence anchors: I22
+
+metric.fvc.normal — FVC within reference limits
+Eligibility: automatic; spirometry.fvc_state = normal
+Concise: FVC is within reference limits.
+Standard: FVC is within the expected reference range.
+Expanded: FVC is within reference limits for the selected equation; its relationship to other measurements determines the physiologic pattern.
+Numeric: FVC is {fvc_L} L ({fvc_pct_pred}% predicted; z-score {fvc_z}).
+Evidence anchors: I22
+
+metric.fvc.low — FVC below LLN
+Eligibility: automatic; spirometry.fvc_state = low
+Concise: FVC is reduced.
+Standard: FVC is below the lower limit of normal.
+Expanded: FVC is reduced relative to the selected reference equation; this finding alone does not establish its cause.
+Numeric: FVC is {fvc_L} L ({fvc_pct_pred}% predicted; z-score {fvc_z}).
+Evidence anchors: I22
+
+metric.fvc.high — FVC above ULN
+Eligibility: automatic; spirometry.fvc_state = high
+Concise: FVC is above reference limits.
+Standard: FVC exceeds the upper limit of normal.
+Expanded: FVC is above the reference range; a large measured volume is not, by itself, evidence of obstructive lung disease.
+Numeric: FVC is {fvc_L} L ({fvc_pct_pred}% predicted; z-score {fvc_z}).
+Evidence anchors: I22
+
+metric.svc.normal — SVC within reference limits
+Eligibility: automatic; spirometry.svc_state = normal
+Concise: SVC is within reference limits.
+Standard: SVC is within the expected reference range.
+Expanded: SVC is within reference limits for the selected equation; its relationship to other measurements determines the physiologic pattern.
+Numeric: SVC is {svc_L} L ({svc_pct_pred}% predicted; z-score {svc_z}).
+Evidence anchors: I22
+
+metric.svc.low — SVC below LLN
+Eligibility: automatic; spirometry.svc_state = low
+Concise: SVC is reduced.
+Standard: SVC is below the lower limit of normal.
+Expanded: SVC is reduced relative to the selected reference equation; this finding alone does not establish its cause.
+Numeric: SVC is {svc_L} L ({svc_pct_pred}% predicted; z-score {svc_z}).
+Evidence anchors: I22
+
+metric.svc.high — SVC above ULN
+Eligibility: automatic; spirometry.svc_state = high
+Concise: SVC is above reference limits.
+Standard: SVC exceeds the upper limit of normal.
+Expanded: SVC is above the reference range; a large measured volume is not, by itself, evidence of obstructive lung disease.
+Numeric: SVC is {svc_L} L ({svc_pct_pred}% predicted; z-score {svc_z}).
+Evidence anchors: I22
+
+metric.ratio.low — FEV1/FVC low
+Eligibility: automatic; spirometry.ratio_state = low
+Concise: FEV1/FVC is reduced.
+Standard: FEV1/FVC is below the lower limit of normal.
+Expanded: A valid FEV1/FVC below the lower limit of normal supports an obstructive ventilatory impairment.
+Numeric: FEV1/FVC is {ratio_percent}% (LLN {ratio_lln_percent}%; z-score {ratio_z}).
+Evidence anchors: I22
+
+metric.ratio.normal — FEV1/FVC normal
+Eligibility: automatic; spirometry.ratio_state = normal
+Concise: FEV1/FVC is preserved.
+Standard: FEV1/FVC is within reference limits.
+Expanded: FEV1/FVC is within reference limits; this does not by itself establish that all pulmonary function is normal.
+Numeric: FEV1/FVC is {ratio_percent}% (LLN {ratio_lln_percent}%; z-score {ratio_z}).
+Evidence anchors: I22
+
+metric.ratio.high — FEV1/FVC high
+Eligibility: automatic; spirometry.ratio_state = high
+Concise: FEV1/FVC is increased.
+Standard: FEV1/FVC is above the reference range.
+Expanded: An increased FEV1/FVC is nonspecific and may accompany a reduced FVC; it does not establish restriction without TLC.
+Numeric: FEV1/FVC is {ratio_percent}% (LLN {ratio_lln_percent}%; z-score {ratio_z}).
+Evidence anchors: I22
+
+metric.ratio.near_lln — Ratio near LLN
+Eligibility: review; spirometry.ratio_near_lln = True
+Concise: FEV1/FVC is near the LLN.
+Standard: FEV1/FVC is close to the lower reference limit.
+Expanded: FEV1/FVC lies near the lower reference limit; biological variability, test quality, and clinical context are relevant.
+Rule note: Near-LLN is a configurable review flag, not a separate ATS/ERS category. Retain the actual low/normal state.
+Evidence anchors: I22
+
+metric.ratio.fixed_only — Below 0.70, at/above LLN
+Eligibility: review; spirometry.fixed_ratio_discordance = fixed_only
+Concise: FEV1/FVC is below 0.70 but preserved by LLN.
+Standard: FEV1/FVC is below the fixed ratio of 0.70 but is not below its age-adjusted LLN.
+Expanded: The fixed-ratio and LLN classifications differ; specify the diagnostic framework rather than automatically labeling this as obstruction.
+Rule note: This does not by itself diagnose or exclude COPD.
+Evidence anchors: I22
+
+metric.ratio.lln_only — Below LLN, at/above 0.70
+Eligibility: review; spirometry.fixed_ratio_discordance = lln_only
+Concise: FEV1/FVC is reduced by LLN despite being at least 0.70.
+Standard: FEV1/FVC is below the LLN despite remaining at or above 0.70.
+Expanded: The age-adjusted reference comparison supports obstruction even though the fixed-ratio threshold is not crossed.
+Evidence anchors: I22
+
+metric.svc.fvc_difference — SVC exceeds FVC
+Eligibility: review; observations.svc_exceeds_fvc = True
+Concise: SVC exceeds FVC.
+Standard: Slow vital capacity is greater than forced vital capacity.
+Expanded: A reproducible SVC greater than FVC may reflect dynamic airway closure during forced expiration; technical differences and effort should also be considered.
+Numeric: SVC exceeds FVC by {svc_fvc_difference_mL} mL.
+Rule note: Do not impose a universal disease-defining difference or replace FEV1/FVC without a configured FEV1/VC reference.
+Evidence anchors: I22
+
+metric.fev1_svc — Reduced FEV1/SVC
+Eligibility: review; observations.fev1_svc_below_valid_lln = True
+Concise: FEV1/SVC is reduced.
+Standard: FEV1/SVC is below the configured reference limit.
+Expanded: A reduced FEV1/SVC may reveal airflow limitation when FEV1/FVC is preserved; interpretation requires an appropriate reference and reproducible vital-capacity maneuvers.
+Evidence anchors: I22
+
+metric.fev1_fev6 — Alternative FEV1/FEV6 ratio
+Eligibility: review; observations.fev1_fev6_valid_reference = True
+Concise: FEV1/FEV6 is {fev1_fev6_state}.
+Standard: FEV1/FEV6 is {fev1_fev6_state} relative to its own reference range.
+Expanded: An alternative FEV1/FEV6 ratio is reported using a validated reference; FEV1/FVC cutoffs are not interchangeable with this ratio.
+Evidence anchors: I22
+
+metric.fev1.mild — FEV1 mild impairment
+Eligibility: automatic; spirometry.fev1_severity = mild
+Concise: FEV1 is mildly reduced.
+Standard: The reduction in FEV1 is mild by z-score.
+Expanded: FEV1 shows mild physiologic impairment using the selected z-score grading scheme.
+Numeric: FEV1 is {fev1_L} L ({fev1_pct_pred}% predicted; z-score {fev1_z}), a mild reduction.
+Rule note: This grades the named measurement, not overall disease severity.
+Evidence anchors: I22
+
+metric.fev1.moderate — FEV1 moderate impairment
+Eligibility: automatic; spirometry.fev1_severity = moderate
+Concise: FEV1 is moderately reduced.
+Standard: The reduction in FEV1 is moderate by z-score.
+Expanded: FEV1 shows moderate physiologic impairment using the selected z-score grading scheme.
+Numeric: FEV1 is {fev1_L} L ({fev1_pct_pred}% predicted; z-score {fev1_z}), a moderate reduction.
+Rule note: This grades the named measurement, not overall disease severity.
+Evidence anchors: I22
+
+metric.fev1.severe — FEV1 severe impairment
+Eligibility: automatic; spirometry.fev1_severity = severe
+Concise: FEV1 is severely reduced.
+Standard: The reduction in FEV1 is severe by z-score.
+Expanded: FEV1 shows severe physiologic impairment using the selected z-score grading scheme.
+Numeric: FEV1 is {fev1_L} L ({fev1_pct_pred}% predicted; z-score {fev1_z}), a severe reduction.
+Rule note: This grades the named measurement, not overall disease severity.
+Evidence anchors: I22
+
+metric.fvc.mild — FVC mild impairment
+Eligibility: automatic; spirometry.fvc_severity = mild
+Concise: FVC is mildly reduced.
+Standard: The reduction in FVC is mild by z-score.
+Expanded: FVC shows mild physiologic impairment using the selected z-score grading scheme.
+Numeric: FVC is {fvc_L} L ({fvc_pct_pred}% predicted; z-score {fvc_z}), a mild reduction.
+Rule note: This grades the named measurement, not overall disease severity.
+Evidence anchors: I22
+
+metric.fvc.moderate — FVC moderate impairment
+Eligibility: automatic; spirometry.fvc_severity = moderate
+Concise: FVC is moderately reduced.
+Standard: The reduction in FVC is moderate by z-score.
+Expanded: FVC shows moderate physiologic impairment using the selected z-score grading scheme.
+Numeric: FVC is {fvc_L} L ({fvc_pct_pred}% predicted; z-score {fvc_z}), a moderate reduction.
+Rule note: This grades the named measurement, not overall disease severity.
+Evidence anchors: I22
+
+metric.fvc.severe — FVC severe impairment
+Eligibility: automatic; spirometry.fvc_severity = severe
+Concise: FVC is severely reduced.
+Standard: The reduction in FVC is severe by z-score.
+Expanded: FVC shows severe physiologic impairment using the selected z-score grading scheme.
+Numeric: FVC is {fvc_L} L ({fvc_pct_pred}% predicted; z-score {fvc_z}), a severe reduction.
+Rule note: This grades the named measurement, not overall disease severity.
+Evidence anchors: I22
+
+SPIROMETRIC AND VENTILATORY PATTERNS
+Use reliable TLC to confirm restriction and mixed impairment. Preserve component labels when quality is limited. PRISm is a defined phenotype whose thresholds must be declared.
+
+pattern.normal — Normal spirometry
+Eligibility: automatic; patterns.normal = True
+Concise: Spirometry is normal.
+Standard: FEV1, FVC, and FEV1/FVC are within reference limits.
+Expanded: Spirometry is within reference limits; lung volumes, gas transfer, and clinical context provide additional information.
+Evidence anchors: I22
+
+pattern.obstruction — Obstructive impairment
+Eligibility: automatic; patterns.obstruction = True
+Concise: Obstructive ventilatory impairment.
+Standard: Spirometry demonstrates an obstructive ventilatory impairment.
+Expanded: FEV1/FVC is below the LLN, supporting an obstructive ventilatory impairment.
+Evidence anchors: I22
+
+pattern.obstruction_preserved_fev1 — Obstruction with preserved FEV1
+Eligibility: automatic; patterns.obstruction_preserved_fev1 = True
+Concise: Obstruction with preserved FEV1.
+Standard: FEV1/FVC is reduced, with FEV1 remaining within reference limits.
+Expanded: An obstructive ventilatory impairment is present despite a preserved FEV1; the ratio identifies the pattern, while FEV1 describes the magnitude of impairment.
+Evidence anchors: I22
+
+pattern.low_fvc_unconfirmed — Low FVC, TLC unavailable
+Eligibility: automatic; patterns.low_fvc_unconfirmed = True
+Concise: Reduced FVC; restriction is unconfirmed.
+Standard: FVC is reduced with a preserved ratio; lung volumes are required to assess for restriction.
+Expanded: The low FVC with preserved FEV1/FVC suggests a possible restrictive pattern, but TLC is needed to distinguish restriction from other causes of reduced vital capacity.
+Evidence anchors: I22
+
+pattern.nonspecific — Nonspecific pattern
+Eligibility: automatic; patterns.nonspecific = True
+Concise: Nonspecific ventilatory pattern.
+Standard: FEV1 and/or FVC are reduced with a preserved FEV1/FVC and normal TLC.
+Expanded: Reduced spirometric volumes with a preserved ratio and TLC within reference limits constitute a nonspecific pattern; the cause requires clinical correlation.
+Evidence anchors: I22
+
+pattern.restriction — Confirmed restriction
+Eligibility: automatic; patterns.restriction = True
+Concise: Restrictive ventilatory impairment.
+Standard: TLC is below the LLN, confirming a restrictive ventilatory impairment.
+Expanded: A reduced TLC confirms restriction; spirometry and gas-transfer findings help characterize the associated physiology.
+Evidence anchors: I22
+
+pattern.simple_restriction — Simple restrictive pattern
+Eligibility: automatic; patterns.simple_restriction = True
+Concise: Simple restrictive pattern.
+Standard: TLC is reduced without disproportionate elevation of residual-volume fractions.
+Expanded: The lung-volume distribution is consistent with a simple restrictive pattern; this describes physiology and does not determine the underlying diagnosis.
+Evidence anchors: I22
+
+pattern.complex_restriction — Complex restrictive pattern
+Eligibility: automatic; patterns.complex_restriction = True
+Concise: Complex restrictive pattern.
+Standard: Restriction is present with an increased residual-volume fraction and a preserved FEV1/FVC.
+Expanded: The reduced TLC with disproportionately retained residual volume and a preserved ratio supports a complex restrictive pattern; reduced thoracic expansion and airway closure are possible contributors.
+Evidence anchors: I22
+
+pattern.mixed — Mixed impairment
+Eligibility: automatic; patterns.mixed = True
+Concise: Mixed obstructive and restrictive impairment.
+Standard: FEV1/FVC and TLC are below their LLNs, indicating mixed impairment.
+Expanded: Both airflow obstruction and restriction are present, supported by a reduced FEV1/FVC and reduced TLC.
+Evidence anchors: I22
+
+pattern.obstruction_low_fvc_unconfirmed — Obstruction and low FVC, TLC unavailable
+Eligibility: automatic; patterns.obstruction_low_fvc_unconfirmed = True
+Concise: Obstruction with reduced FVC; restriction is unconfirmed.
+Standard: An obstructive pattern is present with a low FVC; TLC is required to assess for a concomitant restrictive component.
+Expanded: The reduced FVC may reflect airway closure, gas trapping, or an additional restrictive process; spirometry alone cannot distinguish these.
+Evidence anchors: I22
+
+pattern.obstruction_low_fvc_no_restriction — Low FVC in obstruction, no restriction
+Eligibility: automatic; patterns.obstruction_low_fvc_no_restriction = True
+Concise: Obstruction with low FVC and preserved TLC.
+Standard: FVC is reduced in the setting of obstruction, without a reduced TLC.
+Expanded: Restriction is not demonstrated by TLC; the low FVC may relate to airway closure or incomplete emptying rather than a restrictive component.
+Evidence anchors: I22
+
+pattern.obstruction.mild — Mild obstruction
+Eligibility: automatic; patterns.obstruction_severity = mild
+Concise: Mild obstructive ventilatory impairment.
+Standard: An obstructive ventilatory impairment is present, with mild impairment in FEV1.
+Expanded: FEV1/FVC is below the LLN; the reduction in FEV1 is mild using z-score grading.
+Evidence anchors: I22
+
+pattern.obstruction.moderate — Moderate obstruction
+Eligibility: automatic; patterns.obstruction_severity = moderate
+Concise: Moderate obstructive ventilatory impairment.
+Standard: An obstructive ventilatory impairment is present, with moderate impairment in FEV1.
+Expanded: FEV1/FVC is below the LLN; the reduction in FEV1 is moderate using z-score grading.
+Evidence anchors: I22
+
+pattern.obstruction.severe — Severe obstruction
+Eligibility: automatic; patterns.obstruction_severity = severe
+Concise: Severe obstructive ventilatory impairment.
+Standard: An obstructive ventilatory impairment is present, with severe impairment in FEV1.
+Expanded: FEV1/FVC is below the LLN; the reduction in FEV1 is severe using z-score grading.
+Evidence anchors: I22
+
+pattern.prism — Preserved ratio impaired spirometry phenotype
+Eligibility: review; observations.prism_profile_met = True
+Concise: Preserved ratio impaired spirometry (PRISm).
+Standard: The configured definition of preserved ratio impaired spirometry is met.
+Expanded: FEV1 is reduced with a preserved ratio according to the declared PRISm definition; this phenotype does not confirm restriction or identify a specific disease.
+Rule note: Store the explicit ratio and FEV1 thresholds used; do not silently equate LLN-based findings with the common fixed-ratio/<80% epidemiologic definition.
+Evidence anchors: I22
+
+pattern.dysanapsis — Possible dysanaptic pattern
+Eligibility: review; observations.dysanapsis_considered = True
+Concise: Low ratio with preserved flows and large FVC.
+Standard: A reduced ratio with preserved FEV1 and a relatively large FVC may reflect a dysanaptic pattern.
+Expanded: Airway-to-lung size mismatch is one possible explanation for the reduced ratio with preserved FEV1 and large FVC; symptoms, exposures, bronchodilator response, and longitudinal findings remain relevant.
+Rule note: Do not dismiss abnormal ratios as a normal variant automatically.
+Evidence anchors: I22
+
+pattern.obstruction.legacy_moderately_severe — Legacy moderately severe obstruction
+Eligibility: review; observations.legacy_obstruction_category = moderately_severe
+Concise: Moderately severe obstructive ventilatory impairment by the selected legacy scheme.
+Standard: Obstruction is graded moderately severe using the declared percent-predicted FEV1 scheme.
+Expanded: The legacy percent-predicted FEV1 profile assigns moderately severe impairment; this label is not interchangeable with current z-score grading.
+Evidence anchors: I05
+
+pattern.obstruction.legacy_very_severe — Legacy very severe obstruction
+Eligibility: review; observations.legacy_obstruction_category = very_severe
+Concise: Very severe obstructive ventilatory impairment by the selected legacy scheme.
+Standard: Obstruction is graded very severe using the declared percent-predicted FEV1 scheme.
+Expanded: The legacy percent-predicted FEV1 profile assigns very severe impairment; this label is not interchangeable with current z-score grading.
+Evidence anchors: I05
+
+pattern.restriction.local_grade — Declared local restriction grade
+Eligibility: review; observations.local_restriction_grade_reviewed = True
+Concise: {local_restriction_grade} restrictive impairment by the declared laboratory scheme.
+Standard: Restriction is graded {local_restriction_grade} using {local_restriction_grading_basis}.
+Expanded: Restriction is confirmed by reliable TLC and graded {local_restriction_grade} under the stated laboratory profile ({local_restriction_grading_basis}); the grading basis must be explicit.
+Evidence anchors: I05, I22
+
+MID-EXPIRATORY FLOW, PEAK FLOW, AND MVV
+These measurements are descriptive and cannot independently diagnose small airway disease or respiratory muscle weakness.
+
+flow.fef_low — Reduced FEF25–75
+Eligibility: documented_observation; observations.flow.fef_low = True
+Concise: FEF25–75 is reduced.
+Standard: Mid-expiratory flow is below its reference limit.
+Expanded: Reduced FEF25–75 is a nonspecific finding and does not independently establish small airway disease.
+Evidence anchors: I22, S19, M19
+
+flow.fef_isolated — Isolated low FEF25–75
+Eligibility: documented_observation; observations.flow.fef_isolated = True
+Concise: Isolated reduction in FEF25–75.
+Standard: FEF25–75 is reduced despite preserved conventional spirometric indices.
+Expanded: An isolated low mid-expiratory flow should be interpreted cautiously because it is variable and depends on the measured FVC.
+Evidence anchors: I22, S19, M19
+
+flow.fef_normal — Preserved FEF25–75
+Eligibility: documented_observation; observations.flow.fef_normal = True
+Concise: FEF25–75 is within reference limits.
+Standard: Mid-expiratory flow is within the expected reference range.
+Expanded: A preserved FEF25–75 does not exclude small airway dysfunction and adds no independent disease exclusion.
+Evidence anchors: I22, S19, M19
+
+flow.fef_response — Mid-flow change after bronchodilator
+Eligibility: review; observations.flow.fef_response = True
+Concise: Mid-expiratory flow increases after bronchodilator.
+Standard: FEF25–75 increases after bronchodilator administration.
+Expanded: A change in FEF25–75 is descriptive; it should not be substituted for FEV1 or FVC criteria for a significant bronchodilator response.
+Evidence anchors: I22, S19, M19
+
+flow.pef_low — Reduced peak expiratory flow
+Eligibility: documented_observation; observations.flow.pef_low = True
+Concise: Peak expiratory flow is reduced.
+Standard: Peak expiratory flow is below its reference range.
+Expanded: Low peak flow may reflect airway limitation, a suboptimal start, or effort; interpret it with the loop and maneuver quality.
+Evidence anchors: I22, S19, M19
+
+flow.pef_normal — Preserved peak flow
+Eligibility: documented_observation; observations.flow.pef_normal = True
+Concise: Peak expiratory flow is preserved.
+Standard: Peak expiratory flow is within reference limits.
+Expanded: Peak expiratory flow is within reference limits; this does not exclude airflow limitation elsewhere in the maneuver.
+Evidence anchors: I22, S19, M19
+
+flow.mvv_low — Reduced measured MVV
+Eligibility: documented_observation; observations.flow.mvv_low = True
+Concise: Measured MVV is reduced.
+Standard: Maximum voluntary ventilation is below its reference limit.
+Expanded: Reduced measured MVV is nonspecific and may reflect airflow limitation, ventilatory mechanics, neuromuscular dysfunction, or effort.
+Evidence anchors: I22, S19, M19
+
+flow.mvv_normal — Preserved measured MVV
+Eligibility: documented_observation; observations.flow.mvv_normal = True
+Concise: Measured MVV is preserved.
+Standard: Maximum voluntary ventilation is within reference limits.
+Expanded: Measured MVV is within reference limits; the test remains effort dependent.
+Evidence anchors: I22, S19, M19
+
+flow.mvv_disproportionate — Disproportionately reduced MVV
+Eligibility: review; observations.flow.mvv_disproportionate = True
+Concise: MVV is reduced out of proportion to FEV1.
+Standard: Measured MVV is lower than expected from the spirometric findings.
+Expanded: A disproportionate reduction in MVV may warrant review of effort, ventilatory mechanics, and respiratory muscle function; it is not diagnostic by itself.
+Evidence anchors: I22, S19, M19
+
+flow.mvv_estimated — Estimated MVV
+Eligibility: documented_observation; observations.flow.mvv_estimated = True
+Concise: MVV is estimated from FEV1.
+Standard: MVV is calculated from FEV1 rather than directly measured.
+Expanded: The reported MVV is an estimate using the configured multiplier and should not be interpreted as a direct endurance or muscle-strength measurement.
+Evidence anchors: I22, S19, M19
+
+FLOW-VOLUME AND VOLUME-TIME LOOPS
+All morphology phrases require actual curve review or a documented reviewer observation. Numerical indices cannot establish a loop shape or lesion.
+
+loop.normal — Unremarkable loop
+Eligibility: review; observations.loop.normal = True
+Concise: Flow-volume loop is unremarkable.
+Standard: No reproducible loop abnormality is identified.
+Expanded: The reviewed flow-volume loops show no reproducible abnormal contour; normal loops do not exclude intermittent upper-airway dysfunction.
+Evidence anchors: I22, S19
+
+loop.concave — Expiratory concavity
+Eligibility: review; observations.loop.concave = True
+Concise: Expiratory limb is concave.
+Standard: The expiratory flow-volume limb shows concavity.
+Expanded: Expiratory concavity supports airflow limitation when consistent with the measured indices, but is not specific for a particular airway disorder.
+Evidence anchors: I22, S19
+
+loop.small_preserved_shape — Small loop with preserved contour
+Eligibility: review; observations.loop.small_preserved_shape = True
+Concise: Loop volume is reduced with preserved contour.
+Standard: The flow-volume loop is reduced in size with a relatively preserved shape.
+Expanded: The small loop is compatible with a reduced vital capacity; restriction requires confirmation with TLC.
+Evidence anchors: I22, S19
+
+loop.inspiratory_flattening — Inspiratory flattening
+Eligibility: review; observations.loop.inspiratory_flattening = True
+Concise: Reproducible inspiratory flattening.
+Standard: The inspiratory limb shows reproducible flattening.
+Expanded: Reproducible inspiratory flattening raises concern for variable extrathoracic airflow limitation; correlate with symptoms and further airway evaluation when appropriate.
+Evidence anchors: I22, S19
+
+loop.expiratory_flattening — Expiratory flattening
+Eligibility: review; observations.loop.expiratory_flattening = True
+Concise: Reproducible expiratory flattening.
+Standard: The expiratory limb shows reproducible flattening.
+Expanded: Reproducible expiratory flattening may indicate variable intrathoracic central-airway limitation; loop review and clinical correlation are necessary.
+Evidence anchors: I22, S19
+
+loop.both_flattened — Both limbs flattened
+Eligibility: review; observations.loop.both_flattened = True
+Concise: Both loop limbs show reproducible flattening.
+Standard: Reproducible flattening is present on both inspiratory and expiratory limbs.
+Expanded: Flattening of both limbs raises concern for fixed central or upper-airway obstruction; this is a physiologic clue rather than an anatomic diagnosis.
+Evidence anchors: I22, S19
+
+loop.nonreproducible_flattening — Nonreproducible flattening
+Eligibility: review; observations.loop.nonreproducible_flattening = True
+Concise: Loop flattening is not reproducible.
+Standard: Apparent loop flattening varies between efforts.
+Expanded: Nonreproducible flattening may be technical or effort related and should not be used alone to diagnose central-airway obstruction.
+Evidence anchors: I22, S19
+
+loop.sawtooth — Oscillatory/sawtooth contour
+Eligibility: review; observations.loop.sawtooth = True
+Concise: An oscillatory loop contour is present.
+Standard: The reviewed loop shows an oscillatory or sawtooth contour.
+Expanded: An oscillatory loop contour is nonspecific; assess reproducibility, technique, and relevant upper-airway symptoms.
+Evidence anchors: I22, S19
+
+loop.biphasic — Biphasic expiratory contour
+Eligibility: review; observations.loop.biphasic = True
+Concise: Biphasic expiratory contour.
+Standard: A reproducible biphasic expiratory contour is present.
+Expanded: A biphasic expiratory contour may reflect heterogeneous emptying or central-airway mechanics; it does not identify a lesion on its own.
+Evidence anchors: I22, S19
+
+loop.prolonged_emptying — Prolonged emptying
+Eligibility: review; observations.loop.prolonged_emptying = True
+Concise: Expiratory emptying is prolonged.
+Standard: The volume-time curve shows prolonged expiratory emptying.
+Expanded: Prolonged emptying is compatible with airflow limitation, provided the maneuver is acceptable; duration alone is not diagnostic.
+Evidence anchors: I22, S19
+
+loop.no_plateau — End-expiratory plateau absent
+Eligibility: review; observations.loop.no_plateau = True
+Concise: An end-expiratory plateau was not achieved.
+Standard: The volume-time curve lacks an end-expiratory plateau.
+Expanded: Absence of a plateau requires review against the full end-of-test criteria; it is not, by itself, proof that every reported value is unusable.
+Evidence anchors: I22, S19
+
+loop.upper_airway_no_finding — No reproducible upper-airway pattern
+Eligibility: review; observations.loop.upper_airway_no_finding = True
+Concise: No reproducible central-airway loop pattern.
+Standard: No reproducible loop pattern suggesting central-airway obstruction is identified.
+Expanded: The reviewed loops do not show a reproducible central-airway pattern; intermittent laryngeal obstruction cannot be excluded by a normal resting study.
+Evidence anchors: I22, S19
+
+BRONCHODILATOR RESPONSE
+Keep current technical-response criteria distinct from a legacy profile or disease-specific diagnostic criterion. A significant response and normalization of obstruction are separate findings.
+
+bd.fev1 — FEV1 response
+Eligibility: automatic; bronchodilator.response = fev1
+Concise: Significant bronchodilator response in FEV1.
+Standard: FEV1 increases significantly after bronchodilator administration.
+Expanded: The increase in FEV1 meets the selected bronchodilator-response criterion.
+Evidence anchors: I22
+
+bd.fvc — FVC response
+Eligibility: automatic; bronchodilator.response = fvc
+Concise: Significant bronchodilator response in FVC.
+Standard: FVC increases significantly after bronchodilator administration.
+Expanded: The increase in FVC meets the selected bronchodilator-response criterion; the mechanism is not established by this change alone.
+Evidence anchors: I22
+
+bd.both — FEV1 and FVC response
+Eligibility: automatic; bronchodilator.response = both
+Concise: Significant response in FEV1 and FVC.
+Standard: Both FEV1 and FVC increase significantly after bronchodilator administration.
+Expanded: Both spirometric measurements meet the selected response criterion.
+Evidence anchors: I22
+
+bd.negative — No significant measured response
+Eligibility: automatic; bronchodilator.response = negative
+Concise: No significant bronchodilator response.
+Standard: Neither FEV1 nor FVC meets the selected criterion for a significant bronchodilator response.
+Expanded: A significant spirometric response is not demonstrated on this occasion; this does not exclude asthma or symptomatic benefit from bronchodilator therapy.
+Evidence anchors: I22
+
+bd.not_performed — Bronchodilator testing absent
+Eligibility: automatic; bronchodilator.response = not_performed
+Concise: Bronchodilator testing was not performed.
+Standard: No post-bronchodilator spirometry is available.
+Expanded: Bronchodilator responsiveness cannot be assessed because pre- and post-bronchodilator measurements were not both obtained.
+Evidence anchors: I22
+
+bd.indeterminate — Unreliable comparison
+Eligibility: automatic; bronchodilator.response = indeterminate
+Concise: Bronchodilator response is indeterminate.
+Standard: Technical limitations prevent reliable assessment of bronchodilator response.
+Expanded: Pre- or post-bronchodilator maneuver quality, or missing required data, prevents a valid response classification.
+Evidence anchors: I22
+
+bd.current_numeric — Current criterion with numbers
+Eligibility: automatic; bronchodilator.current_computable = True
+Concise: FEV1 change {bd_fev1_pred_pct}% predicted; FVC change {bd_fvc_pred_pct}% predicted.
+Standard: After bronchodilator, FEV1 changes by {bd_fev1_delta_mL} mL ({bd_fev1_pred_pct}% of predicted) and FVC by {bd_fvc_delta_mL} mL ({bd_fvc_pred_pct}% of predicted).
+Expanded: Bronchodilator-response classification uses the changes relative to predicted FEV1 and FVC, rather than percent change from baseline.
+Numeric: FEV1: {pre_fev1_L} to {post_fev1_L} L, Δ {bd_fev1_delta_mL} mL, {bd_fev1_pred_pct}% of predicted. FVC: {pre_fvc_L} to {post_fvc_L} L, Δ {bd_fvc_delta_mL} mL, {bd_fvc_pred_pct}% of predicted.
+Evidence anchors: I22
+
+bd.legacy_numeric — Legacy profile with numbers
+Eligibility: review; observations.bd_legacy_profile_selected = True
+Concise: Bronchodilator response assessed using the legacy baseline-change profile.
+Standard: FEV1 changes by {bd_fev1_delta_mL} mL ({bd_fev1_baseline_pct}% from baseline); FVC changes by {bd_fvc_delta_mL} mL ({bd_fvc_baseline_pct}% from baseline).
+Expanded: The laboratory-selected legacy profile is reported explicitly; it must not be silently combined with the current predicted-value response criterion.
+Rule note: Exact endpoint operators must match the declared lab profile; historical statements and later summaries differ at the 200 mL boundary.
+Evidence anchors: I22
+
+bd.normalized — Obstruction resolves
+Eligibility: automatic; bronchodilator.obstruction_status = normalized
+Concise: Obstruction resolves after bronchodilator.
+Standard: Post-bronchodilator FEV1/FVC is no longer below the LLN.
+Expanded: The previously reduced ratio normalizes after bronchodilator administration; ratio normalization and a significant volume response should be reported separately.
+Evidence anchors: I22
+
+bd.persistent — Obstruction persists
+Eligibility: automatic; bronchodilator.obstruction_status = persistent
+Concise: Obstruction persists after bronchodilator.
+Standard: Post-bronchodilator FEV1/FVC remains below the LLN.
+Expanded: An obstructive ventilatory impairment remains after bronchodilator administration; this can coexist with a significant FEV1 or FVC response.
+Evidence anchors: I22
+
+bd.normal_baseline_positive — Response with normal baseline spirometry
+Eligibility: automatic; patterns.normal_baseline_bd_positive = True
+Concise: Normal baseline spirometry with a significant bronchodilator response.
+Standard: A significant bronchodilator response is present despite baseline spirometry within reference limits.
+Expanded: The measured response is compatible with variable airway physiology, but does not by itself establish a clinical diagnosis of asthma.
+Evidence anchors: I22
+
+bd.fvc_only_mechanism — Possible volume-response mechanism
+Eligibility: review; observations.bd_fvc_only_mechanism_reviewed = True
+Concise: Predominant FVC response.
+Standard: The bronchodilator response is predominantly a change in FVC.
+Expanded: A predominant FVC response may reflect reduced airway closure or improved emptying; matched maneuver quality is essential before attributing the change to physiology.
+Evidence anchors: I22
+
+bd.subthreshold — Measured subthreshold improvement
+Eligibility: review; observations.bd_subthreshold_increase = True
+Concise: There is a subthreshold increase after bronchodilator.
+Standard: Measured spirometric improvement does not meet the selected significance criterion.
+Expanded: FEV1 and/or FVC increase after bronchodilator, but the changes remain below the selected technical threshold; clinical response cannot be determined from this result alone.
+Evidence anchors: I22
+
+bd.decrease — Post-bronchodilator decrease
+Eligibility: review; observations.bd_decrease = True
+Concise: Spirometric values decrease after bronchodilator.
+Standard: FEV1 and/or FVC decrease on post-bronchodilator testing.
+Expanded: The lower post-bronchodilator values warrant review of effort, technique, fatigue, and timing before a physiologic explanation is assigned.
+Rule note: Do not automatically diagnose paradoxical bronchospasm.
+Evidence anchors: I22
+
+bd.medication — Medication may alter response
+Eligibility: documented_observation; observations.bd_medication_not_withheld = True
+Concise: Recent medication use may affect the measured response.
+Standard: Bronchodilator medication was not withheld according to the testing protocol.
+Expanded: Recent bronchodilator use may blunt the measured incremental response; record the medication and timing when known.
+Evidence anchors: S19
+
+bd.criteria_discordant — Response definitions disagree
+Eligibility: review; observations.bd_criteria_discordant = True
+Concise: Current and legacy response classifications differ.
+Standard: The response meets {bd_met_profile} criteria but not {bd_unmet_profile} criteria.
+Expanded: Different response definitions yield different classifications; the selected laboratory standard and the raw changes should be stated.
+Evidence anchors: I22
+
+LUNG VOLUMES AND VOLUME DISTRIBUTION
+Use volume-specific LLN/ULN and method metadata. Increased RV/TLC can occur because TLC is low; the ratio must be interpreted with absolute volumes.
+
+volume.tlc.normal — TLC normal
+Eligibility: automatic; volumes.tlc_state = normal
+Concise: TLC is within reference limits.
+Standard: TLC is within reference limits relative to the selected reference equation.
+Expanded: TLC is within reference limits. Restriction is defined by a reliable TLC below the LLN; an isolated high TLC does not determine its cause.
+Numeric: TLC is {tlc_L} L ({tlc_pct_pred}% predicted; z-score {tlc_z}).
+Evidence anchors: I22, L23
+
+volume.tlc.low — TLC low
+Eligibility: automatic; volumes.tlc_state = low
+Concise: TLC is reduced.
+Standard: TLC is reduced relative to the selected reference equation.
+Expanded: TLC is reduced. Restriction is defined by a reliable TLC below the LLN; an isolated high TLC does not determine its cause.
+Numeric: TLC is {tlc_L} L ({tlc_pct_pred}% predicted; z-score {tlc_z}).
+Evidence anchors: I22, L23
+
+volume.tlc.high — TLC high
+Eligibility: automatic; volumes.tlc_state = high
+Concise: TLC is increased.
+Standard: TLC is increased relative to the selected reference equation.
+Expanded: TLC is increased. Restriction is defined by a reliable TLC below the LLN; an isolated high TLC does not determine its cause.
+Numeric: TLC is {tlc_L} L ({tlc_pct_pred}% predicted; z-score {tlc_z}).
+Evidence anchors: I22, L23
+
+volume.rv.normal — RV normal
+Eligibility: automatic; volumes.rv_state = normal
+Concise: RV is within reference limits.
+Standard: RV is within reference limits relative to the selected reference equation.
+Expanded: RV is within reference limits. Interpret residual volume alongside TLC and RV/TLC rather than assigning a mechanism from RV alone.
+Numeric: RV is {rv_L} L ({rv_pct_pred}% predicted; z-score {rv_z}).
+Evidence anchors: I22, L23
+
+volume.rv.low — RV low
+Eligibility: automatic; volumes.rv_state = low
+Concise: RV is reduced.
+Standard: RV is reduced relative to the selected reference equation.
+Expanded: RV is reduced. Interpret residual volume alongside TLC and RV/TLC rather than assigning a mechanism from RV alone.
+Numeric: RV is {rv_L} L ({rv_pct_pred}% predicted; z-score {rv_z}).
+Evidence anchors: I22, L23
+
+volume.rv.high — RV high
+Eligibility: automatic; volumes.rv_state = high
+Concise: RV is increased.
+Standard: RV is increased relative to the selected reference equation.
+Expanded: RV is increased. Interpret residual volume alongside TLC and RV/TLC rather than assigning a mechanism from RV alone.
+Numeric: RV is {rv_L} L ({rv_pct_pred}% predicted; z-score {rv_z}).
+Evidence anchors: I22, L23
+
+volume.frc.normal — FRC normal
+Eligibility: automatic; volumes.frc_state = normal
+Concise: FRC is within reference limits.
+Standard: FRC is within reference limits relative to the selected reference equation.
+Expanded: FRC is within reference limits. Interpret the resting lung volume alongside TLC, FRC/TLC, and the measured volume distribution.
+Numeric: FRC is {frc_L} L ({frc_pct_pred}% predicted; z-score {frc_z}).
+Evidence anchors: I22, L23
+
+volume.frc.low — FRC low
+Eligibility: automatic; volumes.frc_state = low
+Concise: FRC is reduced.
+Standard: FRC is reduced relative to the selected reference equation.
+Expanded: FRC is reduced. Interpret the resting lung volume alongside TLC, FRC/TLC, and the measured volume distribution.
+Numeric: FRC is {frc_L} L ({frc_pct_pred}% predicted; z-score {frc_z}).
+Evidence anchors: I22, L23
+
+volume.frc.high — FRC high
+Eligibility: automatic; volumes.frc_state = high
+Concise: FRC is increased.
+Standard: FRC is increased relative to the selected reference equation.
+Expanded: FRC is increased. Interpret the resting lung volume alongside TLC, FRC/TLC, and the measured volume distribution.
+Numeric: FRC is {frc_L} L ({frc_pct_pred}% predicted; z-score {frc_z}).
+Evidence anchors: I22, L23
+
+volume.erv.normal — ERV normal
+Eligibility: automatic; volumes.erv_state = normal
+Concise: ERV is within reference limits.
+Standard: ERV is within reference limits relative to the selected reference equation.
+Expanded: ERV is within reference limits. A reduced ERV is nonspecific and may accompany body habitus, posture, or altered respiratory mechanics.
+Numeric: ERV is {erv_L} L ({erv_pct_pred}% predicted; z-score {erv_z}).
+Evidence anchors: I22, L23
+
+volume.erv.low — ERV low
+Eligibility: automatic; volumes.erv_state = low
+Concise: ERV is reduced.
+Standard: ERV is reduced relative to the selected reference equation.
+Expanded: ERV is reduced. A reduced ERV is nonspecific and may accompany body habitus, posture, or altered respiratory mechanics.
+Numeric: ERV is {erv_L} L ({erv_pct_pred}% predicted; z-score {erv_z}).
+Evidence anchors: I22, L23
+
+volume.erv.high — ERV high
+Eligibility: automatic; volumes.erv_state = high
+Concise: ERV is increased.
+Standard: ERV is increased relative to the selected reference equation.
+Expanded: ERV is increased. A reduced ERV is nonspecific and may accompany body habitus, posture, or altered respiratory mechanics.
+Numeric: ERV is {erv_L} L ({erv_pct_pred}% predicted; z-score {erv_z}).
+Evidence anchors: I22, L23
+
+volume.ic.normal — IC normal
+Eligibility: automatic; volumes.ic_state = normal
+Concise: IC is within reference limits.
+Standard: IC is within reference limits relative to the selected reference equation.
+Expanded: IC is within reference limits. A reduced IC may relate to an elevated resting lung volume, a reduced TLC, or limited inspiration.
+Numeric: IC is {ic_L} L ({ic_pct_pred}% predicted; z-score {ic_z}).
+Evidence anchors: I22, L23
+
+volume.ic.low — IC low
+Eligibility: automatic; volumes.ic_state = low
+Concise: IC is reduced.
+Standard: IC is reduced relative to the selected reference equation.
+Expanded: IC is reduced. A reduced IC may relate to an elevated resting lung volume, a reduced TLC, or limited inspiration.
+Numeric: IC is {ic_L} L ({ic_pct_pred}% predicted; z-score {ic_z}).
+Evidence anchors: I22, L23
+
+volume.ic.high — IC high
+Eligibility: automatic; volumes.ic_state = high
+Concise: IC is increased.
+Standard: IC is increased relative to the selected reference equation.
+Expanded: IC is increased. A reduced IC may relate to an elevated resting lung volume, a reduced TLC, or limited inspiration.
+Numeric: IC is {ic_L} L ({ic_pct_pred}% predicted; z-score {ic_z}).
+Evidence anchors: I22, L23
+
+volume.rv_tlc.normal — RV/TLC normal
+Eligibility: automatic; volumes.rv_tlc_state = normal
+Concise: RV/TLC is preserved.
+Standard: RV/TLC is within reference limits.
+Expanded: RV/TLC is within reference limits; interpret with the absolute volumes.
+Numeric: RV/TLC is {rv_tlc_percent}% (ULN {rv_tlc_uln_percent}%; z-score {rv_tlc_z}).
+Evidence anchors: I22, L23
+
+volume.rv_tlc.high — RV/TLC high
+Eligibility: automatic; volumes.rv_tlc_state = high
+Concise: RV/TLC is increased.
+Standard: RV/TLC is above the upper limit of normal.
+Expanded: RV/TLC is elevated; interpretation depends on absolute volumes, TLC, and maneuver quality.
+Numeric: RV/TLC is {rv_tlc_percent}% (ULN {rv_tlc_uln_percent}%; z-score {rv_tlc_z}).
+Evidence anchors: I22, L23
+
+volume.frc_tlc.normal — FRC/TLC normal
+Eligibility: automatic; volumes.frc_tlc_state = normal
+Concise: FRC/TLC is preserved.
+Standard: FRC/TLC is within reference limits.
+Expanded: FRC/TLC is within reference limits; interpret with the absolute volumes.
+Numeric: FRC/TLC is {frc_tlc_percent}% (ULN {frc_tlc_uln_percent}%; z-score {frc_tlc_z}).
+Evidence anchors: I22, L23
+
+volume.frc_tlc.high — FRC/TLC high
+Eligibility: automatic; volumes.frc_tlc_state = high
+Concise: FRC/TLC is increased.
+Standard: FRC/TLC is above the upper limit of normal.
+Expanded: FRC/TLC is elevated; interpretation depends on absolute volumes, TLC, and maneuver quality.
+Numeric: FRC/TLC is {frc_tlc_percent}% (ULN {frc_tlc_uln_percent}%; z-score {frc_tlc_z}).
+Evidence anchors: I22, L23
+
+volumes.normal — Normal measured volumes
+Eligibility: automatic; volume_patterns.normal = True
+Concise: Lung volumes are within reference limits.
+Standard: The measured lung volumes and volume fractions are within reference limits.
+Expanded: The available reliable lung-volume measurements show no restrictive or hyperinflation pattern.
+Evidence anchors: I22, L23
+
+volumes.air_trapping — Air-trapping pattern
+Eligibility: automatic; volume_patterns.air_trapping = True
+Concise: Lung volumes show an air-trapping pattern.
+Standard: RV/TLC is increased with a non-reduced TLC, supporting air trapping.
+Expanded: An increased residual-volume fraction with a reliable, non-reduced TLC supports air trapping; respiratory muscle weakness and maneuver quality can affect this pattern.
+Evidence anchors: I22, L23
+
+volumes.hyperinflation — Hyperinflation pattern
+Eligibility: automatic; volume_patterns.hyperinflation = True
+Concise: Lung volumes show hyperinflation.
+Standard: The resting and residual-volume fractions are elevated, supporting hyperinflation.
+Expanded: Elevated FRC/TLC and RV/TLC with a non-reduced TLC support hyperinflation; TLC may remain within reference limits.
+Evidence anchors: I22, L23
+
+volumes.hyperinflation_tlc — Hyperinflation with increased TLC
+Eligibility: automatic; volume_patterns.hyperinflation_tlc = True
+Concise: Hyperinflation with increased TLC.
+Standard: TLC is increased with elevated resting or residual-volume fractions.
+Expanded: An increased TLC accompanied by elevated volume fractions supports hyperinflation rather than simply large lungs.
+Evidence anchors: I22, L23
+
+volumes.large_lungs — Large lungs, preserved fractions
+Eligibility: automatic; volume_patterns.large_lungs = True
+Concise: Large lung volumes with preserved volume fractions.
+Standard: TLC is above the ULN with preserved RV/TLC and FRC/TLC.
+Expanded: The high TLC with preserved volume fractions may represent constitutionally large lungs; this is not sufficient to identify disease-related hyperinflation.
+Evidence anchors: I22, L23
+
+volumes.low_tlc_high_ratio — Elevated RV/TLC in restriction
+Eligibility: automatic; volume_patterns.low_tlc_high_ratio = True
+Concise: RV/TLC is increased in the setting of reduced TLC.
+Standard: An increased residual-volume fraction accompanies a reduced TLC.
+Expanded: The elevated RV/TLC may partly reflect the lower TLC; it should not automatically be labeled air trapping without review of absolute RV and the overall pattern.
+Evidence anchors: I22, L23
+
+volumes.rv_high_fraction_normal — High RV, preserved RV/TLC
+Eligibility: automatic; volume_patterns.rv_high_fraction_normal = True
+Concise: RV is increased with a preserved RV/TLC.
+Standard: Residual volume is high in proportion to the total lung volume.
+Expanded: An increased absolute RV with a preserved RV/TLC does not independently establish air trapping.
+Evidence anchors: I22, L23
+
+volumes.unavailable — Lung volumes absent
+Eligibility: automatic; volume_patterns.unavailable = True
+Concise: Lung volumes were not measured.
+Standard: TLC and fractional lung volumes are unavailable.
+Expanded: Restriction, mixed impairment, and volume-distribution abnormalities cannot be assessed directly without reliable lung-volume measurements.
+Evidence anchors: I22, L23
+
+volume.low_erv_context — Low ERV with preserved TLC
+Eligibility: review; observations.low_erv_body_habitus_considered = True
+Concise: Reduced ERV with preserved TLC.
+Standard: ERV is reduced while TLC remains within reference limits.
+Expanded: This volume distribution may reflect body habitus or other extrapulmonary mechanics; it is not specific for obesity.
+Evidence anchors: I22, L23
+
+volume.method_difference — Plethysmography/dilution difference
+Eligibility: review; observations.volume_method_difference = True
+Concise: Lung-volume methods give different results.
+Standard: Plethysmographic TLC differs from gas-dilution TLC.
+Expanded: A method-dependent difference may reflect noncommunicating gas, ventilation heterogeneity, or technical factors; both methods and quality should be stated.
+Numeric: TLC is {tlc_pleth_L} L by plethysmography and {tlc_dilution_L} L by {dilution_method}.
+Evidence anchors: L23
+
+volume.gas_dilution_limit — Dilution method limitation
+Eligibility: review; observations.gas_dilution_underestimate_concern = True
+Concise: Gas dilution may underestimate total lung volume.
+Standard: Ventilation heterogeneity may limit the gas-dilution lung-volume measurement.
+Expanded: Poorly communicating lung regions may be incompletely sampled by gas dilution; apparent restriction requires careful method and quality review.
+Evidence anchors: L23
+
+DLCO AND ADJUSTMENT STATUS
+Grade gas-transfer impairment using the selected DLCO reference and correction basis. A low DLCO is a physiologic finding, not an imaging or vascular diagnosis.
+
+dlco.normal — Normal DLCO
+Eligibility: automatic; diffusion.dlco_state = normal
+Concise: DLCO is within reference limits.
+Standard: Diffusing capacity is within the expected reference range.
+Expanded: DLCO is within reference limits on the reported adjustment basis; a normal value does not exclude early lung or pulmonary vascular disease.
+Numeric: DLCO is {dlco_value} {dlco_units} ({dlco_pct_pred}% predicted; z-score {dlco_z}).
+Evidence anchors: I22, D17
+
+dlco.low — Reduced DLCO
+Eligibility: automatic; diffusion.dlco_state = low
+Concise: DLCO is reduced.
+Standard: Diffusing capacity is below the LLN.
+Expanded: The reduced DLCO indicates impaired measured carbon-monoxide transfer; its mechanism requires integration with volumes, VA, KCO, hemoglobin, and clinical findings.
+Numeric: DLCO is {dlco_value} {dlco_units} ({dlco_pct_pred}% predicted; z-score {dlco_z}).
+Evidence anchors: I22, D17
+
+dlco.high — Elevated DLCO
+Eligibility: automatic; diffusion.dlco_state = high
+Concise: DLCO is increased.
+Standard: Diffusing capacity is above the ULN.
+Expanded: DLCO exceeds the reference range; interpret with hemoglobin, test quality, and the clinical setting.
+Numeric: DLCO is {dlco_value} {dlco_units} ({dlco_pct_pred}% predicted; z-score {dlco_z}).
+Evidence anchors: I22, D17
+
+dlco.not_measured — DLCO not obtained
+Eligibility: automatic; diffusion.dlco_state = not_measured
+Concise: DLCO was not measured.
+Standard: No diffusing-capacity measurement is available.
+Expanded: Gas-transfer function cannot be assessed from this study because DLCO was not obtained.
+Evidence anchors: I22, D17
+
+dlco.invalid — DLCO not interpretable
+Eligibility: automatic; diffusion.dlco_state = invalid
+Concise: DLCO is not interpretable.
+Standard: No reliable diffusing-capacity measurement was obtained.
+Expanded: DLCO maneuver quality does not support a reliable assessment of gas-transfer function.
+Evidence anchors: I22, D17
+
+dlco.mild — Mild DLCO impairment
+Eligibility: automatic; diffusion.dlco_severity = mild
+Concise: DLCO is mildly reduced.
+Standard: Diffusing capacity is reduced to a mild degree.
+Expanded: The reduction in DLCO represents mild gas-transfer impairment by the selected z-score grading scheme.
+Numeric: DLCO is {dlco_pct_pred}% predicted (z-score {dlco_z}), a mild reduction.
+Evidence anchors: I22, D17
+
+dlco.moderate — Moderate DLCO impairment
+Eligibility: automatic; diffusion.dlco_severity = moderate
+Concise: DLCO is moderately reduced.
+Standard: Diffusing capacity is reduced to a moderate degree.
+Expanded: The reduction in DLCO represents moderate gas-transfer impairment by the selected z-score grading scheme.
+Numeric: DLCO is {dlco_pct_pred}% predicted (z-score {dlco_z}), a moderate reduction.
+Evidence anchors: I22, D17
+
+dlco.severe — Severe DLCO impairment
+Eligibility: automatic; diffusion.dlco_severity = severe
+Concise: DLCO is severely reduced.
+Standard: Diffusing capacity is reduced to a severe degree.
+Expanded: The reduction in DLCO represents severe gas-transfer impairment by the selected z-score grading scheme.
+Numeric: DLCO is {dlco_pct_pred}% predicted (z-score {dlco_z}), a severe reduction.
+Evidence anchors: I22, D17
+
+dlco.hb_adjusted — Hemoglobin adjusted
+Eligibility: documented_observation; observations.dlco.hb_adjusted = True
+Concise: DLCO is adjusted for hemoglobin.
+Standard: DLCO interpretation incorporates measured hemoglobin.
+Expanded: The reported DLCO comparison is hemoglobin adjusted using the laboratory method; record the hemoglobin value and its date.
+Evidence anchors: D17
+
+dlco.hb_unadjusted — Hemoglobin unadjusted
+Eligibility: documented_observation; observations.dlco.hb_unadjusted = True
+Concise: DLCO is not adjusted for hemoglobin.
+Standard: The reported DLCO is not hemoglobin adjusted.
+Expanded: Anemia or an elevated hemoglobin may affect the unadjusted DLCO; this limitation should be stated rather than assuming a normal hemoglobin.
+Evidence anchors: D17
+
+dlco.hb_unknown — Unknown adjustment basis
+Eligibility: documented_observation; observations.dlco.hb_unknown = True
+Concise: DLCO adjustment status is unspecified.
+Standard: The hemoglobin-adjustment basis is not established.
+Expanded: The available metadata do not establish whether DLCO was adjusted for hemoglobin; avoid describing the value as corrected or uncorrected until this is clarified.
+Evidence anchors: D17
+
+dlco.anemia — Anemia may contribute
+Eligibility: review; observations.dlco.anemia = True
+Concise: Anemia may contribute to the reduced DLCO.
+Standard: The low hemoglobin may partly explain a reduced unadjusted DLCO.
+Expanded: Because the reported DLCO is unadjusted and anemia is documented, the gas-transfer deficit may partly reflect reduced hemoglobin rather than only pulmonary pathology.
+Evidence anchors: D17
+
+dlco.normalized_with_hb — Reference comparison normal after Hb adjustment
+Eligibility: review; observations.dlco.normalized_with_hb = True
+Concise: DLCO is within reference limits after hemoglobin adjustment.
+Standard: The hemoglobin-adjusted DLCO is within reference limits despite a low unadjusted comparison.
+Expanded: Hemoglobin adjustment changes the DLCO reference classification; retain the adjustment method and measured hemoglobin in the report.
+Evidence anchors: D17
+
+dlco.low_despite_hb — Low despite Hb adjustment
+Eligibility: review; observations.dlco.low_despite_hb = True
+Concise: DLCO remains reduced after hemoglobin adjustment.
+Standard: Hemoglobin-adjusted diffusing capacity remains below the LLN.
+Expanded: The gas-transfer impairment persists on the hemoglobin-adjusted comparison and is not explained solely by the documented hemoglobin level.
+Evidence anchors: D17
+
+dlco.smoking_cohb — Smoking/COHb context
+Eligibility: documented_observation; observations.dlco.smoking_cohb = True
+Concise: Recent smoking may affect DLCO.
+Standard: Recent smoking or elevated carboxyhemoglobin may influence DLCO.
+Expanded: The documented smoking or carboxyhemoglobin context may affect the DLCO measurement; state any laboratory correction that was actually applied.
+Evidence anchors: D17
+
+dlco.oxygen — Oxygen exposure context
+Eligibility: documented_observation; observations.dlco.oxygen = True
+Concise: Supplemental oxygen may affect DLCO.
+Standard: Supplemental oxygen exposure may influence the DLCO measurement.
+Expanded: The oxygen conditions during testing should be documented; do not invent a room-air measurement or oxygen correction.
+Evidence anchors: D17
+
+dlco.isolated_low — Isolated gas-transfer deficit
+Eligibility: automatic; patterns.isolated_low_dlco = True
+Concise: Isolated reduction in DLCO.
+Standard: DLCO is reduced with preserved spirometry and lung volumes.
+Expanded: An isolated gas-transfer deficit is present; PFTs alone do not distinguish its possible causes.
+Evidence anchors: I22, D17
+
+dlco.isolated_differential — Differential for isolated low DLCO
+Eligibility: review; observations.isolated_dlco_differential_reviewed = True
+Concise: Consider pulmonary vascular or early parenchymal causes.
+Standard: A low DLCO with preserved volumes may be seen with pulmonary vascular disease, emphysema, early parenchymal disease, or anemia.
+Expanded: Interpret the isolated DLCO deficit with imaging, hemoglobin, symptoms, and cardiac or vascular assessment; none of these diagnoses is established by the PFT alone.
+Evidence anchors: I22, D17
+
+dlco.elevated_context — Differential for high DLCO
+Eligibility: review; observations.high_dlco_context_reviewed = True
+Concise: Elevated DLCO requires clinical correlation.
+Standard: An increased DLCO may occur with increased pulmonary blood volume, elevated hemoglobin, asthma, or alveolar hemorrhage.
+Expanded: The high DLCO should be interpreted in the relevant clinical setting and after reviewing technique; it is not independently diagnostic of asthma or alveolar hemorrhage.
+Evidence anchors: D17, I22
+
+dlco.legacy_grade — Declared legacy DLCO grade
+Eligibility: review; observations.legacy_dlco_grade_reviewed = True
+Concise: {legacy_dlco_grade} reduction in DLCO by the selected legacy scheme.
+Standard: The reduction in DLCO is graded {legacy_dlco_grade} using {legacy_dlco_profile}.
+Expanded: The stated DLCO grade follows the declared percent-predicted legacy profile; it should not be combined with an unlabeled z-score classification.
+Evidence anchors: I05
+
+VA, KCO, AND VA/TLC
+KCO is the transfer coefficient; do not label it DLCO corrected for alveolar volume. A normal KCO cannot normalize a low DLCO, and VA cannot substitute for TLC.
+
+diffusion.va.normal — VA normal
+Eligibility: automatic; diffusion.va_state = normal
+Concise: VA is within reference limits.
+Standard: VA is within reference limits relative to its reference range.
+Expanded: VA is within reference limits. VA represents the lung volume sampled by the single-breath maneuver, not an independent measurement of TLC.
+Numeric: VA is {va_value} {va_units} ({va_pct_pred}% predicted; z-score {va_z}).
+Evidence anchors: I22, D17
+
+diffusion.va.low — VA low
+Eligibility: automatic; diffusion.va_state = low
+Concise: VA is reduced.
+Standard: VA is reduced relative to its reference range.
+Expanded: VA is reduced. VA represents the lung volume sampled by the single-breath maneuver, not an independent measurement of TLC.
+Numeric: VA is {va_value} {va_units} ({va_pct_pred}% predicted; z-score {va_z}).
+Evidence anchors: I22, D17
+
+diffusion.va.high — VA high
+Eligibility: automatic; diffusion.va_state = high
+Concise: VA is increased.
+Standard: VA is increased relative to its reference range.
+Expanded: VA is increased. VA represents the lung volume sampled by the single-breath maneuver, not an independent measurement of TLC.
+Numeric: VA is {va_value} {va_units} ({va_pct_pred}% predicted; z-score {va_z}).
+Evidence anchors: I22, D17
+
+diffusion.kco.normal — KCO normal
+Eligibility: automatic; diffusion.kco_state = normal
+Concise: KCO is within reference limits.
+Standard: KCO is within reference limits relative to its reference range.
+Expanded: KCO is within reference limits. Interpret KCO alongside VA and DLCO rather than as a volume correction that removes a gas-transfer deficit.
+Numeric: KCO is {kco_value} {kco_units} ({kco_pct_pred}% predicted; z-score {kco_z}).
+Evidence anchors: I22, D17
+
+diffusion.kco.low — KCO low
+Eligibility: automatic; diffusion.kco_state = low
+Concise: KCO is reduced.
+Standard: KCO is reduced relative to its reference range.
+Expanded: KCO is reduced. Interpret KCO alongside VA and DLCO rather than as a volume correction that removes a gas-transfer deficit.
+Numeric: KCO is {kco_value} {kco_units} ({kco_pct_pred}% predicted; z-score {kco_z}).
+Evidence anchors: I22, D17
+
+diffusion.kco.high — KCO high
+Eligibility: automatic; diffusion.kco_state = high
+Concise: KCO is increased.
+Standard: KCO is increased relative to its reference range.
+Expanded: KCO is increased. Interpret KCO alongside VA and DLCO rather than as a volume correction that removes a gas-transfer deficit.
+Numeric: KCO is {kco_value} {kco_units} ({kco_pct_pred}% predicted; z-score {kco_z}).
+Evidence anchors: I22, D17
+
+diffusion.pattern.low_dlco_normal_va_low_kco — Low DLCO, preserved VA, low KCO
+Eligibility: automatic; diffusion_patterns.low_dlco_normal_va_low_kco = True
+Concise: Low DLCO with preserved VA and reduced KCO.
+Standard: The gas-transfer deficit is accompanied by a reduced transfer coefficient and preserved sampled alveolar volume.
+Expanded: The reduced DLCO with preserved VA and low KCO supports reduced transfer efficiency; the PFT does not identify its cause.
+Evidence anchors: I22, D17
+
+diffusion.pattern.low_dlco_low_va_low_kco — Low DLCO, low VA and low KCO
+Eligibility: automatic; diffusion_patterns.low_dlco_low_va_low_kco = True
+Concise: DLCO, VA, and KCO are reduced.
+Standard: The low DLCO reflects both reduced sampled alveolar volume and a low transfer coefficient.
+Expanded: Both VA and KCO are reduced, indicating that the low DLCO is not explained only by a smaller sampled volume.
+Evidence anchors: I22, D17
+
+diffusion.pattern.low_dlco_low_va_normal_kco — Low DLCO, low VA, preserved KCO
+Eligibility: automatic; diffusion_patterns.low_dlco_low_va_normal_kco = True
+Concise: Low DLCO and VA with preserved KCO.
+Standard: DLCO and VA are reduced, while KCO remains within reference limits.
+Expanded: A preserved KCO does not negate the reduced DLCO; interpret the smaller sampled volume in light of inspiration, TLC, and ventilation distribution.
+Evidence anchors: I22, D17
+
+diffusion.pattern.low_dlco_low_va_high_kco — Low DLCO, low VA, high KCO
+Eligibility: automatic; diffusion_patterns.low_dlco_low_va_high_kco = True
+Concise: Low DLCO and VA with increased KCO.
+Standard: DLCO and VA are reduced, while KCO is increased.
+Expanded: An increased KCO with a small VA may accompany incomplete expansion or reduced accessible lung volume; it does not establish normal overall gas transfer.
+Evidence anchors: I22, D17
+
+diffusion.pattern.low_va_tlc — Reduced VA/TLC
+Eligibility: review; diffusion_patterns.low_va_tlc = True
+Concise: VA is low relative to measured TLC.
+Standard: The single-breath sampled volume is reduced relative to the independently measured TLC.
+Expanded: A reduced VA/TLC may indicate ventilation maldistribution or incomplete sampling; assess inspired volume and method quality before assigning a mechanism.
+Numeric: VA/TLC is {va_tlc_percent}%.
+Evidence anchors: I22, D17
+
+diffusion.pattern.preserved_va_tlc — Preserved VA/TLC
+Eligibility: review; diffusion_patterns.preserved_va_tlc = True
+Concise: VA is proportionate to measured TLC.
+Standard: The sampled alveolar volume is proportionate to the independently measured TLC.
+Expanded: VA/TLC is preserved using the laboratory reference or reviewed comparison; this does not by itself exclude parenchymal disease.
+Numeric: VA/TLC is {va_tlc_percent}%.
+Evidence anchors: I22, D17
+
+diffusion.va_expansion_context — Possible incomplete expansion
+Eligibility: review; observations.va_expansion_context_reviewed = True
+Concise: Reduced VA may reflect incomplete lung expansion.
+Standard: The low sampled volume may relate to incomplete expansion or extrapulmonary mechanics.
+Expanded: Reduced VA with preserved or increased KCO may favor incomplete expansion in the appropriate clinical setting; quality, TLC, and imaging are required for interpretation.
+Evidence anchors: I22, D17
+
+RESPIRATORY MUSCLE TESTING, SUPINE VC, AND COUGH FLOW
+Interpret pressure magnitudes with method-appropriate references and documented effort. Low volitional pressures raise concern but do not prove neuromuscular weakness. There is no universal ATS/ERS mild/moderate/severe percent-predicted grading for MIP/MEP.
+
+muscle.mip.normal — MIP normal
+Eligibility: automatic; muscle.mip_state = normal
+Concise: MIP is preserved.
+Standard: MIP magnitude is within its reference range.
+Expanded: MIP magnitude is within reference limits on this effort-dependent test.
+Numeric: MIP is {mip_display_cmH2O} cm H2O ({mip_pct_pred}% predicted; magnitude LLN {mip_magnitude_lln_cmH2O} cm H2O).
+Evidence anchors: M19, M02
+
+muscle.mip.low — MIP low
+Eligibility: automatic; muscle.mip_state = low
+Concise: MIP is reduced.
+Standard: MIP magnitude is below the LLN.
+Expanded: MIP is low; this may reflect muscle weakness, submaximal effort, or technical limitations.
+Numeric: MIP is {mip_display_cmH2O} cm H2O ({mip_pct_pred}% predicted; magnitude LLN {mip_magnitude_lln_cmH2O} cm H2O).
+Evidence anchors: M19, M02
+
+muscle.mep.normal — MEP normal
+Eligibility: automatic; muscle.mep_state = normal
+Concise: MEP is preserved.
+Standard: MEP magnitude is within its reference range.
+Expanded: MEP magnitude is within reference limits on this effort-dependent test.
+Numeric: MEP is {mep_display_cmH2O} cm H2O ({mep_pct_pred}% predicted; magnitude LLN {mep_magnitude_lln_cmH2O} cm H2O).
+Evidence anchors: M19, M02
+
+muscle.mep.low — MEP low
+Eligibility: automatic; muscle.mep_state = low
+Concise: MEP is reduced.
+Standard: MEP magnitude is below the LLN.
+Expanded: MEP is low; this may reflect muscle weakness, submaximal effort, or technical limitations.
+Numeric: MEP is {mep_display_cmH2O} cm H2O ({mep_pct_pred}% predicted; magnitude LLN {mep_magnitude_lln_cmH2O} cm H2O).
+Evidence anchors: M19, M02
+
+muscle.snip.normal — SNIP normal
+Eligibility: automatic; muscle.snip_state = normal
+Concise: SNIP is preserved.
+Standard: SNIP magnitude is within its reference range.
+Expanded: SNIP magnitude is within reference limits on this effort-dependent test.
+Numeric: SNIP is {snip_display_cmH2O} cm H2O ({snip_pct_pred}% predicted; magnitude LLN {snip_magnitude_lln_cmH2O} cm H2O).
+Evidence anchors: M19, M02
+
+muscle.snip.low — SNIP low
+Eligibility: automatic; muscle.snip_state = low
+Concise: SNIP is reduced.
+Standard: SNIP magnitude is below the LLN.
+Expanded: SNIP is low; this may reflect muscle weakness, submaximal effort, or technical limitations.
+Numeric: SNIP is {snip_display_cmH2O} cm H2O ({snip_pct_pred}% predicted; magnitude LLN {snip_magnitude_lln_cmH2O} cm H2O).
+Evidence anchors: M19, M02
+
+muscle.pattern.both_low — Low MIP and MEP
+Eligibility: review; muscle_patterns.both_low = True
+Concise: MIP and MEP are reduced.
+Standard: Inspiratory and expiratory pressure magnitudes are below their reference limits.
+Expanded: Low MIP and MEP raise concern for generalized respiratory muscle weakness when supported by reliable effort and the clinical setting.
+Evidence anchors: M19, M02
+
+muscle.pattern.mip_low_mep_preserved — Low MIP, preserved MEP
+Eligibility: review; muscle_patterns.mip_low_mep_preserved = True
+Concise: MIP is reduced with preserved MEP.
+Standard: Inspiratory pressure is reduced while expiratory pressure remains within reference limits.
+Expanded: This pattern raises concern for inspiratory muscle dysfunction, but low volitional MIP is not specific for diaphragmatic weakness.
+Evidence anchors: M19, M02
+
+muscle.pattern.mep_low_mip_preserved — Low MEP, preserved MIP
+Eligibility: review; muscle_patterns.mep_low_mip_preserved = True
+Concise: MEP is reduced with preserved MIP.
+Standard: Expiratory pressure is reduced while inspiratory pressure remains within reference limits.
+Expanded: This pattern may reflect expiratory muscle dysfunction or technique; it does not by itself establish ineffective cough.
+Evidence anchors: M19, M02
+
+muscle.pattern.both_normal — Preserved MIP and MEP
+Eligibility: automatic; muscle_patterns.both_normal = True
+Concise: MIP and MEP are preserved.
+Standard: Inspiratory and expiratory pressure magnitudes are within reference limits.
+Expanded: These volitional pressure measurements do not demonstrate reduced respiratory muscle strength; intermittent dysfunction or other limitations may require additional evaluation.
+Evidence anchors: M19, M02
+
+muscle.supine_drop — Postural fall in VC
+Eligibility: automatic; muscle.supine_drop_computable = True
+Concise: VC falls {supine_vc_drop_pct}% when supine.
+Standard: Vital capacity decreases by {supine_vc_drop_pct}% from upright to supine.
+Expanded: The postural decrease in vital capacity is reported as a relative change from the upright measurement; interpretation depends on reproducibility and the clinical setting.
+Numeric: Upright VC {upright_vc_L} L; supine VC {supine_vc_L} L; decrease {supine_vc_drop_pct}%.
+Evidence anchors: M19, M02
+
+muscle.supine_concerning — Postural decrease concerning for diaphragm dysfunction
+Eligibility: review; observations.supine_vc_drop_concerning = True
+Concise: Postural VC decline raises concern for diaphragmatic dysfunction.
+Standard: The reproducible fall in VC when supine is greater than expected for the testing method.
+Expanded: An excessive postural fall in vital capacity supports possible diaphragmatic dysfunction in the appropriate clinical setting; it is not diagnostic on its own.
+Rule note: The 2019 ERS statement discusses a 15% decrease as a useful screening clue; thresholds vary by question, method, and baseline mechanics. Do not turn it into a universal diagnosis rule.
+Evidence anchors: M19, M02
+
+muscle.supine_no_excess — No excessive postural fall
+Eligibility: review; observations.supine_vc_drop_not_excessive = True
+Concise: No excessive postural fall in VC.
+Standard: Upright-to-supine VC change is not excessive by the selected laboratory criterion.
+Expanded: No excessive postural decline is identified using the selected criterion; this does not exclude all respiratory muscle dysfunction.
+Evidence anchors: M19, M02
+
+muscle.supine_limited — Postural testing incomplete
+Eligibility: documented_observation; observations.supine_vc_limited = True
+Concise: Supine VC assessment is limited.
+Standard: A reliable upright-to-supine VC comparison could not be obtained.
+Expanded: Postural vital-capacity testing was incomplete or technically limited; diaphragmatic function cannot be inferred from this comparison.
+Evidence anchors: M19, M02
+
+muscle.low_pressures_restriction — Restriction plus low respiratory pressures
+Eligibility: review; observations.restriction_low_pressures_reviewed = True
+Concise: Restriction with reduced respiratory pressures.
+Standard: Restriction is accompanied by reduced MIP and/or MEP.
+Expanded: Respiratory muscle dysfunction may contribute to the restrictive physiology if the pressure measurements are reliable and the clinical setting supports this interpretation.
+Evidence anchors: M19, I22
+
+muscle.pcf_value — Peak cough flow measurement
+Eligibility: documented_observation; observations.pcf_measured = True
+Concise: Peak cough flow is {pcf_L_min} L/min.
+Standard: Peak cough flow measures {pcf_L_min} L/min under {pcf_condition} conditions.
+Expanded: The measured cough flow is {pcf_L_min} L/min; document whether the effort was spontaneous, coached, assisted, or obtained through an artificial airway.
+Evidence anchors: M19, M02
+
+muscle.pcf_low — Reduced cough flow by configured context
+Eligibility: review; observations.pcf_below_context_threshold = True
+Concise: Cough flow is reduced by the selected clinical criterion.
+Standard: Peak cough flow is below the threshold selected for this clinical context.
+Expanded: Reduced cough flow may indicate limited airway-clearance reserve; thresholds and interventions are disease- and method-dependent.
+Rule note: Do not apply 160 or 270 L/min as universal adult reference limits or automatically infer need for a device.
+Evidence anchors: M19, M02
+
+muscle.bulbar_limit — Bulbar/orofacial limitation
+Eligibility: review; observations.bulbar_pressure_limitation = True
+Concise: Bulbar or mouth-seal limitations affect pressure testing.
+Standard: Orofacial or bulbar dysfunction limits mouth-pressure reliability.
+Expanded: An inadequate seal or impaired coordination can produce low MIP/MEP without establishing the degree of respiratory muscle weakness; consider an alternative method when clinically appropriate.
+Evidence anchors: M19, M02
+
+METHACHOLINE CHALLENGE
+Prefer protocol-specific PD20 when delivered dose is known. Preserve dose units and the post-diluent baseline. Severity categories describe airway responsiveness, not asthma severity.
+
+methacholine.positive — Positive methacholine response
+Eligibility: automatic; challenge.methacholine_state = positive
+Concise: Methacholine challenge demonstrates airway hyperresponsiveness.
+Standard: A protocol-defined fall in FEV1 is reached during methacholine challenge.
+Expanded: The challenge demonstrates airway hyperresponsiveness; the result supports clinical assessment but does not independently establish asthma.
+Evidence anchors: B17
+
+methacholine.negative — Completed negative challenge
+Eligibility: automatic; challenge.methacholine_state = negative
+Concise: Methacholine challenge is negative at the tested limit.
+Standard: No protocol-defined FEV1 response is reached at the maximum completed dose.
+Expanded: The completed challenge does not demonstrate airway hyperresponsiveness at the tested limit; medication use and symptom timing affect its diagnostic implications.
+Evidence anchors: B17
+
+methacholine.incomplete — Incomplete challenge
+Eligibility: automatic; challenge.methacholine_state = incomplete
+Concise: Methacholine challenge is incomplete.
+Standard: Testing stopped before completion of the planned challenge protocol.
+Expanded: The challenge cannot be labeled a fully negative study because the planned maximum dose was not completed.
+Evidence anchors: B17
+
+methacholine.indeterminate — Technically indeterminate challenge
+Eligibility: automatic; challenge.methacholine_state = indeterminate
+Concise: Methacholine challenge is indeterminate.
+Standard: Technical limitations prevent reliable challenge interpretation.
+Expanded: The available dose-response measurements do not support a reliable determination of airway responsiveness.
+Evidence anchors: B17
+
+methacholine.diluent_response — Response to diluent/baseline instability
+Eligibility: automatic; challenge.methacholine_state = diluent_response
+Concise: Baseline instability limits challenge interpretation.
+Standard: FEV1 changes substantially after diluent or during baseline assessment.
+Expanded: A diluent response or unstable baseline limits the reliability of the subsequent methacholine dose-response comparison.
+Evidence anchors: B17
+
+methacholine.pd20 — Measured PD20
+Eligibility: automatic; challenge.pd20_reportable = True
+Concise: Methacholine PD20 is {pd20_value} {pd20_unit}.
+Standard: The delivered dose provoking a 20% fall in FEV1 is {pd20_value} {pd20_unit}.
+Expanded: The methacholine dose-response result is reported as protocol-specific PD20; concentration and delivered-dose values are not interchangeable.
+Evidence anchors: B17
+
+methacholine.pc20 — Measured PC20
+Eligibility: automatic; challenge.pc20_reportable = True
+Concise: Methacholine PC20 is {pc20_mg_mL} mg/mL.
+Standard: The concentration provoking a 20% fall in FEV1 is {pc20_mg_mL} mg/mL using {methacholine_protocol}.
+Expanded: PC20 is reported for the documented concentration-based protocol; the method is needed to interpret or compare the value.
+Evidence anchors: B17
+
+methacholine.pd20_not_reached — PD20 exceeds tested limit
+Eligibility: automatic; challenge.pd20_exceeds_max = True
+Concise: PD20 exceeds {max_pd_value} {max_pd_unit}.
+Standard: A 20% fall in FEV1 is not reached through {max_pd_value} {max_pd_unit}.
+Expanded: The completed dose sequence establishes a lower bound on PD20; report greater than the maximum delivered dose rather than inventing an exact PD20.
+Evidence anchors: B17
+
+methacholine.pc20_not_reached — PC20 exceeds tested limit
+Eligibility: automatic; challenge.pc20_exceeds_max = True
+Concise: PC20 exceeds {max_pc20_mg_mL} mg/mL.
+Standard: A 20% fall in FEV1 is not reached through {max_pc20_mg_mL} mg/mL.
+Expanded: The completed concentration sequence establishes a lower bound on PC20 for this protocol; it does not provide an exact concentration response.
+Evidence anchors: B17
+
+methacholine.ahr.borderline — Borderline AHR
+Eligibility: review; observations.methacholine_ahr_category = borderline
+Concise: Borderline airway hyperresponsiveness.
+Standard: The methacholine response falls in the borderline AHR range for the documented protocol.
+Expanded: The protocol-specific result indicates borderline airway hyperresponsiveness; this grading is not a measure of asthma severity.
+Rule note: Use the laboratory-supplied or explicitly configured protocol-specific category; shared printed endpoints require a documented implementation convention.
+Evidence anchors: B17
+
+methacholine.ahr.mild — Mild AHR
+Eligibility: review; observations.methacholine_ahr_category = mild
+Concise: Mild airway hyperresponsiveness.
+Standard: The methacholine response falls in the mild AHR range for the documented protocol.
+Expanded: The protocol-specific result indicates mild airway hyperresponsiveness; this grading is not a measure of asthma severity.
+Rule note: Use the laboratory-supplied or explicitly configured protocol-specific category; shared printed endpoints require a documented implementation convention.
+Evidence anchors: B17
+
+methacholine.ahr.moderate — Moderate AHR
+Eligibility: review; observations.methacholine_ahr_category = moderate
+Concise: Moderate airway hyperresponsiveness.
+Standard: The methacholine response falls in the moderate AHR range for the documented protocol.
+Expanded: The protocol-specific result indicates moderate airway hyperresponsiveness; this grading is not a measure of asthma severity.
+Rule note: Use the laboratory-supplied or explicitly configured protocol-specific category; shared printed endpoints require a documented implementation convention.
+Evidence anchors: B17
+
+methacholine.ahr.marked — Marked AHR
+Eligibility: review; observations.methacholine_ahr_category = marked
+Concise: Marked airway hyperresponsiveness.
+Standard: The methacholine response falls in the marked AHR range for the documented protocol.
+Expanded: The protocol-specific result indicates marked airway hyperresponsiveness; this grading is not a measure of asthma severity.
+Rule note: Use the laboratory-supplied or explicitly configured protocol-specific category; shared printed endpoints require a documented implementation convention.
+Evidence anchors: B17
+
+methacholine.negative_context — Negative test diagnostic implication
+Eligibility: review; observations.negative_methacholine_context_reviewed = True
+Concise: A completed negative test lowers the probability of current asthma.
+Standard: A negative challenge during an appropriate symptomatic period makes current asthma less likely.
+Expanded: The implication of a negative challenge depends on medication withholding, adequate dose delivery, and symptoms at the time of testing; it does not exclude every asthma phenotype.
+Evidence anchors: B17
+
+methacholine.medications — Medication withholding limitation
+Eligibility: documented_observation; observations.challenge_medication_limit = True
+Concise: Medication use may blunt challenge responsiveness.
+Standard: Relevant medication was not withheld according to the challenge protocol.
+Expanded: Recent bronchodilator or other relevant medication use may reduce challenge responsiveness; record the drug and timing and avoid an unqualified negative interpretation.
+Evidence anchors: B17
+
+methacholine.recovery — Documented post-challenge recovery
+Eligibility: documented_observation; observations.challenge_recovery_documented = True
+Concise: FEV1 recovers after bronchodilator.
+Standard: FEV1 returns to {recovery_pct_baseline}% of the challenge baseline after bronchodilator.
+Expanded: Post-challenge recovery is documented by repeat FEV1, rather than inferred from symptom improvement alone.
+Evidence anchors: B17
+
+EXERCISE, EVH, AND OTHER INDIRECT CHALLENGES
+Optional module. Import the actual protocol and laboratory positivity criterion; symptoms alone do not establish exercise-induced bronchoconstriction.
+
+indirect.exercise.positive — Exercise positive
+Eligibility: documented_observation; challenge.exercise_state = positive
+Concise: Exercise challenge is positive.
+Standard: Exercise challenge meets the selected FEV1-response criterion.
+Expanded: A protocol-defined physiologic response is present; interpret with symptoms, medication use, and test conditions.
+Evidence anchors: B18, E13
+
+indirect.exercise.negative — Exercise negative
+Eligibility: documented_observation; challenge.exercise_state = negative
+Concise: Exercise challenge is negative at the completed protocol limit.
+Standard: Exercise challenge does not meet the selected FEV1-response criterion.
+Expanded: No qualifying response was measured under the completed test conditions; an inadequate stimulus or medication effect must be considered when relevant.
+Evidence anchors: B18, E13
+
+indirect.exercise.incomplete — Exercise incomplete
+Eligibility: documented_observation; challenge.exercise_state = incomplete
+Concise: Exercise challenge is incomplete.
+Standard: Adequate completion of the exercise protocol was not achieved.
+Expanded: The result cannot establish absence of responsiveness because the required stimulus or measurement sequence was not completed.
+Evidence anchors: B18, E13
+
+indirect.evh.positive — Eucapnic voluntary hyperpnea positive
+Eligibility: documented_observation; challenge.evh_state = positive
+Concise: Eucapnic voluntary hyperpnea challenge is positive.
+Standard: Eucapnic voluntary hyperpnea challenge meets the selected FEV1-response criterion.
+Expanded: A protocol-defined physiologic response is present; interpret with symptoms, medication use, and test conditions.
+Evidence anchors: B18, E13
+
+indirect.evh.negative — Eucapnic voluntary hyperpnea negative
+Eligibility: documented_observation; challenge.evh_state = negative
+Concise: Eucapnic voluntary hyperpnea challenge is negative at the completed protocol limit.
+Standard: Eucapnic voluntary hyperpnea challenge does not meet the selected FEV1-response criterion.
+Expanded: No qualifying response was measured under the completed test conditions; an inadequate stimulus or medication effect must be considered when relevant.
+Evidence anchors: B18, E13
+
+indirect.evh.incomplete — Eucapnic voluntary hyperpnea incomplete
+Eligibility: documented_observation; challenge.evh_state = incomplete
+Concise: Eucapnic voluntary hyperpnea challenge is incomplete.
+Standard: Adequate completion of the evh protocol was not achieved.
+Expanded: The result cannot establish absence of responsiveness because the required stimulus or measurement sequence was not completed.
+Evidence anchors: B18, E13
+
+indirect.mannitol.positive — Mannitol positive
+Eligibility: documented_observation; challenge.mannitol_state = positive
+Concise: Mannitol challenge is positive.
+Standard: Mannitol challenge meets the selected FEV1-response criterion.
+Expanded: A protocol-defined physiologic response is present; interpret with symptoms, medication use, and test conditions.
+Evidence anchors: B18, E13
+
+indirect.mannitol.negative — Mannitol negative
+Eligibility: documented_observation; challenge.mannitol_state = negative
+Concise: Mannitol challenge is negative at the completed protocol limit.
+Standard: Mannitol challenge does not meet the selected FEV1-response criterion.
+Expanded: No qualifying response was measured under the completed test conditions; an inadequate stimulus or medication effect must be considered when relevant.
+Evidence anchors: B18, E13
+
+indirect.mannitol.incomplete — Mannitol incomplete
+Eligibility: documented_observation; challenge.mannitol_state = incomplete
+Concise: Mannitol challenge is incomplete.
+Standard: Adequate completion of the mannitol protocol was not achieved.
+Expanded: The result cannot establish absence of responsiveness because the required stimulus or measurement sequence was not completed.
+Evidence anchors: B18, E13
+
+indirect.exercise_value — Maximum post-exercise FEV1 fall
+Eligibility: automatic; challenge.exercise_fall_reportable = True
+Concise: Maximum post-exercise FEV1 fall is {exercise_fev1_fall_pct}%.
+Standard: FEV1 falls by a maximum of {exercise_fev1_fall_pct}% from baseline at {exercise_nadir_minutes} minutes after exercise.
+Expanded: The response is quantified from valid serial FEV1 measurements and the documented baseline; record the adequacy of the exercise stimulus.
+Evidence anchors: E13, B18
+
+indirect.mannitol_pd15 — Mannitol PD15
+Eligibility: automatic; challenge.mannitol_pd15_reportable = True
+Concise: Mannitol PD15 is {mannitol_pd15_mg} mg.
+Standard: The cumulative mannitol dose provoking a 15% fall in FEV1 is {mannitol_pd15_mg} mg.
+Expanded: The mannitol response is quantified using the protocol-specific cumulative dose; a methacholine PD20 is a different measure.
+Evidence anchors: B18
+
+FRACTIONAL EXHALED NITRIC OXIDE
+Optional adult module. FeNO describes a biomarker; low FeNO does not exclude asthma and high FeNO is not an independent asthma diagnosis.
+
+feno.low — Adult FeNO low
+Eligibility: automatic; feno.adult_category = low
+Concise: FeNO is low.
+Standard: FeNO is below the adult low-level threshold.
+Expanded: Low FeNO makes substantial eosinophilic airway inflammation less likely in the appropriate setting; smoking and anti-inflammatory treatment may affect the value.
+Numeric: FeNO is {feno_ppb} ppb at {feno_flow_mL_s} mL/s.
+Evidence anchors: F11
+
+feno.intermediate — Adult FeNO intermediate
+Eligibility: automatic; feno.adult_category = intermediate
+Concise: FeNO is in the intermediate range.
+Standard: FeNO is intermediate by the adult ATS categories.
+Expanded: An intermediate FeNO should be interpreted with symptoms, atopy, treatment, and other evidence of airway inflammation.
+Numeric: FeNO is {feno_ppb} ppb at {feno_flow_mL_s} mL/s.
+Evidence anchors: F11
+
+feno.high — Adult FeNO high
+Eligibility: automatic; feno.adult_category = high
+Concise: FeNO is elevated.
+Standard: FeNO is high by the adult ATS categories.
+Expanded: A high FeNO supports eosinophilic airway inflammation and potential corticosteroid responsiveness in the appropriate clinical setting; it does not independently diagnose asthma.
+Numeric: FeNO is {feno_ppb} ppb at {feno_flow_mL_s} mL/s.
+Evidence anchors: F11
+
+feno.on_ics — Low FeNO during ICS treatment
+Eligibility: review; observations.feno_ics_context = True
+Concise: FeNO is low while on inhaled corticosteroid therapy.
+Standard: The FeNO value was obtained during inhaled corticosteroid treatment.
+Expanded: A low FeNO on inhaled corticosteroids may reflect treatment suppression and should not be used alone to exclude a history of eosinophilic airway disease.
+Evidence anchors: F11
+
+feno.high_on_ics — High FeNO during ICS treatment
+Eligibility: review; observations.feno_high_on_ics = True
+Concise: FeNO remains high during inhaled corticosteroid therapy.
+Standard: FeNO is elevated despite reported inhaled corticosteroid use.
+Expanded: The high FeNO warrants review of treatment use, inhaler technique, allergen exposure, and the clinical setting; it does not prove nonadherence.
+Evidence anchors: F11
+
+feno.uninterpretable — FeNO quality limitation
+Eligibility: documented_observation; observations.feno_quality_limit = True
+Concise: FeNO is not reliably interpretable.
+Standard: Technical limitations affect the FeNO measurement.
+Expanded: FeNO quality, exhalation flow, and measurement conditions require review before a category or treatment implication is assigned.
+Evidence anchors: F11
+
+AIRWAY RESISTANCE AND CONDUCTANCE
+Optional module. Apply equipment- and method-specific reference limits. Raw and sGaw do not independently classify or localize disease.
+
+resistance.raw_high — High Raw
+Eligibility: review; observations.resistance.raw_high = True
+Concise: Airway resistance is increased.
+Standard: Measured airway resistance is above its reference limit.
+Expanded: The increased Raw is compatible with altered airway mechanics but depends on lung volume and technique.
+Evidence anchors: L23, I22
+
+resistance.raw_normal — Normal Raw
+Eligibility: review; observations.resistance.raw_normal = True
+Concise: Airway resistance is within reference limits.
+Standard: Raw is within the laboratory reference range.
+Expanded: Raw is preserved using the selected method; this does not exclude airway disease.
+Evidence anchors: L23, I22
+
+resistance.sgaw_low — Low sGaw
+Eligibility: review; observations.resistance.sgaw_low = True
+Concise: Specific airway conductance is reduced.
+Standard: sGaw is below its reference limit.
+Expanded: A reduced sGaw supports impaired conductance in the tested conditions but is not diagnostic of a particular airway disorder.
+Evidence anchors: L23, I22
+
+resistance.sgaw_normal — Normal sGaw
+Eligibility: review; observations.resistance.sgaw_normal = True
+Concise: Specific airway conductance is preserved.
+Standard: sGaw is within the laboratory reference range.
+Expanded: Specific conductance is within reference limits using the selected method and lung-volume basis.
+Evidence anchors: L23, I22
+
+resistance.response — Raw/sGaw response
+Eligibility: review; observations.resistance.response = True
+Concise: Airway mechanics improve after bronchodilator.
+Standard: Raw decreases and/or sGaw increases after bronchodilator.
+Expanded: A change in resistance or conductance is described using the laboratory criterion and must not be substituted for spirometric response criteria.
+Evidence anchors: L23, I22
+
+RESPIRATORY OSCILLOMETRY
+Optional specialist module. Require device, frequency, reference equation, quality, and units. Resistance includes the respiratory system and should not be treated as a direct anatomic measurement of small airways.
+
+oscillometry.normal — Normal oscillometry
+Eligibility: review; observations.oscillometry.normal = True
+Concise: Oscillometry is within reference limits.
+Standard: The reported resistance and reactance indices are within their reference limits.
+Expanded: The valid oscillometry indices are within the configured device- and reference-specific ranges.
+Evidence anchors: O20
+
+oscillometry.r5_high — High low-frequency resistance
+Eligibility: review; observations.oscillometry.r5_high = True
+Concise: Low-frequency resistance is increased.
+Standard: Resistance at 5 Hz is above its reference limit.
+Expanded: Increased R5 reflects altered respiratory-system resistance; it is not specific for small airway disease.
+Evidence anchors: O20
+
+oscillometry.frequency_dependence — Frequency dependence of resistance
+Eligibility: review; observations.oscillometry.frequency_dependence = True
+Concise: Resistance shows increased frequency dependence.
+Standard: The difference between low- and higher-frequency resistance is increased.
+Expanded: Increased R5–R20 is compatible with heterogeneous airway mechanics in the appropriate setting; it is not a direct measurement of peripheral-airway resistance.
+Evidence anchors: O20
+
+oscillometry.x5_low — Abnormal reactance
+Eligibility: review; observations.oscillometry.x5_low = True
+Concise: Low-frequency reactance is more negative than expected.
+Standard: Reactance at 5 Hz is below its lower reference limit.
+Expanded: A more negative X5 supports abnormal respiratory mechanics; the cause requires integration with volumes and other findings.
+Evidence anchors: O20
+
+oscillometry.ax_high — High AX
+Eligibility: review; observations.oscillometry.ax_high = True
+Concise: Reactance area is increased.
+Standard: AX is above its reference limit.
+Expanded: An increased reactance area indicates abnormal respiratory-system reactance using the selected device and reference.
+Evidence anchors: O20
+
+oscillometry.fres_high — High resonant frequency
+Eligibility: review; observations.oscillometry.fres_high = True
+Concise: Resonant frequency is increased.
+Standard: The resonant frequency is above the selected reference limit.
+Expanded: An increased resonant frequency is a nonspecific marker of altered respiratory mechanics.
+Evidence anchors: O20
+
+oscillometry.bd_response — Oscillometric bronchodilator response
+Eligibility: review; observations.oscillometry.bd_response = True
+Concise: Oscillometry shows a bronchodilator response.
+Standard: The change in oscillometry meets the selected response criterion.
+Expanded: An oscillometric response is present using the declared device- and index-specific criterion; this is separate from spirometric bronchodilator responsiveness.
+Evidence anchors: O20
+
+oscillometry.quality_limited — Oscillometry quality limitation
+Eligibility: review; observations.oscillometry.quality_limited = True
+Concise: Oscillometry requires caution.
+Standard: Artifacts or inconsistent acquisitions limit oscillometry interpretation.
+Expanded: Oscillometry quality is limited by the documented acquisition or artifact issue; unreliable values should not drive disease classification.
+Evidence anchors: O20
+
+MULTIPLE-BREATH WASHOUT
+Optional specialist module. Report actual tracer, device, method, reference, and quality. No universal LCI cutoff is supplied in this package.
+
+washout.lci_high — Increased LCI
+Eligibility: review; observations.washout.lci_high = True
+Concise: Lung clearance index is increased.
+Standard: LCI is above the method-specific reference limit.
+Expanded: An increased LCI supports ventilation inhomogeneity using the validated method and reference; it does not identify a specific disease.
+Rule note: Basic wording only. Implementation requires the lab-selected washout standard and device validation beyond this package.
+Evidence anchors: L23
+
+washout.lci_normal — Normal LCI
+Eligibility: review; observations.washout.lci_normal = True
+Concise: Lung clearance index is within reference limits.
+Standard: LCI is within the method-specific reference range.
+Expanded: The washout result does not demonstrate increased LCI using the selected method and reference.
+Rule note: Basic wording only. Implementation requires the lab-selected washout standard and device validation beyond this package.
+Evidence anchors: L23
+
+washout.quality_limited — Washout quality limitation
+Eligibility: review; observations.washout.quality_limited = True
+Concise: Washout quality limits interpretation.
+Standard: Leak, breathing irregularity, or incomplete washout affects the measurement.
+Expanded: The observed washout quality limitation prevents an unqualified ventilation-distribution interpretation.
+Rule note: Basic wording only. Implementation requires the lab-selected washout standard and device validation beyond this package.
+Evidence anchors: L23
+
+WALK TESTING AND EXERTIONAL OXYGENATION
+Optional field-test module, distinct from complete CPET. Preserve oxygen device/flow, walking aid, nadir saturation, signal quality, and limiting symptom.
+
+walk.distance — Measured six-minute walk distance
+Eligibility: documented_observation; observations.walk.distance = True
+Concise: Six-minute walk distance is {walk_distance_m} m.
+Standard: The patient walks {walk_distance_m} m in six minutes under the documented test conditions.
+Expanded: Six-minute walk distance is {walk_distance_m} m; record oxygen support, walking aid, interruptions, and the reason for any limitation.
+Evidence anchors: W14
+
+walk.distance_low — Distance below valid reference
+Eligibility: review; observations.walk.distance_low = True
+Concise: Walk distance is below the selected reference range.
+Standard: Six-minute walk distance is reduced relative to the validated reference.
+Expanded: A reduced distance reflects functional limitation but is not specific for a pulmonary mechanism.
+Evidence anchors: W14
+
+walk.no_desaturation — No qualifying desaturation
+Eligibility: documented_observation; observations.walk.no_desaturation = True
+Concise: No qualifying exertional desaturation is demonstrated.
+Standard: Saturation does not cross the selected desaturation threshold during the completed test.
+Expanded: No qualifying desaturation is measured with an adequate signal under the recorded oxygen conditions; this does not establish room-air oxygenation if supplemental oxygen was used.
+Evidence anchors: W14
+
+walk.desaturation — Documented desaturation
+Eligibility: review; observations.walk.desaturation = True
+Concise: Exertional desaturation is present.
+Standard: SpO2 falls from {walk_baseline_spo2}% to a nadir of {walk_nadir_spo2}% during walking.
+Expanded: A reproducible decline in saturation is observed with an adequate signal; state the oxygen support rather than inferring its cause.
+Evidence anchors: W14
+
+walk.oxygen — Oxygen support during testing
+Eligibility: documented_observation; observations.walk.oxygen = True
+Concise: The walk is performed on {walk_oxygen_description}.
+Standard: Oxygen support during the walk is {walk_oxygen_description}.
+Expanded: The distance and oxygenation findings apply to the recorded device and setting; continuous-flow and pulse-dose settings are not interchangeable.
+Evidence anchors: W14
+
+walk.titration — Observed oxygen titration result
+Eligibility: review; observations.walk.titration = True
+Concise: The recorded oxygen setting maintains the selected saturation target.
+Standard: During the observed titration, {titration_oxygen_description} maintains SpO2 at or above {target_spo2}%.
+Expanded: The reported oxygen setting achieves the selected target during this test; a prescription requires clinical review of device, activity, and context.
+Evidence anchors: W14
+
+walk.stopped — Interrupted/stopped walk
+Eligibility: documented_observation; observations.walk.stopped = True
+Concise: Walk testing stopped early.
+Standard: The walk stops after {walk_duration_min} minutes because of {walk_limiting_symptom}.
+Expanded: The test was not completed; report achieved time and distance without presenting them as a completed six-minute result.
+Evidence anchors: W14
+
+walk.poor_signal — Oximetry limitation
+Eligibility: documented_observation; observations.walk.poor_signal = True
+Concise: Oximetry signal limits assessment.
+Standard: Motion or poor signal quality limits the saturation measurement.
+Expanded: The saturation trace is not sufficiently reliable for an unqualified desaturation interpretation.
+Evidence anchors: W14
+
+COMPARISON WITH PRIOR STUDIES
+Report direction and magnitude separately from clinical importance. Match pre/post-bronchodilator state, method, reference, adjustment basis, and quality. Universal longitudinal significance thresholds are not assumed.
+
+serial.no_prior — No comparable prior study
+Eligibility: documented_observation; observations.serial.no_prior = True
+Concise: No prior comparable PFT is available.
+Standard: No suitable prior study is available for comparison.
+Expanded: A longitudinal change cannot be assessed because a comparable prior measurement is unavailable.
+Evidence anchors: I22, R17
+
+serial.stable_reviewed — No meaningful change after review
+Eligibility: review; observations.serial.stable_reviewed = True
+Concise: No meaningful interval change.
+Standard: There is no meaningful interval change in the reviewed comparable measurements.
+Expanded: The observed differences are judged not clinically meaningful after reviewing test quality, methods, and the clinical context.
+Evidence anchors: I22, R17
+
+serial.fev1_down — Lower FEV1
+Eligibility: documented_observation; observations.serial.fev1_down = True
+Concise: FEV1 is lower than on the prior study.
+Standard: FEV1 decreases by {serial_fev1_delta_mL_abs} mL from {prior_date} to {current_date}.
+Expanded: FEV1 is lower on the comparable study; the magnitude, quality, and clinical context determine the importance of this change.
+Evidence anchors: I22, R17
+
+serial.fev1_up — Higher FEV1
+Eligibility: documented_observation; observations.serial.fev1_up = True
+Concise: FEV1 is higher than on the prior study.
+Standard: FEV1 increases by {serial_fev1_delta_mL_abs} mL from {prior_date} to {current_date}.
+Expanded: FEV1 is higher on the comparable study; this descriptive change does not identify the cause.
+Evidence anchors: I22, R17
+
+serial.fvc_down — Lower FVC
+Eligibility: documented_observation; observations.serial.fvc_down = True
+Concise: FVC is lower than on the prior study.
+Standard: FVC decreases from {prior_fvc_L} to {current_fvc_L} L.
+Expanded: The change in FVC is reported numerically; reduced effort, airway closure, and a restrictive process remain possible explanations depending on the full study.
+Evidence anchors: I22, R17
+
+serial.fvc_up — Higher FVC
+Eligibility: documented_observation; observations.serial.fvc_up = True
+Concise: FVC is higher than on the prior study.
+Standard: FVC increases from {prior_fvc_L} to {current_fvc_L} L.
+Expanded: FVC is higher on the comparable measurement; interpretation requires attention to testing state and quality.
+Evidence anchors: I22, R17
+
+serial.tlc_down — Lower TLC
+Eligibility: documented_observation; observations.serial.tlc_down = True
+Concise: TLC is lower than on the prior study.
+Standard: TLC decreases from {prior_tlc_L} to {current_tlc_L} L.
+Expanded: The lung-volume change should be evaluated using matched methods, reliable maneuvers, and the accompanying spirometric findings.
+Evidence anchors: I22, R17
+
+serial.dlco_down — Lower DLCO
+Eligibility: documented_observation; observations.serial.dlco_down = True
+Concise: DLCO is lower than on the prior study.
+Standard: DLCO decreases from {prior_dlco_value} to {current_dlco_value} {dlco_units}.
+Expanded: The gas-transfer change requires matched hemoglobin-adjustment and testing conditions before attributing it to pulmonary progression.
+Evidence anchors: I22, R17
+
+serial.dlco_up — Higher DLCO
+Eligibility: documented_observation; observations.serial.dlco_up = True
+Concise: DLCO is higher than on the prior study.
+Standard: DLCO increases from {prior_dlco_value} to {current_dlco_value} {dlco_units}.
+Expanded: The higher gas-transfer measurement should be interpreted with hemoglobin, test quality, and the clinical context.
+Evidence anchors: I22, R17
+
+serial.absolute_pp — Change in percentage points
+Eligibility: documented_observation; observations.serial.absolute_pp = True
+Concise: {serial_metric_label} changes by {serial_signed_pp_change} percentage points predicted.
+Standard: {serial_metric_label} changes from {prior_pct_pred}% to {current_pct_pred}% predicted, a difference of {serial_signed_pp_change} percentage points.
+Expanded: The stated change is an absolute difference in percent-predicted values, not a relative percent change from baseline.
+Evidence anchors: I22, R17
+
+serial.relative — Relative change
+Eligibility: documented_observation; observations.serial.relative = True
+Concise: {serial_metric_label} changes by {serial_relative_pct}% from baseline.
+Standard: The relative change in {serial_metric_label} from the prior measured value is {serial_relative_pct}%.
+Expanded: Relative change uses the prior measured value as the denominator and should not be confused with percentage-point change in percent predicted.
+Evidence anchors: I22, R17
+
+serial.reference_changed — Reference equation changed
+Eligibility: documented_observation; observations.serial.reference_changed = True
+Concise: Reference equations differ between studies.
+Standard: Percent-predicted values and z-scores use different reference equations.
+Expanded: Part of the reported reference-normalized change may reflect the equation change; compare measured values and consider recomputation using a common valid reference.
+Evidence anchors: I22, R17, RN23
+
+serial.method_changed — Measurement method changed
+Eligibility: documented_observation; observations.serial.method_changed = True
+Concise: Testing methods differ between studies.
+Standard: A method difference limits direct longitudinal comparison.
+Expanded: Differences in equipment, lung-volume method, or testing protocol may contribute to the apparent change.
+Evidence anchors: I22, R17
+
+serial.quality_changed — Quality limits comparison
+Eligibility: documented_observation; observations.serial.quality_changed = True
+Concise: Test quality limits serial comparison.
+Standard: Differences in maneuver quality reduce confidence in the interval change.
+Expanded: The measured change may be influenced by unequal test quality; avoid an unqualified progression or improvement statement.
+Evidence anchors: I22, R17
+
+serial.hb_changed — DLCO adjustment changed
+Eligibility: documented_observation; observations.serial.hb_changed = True
+Concise: DLCO correction bases differ.
+Standard: The two DLCO studies use different hemoglobin-adjustment bases.
+Expanded: Differences in hemoglobin measurement or correction method limit attribution of the DLCO change to pulmonary disease.
+Evidence anchors: I22, R17
+
+serial.bd_state_changed — Bronchodilator state differs
+Eligibility: documented_observation; observations.serial.bd_state_changed = True
+Concise: Pre- and post-bronchodilator states differ.
+Standard: The compared studies were obtained in different bronchodilator states.
+Expanded: A comparison between pre- and post-bronchodilator measurements may reflect treatment state as well as longitudinal physiology.
+Evidence anchors: I22, R17
+
+serial.new_obstruction — Newly reduced ratio
+Eligibility: review; observations.serial.new_obstruction = True
+Concise: A reduced FEV1/FVC is newly demonstrated.
+Standard: FEV1/FVC is now below the LLN on comparable testing.
+Expanded: A newly reduced ratio is demonstrated; review proximity to the LLN and test quality before assigning clinical significance.
+Evidence anchors: I22, R17
+
+serial.new_restriction — Newly low TLC
+Eligibility: review; observations.serial.new_restriction = True
+Concise: Restriction is newly demonstrated.
+Standard: TLC is now below the LLN on reliable comparable testing.
+Expanded: A new restrictive ventilatory impairment is supported by the low TLC; the underlying cause requires clinical assessment.
+Evidence anchors: I22, R17
+
+serial.ppf_fvc — PPF physiologic FVC threshold only
+Eligibility: review; observations.ppf_fvc_threshold_context_confirmed = True
+Concise: FVC change meets the PPF physiologic threshold.
+Standard: The comparable FVC decline meets the FVC component of the PPF physiologic criterion.
+Expanded: In the documented non-IPF fibrotic ILD setting and time window, the FVC decline meets a physiologic PPF threshold; a full PPF determination requires the other guideline domains and exclusion of alternative explanations.
+Evidence anchors: P22
+
+serial.ppf_dlco — PPF physiologic DLCO threshold only
+Eligibility: review; observations.ppf_dlco_threshold_context_confirmed = True
+Concise: DLCO change meets the PPF physiologic threshold.
+Standard: The comparable hemoglobin-adjusted DLCO decline meets the DLCO component of the PPF physiologic criterion.
+Expanded: In the documented non-IPF fibrotic ILD setting and time window, the DLCO decline meets a physiologic PPF threshold; this alone does not establish PPF and alternative causes of a DLCO decline must be considered.
+Evidence anchors: P22
+
+INTEGRATED IMPRESSION OPTIONS
+These are reusable report assemblies rather than diagnoses. The underlying component findings must be valid. Differential and etiologic interpretation remain review-only.
+
+impression.all_normal — All tested routine domains normal
+Eligibility: automatic; integrated.all_normal = True
+Concise: Normal spirometry, lung volumes, and DLCO.
+Standard: Spirometry, lung volumes, and diffusing capacity are within reference limits.
+Expanded: The tested routine pulmonary-function domains are within reference limits; this does not exclude disease outside the sensitivity or scope of these tests.
+Evidence anchors: I22, D17, L23
+
+impression.spiro_only_normal — Normal spirometry only
+Eligibility: automatic; integrated.spiro_only_normal = True
+Concise: Normal spirometry.
+Standard: The available spirometric measurements are within reference limits.
+Expanded: Spirometry is normal; a statement of normal complete pulmonary function is not supported without the other requested test domains.
+Evidence anchors: I22, D17, L23
+
+impression.obstruction_normal_dlco — Obstruction, preserved gas transfer
+Eligibility: automatic; integrated.obstruction_normal_dlco = True
+Concise: Obstruction with preserved DLCO.
+Standard: An obstructive ventilatory impairment is present with diffusing capacity within reference limits.
+Expanded: Airflow obstruction is demonstrated without a measured gas-transfer deficit; this physiology alone does not distinguish asthma from other airway disorders.
+Evidence anchors: I22, D17, L23
+
+impression.obstruction_low_dlco — Obstruction, low gas transfer
+Eligibility: automatic; integrated.obstruction_low_dlco = True
+Concise: Obstruction with reduced DLCO.
+Standard: An obstructive ventilatory impairment is accompanied by reduced diffusing capacity.
+Expanded: The combined findings show airflow limitation and gas-transfer impairment; a specific cause requires imaging and clinical correlation.
+Evidence anchors: I22, D17, L23
+
+impression.obstruction_trapping — Obstruction with trapping
+Eligibility: automatic; integrated.obstruction_trapping = True
+Concise: Obstruction with air trapping.
+Standard: An obstructive ventilatory impairment is accompanied by an air-trapping lung-volume pattern.
+Expanded: Spirometry and volume distribution show airflow limitation with retained residual volume; the mechanism is not specific to one airway diagnosis.
+Evidence anchors: I22, D17, L23
+
+impression.obstruction_hyperinflation — Obstruction with hyperinflation
+Eligibility: automatic; integrated.obstruction_hyperinflation = True
+Concise: Obstruction with hyperinflation.
+Standard: An obstructive ventilatory impairment is accompanied by a hyperinflation volume pattern.
+Expanded: Both airflow limitation and increased resting or residual-volume fractions are demonstrated.
+Evidence anchors: I22, D17, L23
+
+impression.restriction_normal_dlco — Restriction, preserved gas transfer
+Eligibility: automatic; integrated.restriction_normal_dlco = True
+Concise: Restriction with preserved DLCO.
+Standard: A restrictive ventilatory impairment is present with DLCO within reference limits.
+Expanded: Restriction is confirmed without a measured gas-transfer deficit; preserved DLCO does not independently establish an extrapulmonary cause.
+Evidence anchors: I22, D17, L23
+
+impression.restriction_low_dlco — Restriction, impaired gas transfer
+Eligibility: automatic; integrated.restriction_low_dlco = True
+Concise: Restriction with reduced DLCO.
+Standard: A restrictive ventilatory impairment is accompanied by a gas-transfer deficit.
+Expanded: The combined restrictive and diffusion abnormalities are compatible with several processes, including parenchymal disease, but do not establish ILD.
+Evidence anchors: I22, D17, L23
+
+impression.mixed_low_dlco — Mixed impairment, low DLCO
+Eligibility: automatic; integrated.mixed_low_dlco = True
+Concise: Mixed impairment with reduced DLCO.
+Standard: Mixed obstructive and restrictive impairment is accompanied by a gas-transfer deficit.
+Expanded: Reliable spirometry and TLC support mixed impairment, with an additional reduction in measured gas transfer.
+Evidence anchors: I22, D17, L23
+
+impression.nonspecific_low_dlco — Nonspecific pattern, low DLCO
+Eligibility: automatic; integrated.nonspecific_low_dlco = True
+Concise: Nonspecific pattern with reduced DLCO.
+Standard: Reduced spirometric volumes with preserved ratio and normal TLC are accompanied by low DLCO.
+Expanded: A nonspecific ventilatory pattern and gas-transfer deficit are present; the combined findings warrant clinical correlation rather than a spirometry-only diagnosis of restriction.
+Evidence anchors: I22, D17, L23
+
+impression.isolated_diffusion — Preserved volumes, low DLCO
+Eligibility: automatic; integrated.isolated_diffusion = True
+Concise: Preserved spirometry and lung volumes with reduced DLCO.
+Standard: The only demonstrated routine functional abnormality is reduced diffusing capacity.
+Expanded: A gas-transfer deficit is present despite preserved spirometry and volumes; technical and clinical contributors should be assessed.
+Evidence anchors: I22, D17, L23
+
+impression.emphysema_context — Possible emphysema physiology
+Eligibility: review; observations.emphysema_physiology_reviewed = True
+Concise: The pattern is compatible with emphysema in the appropriate setting.
+Standard: Obstruction, hyperinflation, and reduced DLCO may support emphysema physiology.
+Expanded: The combination is compatible with emphysema when supported by imaging and clinical history; the PFT pattern alone does not confirm the diagnosis.
+Evidence anchors: I22
+
+impression.extrapulmonary_context — Possible extrapulmonary restriction
+Eligibility: review; observations.extrapulmonary_restriction_reviewed = True
+Concise: An extrapulmonary contribution to restriction is possible.
+Standard: The restrictive pattern with relatively preserved transfer findings may reflect reduced lung expansion.
+Expanded: Body habitus, chest-wall mechanics, or respiratory muscle dysfunction may contribute in the appropriate setting; PFTs alone do not distinguish these from every parenchymal process.
+Evidence anchors: I22
+
+impression.parenchymal_context — Possible parenchymal contribution
+Eligibility: review; observations.parenchymal_restriction_reviewed = True
+Concise: A parenchymal contribution to restriction is possible.
+Standard: Restriction with impaired gas transfer may reflect parenchymal lung disease.
+Expanded: The findings can support concern for parenchymal disease when concordant with imaging and history; pulmonary vascular, hemoglobin, and technical contributors may also affect DLCO.
+Evidence anchors: I22
+
+OPTIONAL FOLLOW-UP LANGUAGE
+Suggestions are offered for clinician selection. They must not automatically create orders, prescribe treatment, or claim a diagnosis.
+
+followup.volumes — Obtain volumes to assess low FVC
+Eligibility: review; observations.followup.volumes = True
+Concise: Consider lung volumes to assess for restriction.
+Standard: Lung-volume measurement may clarify the reduced FVC.
+Expanded: If clinically indicated, reliable TLC measurement can distinguish restriction from other causes of reduced vital capacity.
+Evidence anchors: I22, R17, M19
+
+followup.repeat_quality — Repeat limited testing
+Eligibility: review; observations.followup.repeat_quality = True
+Concise: Consider repeat testing if clinically useful.
+Standard: Repeat testing may improve confidence if the result will affect care.
+Expanded: A repeat study with improved maneuver quality may clarify the pattern or its severity if this information is clinically consequential.
+Evidence anchors: I22, R17, M19
+
+followup.hb — Clarify hemoglobin basis
+Eligibility: review; observations.followup.hb = True
+Concise: Consider hemoglobin-adjusted DLCO assessment.
+Standard: A current hemoglobin and the laboratory adjustment method may clarify the gas-transfer finding.
+Expanded: If anemia or a change in hemoglobin is clinically relevant, a consistent hemoglobin-adjusted comparison may improve interpretation.
+Evidence anchors: I22, R17, M19
+
+followup.airway — Further airway assessment
+Eligibility: review; observations.followup.airway = True
+Concise: Consider further airway evaluation.
+Standard: Reproducible central-airway loop abnormalities may warrant additional evaluation.
+Expanded: Persistent, reproducible loop flattening should be correlated with symptoms and, when appropriate, anatomic or laryngeal assessment.
+Evidence anchors: I22, R17, M19
+
+followup.muscle — Further muscle assessment
+Eligibility: review; observations.followup.muscle = True
+Concise: Consider additional respiratory muscle assessment.
+Standard: Repeat or complementary respiratory muscle testing may clarify the low pressure values.
+Expanded: If the clinical concern persists, complementary testing may help distinguish true muscle dysfunction from limitations of volitional mouth-pressure measurements.
+Evidence anchors: I22, R17, M19
+
+followup.challenge — Challenge testing if indicated
+Eligibility: review; observations.followup.challenge = True
+Concise: Consider bronchial challenge if clinically indicated.
+Standard: A normal spirometric study may be followed by bronchial challenge when the diagnostic question warrants it.
+Expanded: Bronchial challenge can be considered within an appropriate clinical assessment when variable airway disease remains a concern despite nondiagnostic spirometry.
+Evidence anchors: I22, R17, M19
+
+followup.correlate — Clinical correlation
+Eligibility: review; observations.followup.correlate = True
+Concise: Correlate with the clinical setting.
+Standard: Interpret these physiologic findings alongside symptoms, exposures, and relevant imaging.
+Expanded: The PFT describes measured physiology; the clinical diagnosis requires integration with the relevant history and other investigations.
+Evidence anchors: I22, R17, M19
+
+PRIMARY SOURCES
+Source anchors support definitions and test principles, not verbatim sentence wording.
+I05 — Interpretative strategies for lung function tests (2005)
+https://doi.org/10.1183/09031936.05.00035205
+Use: Historical impairment and bronchodilator profiles; not the default current grading.
+
+I22 — ERS/ATS technical standard on interpretive strategies for routine lung function tests (2022)
+https://doi.org/10.1183/13993003.01499-2021
+Use: Physiologic classification, z-score impairment, bronchodilator response, uncertainty.
+
+S19 — Standardization of Spirometry 2019 Update: An Official ATS/ERS Technical Statement (2019)
+https://pmc.ncbi.nlm.nih.gov/articles/PMC6794117/
+Use: Spirometry measurement, maneuver quality, separate FEV1/FVC quality assessment.
+
+L23 — ERS/ATS technical statement: standardisation of the measurement of lung volumes, 2023 update (2023)
+https://doi.org/10.1183/13993003.01519-2022
+Use: Lung-volume methods and quality; read with November 2023 correction.
+
+D17 — 2017 ERS/ATS standards for single-breath carbon monoxide uptake in the lung (2017)
+https://doi.org/10.1183/13993003.00016-2016
+Use: DLCO technique, adjustment, and reporting.
+
+R17 — Recommendations for a Standardized Pulmonary Function Report: An Official ATS Technical Statement (2017)
+https://doi.org/10.1164/rccm.201710-1981ST
+Use: Report contents, quality communication, measured values.
+
+M19 — ERS statement on respiratory muscle testing at rest and during exercise (2019)
+https://doi.org/10.1183/13993003.01214-2018
+Use: MIP/MEP, volitional limitations, upright/supine vital capacity.
+
+M02 — ATS/ERS Statement on Respiratory Muscle Testing (2002)
+https://doi.org/10.1164/rccm.166.4.518
+Use: Respiratory pressure measurement and physiologic interpretation.
+
+B17 — ERS technical standard on bronchial challenge testing: general considerations and performance of methacholine challenge tests (2017)
+https://doi.org/10.1183/13993003.01526-2016
+Use: Delivered dose, PC20/PD20, protocol dependence, AHR categories.
+
+B18 — ERS technical standard on bronchial challenge testing: pathophysiology and methodology of indirect airway challenge testing (2018)
+https://doi.org/10.1183/13993003.01033-2018
+Use: Exercise, EVH, mannitol and other indirect challenges.
+
+E13 — An Official ATS Clinical Practice Guideline: Exercise-induced Bronchoconstriction (2013)
+https://doi.org/10.1164/rccm.201303-0437ST
+Use: Post-exercise FEV1 response and interpretation.
+
+F11 — An Official ATS Clinical Practice Guideline: Interpretation of Exhaled Nitric Oxide Levels for Clinical Applications (2011)
+https://pmc.ncbi.nlm.nih.gov/articles/PMC4408724/
+Use: Adult FeNO categories and context.
+
+O20 — Technical standards for respiratory oscillometry (2020)
+https://doi.org/10.1183/13993003.00753-2019
+Use: Impedance measurements, quality, reference and device dependence.
+
+W14 — An official ERS/ATS technical standard: field walking tests in chronic respiratory disease (2014)
+https://doi.org/10.1183/09031936.00150314
+Use: Walk-test performance, distance, oxygen and serial comparability.
+
+P22 — Idiopathic Pulmonary Fibrosis (an Update) and Progressive Pulmonary Fibrosis in Adults: An Official ATS/ERS/JRS/ALAT Clinical Practice Guideline (2022)
+https://pmc.ncbi.nlm.nih.gov/articles/PMC9851481/
+Use: Disease-specific PPF context for longitudinal physiology.
+
+RN23 — Race and Ethnicity in Pulmonary Function Test Interpretation: An Official ATS Statement (2023)
+https://pmc.ncbi.nlm.nih.gov/articles/PMC10112445/
+Use: Race-neutral spirometry references and implications of reference changes.
+

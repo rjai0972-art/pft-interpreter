@@ -80,3 +80,15 @@ and the single-file browser version (`PFT_Interpreter_standalone.html`) always w
 - `npm test` checks the shell's logic without needing a screen.
 - Code signing is optional and not set up. For Windows add a signing certificate to the build; for Mac add an Apple Developer ID and notarization.
   Until then the first-launch steps above are needed.
+
+## How the reading is built (version 3.2)
+
+The report is assembled from a reviewed adult PFT phrase catalog (279 findings, 901 wording variants; original
+wording anchored to the ERS/ATS 2022 interpretive standard, ATS/ERS 2019 spirometry, ERS/ATS 2023 lung volumes,
+ERS/ATS 2017 DLCO, ERS 2019 respiratory-muscle and ERS 2017 challenge standards) and a rules layer that computes
+every measurement state before any wording is chosen. Unknown never counts as normal; a component that failed
+quality criteria drives no pattern or severity statement; a low FVC is "restriction unconfirmed" until TLC is known;
+a preserved KCO never cancels a low DLCO; the hemoglobin basis is stated, not assumed. The Interpretation reads the
+ventilatory pattern, lung volumes and gas transfer together, then the bronchodilator response, the adjunct tests and
+the serial change. Interpretive context (disease names, differentials, follow-up) is offered as suggested additions
+and included only when tapped. Source code and tests: `web/`; the catalog and its rule specification: `web/catalog/`.

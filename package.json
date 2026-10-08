@@ -1,7 +1,7 @@
 {
   "name": "pft-interpreter",
   "productName": "PFT Interpreter",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "description": "Pulmonary function test interpretation (ERS/ATS 2022, z-score / LLN) with Learn pages, 6MWD trend and a local case bank.",
   "author": "PFT Interpreter",
   "license": "UNLICENSED",

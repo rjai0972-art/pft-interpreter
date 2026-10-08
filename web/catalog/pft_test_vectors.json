@@ -1,0 +1,1227 @@
+{
+  "version": "1.0.0",
+  "scope": "Framework-independent fixture specifications. Inputs are simplified normalized examples, not a clinical patient record.",
+  "automated_check_scope": "Arithmetic and representative pattern expectations were checked in a scratch reference checker; actual repository calculation/renderer integration is still required.",
+  "machine_checkable_fixtures": [
+    {
+      "id": "z_equals_lln",
+      "kind": "z_state",
+      "inputs": {
+        "z": -1.645
+      },
+      "expected": {
+        "state": "normal",
+        "severity": "preserved"
+      },
+      "eligible_phrase_ids": [],
+      "blocked_phrase_ids": [],
+      "note": ""
+    },
+    {
+      "id": "z_just_below_lln",
+      "kind": "z_state",
+      "inputs": {
+        "z": -1.646
+      },
+      "expected": {
+        "state": "low",
+        "severity": "mild"
+      },
+      "eligible_phrase_ids": [],
+      "blocked_phrase_ids": [],
+      "note": ""
+    },
+    {
+      "id": "z_equals_minus_2_5",
+      "kind": "z_state",
+      "inputs": {
+        "z": -2.5
+      },
+      "expected": {
+        "state": "low",
+        "severity": "mild"
+      },
+      "eligible_phrase_ids": [],
+      "blocked_phrase_ids": [],
+      "note": ""
+    },
+    {
+      "id": "z_below_minus_2_5",
+      "kind": "z_state",
+      "inputs": {
+        "z": -2.5001
+      },
+      "expected": {
+        "state": "low",
+        "severity": "moderate"
+      },
+      "eligible_phrase_ids": [],
+      "blocked_phrase_ids": [],
+      "note": ""
+    },
+    {
+      "id": "z_equals_minus_4",
+      "kind": "z_state",
+      "inputs": {
+        "z": -4.0
+      },
+      "expected": {
+        "state": "low",
+        "severity": "moderate"
+      },
+      "eligible_phrase_ids": [],
+      "blocked_phrase_ids": [],
+      "note": ""
+    },
+    {
+      "id": "z_below_minus_4",
+      "kind": "z_state",
+      "inputs": {
+        "z": -4.0001
+      },
+      "expected": {
+        "state": "low",
+        "severity": "severe"
+      },
+      "eligible_phrase_ids": [],
+      "blocked_phrase_ids": [],
+      "note": ""
+    },
+    {
+      "id": "z_missing",
+      "kind": "z_state",
+      "inputs": {
+        "z": null
+      },
+      "expected": {
+        "state": "unknown",
+        "severity": "unknown"
+      },
+      "eligible_phrase_ids": [],
+      "blocked_phrase_ids": [],
+      "note": ""
+    },
+    {
+      "id": "z_high",
+      "kind": "z_state",
+      "inputs": {
+        "z": 1.7
+      },
+      "expected": {
+        "state": "high",
+        "severity": "preserved"
+      },
+      "eligible_phrase_ids": [],
+      "blocked_phrase_ids": [],
+      "note": ""
+    },
+    {
+      "id": "quality_blocks_z",
+      "kind": "z_state",
+      "inputs": {
+        "z": -3,
+        "reliable": false
+      },
+      "expected": {
+        "state": "invalid",
+        "severity": "unknown"
+      },
+      "eligible_phrase_ids": [],
+      "blocked_phrase_ids": [],
+      "note": ""
+    },
+    {
+      "id": "normal_spiro_volumes_unknown",
+      "kind": "pattern",
+      "inputs": {
+        "ratio": "normal",
+        "fev1": "normal",
+        "fvc": "normal",
+        "tlc": null
+      },
+      "expected": {
+        "pattern": "normal",
+        "restriction": "unconfirmed"
+      },
+      "eligible_phrase_ids": [
+        "pattern.normal",
+        "impression.spiro_only_normal"
+      ],
+      "blocked_phrase_ids": [
+        "impression.all_normal",
+        "pattern.restriction"
+      ],
+      "note": ""
+    },
+    {
+      "id": "low_fvc_tlc_missing",
+      "kind": "pattern",
+      "inputs": {
+        "ratio": "normal",
+        "fev1": "low",
+        "fvc": "low",
+        "tlc": null
+      },
+      "expected": {
+        "pattern": "low_fvc_unconfirmed",
+        "restriction": "unconfirmed"
+      },
+      "eligible_phrase_ids": [
+        "pattern.low_fvc_unconfirmed"
+      ],
+      "blocked_phrase_ids": [
+        "pattern.restriction",
+        "pattern.nonspecific"
+      ],
+      "note": ""
+    },
+    {
+      "id": "low_fvc_normal_tlc",
+      "kind": "pattern",
+      "inputs": {
+        "ratio": "normal",
+        "fev1": "low",
+        "fvc": "low",
+        "tlc": "normal"
+      },
+      "expected": {
+        "pattern": "nonspecific",
+        "restriction": "not_demonstrated"
+      },
+      "eligible_phrase_ids": [
+        "pattern.nonspecific"
+      ],
+      "blocked_phrase_ids": [
+        "pattern.restriction",
+        "pattern.low_fvc_unconfirmed"
+      ],
+      "note": ""
+    },
+    {
+      "id": "low_fvc_low_tlc",
+      "kind": "pattern",
+      "inputs": {
+        "ratio": "normal",
+        "fev1": "low",
+        "fvc": "low",
+        "tlc": "low"
+      },
+      "expected": {
+        "pattern": "restriction",
+        "restriction": "confirmed"
+      },
+      "eligible_phrase_ids": [
+        "pattern.restriction"
+      ],
+      "blocked_phrase_ids": [
+        "pattern.nonspecific",
+        "pattern.low_fvc_unconfirmed"
+      ],
+      "note": ""
+    },
+    {
+      "id": "low_ratio_preserved_fev1",
+      "kind": "pattern",
+      "inputs": {
+        "ratio": "low",
+        "fev1": "normal",
+        "fvc": "normal",
+        "tlc": "normal"
+      },
+      "expected": {
+        "pattern": "obstruction_preserved_fev1",
+        "restriction": "not_demonstrated"
+      },
+      "eligible_phrase_ids": [
+        "pattern.obstruction_preserved_fev1"
+      ],
+      "blocked_phrase_ids": [
+        "pattern.normal"
+      ],
+      "note": ""
+    },
+    {
+      "id": "low_ratio_low_tlc",
+      "kind": "pattern",
+      "inputs": {
+        "ratio": "low",
+        "fev1": "low",
+        "fvc": "low",
+        "tlc": "low"
+      },
+      "expected": {
+        "pattern": "mixed",
+        "restriction": "confirmed"
+      },
+      "eligible_phrase_ids": [
+        "pattern.mixed"
+      ],
+      "blocked_phrase_ids": [
+        "pattern.nonspecific",
+        "pattern.low_fvc_unconfirmed"
+      ],
+      "note": ""
+    },
+    {
+      "id": "obstruction_low_fvc_tlc_missing",
+      "kind": "pattern",
+      "inputs": {
+        "ratio": "low",
+        "fev1": "low",
+        "fvc": "low",
+        "tlc": null
+      },
+      "expected": {
+        "pattern": "obstruction_low_fvc_unconfirmed",
+        "restriction": "unconfirmed"
+      },
+      "eligible_phrase_ids": [
+        "pattern.obstruction_low_fvc_unconfirmed"
+      ],
+      "blocked_phrase_ids": [
+        "pattern.mixed"
+      ],
+      "note": ""
+    },
+    {
+      "id": "obstruction_low_fvc_normal_tlc",
+      "kind": "pattern",
+      "inputs": {
+        "ratio": "low",
+        "fev1": "low",
+        "fvc": "low",
+        "tlc": "normal"
+      },
+      "expected": {
+        "pattern": "obstruction_low_fvc_no_restriction",
+        "restriction": "not_demonstrated"
+      },
+      "eligible_phrase_ids": [
+        "pattern.obstruction_low_fvc_no_restriction"
+      ],
+      "blocked_phrase_ids": [
+        "pattern.mixed"
+      ],
+      "note": ""
+    },
+    {
+      "id": "unreliable_ratio",
+      "kind": "pattern",
+      "inputs": {
+        "ratio": "invalid",
+        "fev1": "normal",
+        "fvc": "low",
+        "tlc": null
+      },
+      "expected": {
+        "pattern": "indeterminate",
+        "restriction": "unconfirmed"
+      },
+      "eligible_phrase_ids": [],
+      "blocked_phrase_ids": [
+        "pattern.normal",
+        "pattern.obstruction",
+        "pattern.nonspecific"
+      ],
+      "note": ""
+    },
+    {
+      "id": "low_fvc_high_tlc",
+      "kind": "pattern",
+      "inputs": {
+        "ratio": "normal",
+        "fev1": "low",
+        "fvc": "low",
+        "tlc": "high"
+      },
+      "expected": {
+        "pattern": "low_volumes_high_tlc_review",
+        "restriction": "not_demonstrated"
+      },
+      "eligible_phrase_ids": [],
+      "blocked_phrase_ids": [
+        "pattern.nonspecific",
+        "pattern.restriction"
+      ],
+      "note": "A high TLC is not the normal TLC required by the catalog nonspecific-pattern phrase."
+    },
+    {
+      "id": "bd_exactly_10",
+      "kind": "bd",
+      "inputs": {
+        "fev1": {
+          "pre": "1.8",
+          "post": "2.1",
+          "predicted": "3.0",
+          "reliable": true
+        },
+        "fvc": {
+          "pre": "3.0",
+          "post": "3.0",
+          "predicted": "4.0",
+          "reliable": true
+        }
+      },
+      "expected": {
+        "response": "negative",
+        "fev1_pred_pct": 10.0
+      },
+      "eligible_phrase_ids": [
+        "bd.negative"
+      ],
+      "blocked_phrase_ids": [
+        "bd.fev1"
+      ],
+      "note": ""
+    },
+    {
+      "id": "bd_just_above_10",
+      "kind": "bd",
+      "inputs": {
+        "fev1": {
+          "pre": "1.8",
+          "post": "2.1003",
+          "predicted": "3.0",
+          "reliable": true
+        },
+        "fvc": {
+          "pre": "3.0",
+          "post": "3.0",
+          "predicted": "4.0",
+          "reliable": true
+        }
+      },
+      "expected": {
+        "response": "fev1",
+        "fev1_pred_pct": 10.01
+      },
+      "eligible_phrase_ids": [
+        "bd.fev1"
+      ],
+      "blocked_phrase_ids": [
+        "bd.negative"
+      ],
+      "note": ""
+    },
+    {
+      "id": "bd_fvc_response_only",
+      "kind": "bd",
+      "inputs": {
+        "fev1": {
+          "pre": "1.5",
+          "post": "1.6",
+          "predicted": "3.0",
+          "reliable": true
+        },
+        "fvc": {
+          "pre": "2.0",
+          "post": "2.5",
+          "predicted": "4.0",
+          "reliable": true
+        }
+      },
+      "expected": {
+        "response": "fvc",
+        "fvc_pred_pct": 12.5
+      },
+      "eligible_phrase_ids": [
+        "bd.fvc"
+      ],
+      "blocked_phrase_ids": [
+        "bd.negative"
+      ],
+      "note": ""
+    },
+    {
+      "id": "bd_both",
+      "kind": "bd",
+      "inputs": {
+        "fev1": {
+          "pre": "1.5",
+          "post": "1.9",
+          "predicted": "3.0",
+          "reliable": true
+        },
+        "fvc": {
+          "pre": "2.0",
+          "post": "2.5",
+          "predicted": "4.0",
+          "reliable": true
+        }
+      },
+      "expected": {
+        "response": "both"
+      },
+      "eligible_phrase_ids": [
+        "bd.both"
+      ],
+      "blocked_phrase_ids": [
+        "bd.negative"
+      ],
+      "note": ""
+    },
+    {
+      "id": "bd_positive_one_metric_missing",
+      "kind": "bd",
+      "inputs": {
+        "fev1": {
+          "pre": "1.5",
+          "post": "1.9",
+          "predicted": "3.0",
+          "reliable": true
+        },
+        "fvc": null
+      },
+      "expected": {
+        "response": "fev1"
+      },
+      "eligible_phrase_ids": [
+        "bd.fev1"
+      ],
+      "blocked_phrase_ids": [
+        "bd.negative",
+        "bd.current_numeric"
+      ],
+      "note": "Positive FEV1 response remains reportable; do not call it FEV1-only or infer the FVC response."
+    },
+    {
+      "id": "bd_negative_one_metric_missing",
+      "kind": "bd",
+      "inputs": {
+        "fev1": {
+          "pre": "1.5",
+          "post": "1.6",
+          "predicted": "3.0",
+          "reliable": true
+        },
+        "fvc": null
+      },
+      "expected": {
+        "response": "indeterminate"
+      },
+      "eligible_phrase_ids": [
+        "bd.indeterminate"
+      ],
+      "blocked_phrase_ids": [
+        "bd.negative"
+      ],
+      "note": ""
+    },
+    {
+      "id": "bd_missing_predicted",
+      "kind": "bd",
+      "inputs": {
+        "fev1": {
+          "pre": "1.5",
+          "post": "1.9",
+          "predicted": null,
+          "reliable": true
+        },
+        "fvc": null
+      },
+      "expected": {
+        "response": "indeterminate"
+      },
+      "eligible_phrase_ids": [
+        "bd.indeterminate"
+      ],
+      "blocked_phrase_ids": [
+        "bd.fev1"
+      ],
+      "note": ""
+    },
+    {
+      "id": "bd_invalid_post",
+      "kind": "bd",
+      "inputs": {
+        "fev1": {
+          "pre": "1.5",
+          "post": "1.9",
+          "predicted": "3.0",
+          "reliable": false
+        },
+        "fvc": {
+          "pre": "2.0",
+          "post": "2.0",
+          "predicted": "4.0",
+          "reliable": true
+        }
+      },
+      "expected": {
+        "response": "indeterminate"
+      },
+      "eligible_phrase_ids": [
+        "bd.indeterminate"
+      ],
+      "blocked_phrase_ids": [
+        "bd.negative"
+      ],
+      "note": ""
+    },
+    {
+      "id": "bd_legacy_current_disagree",
+      "kind": "bd",
+      "inputs": {
+        "fev1": {
+          "pre": "1.20",
+          "post": "1.44",
+          "predicted": "3.0",
+          "reliable": true
+        },
+        "fvc": {
+          "pre": "2.0",
+          "post": "2.0",
+          "predicted": "4.0",
+          "reliable": true
+        }
+      },
+      "expected": {
+        "response": "negative",
+        "fev1_pred_pct": 8.0,
+        "fev1_baseline_pct": 20.0,
+        "legacy_ge_200_profile": true
+      },
+      "eligible_phrase_ids": [
+        "bd.negative"
+      ],
+      "blocked_phrase_ids": [
+        "bd.fev1"
+      ],
+      "note": "The 240 mL and 20% baseline increase meets the declared legacy profile but not current >10% predicted."
+    },
+    {
+      "id": "bd_negative_change",
+      "kind": "bd",
+      "inputs": {
+        "fev1": {
+          "pre": "2.0",
+          "post": "1.7",
+          "predicted": "3.0",
+          "reliable": true
+        },
+        "fvc": {
+          "pre": "3.0",
+          "post": "2.9",
+          "predicted": "4.0",
+          "reliable": true
+        }
+      },
+      "expected": {
+        "response": "negative"
+      },
+      "eligible_phrase_ids": [
+        "bd.negative"
+      ],
+      "blocked_phrase_ids": [
+        "bd.fev1",
+        "bd.fvc"
+      ],
+      "note": "A decrease does not meet a positive response criterion and does not diagnose paradoxical bronchospasm."
+    },
+    {
+      "id": "normal_tlc_high_rv_fraction",
+      "kind": "volume_pattern",
+      "inputs": {
+        "tlc": "normal",
+        "rv_tlc": "high",
+        "frc_tlc": "normal"
+      },
+      "expected": {
+        "volume_pattern": "air_trapping"
+      },
+      "eligible_phrase_ids": [
+        "volumes.air_trapping"
+      ],
+      "blocked_phrase_ids": [
+        "volumes.large_lungs"
+      ],
+      "note": ""
+    },
+    {
+      "id": "low_tlc_high_rv_fraction",
+      "kind": "volume_pattern",
+      "inputs": {
+        "tlc": "low",
+        "rv_tlc": "high",
+        "frc_tlc": "normal"
+      },
+      "expected": {
+        "volume_pattern": "low_tlc_high_ratio"
+      },
+      "eligible_phrase_ids": [
+        "volumes.low_tlc_high_ratio"
+      ],
+      "blocked_phrase_ids": [
+        "volumes.air_trapping"
+      ],
+      "note": ""
+    },
+    {
+      "id": "large_lungs",
+      "kind": "volume_pattern",
+      "inputs": {
+        "tlc": "high",
+        "rv_tlc": "normal",
+        "frc_tlc": "normal"
+      },
+      "expected": {
+        "volume_pattern": "large_lungs"
+      },
+      "eligible_phrase_ids": [
+        "volumes.large_lungs"
+      ],
+      "blocked_phrase_ids": [
+        "volumes.hyperinflation"
+      ],
+      "note": ""
+    },
+    {
+      "id": "hyperinflation_normal_tlc",
+      "kind": "volume_pattern",
+      "inputs": {
+        "tlc": "normal",
+        "rv_tlc": "high",
+        "frc_tlc": "high"
+      },
+      "expected": {
+        "volume_pattern": "hyperinflation"
+      },
+      "eligible_phrase_ids": [
+        "volumes.hyperinflation"
+      ],
+      "blocked_phrase_ids": [
+        "volumes.large_lungs"
+      ],
+      "note": ""
+    },
+    {
+      "id": "hyperinflation_high_tlc",
+      "kind": "volume_pattern",
+      "inputs": {
+        "tlc": "high",
+        "rv_tlc": "high",
+        "frc_tlc": "high"
+      },
+      "expected": {
+        "volume_pattern": "hyperinflation_tlc"
+      },
+      "eligible_phrase_ids": [
+        "volumes.hyperinflation_tlc"
+      ],
+      "blocked_phrase_ids": [
+        "volumes.large_lungs"
+      ],
+      "note": ""
+    },
+    {
+      "id": "high_tlc_missing_fraction",
+      "kind": "volume_pattern",
+      "inputs": {
+        "tlc": "high",
+        "rv_tlc": null,
+        "frc_tlc": "normal"
+      },
+      "expected": {
+        "volume_pattern": "unclassified"
+      },
+      "eligible_phrase_ids": [],
+      "blocked_phrase_ids": [
+        "volumes.large_lungs",
+        "volumes.hyperinflation"
+      ],
+      "note": ""
+    },
+    {
+      "id": "low_dlco_normal_kco",
+      "kind": "diffusion_pattern",
+      "inputs": {
+        "dlco": "low",
+        "va": "low",
+        "kco": "normal"
+      },
+      "expected": {
+        "diffusion_pattern": "low_dlco_low_va_normal_kco"
+      },
+      "eligible_phrase_ids": [
+        "diffusion.pattern.low_dlco_low_va_normal_kco"
+      ],
+      "blocked_phrase_ids": [
+        "dlco.normal"
+      ],
+      "note": ""
+    },
+    {
+      "id": "low_dlco_low_va_low_kco",
+      "kind": "diffusion_pattern",
+      "inputs": {
+        "dlco": "low",
+        "va": "low",
+        "kco": "low"
+      },
+      "expected": {
+        "diffusion_pattern": "low_dlco_low_va_low_kco"
+      },
+      "eligible_phrase_ids": [
+        "diffusion.pattern.low_dlco_low_va_low_kco"
+      ],
+      "blocked_phrase_ids": [
+        "dlco.normal"
+      ],
+      "note": ""
+    },
+    {
+      "id": "low_dlco_missing_kco",
+      "kind": "diffusion_pattern",
+      "inputs": {
+        "dlco": "low",
+        "va": "low",
+        "kco": null
+      },
+      "expected": {
+        "diffusion_pattern": "unclassified"
+      },
+      "eligible_phrase_ids": [],
+      "blocked_phrase_ids": [
+        "diffusion.pattern.low_dlco_low_va_normal_kco"
+      ],
+      "note": ""
+    },
+    {
+      "id": "mip_signed_weaker",
+      "kind": "pressure",
+      "inputs": {
+        "value": -60,
+        "magnitude_lln": 80,
+        "reliable": true
+      },
+      "expected": {
+        "state": "low",
+        "magnitude": 60
+      },
+      "eligible_phrase_ids": [
+        "muscle.mip.low"
+      ],
+      "blocked_phrase_ids": [
+        "muscle.mip.normal"
+      ],
+      "note": ""
+    },
+    {
+      "id": "mip_signed_stronger",
+      "kind": "pressure",
+      "inputs": {
+        "value": -100,
+        "magnitude_lln": 80,
+        "reliable": true
+      },
+      "expected": {
+        "state": "normal",
+        "magnitude": 100
+      },
+      "eligible_phrase_ids": [
+        "muscle.mip.normal"
+      ],
+      "blocked_phrase_ids": [
+        "muscle.mip.low"
+      ],
+      "note": ""
+    },
+    {
+      "id": "mip_limited",
+      "kind": "pressure",
+      "inputs": {
+        "value": -40,
+        "magnitude_lln": 80,
+        "reliable": false
+      },
+      "expected": {
+        "state": "invalid"
+      },
+      "eligible_phrase_ids": [],
+      "blocked_phrase_ids": [
+        "muscle.mip.low",
+        "muscle.mip.normal"
+      ],
+      "note": ""
+    },
+    {
+      "id": "supine_vc_relative",
+      "kind": "supine_vc",
+      "inputs": {
+        "upright": "3.0",
+        "supine": "2.4",
+        "reliable": true
+      },
+      "expected": {
+        "drop_pct": 20.0,
+        "decrease_template_eligible": true
+      },
+      "eligible_phrase_ids": [
+        "muscle.supine_drop"
+      ],
+      "blocked_phrase_ids": [],
+      "note": ""
+    },
+    {
+      "id": "supine_vc_missing",
+      "kind": "supine_vc",
+      "inputs": {
+        "upright": "3.0",
+        "supine": null,
+        "reliable": true
+      },
+      "expected": {
+        "drop_pct": null,
+        "decrease_template_eligible": false
+      },
+      "eligible_phrase_ids": [],
+      "blocked_phrase_ids": [
+        "muscle.supine_drop"
+      ],
+      "note": ""
+    },
+    {
+      "id": "supine_vc_increase",
+      "kind": "supine_vc",
+      "inputs": {
+        "upright": "3.0",
+        "supine": "3.2",
+        "reliable": true
+      },
+      "expected": {
+        "drop_pct": -6.666666666666667,
+        "decrease_template_eligible": false
+      },
+      "eligible_phrase_ids": [],
+      "blocked_phrase_ids": [
+        "muscle.supine_drop"
+      ],
+      "note": ""
+    },
+    {
+      "id": "feno_24_9",
+      "kind": "feno",
+      "inputs": {
+        "ppb": 24.9,
+        "age_years": 40,
+        "reliable": true
+      },
+      "expected": {
+        "category": "low"
+      },
+      "eligible_phrase_ids": [
+        "feno.low"
+      ],
+      "blocked_phrase_ids": [],
+      "note": ""
+    },
+    {
+      "id": "feno_25",
+      "kind": "feno",
+      "inputs": {
+        "ppb": 25,
+        "age_years": 40,
+        "reliable": true
+      },
+      "expected": {
+        "category": "intermediate"
+      },
+      "eligible_phrase_ids": [
+        "feno.intermediate"
+      ],
+      "blocked_phrase_ids": [],
+      "note": ""
+    },
+    {
+      "id": "feno_50",
+      "kind": "feno",
+      "inputs": {
+        "ppb": 50,
+        "age_years": 40,
+        "reliable": true
+      },
+      "expected": {
+        "category": "intermediate"
+      },
+      "eligible_phrase_ids": [
+        "feno.intermediate"
+      ],
+      "blocked_phrase_ids": [],
+      "note": ""
+    },
+    {
+      "id": "feno_50_1",
+      "kind": "feno",
+      "inputs": {
+        "ppb": 50.1,
+        "age_years": 40,
+        "reliable": true
+      },
+      "expected": {
+        "category": "high"
+      },
+      "eligible_phrase_ids": [
+        "feno.high"
+      ],
+      "blocked_phrase_ids": [],
+      "note": ""
+    },
+    {
+      "id": "feno_child",
+      "kind": "feno",
+      "inputs": {
+        "ppb": 24,
+        "age_years": 9,
+        "reliable": true
+      },
+      "expected": {
+        "category": "unknown"
+      },
+      "eligible_phrase_ids": [],
+      "blocked_phrase_ids": [
+        "feno.low"
+      ],
+      "note": "Adult categories must not be applied to children."
+    },
+    {
+      "id": "serial_percentage_points",
+      "kind": "serial_math",
+      "inputs": {
+        "prior_pct_pred": 80,
+        "current_pct_pred": 74
+      },
+      "expected": {
+        "signed_pp_change": -6,
+        "relative_pct_change_of_pct_pred": -7.5
+      },
+      "eligible_phrase_ids": [
+        "serial.absolute_pp",
+        "serial.relative"
+      ],
+      "blocked_phrase_ids": [],
+      "note": ""
+    },
+    {
+      "id": "unknown_fact_not_normal",
+      "kind": "fact_match",
+      "inputs": {
+        "facts": {},
+        "phrase_id": "dlco.normal"
+      },
+      "expected": {
+        "match": false
+      },
+      "eligible_phrase_ids": [],
+      "blocked_phrase_ids": [],
+      "note": ""
+    },
+    {
+      "id": "review_requires_explicit_selection",
+      "kind": "selection_gate",
+      "inputs": {
+        "facts": {
+          "observations.isolated_dlco_differential_reviewed": true
+        },
+        "phrase_id": "dlco.isolated_differential",
+        "clinician_reviewed": false
+      },
+      "expected": {
+        "eligible": false
+      },
+      "eligible_phrase_ids": [],
+      "blocked_phrase_ids": [],
+      "note": ""
+    },
+    {
+      "id": "quality_observation_not_inferred",
+      "kind": "selection_gate",
+      "inputs": {
+        "facts": {},
+        "phrase_id": "quality.acceptable",
+        "clinician_reviewed": false
+      },
+      "expected": {
+        "eligible": false
+      },
+      "eligible_phrase_ids": [],
+      "blocked_phrase_ids": [],
+      "note": ""
+    },
+    {
+      "id": "numeric_missing_placeholder",
+      "kind": "render_gate",
+      "inputs": {
+        "phrase_id": "metric.fev1.low",
+        "variant": "numeric",
+        "values": {
+          "fev1_L": 1.2,
+          "fev1_pct_pred": 40
+        }
+      },
+      "expected": {
+        "renderable": false
+      },
+      "eligible_phrase_ids": [],
+      "blocked_phrase_ids": [],
+      "note": ""
+    }
+  ],
+  "review_and_integration_fixtures": [
+    {
+      "id": "methacholine_incomplete_not_negative",
+      "inputs": {
+        "completed": false,
+        "maximum_planned_reached": false,
+        "threshold_reached": false
+      },
+      "must_offer": [
+        "methacholine.incomplete"
+      ],
+      "must_not_offer": [
+        "methacholine.negative"
+      ],
+      "reason": "Completion is required for a fully negative challenge."
+    },
+    {
+      "id": "methacholine_censored_pd20",
+      "inputs": {
+        "completed": true,
+        "threshold_reached": false,
+        "maximum_delivered": 400,
+        "unit": "micrograms"
+      },
+      "must_offer": [
+        "methacholine.pd20_not_reached"
+      ],
+      "expected_text_constraint": "PD20 >400 micrograms, not PD20 =400 micrograms."
+    },
+    {
+      "id": "metha_shared_category_endpoint",
+      "inputs": {
+        "pd20": 100,
+        "unit": "micrograms",
+        "category_policy": null
+      },
+      "must_not_auto_assign": [
+        "methacholine.ahr.borderline",
+        "methacholine.ahr.mild"
+      ],
+      "reason": "Shared printed category endpoint requires a declared lab policy."
+    },
+    {
+      "id": "mixed_with_normal_fractions",
+      "inputs": {
+        "ratio": "low",
+        "tlc": "low",
+        "rv_tlc": "normal",
+        "frc_tlc": "normal"
+      },
+      "must_offer": [
+        "pattern.mixed"
+      ],
+      "reason": "Mixed impairment does not require high residual-volume fractions."
+    },
+    {
+      "id": "ratio_normalizes_without_significant_bdr",
+      "inputs": {
+        "pre_ratio_state": "low",
+        "post_ratio_state": "normal",
+        "bd_response": "negative"
+      },
+      "must_offer": [
+        "bd.normalized",
+        "bd.negative"
+      ],
+      "reason": "Ratio normalization and qualifying volume response are independent."
+    },
+    {
+      "id": "positive_bdr_persistent_obstruction",
+      "inputs": {
+        "bd_response": "fev1",
+        "pre_ratio_state": "low",
+        "post_ratio_state": "low"
+      },
+      "must_offer": [
+        "bd.fev1",
+        "bd.persistent"
+      ],
+      "reason": "Positive response may coexist with persistent obstruction."
+    },
+    {
+      "id": "reference_change_serial",
+      "inputs": {
+        "prior_reference": "equation_A",
+        "current_reference": "equation_B",
+        "measured_fev1_change_L": 0,
+        "pct_pred_change": -6
+      },
+      "must_offer": [
+        "serial.reference_changed"
+      ],
+      "must_not_auto_offer": [
+        "serial.fev1_down"
+      ],
+      "reason": "A normalized reference change is not a measured-volume decline."
+    },
+    {
+      "id": "ppf_two_physiologic_metrics_one_domain",
+      "inputs": {
+        "non_ipf_fibrotic_ild": true,
+        "fvc_drop_pp": 6,
+        "hb_adjusted_dlco_drop_pp": 12,
+        "symptom_domain": false,
+        "radiologic_domain": false,
+        "within_year": true
+      },
+      "full_ppf_supported": false,
+      "reason": "FVC and DLCO both belong to one physiologic domain."
+    },
+    {
+      "id": "anemia_adjustment_unknown",
+      "inputs": {
+        "dlco_state": "low",
+        "hemoglobin": 9,
+        "hb_adjustment_status": "unknown"
+      },
+      "must_offer": [
+        "dlco.hb_unknown"
+      ],
+      "must_not_auto_offer": [
+        "dlco.anemia"
+      ],
+      "reason": "The value may already be adjusted; do not double-correct or assume the anemia explains it."
+    },
+    {
+      "id": "room_air_not_tested",
+      "inputs": {
+        "walk_oxygen": "2 L/min continuous flow",
+        "no_desaturation": true
+      },
+      "expected_text_constraint": "No qualifying desaturation on the recorded oxygen support; no assertion of normal room-air oxygenation."
+    },
+    {
+      "id": "early_termination_high_ratio",
+      "inputs": {
+        "fvc_reliable": false,
+        "ratio_z": 0.5,
+        "observed_early_termination": true
+      },
+      "must_offer": [
+        "quality.early_termination"
+      ],
+      "must_not_auto_offer": [
+        "pattern.normal",
+        "pattern.nonspecific"
+      ],
+      "reason": "An underestimated FVC can artificially preserve the ratio."
+    },
+    {
+      "id": "scope_requires_clinician_finalization",
+      "inputs": {
+        "all_required_facts_present": true,
+        "report_signed": false
+      },
+      "expected_behavior": "Offer a draft; do not auto-sign, prescribe, diagnose, or place an order."
+    }
+  ]
+}
