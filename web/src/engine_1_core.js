@@ -223,8 +223,9 @@ const SCHEMA = {
         S('smoke', 'Smoking status', [['', 'Not entered'], ['never', 'Never'], ['former', 'Former'], ['current', 'Current']])
       ] },
       { title: 'Height and weight (optional, for BMI)', opt: true, fields: [
-        N('ht', 'Height', 'cm', { min: 50, max: 230, step: 0.5 }),
-        N('wt', 'Weight', 'kg', { min: 5, max: 400, step: 0.5 })
+        S('units', 'Units', [['', 'cm / kg'], ['us', 'in / lb']]),
+        N('ht', 'Height', 'cm', { min: 20, max: 230, step: 0.5 }),
+        N('wt', 'Weight', 'kg', { min: 5, max: 900, step: 0.5 })
       ] },
       { title: 'Reference equations (the recommended option is already selected)', opt: true, fields: [
         S('ref_spiro', 'Spirometry reference set', [['global', 'GLI Global, race-neutral (recommended, ATS 2023)'], ['gli2012', 'GLI-2012 (race-specific)'], ['other', 'Other / lab-specific']], { stack: true, hint: 'ATS 2023: race-neutral GLI Global replaces race-specific sets; the lab report decides which set produced the z-scores you enter' }),
@@ -621,7 +622,7 @@ function blankPrior() { const o = {}; PRIOR_FIELDS.forEach(f => { o[f.id] = f.ty
 function blankTrendRow() { return { date: '', dist: '', nadir: '', o2: '' }; }
 
 function defaultState() {
-  const st = { v: 3, tests: {}, settings: { band: CFG.band, headsupInCopy: false, style: 'standard' }, review: {}, prior: { cur: {}, list: [blankPrior()] }, trend6: { list: [blankTrendRow()] } };
+  const st = { v: 3, tests: {}, settings: { band: CFG.band, headsupInCopy: false, style: 'standard', serial: 'ers' }, review: {}, prior: { cur: {}, list: [blankPrior()] }, trend6: { list: [blankTrendRow()] } };
   TESTS.forEach(t => { st.tests[t.key] = false; });
   Object.keys(SCHEMA).forEach(k => { st[k] = blankModule(k); });
   CUR_FIELDS.forEach(f => { st.prior.cur[f.id] = ''; });
@@ -637,6 +638,8 @@ function normalizeState(raw) {
     if (has(num(raw.settings.band))) st.settings.band = Math.max(0, Math.min(1, num(raw.settings.band)));
     st.settings.headsupInCopy = !!raw.settings.headsupInCopy;
     if (STYLES.indexOf(raw.settings.style) >= 0) st.settings.style = raw.settings.style;
+    if (st.settings.style === 'numeric') st.settings.style = 'standard';
+    if (raw.settings.serial === 'local') st.settings.serial = 'local';
   }
   if (raw.review && typeof raw.review === 'object') Object.keys(raw.review).forEach(k => { if (raw.review[k] && /^[a-z0-9_.]+$/.test(k)) st.review[k] = true; });
   // v2 states had one spirometry grade (the lower of the two); v3 grades FEV1 and FVC separately

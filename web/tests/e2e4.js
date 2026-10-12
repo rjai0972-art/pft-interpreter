@@ -4,6 +4,7 @@ const { chromium } = require('/opt/npm-tools/node_modules/playwright');
 const path = require('path');
 const FILE = process.env.PFT_URL || ('file://' + path.join(__dirname, '..', 'dist', 'PFT_Interpreter_standalone.html'));
 let fails = 0, passes = 0;
+const openCard = (page, id) => page.evaluate((id) => { const el = document.getElementById(id); if (el && !el.open) el.open = true; }, id);
 async function loadExample(page, i) {
   await page.evaluate(() => window.__pft.setMode('learn', { topic: 'examples' }));
   await page.waitForSelector('.learn-body[data-topic="examples"] .ex');
@@ -24,14 +25,14 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
   // COPD example: suggestions and wording level
   await loadExample(page, 0);
   ok(await page.locator('[data-field="settings.style"] .ch').count() === 3, 'three wording levels');
-  await page.locator('#suggest > summary').click();
+  await openCard(page, 'suggest');
   const sug = page.locator('#suggest .sug');
   const nSug = await sug.count();
   ok(nSug >= 2, 'suggested additions offered for the COPD case: ' + nSug);
   const emph = page.locator('#suggest .sug[data-sug="impression.emphysema_context"]');
   ok(await emph.count() === 1, 'emphysema context is offered (obstruction + hyperinflation + low DLCO)');
   const before = await page.locator('#doc .interp').innerText();
-  ok(!/emphysema/i.test(before), 'disease name absent before tapping');
+  ok(!/compatible with emphysema/i.test(before), 'catalog phrase absent before tapping');
   await emph.click();
   await page.waitForTimeout(100);
   const after = await page.locator('#doc .interp').innerText();
@@ -39,13 +40,13 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
   ok(await emph.getAttribute('aria-pressed') === 'true', 'chip shows included');
   ok((await page.evaluate(() => JSON.stringify(window.__pft.state.review))) === '{"impression.emphysema_context":true}', 'selection stored by phrase id');
   await emph.click(); await page.waitForTimeout(80);
-  ok(!/emphysema/i.test(await page.locator('#doc .interp').innerText()), 'tap again removes it');
+  ok(!/compatible with emphysema/i.test(await page.locator('#doc .interp').innerText()), 'tap again removes it');
   // wording level changes the section text, not the facts
   const std = await page.locator('#doc .sec[data-sec="spiro"] p').innerText();
   ok(/1\.55 L \(z -3\.1\)/.test(std), 'standard level prints the measured FEV1 with its z-score: ' + std.slice(0, 120));
   await page.locator('[data-field="settings.style"] .ch[data-v="concise"]').click(); await page.waitForTimeout(80);
   const conTxt = await page.locator('#doc .sec[data-sec="spiro"] p').innerText();
-  ok(!/1\.55 L \(z/.test(conTxt) && /FEV1\/FVC is reduced, with a moderately reduced FEV1 and a normal FVC/.test(conTxt), 'concise level drops the numbers line: ' + conTxt.slice(0, 120));
+  ok(!/1\.55 L \(z/.test(conTxt) && /Moderate obstructive impairment present \(FEV1\/FVC z -3\.4, below the LLN; FEV1 z -3\.1\)/.test(conTxt), 'concise level drops the numbers line: ' + conTxt.slice(0, 120));
   await page.locator('[data-field="settings.style"] .ch[data-v="expanded"]').click(); await page.waitForTimeout(80);
   const expTxt = await page.locator('#doc .sec[data-sec="spiro"] p').innerText();
   ok(expTxt.length > std.length, 'detailed level is longer');
@@ -58,7 +59,7 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
   await page.waitForSelector('[data-field="spiro.limits"]');
   await page.locator('[data-field="spiro.limits"] .cp[data-v="early"]').click(); await page.waitForTimeout(80);
   const pvTxt = await page.locator('#pv').innerText();
-  ok(/[Ee]arly termination/.test(pvTxt), 'limitation chip appears in the preview section: ' + pvTxt.slice(0, 160));
+  ok(/End of test criteria was not met limiting accuracy of interpretation/.test(pvTxt), 'limitation chip appears in the INTERPRETABILITY section: ' + pvTxt.slice(0, 160));
   await page.locator('[data-field="spiro.limits"] .cp[data-v="early"]').click(); await page.waitForTimeout(80);
   await page.screenshot({ path: 'shots/42_spiro_quality.png', fullPage: true });
 
@@ -67,7 +68,7 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
   await page.waitForSelector('[data-field="dlco.basis"]');
   ok(await page.locator('[data-field="dlco.basis"] .ch').count() === 2, 'basis: unadjusted / adjusted taps (blank = report does not say)');
   await page.locator('[data-field="dlco.basis"] .ch[data-v="adj"]').click(); await page.waitForTimeout(80);
-  ok(/Hemoglobin-adjusted DLCO is/.test(await page.locator('#pv .sec[data-sec="dlco"]').innerText()), 'adjusted basis labels the DLCO line');
+  ok(/\(hemoglobin-adjusted value\)/.test(await page.locator('#pv .sec[data-sec="dlco"]').innerText()), 'adjusted basis labels the DLCO line');
   ok(await page.locator('#hu-chip').innerText().then(t => /alert|caution/i.test(t)), 'two adjusted values flagged in the heads-up chip');
   await page.locator('[data-field="dlco.basis"] .ch[data-v="un"]').click(); await page.waitForTimeout(80);
 
@@ -77,12 +78,12 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
   await page.locator('[data-prior-block="dlco"] input[type=checkbox]').first().check();
   await page.locator('[data-prior-block="dlco"] .pr-row').nth(2).locator('input').nth(0).fill('14.2');
   await page.locator('[data-prior-block="dlco"] .pr-row').nth(2).locator('input').nth(1).fill('17.0');
-  ok(/Compared with Mar 1, 2024 \(1 year earlier\): DLCO 17\.0 → 14\.2 mL\/min\/mmHg \(-2\.8, -16%\), a significant decline/.test(await page.locator('#pv .sec[data-sec="dlco"]').innerText()), 'DLCO comparison inline with its 10% threshold: ' + await page.locator('#pv .sec[data-sec="dlco"]').innerText());
+  ok(/DLCO has changed by -16% & -2\.8 mL\/min\/mmHg \(17\.0 → 14\.2\)\. This change is likely to be significant given testing margin of error of ~10%/.test(await page.locator('#pv .sec[data-sec="prior"]').innerText()), 'DLCO comparison with its 10% threshold: ' + await page.locator('#pv .sec[data-sec="prior"]').innerText());
   const cmp = page.locator('[data-prior-block="dlco"] [data-group="cmp"]');
   ok(await cmp.locator('input[type=checkbox]').count() === 2, 'the DLCO step offers the two comparability flags that matter for DLCO');
   await cmp.locator('summary').click();
   await cmp.locator('input[type=checkbox]').first().check(); await page.waitForTimeout(80);
-  ok(/not directly comparable \(different hemoglobin-adjustment basis\)/.test(await page.locator('#pv .sec[data-sec="dlco"]').innerText()), 'hemoglobin-basis flag caveats the DLCO comparison: ' + await page.locator('#pv .sec[data-sec="dlco"]').innerText());
+  ok(/not directly comparable \(different hemoglobin-adjustment basis\)/.test(await page.locator('#pv .sec[data-sec="prior"]').innerText()), 'hemoglobin-basis flag caveats the DLCO comparison: ' + await page.locator('#pv .sec[data-sec="prior"]').innerText());
   await cmp.locator('input[type=checkbox]').first().uncheck(); await page.waitForTimeout(80);
 
   // challenge: completion and censored maximum
@@ -107,12 +108,16 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
     S.dlco.dlco = { c: 'nm', z: '-2.4' }; S.dlco.va = { c: 'wnl', z: '' }; S.dlco.kco = { c: 'mild', z: '' }; window.__pft.load(S, 'report'); });
   await page.waitForSelector('#differentials');
   ok(await page.locator('#differentials').evaluate(e => !e.open), 'differentials card starts collapsed when nothing is selected');
-  await page.locator('#differentials > summary').click();
-  ok(await page.locator('#differentials .dx-group').count() === 1 && await page.locator('#differentials .dx-group[data-dx-group="dlco_isolated"]').count() === 1, 'isolated low DLCO offers one differential group');
-  ok(await page.locator('#differentials .dx-group h3').innerText() === 'For the isolated reduction in DLCO', 'group is titled by the finding');
-  ok(await page.locator('#differentials .dx[data-dx^="dx."]').count() === 6 && await page.locator('#differentials .dx[data-dx^="study."]').count() === 6, 'six differentials and six studies offered');
-  ok(await page.locator('#differentials .dx.on').count() === 0 && !/Differential considerations/.test(await page.locator('#doc').innerText()) && await page.locator('#doc .studies').count() === 0, 'nothing included by default');
+  await openCard(page, 'differentials');
+  ok(await page.locator('#differentials .dx-group').count() === 2 && await page.locator('#differentials .dx-group[data-dx-group="dlco_isolated"]').count() === 1 && await page.locator('#differentials .dx-group[data-dx-group="general"]').count() === 1, 'isolated low DLCO offers its own group plus the general suggestions');
+  ok(await page.locator('#differentials .dx-group h3').first().innerText() === 'For the isolated reduction in DLCO', 'group is titled by the finding');
+  const G = page.locator('#differentials .dx-group[data-dx-group="dlco_isolated"]');
+  ok(await G.locator('.dx[data-dx^="dx."]').count() === 6 && await G.locator('.dx[data-dx^="study."]').count() === 6, 'six differentials and six studies offered for the finding');
+  ok(await page.locator('#differentials .dx-group[data-dx-group="general"] .dx').count() >= 3, 'general suggestions (repeat PFTs, clinic consultation, e-consult) offered');
+  const nSug0 = (await page.locator('#doc .interp').innerText().then(t => t.match(/Suggest /g) || [])).length;
+  ok(await page.locator('#differentials .dx.on').count() === 0 && !/Differential considerations/.test(await page.locator('#doc').innerText()) && nSug0 === 1, 'nothing included by default (only the template\'s own hemoglobin suggestion)');
   ok(await page.locator('#suggest .sug[data-sug="dlco.isolated_differential"]').count() === 1 && await page.locator('#suggest .sug[data-sug="followup.hb"]').count() === 1, 'the generic catalog wording is offered while nothing itemized overlaps it');
+  ok(await page.locator('#suggest .sug[data-sug="local.attest"]').count() === 1 && await page.locator('#suggest .sug[data-sug="local.no_prior"]').count() === 1, 'reading-room template sentences (attestation, no prior studies) are offered as taps');
   await page.locator('#differentials .dx[data-dx="dx.dlco_isolated.ild_early"]').click(); await page.waitForTimeout(100);
   await page.locator('#differentials .dx[data-dx="dx.dlco_isolated.cohb"]').click(); await page.waitForTimeout(100);
   const interp = await page.locator('#doc .interp').innerText();
@@ -120,26 +125,31 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
   ok(await page.locator('#differentials .dx[data-dx="dx.dlco_isolated.ild_early"]').getAttribute('aria-pressed') === 'true', 'tapped differential shows included');
   await page.locator('#differentials .dx[data-dx="study.hb"]').click(); await page.waitForTimeout(100);
   await page.locator('#differentials .dx[data-dx="study.hrct"]').click(); await page.waitForTimeout(100);
-  const stTxt = await page.locator('#doc .studies').innerText();
-  ok(/Additional studies to consider/i.test(stTxt) && /Hemoglobin \(to adjust the DLCO\) and carboxyhemoglobin; high-resolution CT of the chest\./.test(stTxt), 'tapped studies appear in the report: ' + stTxt.slice(0, 160));
+  const stTxt = await page.locator('#doc .interp').innerText();
+  ok(/Suggest hemoglobin \(to adjust the DLCO\) and carboxyhemoglobin\. Suggest high-resolution CT of the chest\./.test(stTxt), 'tapped studies appear as Suggest sentences in the conclusion: ' + stTxt.slice(-200));
   const plainDx = await page.evaluate(() => document.getElementById('plain').textContent);
-  ok(/\nADDITIONAL STUDIES TO CONSIDER: Hemoglobin/.test(plainDx) && /INTERPRETATION: [^\n]*Differential considerations for the isolated reduction in DLCO include/.test(plainDx), 'copy-ready text carries the differential sentence and the study line');
+  ok(/CONCLUSION: [^\n]*Differential considerations for the isolated reduction in DLCO include[^\n]*Suggest hemoglobin/.test(plainDx) && !/ADDITIONAL STUDIES/.test(plainDx), 'copy-ready text carries the differential sentence and the suggestions inside the conclusion');
   ok(await page.locator('#suggest .sug[data-sug="dlco.isolated_differential"]').count() === 0 && await page.locator('#suggest .sug[data-sug="followup.hb"]').count() === 0, 'the generic catalog chips are withdrawn once an itemized differential or the hemoglobin study covers them');
   ok(await page.locator('#differentials .chip').innerText().then(t => /2 differentials, 2 studies included/.test(t)), 'summary chip counts both kinds: ' + await page.locator('#differentials .chip').innerText());
   await page.locator('#differentials [data-dx-none="dlco_isolated:dx"]').click(); await page.waitForTimeout(100);
   ok(await page.locator('#differentials .dx[data-dx^="dx."].on').count() === 0 && !/Differential considerations/.test(await page.locator('#doc .interp').innerText()), '"None" clears the differentials and the sentence leaves');
   await page.locator('#differentials [data-dx-all="dlco_isolated:study"]').click(); await page.waitForTimeout(100);
-  ok(await page.locator('#differentials .dx[data-dx^="study."].on').count() === 6, '"All" selects every study');
-  const stAll = await page.locator('#doc .studies p').innerText();
-  ok((stAll.match(/;/g) || []).length === 5 && /^Hemoglobin/.test(stAll), 'six studies listed once each: ' + stAll.slice(0, 80));
+  ok(await G.locator('.dx[data-dx^="study."].on').count() === 6, '"All" selects every study of the finding');
+  const stAll = await page.locator('#doc .interp').innerText();
+  ok((stAll.match(/Suggest /g) || []).length === 6, 'six studies listed once each as Suggest sentences (the template\'s hemoglobin line yields to the tapped one): ' + stAll.slice(-300));
   ok(JSON.stringify(await page.evaluate(() => Object.keys(window.__pft.state.review).sort())) === JSON.stringify(['study.cpet', 'study.dlco_repeat', 'study.echo', 'study.hb', 'study.hrct', 'study.sixmwt']), 'selection is stored by id in the case state');
-  // the live preview on an entry step notes the offer and shows the studies block
+  // the attestation line closes the report when tapped
+  await openCard(page, 'suggest');
+  await page.locator('#suggest .sug[data-sug="local.attest"]').click(); await page.waitForTimeout(100);
+  ok(/PFT interpretation was reviewed with the attending Pulmonologist identified as an additional signer to this note\.$/.test(await page.locator('#doc .interp .impr-p').innerText().then(t => t.trim())), 'attestation sentence closes the conclusion');
+  await page.locator('#suggest .sug[data-sug="local.attest"]').click(); await page.waitForTimeout(100);
+  // the live preview on an entry step notes the offer
   await page.evaluate(() => window.__pft.goto('dlco'));
-  await page.waitForSelector('#pv .studies');
-  ok(/differentials and additional studies for 1 finding/.test(await page.locator('#pv .pv-sug').innerText()), 'preview points to the differentials on the Report step');
+  await page.waitForSelector('#pv .pv-sug');
+  ok(/differentials and additional studies for 2 findings/.test(await page.locator('#pv .pv-sug').innerText()), 'preview points to the differentials on the Report step');
   await page.evaluate(() => { window.__pft.state.review = {}; window.__pft.goto('report'); });
   await page.waitForSelector('#differentials');
-  await page.locator('#differentials > summary').click();
+  await openCard(page, 'differentials');
   await page.screenshot({ path: 'shots/44_differentials.png', fullPage: true });
 
   // predicted 6MWD calculator on the 6MWT step (Enright & Sherrill 1998, as on MDCalc)
@@ -154,7 +164,7 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
   const esTiles = await page.locator('[data-es] .stat .sv').allInnerTexts();
   ok(esTiles.join('|') === '549 m|396 m|77%', 'predicted, LLN and % predicted tiles: ' + esTiles.join('|'));
   ok(/7\.57 × height/.test(await page.locator('[data-es] .es-body').innerText()) && /used in the report because no laboratory predicted value/.test(await page.locator('[data-es] .es-body').innerText()), 'equation and precedence note shown');
-  ok(/Walked 420 m \(77% predicted; LLN 396 m\), above the LLN\. Predicted 549 m by Enright & Sherrill 1998/.test(await page.locator('#pv .sec[data-sec="six"]').innerText()), 'the preview reports the calculated reference');
+  ok(/Walked 420 m \(77% predicted; LLN 396 m\)\. Total distance within predicted normal range given sex, age, height and weight\./.test(await page.locator('#pv .sec[data-sec="six"]').innerText()), 'the preview reports the calculated reference');
   await page.screenshot({ path: 'shots/46_sixmw_calculator.png', fullPage: true });
   await page.evaluate(() => { const S = window.__pft.state; S.sixmw.pred = '500'; S.sixmw.eq = 'Enright & Sherrill 1998'; window.__pft.goto('sixmw'); });
   await page.waitForSelector('[data-es][data-es-state="lab"]');
@@ -163,7 +173,7 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
   // composed section sentences
   await page.evaluate(() => { const S = window.PFT.defaultState(); Object.keys(S.tests).forEach(k => { S.tests[k] = false; }); S.tests.spiro = true; S.spiro.ratio = { c: 'wnl', z: '' }; S.spiro.fev1 = { c: 'wnl', z: '' }; S.spiro.fvc = { c: 'wnl', z: '' }; window.__pft.load(S, 'report'); });
   await page.waitForSelector('#doc');
-  ok(await page.locator('#doc .sec[data-sec="spiro"] p').innerText() === 'FEV1, FVC and FEV1/FVC are all normal.', 'normal spirometry reads as one sentence');
+  ok(await page.locator('#doc .sec[data-sec="spiro"] p').innerText() === 'Normal FVC, FEV1, and ratio.', 'normal spirometry in the template words');
 
   // report text never carries source keys
   await page.evaluate(() => { window.__pft.setMode('case'); window.__pft.goto('report'); });

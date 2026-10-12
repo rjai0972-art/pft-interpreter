@@ -96,7 +96,7 @@ async function loadExample(page, i) {
   const fvc = page.locator('[data-field="spiro.fvc"]');
   await fvc.getByRole('button', { name: 'WNL' }).click();
   const liveTxt = await page.locator('.live p').first().innerText();
-  ok(/FEV1\/FVC is reduced, with a moderately reduced FEV1 and a normal FVC\./.test(liveTxt) && !/obstructive/.test(liveTxt), 'live panel is facts only, in one sentence: ' + liveTxt);
+  ok(/Moderate obstructive impairment present \(FEV1\/FVC below the LLN; FEV1 z -3\.1\)\. FVC is normal\./.test(liveTxt) && !/COPD|ventilatory defect/.test(liveTxt), 'live panel carries the template statement, not the conclusion: ' + liveTxt);
   // effort: nothing preselected
   const eff = page.locator('[data-field="spiro.effort"]');
   ok(await eff.locator('.ch').count() === 2 && await eff.locator('.ch[aria-checked="true"]').count() === 0, 'effort has no preselected "Adequate"');
@@ -109,7 +109,7 @@ async function loadExample(page, i) {
   await qual.getByRole('radio', { name: 'B', exact: true }).click();
   await qual2.getByRole('radio', { name: 'B', exact: true }).click();
   ok((await page.evaluate(() => window.__pft.state.spiro.qual_fev1 + window.__pft.state.spiro.qual_fvc)) === 'BB', 'quality grades by tap');
-  ok(/^Good quality \(grade B\)\./.test(await page.locator('.live p').first().innerText()), 'quality line reads naturally');
+  ok(/Spirometry testing was technically acceptable for interpretation \(grade B\)\./.test(await page.locator('#pv .sec[data-sec="qual"]').innerText()), 'interpretability line in the preview');
   // prior study inline
   const pb = page.locator('[data-prior-block="spiro"]');
   ok(await pb.count() === 1 && await pb.locator('.prior-body').isHidden(), 'prior comparison is a checkbox on the spirometry step, closed by default');
@@ -122,13 +122,14 @@ async function loadExample(page, i) {
   await rows.nth(2).locator('input').nth(1).fill('1.85');
   ok((await page.evaluate(() => [window.__pft.state.spiro.fev1_abs, window.__pft.state.prior.list[0].fev1, window.__pft.state.tests.prior])).join() === '1.55,1.85,false', 'current value feeds the spirometry entry, prior value the prior study; no test toggle touched');
   const liveP = await page.locator('.live p').first().innerText();
-  ok(/Compared with Mar 5, 2024 \(1 year earlier\): FEV1 1\.85 → 1\.55 L \(-300 mL, -16%\), a significant decline\./.test(liveP), 'comparison with percent change and significance appears in the section: ' + liveP);
+  const prTxt = await page.locator('#pv .sec[data-sec="prior"]').innerText();
+  ok(/Since last testing \(3\/5\/2024, 1 year earlier\)\. FEV1 has changed by -16% & -300 mL \(1\.85 → 1\.55 L\)\. This change is likely to be significant given testing margin of error of ~15%\./.test(prTxt), 'comparison with percent change and significance appears in the PAST TESTING COMPARISON section: ' + prTxt);
   await pb.locator('.pr-cmp summary').click();
   await pb.locator('.pr-cmp input[type=checkbox]').nth(1).check();
-  ok(/not directly comparable \(different bronchodilator state\)/.test(await page.locator('.live p').first().innerText()), 'comparability flag caveats the comparison');
+  ok(/not directly comparable \(different bronchodilator state\)/.test(await page.locator('#pv .sec[data-sec="prior"]').innerText()), 'comparability flag caveats the comparison');
   await pb.locator('.pr-cmp input[type=checkbox]').nth(1).uncheck();
   await pb.locator('input[type=checkbox]').first().uncheck();
-  ok((await page.evaluate(() => window.__pft.state.prior.list[0].fev1)) === '' && !/Compared with/.test(await page.locator('.live p').first().innerText()), 'unticking clears the prior values and the comparison');
+  ok((await page.evaluate(() => window.__pft.state.prior.list[0].fev1)) === '' && await page.locator('#pv .sec[data-sec="prior"]').count() === 0, 'unticking clears the prior values and the comparison section');
   // loop gallery (its own step)
   await page.locator('.pill[data-step="fvl"]').click();
   ok(await page.locator('.step-head h2').innerText() === 'Flow–volume loop', 'loop has its own step');
@@ -136,7 +137,7 @@ async function loadExample(page, i) {
   ok(await gal.locator('.lp-tile').count() === 14, '14 loop tiles');
   await gal.locator('.lp-tile[data-loop="concave"]').click();
   ok((await page.evaluate(() => window.__pft.state.fvl.loop)) === 'concave', 'loop state concave');
-  ok(/^Concave \(scooped\)/.test(await page.locator('.live p').first().innerText()), 'live text describes the concave loop without a "Loop shape:" prefix');
+  ok(/^The flow-volume curve is curvilinear and suggests an obstructive ventilatory defect\./.test(await page.locator('.live p').first().innerText()), 'live text describes the curve in the template words');
   await gal.locator('.lp-tile[data-loop="concave"]').click();
   ok((await page.evaluate(() => window.__pft.state.fvl.loop)) === '', 'tile tap again clears');
   await gal.locator('.lp-tile[data-loop="sevobs"]').click();
@@ -168,7 +169,7 @@ async function loadExample(page, i) {
   await page.locator('#copy-report').click();
   await page.waitForTimeout(200);
   const clip = await page.evaluate(() => navigator.clipboard.readText());
-  ok(/PULMONARY FUNCTION TEST REPORT/.test(clip) && !/HEADS-UP/.test(clip) && /INTERPRETATION: /.test(clip) && !/Tests performed/.test(clip), 'clipboard report, compact header');
+  ok(/PULMONARY FUNCTION TEST REPORT/.test(clip) && !/HEADS-UP/.test(clip) && /CONCLUSION: /.test(clip) && /INTERPRETABILITY: /.test(clip) && !/Tests performed/.test(clip), 'clipboard report in the template form');
   await page.locator('#copy-all').click(); await page.waitForTimeout(200);
   const clip2 = await page.evaluate(() => navigator.clipboard.readText());
   ok(/HEADS-UP/.test(clip2) || (await page.locator('.hu-item').count()) === 0, 'clipboard with heads-up');

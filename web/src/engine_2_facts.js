@@ -110,7 +110,8 @@ function buildFacts(st) {
   CFG.band = has(band) ? Math.max(0, Math.min(1, band)) : 0.25;
   const on = st.tests;
   const c = st.ctx;
-  const age = num(c.age), ht = num(c.ht), wt = num(c.wt);
+  const age = num(c.age); let ht = num(c.ht), wt = num(c.wt);
+  if (c.units === 'us') { if (has(ht)) ht = ht * 2.54; if (has(wt)) wt = wt * 0.45359237; }
   const bmi = (has(ht) && has(wt) && ht > 0) ? wt / Math.pow(ht / 100, 2) : NaN;
   const f = { on: Object.assign({}, on), st: st, review: st.review || {}, style: (st.settings && st.settings.style) || 'standard' };
   const indic = Array.isArray(c.indic) ? c.indic : [];
@@ -915,6 +916,16 @@ const REVIEW_PHRASES = [
   { id: 'followup.challenge', when: (f) => f.sp.pat.normal && (f.ctx.hasInd('asthma') || f.ctx.hasInd('wheeze') || f.ctx.hasInd('cough')) && !f.on.bronch },
   { id: 'followup.correlate', when: (f) => f.sp.any || f.vol.any || f.dl.any }
 ];
+/* Reading-room template sentences that are not findings: offered as taps, placed at the end of the conclusion. */
+const LOCAL_PHRASES = [
+  { id: 'local.no_prior', label: 'No prior studies', section: 'serial', text: 'There are no prior studies available for comparison.', when: (f) => !(f.on.prior && f.prior.any) },
+  { id: 'local.no_change', label: 'No change from earlier studies', section: 'serial', text: 'Compared to earlier studies, there has been no significant change.', when: (f) => !(f.on.prior && f.prior.any) },
+  { id: 'local.asthma_not_excluded', label: 'Normal PFTs do not exclude asthma', section: 'local_end', text: 'Normal pulmonary function tests do not exclude asthma.', when: (f) => f.sp.pat.normal && !(f.ctx.hasInd('asthma') || f.ctx.hasInd('wheeze') || f.ctx.hasInd('cough')) },
+  { id: 'local.bd_clinical', label: 'Clinical bronchodilator response not precluded', section: 'local_end', text: 'Failure to meet reversibility thresholds during bronchodilator testing does not preclude a clinical response to inhaled bronchodilator therapy.', when: (f) => f.on.bd && f.F['bronchodilator.response'] === 'negative' && !f.sp.ratio.low },
+  { id: 'local.obese_erv', label: 'Low ERV in obesity', section: 'local_end', text: 'A decreased expiratory reserve volume associated with tidal breathing superimposed on the flow-volume curve at low lung volumes is commonly seen in obese patients.', when: (f) => f.on.vol && f.vol.erv.low && f.ctx.obese },
+  { id: 'local.dlco_lv', label: 'DLCO can be raised by LV failure, asthma, hemorrhage, obesity', section: 'local_end', text: 'DLCO may be relatively increased in left ventricular failure, asthma, pulmonary hemorrhage, or obesity. Presence of these factors might cause overestimation of DLCO in the setting of a primary impairment due to emphysema, interstitial lung disease, etc.', when: (f) => f.on.dlco && f.dl.dlco.measured && !f.dl.dlco.low && !f.dl.dlco.high && (f.sp.ratio.low || (f.on.vol && f.vol.pat.restriction)) },
+  { id: 'local.attest', label: 'Reviewed with the attending', section: 'local_end', text: 'PFT interpretation was reviewed with the attending Pulmonologist identified as an additional signer to this note.', when: () => true }
+];
 function suggestions(f) {
   const out = [];
   REVIEW_PHRASES.forEach(r => {
@@ -922,6 +933,11 @@ function suggestions(f) {
     let rel = false; try { rel = !!r.when(f); } catch (e) { rel = false; }
     const on = !!(f.review && f.review[r.id]);
     if (rel || on) out.push({ id: r.id, label: cp.label, section: cp.sec, on: on, relevant: rel, text: ptext(r.id, 'standard', {}) || ptext(r.id, 'concise', {}) });
+  });
+  LOCAL_PHRASES.forEach(r => {
+    let rel = false; try { rel = !!r.when(f); } catch (e) { rel = false; }
+    const on = !!(f.review && f.review[r.id]);
+    if (rel || on) out.push({ id: r.id, label: r.label, section: r.section, on: on, relevant: rel, text: r.text, local: true });
   });
   return out;
 }

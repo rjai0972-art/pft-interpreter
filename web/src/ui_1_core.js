@@ -219,10 +219,14 @@ function numField(mod, f) {
   const id = uid('n');
   const inp = h('input', { type: 'text', class: 'num', id: id, inputmode: 'decimal', autocomplete: 'off', placeholder: f.ph || '', value: S[mod][f.id],
     oninput: (e) => { S[mod][f.id] = e.target.value; sync(); } });
-  widgets.push(() => { const v = S[mod][f.id]; inp.classList.toggle('bad', v !== '' && !hasNum(v)); if (document.activeElement !== inp && inp.value !== String(v)) inp.value = v; });
+  const unitEl = f.unit ? h('span', { class: 'unit', text: f.unit }) : null;
+  widgets.push(() => {
+    const v = S[mod][f.id]; inp.classList.toggle('bad', v !== '' && !hasNum(v)); if (document.activeElement !== inp && inp.value !== String(v)) inp.value = v;
+    if (unitEl && mod === 'ctx' && (f.id === 'ht' || f.id === 'wt')) unitEl.textContent = S.ctx.units === 'us' ? (f.id === 'ht' ? 'in' : 'lb') : (f.id === 'ht' ? 'cm' : 'kg');
+  });
   return h('div', { class: 'fld' }, [
     h('div', { class: 'lab-row' }, [h('label', { for: id, text: f.label }), info(glossKey(mod, f.id))]),
-    h('div', { class: 'inwrap' }, [inp, f.unit ? h('span', { class: 'unit', text: f.unit }) : null])
+    h('div', { class: 'inwrap' }, [inp, unitEl])
   ]);
 }
 /* A "sel" field is shown as a row of tap buttons. A leading "Not …" option is not drawn: nothing pressed means not entered,
@@ -490,6 +494,7 @@ function stepCtx() {
     stepHead(m.title, '', m.src),
     m.groups.map(g => groupEl('ctx', g)),
     h('details', { class: 'optgrp fold', 'data-group': 'settings' }, [h('summary', {}, [h('span', { class: 't', text: 'Settings: near-LLN flag and wording level' })]), h('div', { class: 'fields' }, [
+      serialRow(),
       h('div', { class: 'prm ch-row', 'data-field': 'settings.band' }, [
         h('div', { class: 'prm-top' }, [h('span', { class: 'prm-l', text: 'Near-LLN review flag' }), h('span', { class: 'hint', text: 'A value this close above the LLN is marked "near the LLN". It stays within normal limits; this is a local review convention, not a category' })]),
         h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Near-LLN review flag' }, bb)
@@ -580,6 +585,17 @@ function curPlaceholder(id) {
     dlco_pct: (isFinite(f.dl.adjPct) ? f.dl.adjPct : f.dl.pct), six: f.six.dist, feno: f.feno.v })[id];
   return (typeof v === 'number' && isFinite(v)) ? String(Math.round(v * 100) / 100) : '';
 }
+/* ------------------------------------------------------------- serial-change thresholds */
+const SERIAL_OPTS = [['ers', 'ERS/ATS: FEV1 and FVC 15%, DLCO 10%'], ['local', 'Reading-room template: FEV1 and FVC 10%, DLCO 20%']];
+function serialRow() {
+  const btns = SERIAL_OPTS.map(o => h('button', { type: 'button', class: 'ch', role: 'radio', 'data-v': o[0], 'aria-checked': 'false', text: o[1], onclick: () => { S.settings.serial = o[0]; sync(); } }));
+  widgets.push(() => btns.forEach(b => b.setAttribute('aria-checked', String((S.settings.serial || 'ers') === b.getAttribute('data-v')))));
+  return h('div', { class: 'prm ch-row', 'data-field': 'settings.serial' }, [
+    h('div', { class: 'prm-top' }, [h('span', { class: 'prm-l', text: 'Significant change on past testing' }), h('span', { class: 'hint', text: 'The margin of error quoted in the PAST TESTING COMPARISON section' })]),
+    h('div', { class: 'seg stack', role: 'radiogroup', 'aria-label': 'Significant change thresholds' }, btns)
+  ]);
+}
+
 /* ------------------------------------------------------------- wording level */
 const STYLE_OPTS = [['concise', 'Concise'], ['standard', 'Standard'], ['expanded', 'Detailed']];
 function styleRow() {
@@ -658,10 +674,9 @@ function reportDoc() {
     h('p', { text: s.lines.join(' ') })
   ])));
   const codes = uniq(R.sections.reduce((a, s) => a.concat(s.codes || []), []));
-  doc.appendChild(h('div', { class: 'interp' }, [h('h3', { text: 'Interpretation' }),
+  doc.appendChild(h('div', { class: 'interp' }, [h('h3', { text: 'Conclusion' }),
     R.impression.length ? h('p', { class: 'impr-p' }, R.impression.map(t => h('span', { class: 'impr-s', text: t + ' ' }))) : h('p', { class: 'fine', text: 'No interpretable data entered.' }),
     codes.length ? h('div', { class: 'codes-row', 'data-codes': codes.join(',') }, [h('span', { class: 'fine' }, ['Annals ATS 2025 codes', h('span', { class: 'noprint', text: ' (tap for meaning)' })]), h('span', { class: 'codes' }, codes.map(codeChip))]) : null]));
-  const sb = studiesBlock(); if (sb) doc.appendChild(sb);
   return doc;
 }
 /* A small picture of each loop named in a "look for" tip, drawn with the same shapes as the gallery. */
@@ -779,12 +794,11 @@ function paintPreview() {
   next.impr = R.impression.slice();
   const codes = uniq(R.sections.reduce((a, s) => a.concat(s.codes || []), []));
   const had = prev.impr || [];
-  doc.appendChild(h('div', { class: 'interp' }, [h('h3', { text: 'Interpretation' }),
+  doc.appendChild(h('div', { class: 'interp' }, [h('h3', { text: 'Conclusion' }),
     R.impression.length
       ? h('p', { class: 'impr-p' }, R.impression.map(t => h('span', { class: 'impr-s' + (prev.impr && had.indexOf(t) < 0 ? ' chg' : ''), text: t + ' ' })))
       : h('p', { class: 'pv-empty', text: 'The synthesis appears here once values are entered.' }),
     codes.length ? h('div', { class: 'codes-row' }, [h('span', { class: 'fine', text: 'Annals ATS 2025 codes' }), h('span', { class: 'codes' }, codes.map(codeChip))]) : null]));
-  const sbp = studiesBlock(); if (sbp) doc.appendChild(sbp);
   const oldDoc = pv.querySelector('.pv-doc'), keepTop = oldDoc ? oldDoc.scrollTop : 0;
   pv.textContent = '';
   pv.appendChild(h('div', { class: 'pv-head' }, [

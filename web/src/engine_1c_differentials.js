@@ -39,7 +39,12 @@ const STUDIES = {
   'study.osc': 'oscillometry or airway resistance (airway mechanics when spirometry is nonspecific)',
   'study.cxr': 'chest radiograph or CT for pleural, chest-wall or parenchymal disease',
   'study.cbc': 'complete blood count (polycythemia)',
-  'study.sleep': 'sleep study if sleep-disordered breathing is suspected'
+  'study.sleep': 'sleep study if sleep-disordered breathing is suspected',
+  'study.full': 'complete PFTs including lung volumes and measurement of the diffusing capacity',
+  'study.clinic': 'Pulmonary Clinic consultation',
+  'study.econsult': 'a Pulmonary E-Consult',
+  'study.quit': 'smoking cessation',
+  'study.repeat_pft': 'repeat pulmonary function testing in 6 to 12 months to assess for change'
 };
 
 /* Each group: key, when(f) -> boolean, title (used in "Differential considerations for <title>"), dx: [[id, text]], studies: [study id] */
@@ -191,6 +196,9 @@ const DX_GROUPS = [
          ['laryngeal', 'inducible laryngeal obstruction'],
          ['early', 'early parenchymal or pulmonary vascular disease below the sensitivity of resting tests']],
     studies: (f) => ['study.bd', 'study.mch', 'study.feno', 'study.dlco', 'study.volumes', 'study.cpet', 'study.echo'].filter(id => !((id === 'study.bd' && f.on.bd) || (id === 'study.mch' && f.on.bronch) || (id === 'study.feno' && f.on.feno) || (id === 'study.dlco' && f.on.dlco) || (id === 'study.volumes' && f.on.vol) || (id === 'study.cpet' && f.on.cpet))) },
+  { key: 'general', title: 'the overall study (general suggestions)',
+    when: () => true, dx: [],
+    studies: (f) => [(f.on.spiro && !f.on.vol && !f.on.dlco) ? 'study.full' : '', 'study.repeat_pft', 'study.clinic', 'study.econsult', (f.ctx.smoke === 'current') ? 'study.quit' : ''].filter(Boolean) },
   { key: 'low_rv_isolated', title: 'the isolated low RV',
     when: (f) => f.on.vol && f.vol.pat.lowRV,
     dx: [['chestwall', 'chest-wall or pleural disease limiting the end-expiratory position'],

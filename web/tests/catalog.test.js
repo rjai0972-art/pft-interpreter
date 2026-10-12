@@ -38,7 +38,7 @@ const autoIds = (r) => P.eligiblePhrases(r.F, 'automatic').map(p => p.id);
   const r2 = run(st);
   ok(P.eligiblePhrases(r2.F, 'review').map(p => p.id).join(',') === 'impression.emphysema_context', 'selected review phrase eligible');
   ok(r2.impression.some(t => /compatible with emphysema/i.test(t)), 'selected review phrase appears in the interpretation');
-  ok(!run(mk(['spiro', 'vol', 'dlco'], 'spiro.ratio=low', 'spiro.fev1=mod', 'spiro.fvc=wnl', 'vol.tlc=wnl', 'vol.rvtlc=high', 'vol.frctlc=high', 'dlco.dlco=mod')).impression.some(t => /emphysema/i.test(t)), 'no disease name without selection');
+  ok(!run(mk(['spiro', 'vol', 'dlco'], 'spiro.ratio=low', 'spiro.fev1=mod', 'spiro.fvc=wnl', 'vol.tlc=wnl', 'vol.rvtlc=high', 'vol.frctlc=high', 'dlco.dlco=mod')).impression.some(t => /compatible with emphysema/i.test(t)), 'the catalog review phrase never appears without selection (the template\'s "suggests pulmonary emphysema" is the reading room\'s own standard sentence)');
   // no source keys, placeholders or fact paths in the copy-ready report
   [full, r2].forEach(r => {
     ok(!/\{[a-z0-9_]+\}/i.test(r.text), 'no placeholder printed');
@@ -168,7 +168,7 @@ VEC.machine_checkable_fixtures.forEach(fx => {
   // positive_bdr_persistent_obstruction
   r = run(mk(['spiro', 'bd'], 'spiro.ratio=low', 'spiro.fev1=mild', 'spiro.fvc=wnl', 'bd.resp=fev1', 'bd.post_ratio=low'));
   ok(autoIds(r).indexOf('bd.fev1') >= 0 && autoIds(r).indexOf('bd.persistent') >= 0, 'positive response with persistent obstruction both offered');
-  ok(/can coexist/.test(r.impression.join(' ')), 'coexistence stated');
+  ok(/although obstruction persists after bronchodilator/.test(r.impression.join(' ')), 'coexistence stated');
   // reference_change_serial
   r = run(mk(['spiro', 'prior'], 'spiro.fev1_abs=2.0', 'spiro.fev1_pct=74', 'prior.1.fev1=2.0', 'prior.1.fev1_pct=80', 'prior.1.date=2024-01-01', 'prior.1.ref_diff=1', 'ctx.date=2025-01-01'));
   ok(autoIds(r).concat(eligibleIds(r)).indexOf('serial.reference_changed') >= 0, 'reference change offered');
@@ -176,7 +176,7 @@ VEC.machine_checkable_fixtures.forEach(fx => {
   ok(/not directly comparable \(different reference equations\)/.test(r.impression.join(' ') + ' ' + r.text), 'percent-predicted change carries the caveat');
   // ppf_two_physiologic_metrics_one_domain
   r = run(mk(['spiro', 'dlco', 'prior'], 'ctx.indic=ild', 'ctx.date=2025-06-01', 'spiro.fvc_pct=70', 'dlco.dlco_pct=48', 'dlco.basis=adj', 'prior.1.date=2024-07-01', 'prior.1.fvc_pct=76', 'prior.1.dlco_pct=60'));
-  const txt = r.impression.join(' ');
+  const txt = r.text;
   ok(/one domain/.test(txt) && !/progressive pulmonary fibrosis is (present|established)/i.test(txt), 'FVC and DLCO thresholds reported as one domain, never as PPF', txt);
   // anemia_adjustment_unknown
   r = run(mk(['dlco'], 'dlco.dlco=mod', 'dlco.hb=9'));
