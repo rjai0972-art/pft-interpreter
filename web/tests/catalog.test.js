@@ -173,11 +173,11 @@ VEC.machine_checkable_fixtures.forEach(fx => {
   r = run(mk(['spiro', 'prior'], 'spiro.fev1_abs=2.0', 'spiro.fev1_pct=74', 'prior.1.fev1=2.0', 'prior.1.fev1_pct=80', 'prior.1.date=2024-01-01', 'prior.1.ref_diff=1', 'ctx.date=2025-01-01'));
   ok(autoIds(r).concat(eligibleIds(r)).indexOf('serial.reference_changed') >= 0, 'reference change offered');
   ok(eligibleIds(r).indexOf('serial.fev1_down') < 0, 'no measured decline from a reference change');
-  ok(/comparison limited: different reference equations/.test(r.impression.join(' ')), 'percent-predicted change carries the caveat');
+  ok(/not directly comparable \(different reference equations\)/.test(r.impression.join(' ') + ' ' + r.text), 'percent-predicted change carries the caveat');
   // ppf_two_physiologic_metrics_one_domain
   r = run(mk(['spiro', 'dlco', 'prior'], 'ctx.indic=ild', 'ctx.date=2025-06-01', 'spiro.fvc_pct=70', 'dlco.dlco_pct=48', 'dlco.basis=adj', 'prior.1.date=2024-07-01', 'prior.1.fvc_pct=76', 'prior.1.dlco_pct=60'));
   const txt = r.impression.join(' ');
-  ok(/one domain only|same physiologic domain/.test(txt) && !/progressive pulmonary fibrosis is (present|established)/i.test(txt), 'FVC and DLCO thresholds reported as one domain, never as PPF', txt);
+  ok(/one domain/.test(txt) && !/progressive pulmonary fibrosis is (present|established)/i.test(txt), 'FVC and DLCO thresholds reported as one domain, never as PPF', txt);
   // anemia_adjustment_unknown
   r = run(mk(['dlco'], 'dlco.dlco=mod', 'dlco.hb=9'));
   ok(r.F['observations.dlco.hb_unknown'] === true && r.F['observations.dlco.anemia'] === undefined, 'unknown basis: no automatic anemia attribution');
@@ -191,7 +191,7 @@ VEC.machine_checkable_fixtures.forEach(fx => {
   r = run(mk(['spiro'], 'spiro.ratio=z0.5', 'spiro.fev1=wnl', 'spiro.fvc=mild', 'spiro.limits=early'));
   ok(r.F['observations.quality.early_termination'] === true, 'early termination observed');
   ok(eligibleIds(r).indexOf('pattern.normal') < 0 && eligibleIds(r).indexOf('pattern.nonspecific') < 0 && eligibleIds(r).indexOf('pattern.low_fvc_unconfirmed') < 0, 'no pattern conclusion with an underestimated FVC');
-  ok(/cannot be reliably classified/.test(r.impression.join(' ')), 'indeterminate stated');
+  ok(/cannot be classified/.test(r.impression.join(' ')), 'indeterminate stated');
   r = run(mk(['spiro'], 'spiro.ratio=low', 'spiro.fev1=mod', 'spiro.fvc=mild', 'spiro.limits=early'));
   ok(r.F['patterns.obstruction'] === true, 'a low ratio despite early termination is still obstruction');
 })();

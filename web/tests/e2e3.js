@@ -5,11 +5,17 @@ const path = require('path');
 const FILE = process.env.PFT_URL || ('file://' + path.join(__dirname, '..', 'dist', 'PFT_Interpreter_standalone.html'));
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.log('FAIL', m); } };
+async function loadExample(page, i) {
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'examples' }));
+  await page.waitForSelector('.learn-body[data-topic="examples"] .ex');
+  await page.locator('.learn-body[data-topic="examples"] .ex').nth(i).click();
+  await page.waitForSelector('#doc');
+}
 
 const readDoc = (sel) => `(() => { const d = document.querySelector(${JSON.stringify(sel)}); if (!d) return null;
   return { meta: [...d.querySelectorAll('.meta span')].map(x => x.textContent),
     secs: [...d.querySelectorAll('.sec')].map(s => ({ key: s.getAttribute('data-sec'), title: s.querySelector('h3').textContent, text: (s.querySelector('p:not(.pv-empty)') || {textContent: ''}).textContent, empty: !!s.querySelector('.pv-empty') })),
-    impr: [...d.querySelectorAll('.interp li')].map(x => x.textContent), codes: [...d.querySelectorAll('.codes-row .code')].map(x => x.textContent) }; })()`;
+    impr: [...d.querySelectorAll('.interp .impr-s')].map(x => x.textContent), codes: [...d.querySelectorAll('.codes-row .code')].map(x => x.textContent) }; })()`;
 
 (async () => {
   const browser = await chromium.launch();
@@ -27,10 +33,9 @@ const readDoc = (sel) => `(() => { const d = document.querySelector(${JSON.strin
   const names = await page.evaluate(() => window.PFT_EXAMPLES.EXAMPLES.map(e => e.name));
   ok(names.length >= 6, 'examples available: ' + names.length);
   let compared = 0;
-  for (const name of names) {
-    await page.evaluate(() => window.__pft.goto('tests'));
-    await page.locator('.ex[data-example="' + name.replace(/"/g, '\\"') + '"]').click();
-    await page.waitForSelector('#doc');
+  for (let ei = 0; ei < names.length; ei++) {
+    const name = names[ei];
+    await loadExample(page, ei);
     const rep = await page.evaluate(readDoc('#doc'));
     const steps = await page.locator('.pill').evaluateAll(els => els.map(e => e.getAttribute('data-step')));
     for (const st of steps) {
@@ -47,8 +52,8 @@ const readDoc = (sel) => `(() => { const d = document.querySelector(${JSON.strin
   ok(compared > 40, 'compared ' + compared + ' example/step pairs');
 
   // ---- current step is marked, and the marked section is the step's own
-  await page.evaluate(() => window.__pft.goto('tests')); await page.locator('.ex').first().click(); await page.waitForSelector('#doc');
-  for (const [st, key] of [['spiro', 'spiro'], ['dlco', 'dlco'], ['vol', 'vol'], ['prior', 'prior']]) {
+  await loadExample(page, 0);
+  for (const [st, key] of [['spiro', 'spiro'], ['dlco', 'dlco'], ['vol', 'vol']]) {
     const has = await page.locator('.pill[data-step="' + st + '"]').count();
     if (!has) continue;
     await page.evaluate((s) => window.__pft.goto(s), st);
@@ -57,11 +62,11 @@ const readDoc = (sel) => `(() => { const d = document.querySelector(${JSON.strin
   }
 
   // ---- panel is brought to the current section
-  await page.evaluate(() => window.__pft.goto('prior')); await page.waitForTimeout(100);
+  await page.evaluate(() => window.__pft.goto('dlco')); await page.waitForTimeout(100);
   const st1 = await page.evaluate(() => document.querySelector('#pv .pv-doc').scrollTop);
   await page.evaluate(() => window.__pft.goto('spiro')); await page.waitForTimeout(100);
   const st2 = await page.evaluate(() => document.querySelector('#pv .pv-doc').scrollTop);
-  ok(st1 > st2, 'panel scrolls to the current section (prior ' + st1 + ' > spiro ' + st2 + ')');
+  ok(st1 > st2, 'panel scrolls to the current section (dlco ' + st1 + ' > spiro ' + st2 + ')');
 
   // ---- live update from a click, with flash, without leaving the step
   await page.evaluate(() => { window.__pft.setMode('case'); window.__pft.goto('tests'); });
@@ -96,7 +101,7 @@ const readDoc = (sel) => `(() => { const d = document.querySelector(${JSON.strin
   ok(noOverflow, 'no horizontal page scroll with the panel');
 
   // ---- buttons
-  await page.evaluate(() => window.__pft.goto('tests')); await page.locator('.ex').first().click(); await page.waitForSelector('#doc'); await page.evaluate(() => window.__pft.goto('spiro'));
+  await loadExample(page, 0); await page.evaluate(() => window.__pft.goto('spiro'));
   await page.click('#pv-copy'); await page.waitForTimeout(150);
   const clip = await page.evaluate(() => navigator.clipboard.readText()).catch(() => '');
   const want = await page.evaluate(() => window.__pft.result.text);
@@ -131,7 +136,7 @@ const readDoc = (sel) => `(() => { const d = document.querySelector(${JSON.strin
 
   const m = await browser.newContext({ viewport: { width: 400, height: 800 }, colorScheme: 'dark', hasTouch: true, isMobile: true });
   const mp = await m.newPage(); await mp.goto(FILE); await mp.waitForSelector('.tgrid');
-  await mp.locator('.ex').first().click(); await mp.waitForSelector('#doc'); await mp.evaluate(() => window.__pft.goto('vol'));
+  await loadExample(mp, 0); await mp.evaluate(() => window.__pft.goto('vol'));
   ok(await mp.locator('#pv').isHidden(), 'phone: panel hidden');
   ok(await mp.locator('.live').first().isVisible(), 'phone: findings box still shown');
   ok(await mp.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1), 'phone: no horizontal scroll');

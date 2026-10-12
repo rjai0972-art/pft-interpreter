@@ -424,7 +424,7 @@ T.limits = { title: 'Limitations and pitfalls', kicker: 'What this can and canno
 
 T.app = { title: 'About this app and the case bank', kicker: 'How the reading works, and what saving does', blocks: [
   { h: 'How the interpretation is built', ol: [
-    'Each test section reports facts only: what was entered, its reliability, and what it is relative to the LLN, in the wording level you choose. Metrics in the same state share one sentence ("FEV1, FVC and FEV1/FVC are all within reference limits"); when one is abnormal, the defining measurement leads and carries the others ("FEV1/FVC is reduced, with FEV1 moderately reduced; FVC is within reference limits").',
+    'Each test section reports facts only, the way a reading physician dictates them: the numbers first, then one sentence that groups the indices by state ("FEV1, FVC and FEV1/FVC are all normal"; "FEV1/FVC is reduced, with a moderately reduced FEV1 and a normal FVC"). A prior study is compared inside the same section with the percent change and whether it is a significant change.',
     'The Interpretation synthesizes: the ventilatory pattern, lung volumes and gas transfer are read together in one statement, then the bronchodilator response, the adjunct tests, the comparison with prior studies, and what would clarify the picture. Interpretive context that needs judgement is offered as suggested additions and included only when tapped.',
     'For each verified finding the Report step also offers its differential considerations and the studies that sort them out (for an isolated low DLCO: pulmonary vascular disease, early interstitial disease before FVC or TLC fall, emphysema with preserved volumes, anemia, recent smoking or carboxyhemoglobin; hemoglobin and COHb, HRCT, echocardiography, exertional oximetry). Tapped differentials join the Interpretation as one sentence per finding; tapped studies are listed once under "Additional studies to consider". None is inserted on its own.',
     'The heads-up box compares tests with each other and with the tracing: alerts and cautions for inconsistency and data-entry problems, look-for tips with example loops, and notes for missing tests that would change the reading.',
@@ -460,8 +460,12 @@ const GROUPS = [
   { title: 'Challenge and inflammation', ids: ['feno', 'bronch'] },
   { title: 'Exercise and gases', ids: ['sixmw', 'cpet', 'gas'] },
   { title: 'Over time', ids: ['prior'] },
-  { title: 'This app', ids: ['app', 'phrases'] }
+  { title: 'This app', ids: ['examples', 'app', 'phrases'] }
 ];
+T.examples = { title: 'Worked examples', kicker: 'Load a complete case and read the report', blocks: [
+  { p: 'Each example fills every step with a coherent case. Load one, read the report, then walk back through the steps to see which taps produced each sentence. Loading an example replaces the current case.' },
+  { examples: true }
+] };
 
 root.PFT_EDU = { topics: T, groups: GROUPS };
 if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_EDU;

@@ -23,11 +23,13 @@ node tests/e2e.js; node tests/e2e2.js; node tests/e2e3.js; node tests/e2e4.js; n
    air trapping vs hyperinflation vs large lungs, DLCO with VA/KCO and the hemoglobin basis, muscle, posture,
    challenge states (positive / negative / incomplete / indeterminate / diluent response), FeNO, serial comparability.
 3. **The findings map `F`** uses the exact fact keys of the phrase catalog; the catalog is matched by strict equality.
-4. **Sections** report facts at the chosen level (concise / standard / detailed / with numbers). The metrics of a
-   section are composed into one sentence by state (`metricGroup` in `engine_3_sections.js`): same-state metrics are
-   grouped with their z-scores, abnormal groups lead (the defining measurement first), the normal group closes the
-   sentence, invalid metrics keep their own sentence; the detailed level appends the catalog's caveats and the numeric
-   level prints the measured values inline. Qualifiers (quality, limitations, basis, hemoglobin) keep catalog wording.
+4. **Sections** report facts at the chosen level (concise / standard / detailed) in the reading physician's voice
+   (`valuesLine`, `findingSentences`, `metricBlock` in `engine_3_sections.js`): the numbers line first, then one
+   sentence that groups the indices by state with the defining index leading when abnormal ("FEV1/FVC is reduced,
+   with a moderately reduced FEV1 and a normal FVC"); invalid indices keep their own sentence; the detailed level
+   appends the catalog's caveats. Prior studies are compared inside their own section (`priorLines`, `serialVerdict`)
+   with the percent change and a significance verdict; `priorImpression` writes the serial sentences of the
+   interpretation. The interpretation is a paragraph, not a numbered list.
 5. **The Interpretation** is one synthesis: ventilatory pattern, lung volumes and gas transfer in one statement, then
    the gas-transfer mechanism, bronchodilator response, adjunct tests, serial change, and what would clarify the picture.
    Review-only wording (disease context, differentials, follow-up) is offered as *suggested additions* and included

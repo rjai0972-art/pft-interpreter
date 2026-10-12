@@ -216,7 +216,7 @@ function differentialText(groups) {
   const sentences = [], studies = [], seen = {};
   groups.forEach(g => {
     const on = g.dx.filter(d => d.on).map(d => d.text);
-    if (on.length) sentences.push('Differential considerations for ' + g.title + ' include ' + joinList(on) + ', which the physiologic pattern alone does not distinguish.');
+    if (on.length) sentences.push('Differential considerations for ' + g.title + ' include ' + joinList(on) + '.');
     g.studies.forEach(s => { if (s.on && !seen[s.id]) { seen[s.id] = 1; studies.push(s.text); } });
   });
   return { sentences: sentences, studies: studies };

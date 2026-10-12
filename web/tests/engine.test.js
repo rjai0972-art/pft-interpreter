@@ -73,9 +73,9 @@ const hu = (r, idPrefix) => r.headsup.filter(h => h.id.indexOf(idPrefix) === 0)[
   ok(/^Severe obstructive/.test(sp('low', 'sev', 'wnl').impression[0]), 'severity from FEV1 z');
   ok(/^Moderate obstructive/.test(sp('low', 'mod', 'wnl').impression[0]), 'moderate');
   // high ratio
-  ok(/increased|above the ULN/.test(sp('high', 'mild', 'mild').sections[0].lines.join(' ')), 'ratio above ULN mentioned');
+  ok(/FEV1\/FVC is elevated/.test(sp('high', 'mild', 'mild').sections[0].lines.join(' ')), 'ratio above ULN mentioned');
   // quality statements
-  ok(/good \(grade B\)/.test(sp('wnl', 'wnl', 'wnl', ['spiro.qual=B']).sections[0].lines[0]), 'grade B statement');
+  ok(/^Good quality \(grade B\)\./.test(sp('wnl', 'wnl', 'wnl', ['spiro.qual=B']).sections[0].lines[0]), 'grade B statement');
   ok(/reduced confidence \(grade D\)/.test(sp('wnl', 'wnl', 'wnl', ['spiro.qual=D']).sections[0].lines[0]), 'grade D statement');
   ok(hasHU(sp('wnl', 'wnl', 'wnl', ['spiro.qual=F']), 'TQ1') && hu(sp('wnl', 'wnl', 'wnl', ['spiro.qual=F']), 'TQ1').lvl === 'alert', 'grade F alerts');
 })();
@@ -100,7 +100,7 @@ const hu = (r, idPrefix) => r.headsup.filter(h => h.id.indexOf(idPrefix) === 0)[
   eq(V(vl('low', 'mod', 'wnl', 'mod', 'wnl')), 'V16', 'low ratio + low TLC = mixed even if RV/TLC normal');
   ok(/hyperinflation and air trapping/.test(vl('low', 'mod', 'wnl', 'high', 'high').impression[0]), 'obstruction + high TLC + high RV/TLC');
   ok(/with air trapping/.test(vl('low', 'mod', 'wnl', 'wnl', 'high').impression[0]) && !/hyperinflation/.test(vl('low', 'mod', 'wnl', 'wnl', 'high').impression[0]), 'obstruction + RV/TLC high only = air trapping');
-  ok(/without air trapping or hyperinflation/.test(vl('low', 'mod', 'wnl', 'wnl', 'wnl').impression[0]), 'obstruction with normal volumes');
+  ok(/without hyperinflation or air trapping/.test(vl('low', 'mod', 'wnl', 'wnl', 'wnl').impression[0]), 'obstruction with normal volumes');
   ok(/large lungs/.test(vl('wnl', 'wnl', 'wnl', 'high', 'wnl').impression[0]), 'large lungs');
   ok(/obesity may contribute/i.test(run(mk(['spiro', 'vol', ], 'ctx.ht=170', 'ctx.wt=100', 'spiro.ratio=wnl', 'spiro.fev1=mild', 'spiro.fvc=mild', 'vol.tlc=mild')).impression.join(' ')), 'obesity add-on when BMI>=30');
   ok(!/obesity may contribute/i.test(run(mk(['spiro', 'vol', ], 'ctx.ht=170', 'ctx.wt=70', 'spiro.ratio=wnl', 'spiro.fev1=mild', 'spiro.fvc=mild', 'vol.tlc=mild')).impression.join(' ')), 'no obesity add-on at normal BMI');
@@ -198,15 +198,15 @@ const hu = (r, idPrefix) => r.headsup.filter(h => h.id.indexOf(idPrefix) === 0)[
   eq(mp('M', 74, 99, 39).snip, 'low', 'SNIP < 40 low'); eq(mp('', 60, 60, 60).mip, 'unknown', 'sex unknown -> not classified');
   eq(mp('M', -90, 120, 60).mip, 'normal', 'negative-signed MIP is treated as magnitude');
   const po = (up, sup) => run(mk(['post'], 'post.up=' + up, 'post.sup=' + sup));
-  ok(/above the change expected in health/.test(po(3, 2.6).impression[0]) && !/exceeds the 15%/.test(po(3, 2.6).impression[0]), 'supine fall 13% above expected, below the 15% clue');
-  ok(/No excessive postural fall/.test(po(3, 2.8).impression[0]), 'fall 6.7% normal'); ok(/exceeds the 15% screening clue/.test(po(3, 2.3).impression[0]), 'fall 23% exceeds the clue'); ok(/30% or more/.test(po(3, 1.9).impression[0]), 'fall 37% in the bilateral range');
+  ok(/above the usual change in health/.test(po(3, 2.6).impression[0]) && !/exceeds the 20%/.test(po(3, 2.6).impression[0]), 'supine fall 13% above expected, below the 15% threshold');
+  ok(/No excessive postural fall/.test(po(3, 2.8).impression[0]), 'fall 6.7% normal'); ok(/exceeds the 20% threshold/.test(po(3, 2.3).impression[0]), 'fall 23% exceeds the threshold'); ok(/30% or more/.test(po(3, 1.9).impression[0]), 'fall 37% in the bilateral range');
   ok(/Orthodeoxia by SpO2/.test(run(mk(['post'], 'post.spo2_sup=97', 'post.spo2_up=91')).impression.join(' ')), 'orthodeoxia by SpO2');
   const six = run(mk(['sixmw'], 'ctx.age=60', 'sixmw.dist=300', 'sixmw.spo2_base=95', 'sixmw.spo2_nadir=85', 'sixmw.hr_peak=120', 'sixmw.hr_1min=110')).facts.six;
   eq(six.dsp, 255, 'distance-saturation product (distance x nadir SpO2 as a fraction)'); eq(six.drop, 10, 'SpO2 drop'); eq(six.hrr1, 10, 'HRR1'); ok(Math.abs(six.hrPct - 120 / 166 * 100) < 1e-9, '% age-predicted max HR (Tanaka 208 - 0.7 x age)');
   const sixF = run(mk(['sixmw'], 'ctx.age=60', 'ctx.hrmax_eq=fox', 'sixmw.hr_peak=120')).facts.six;
   ok(Math.abs(sixF.hrPct - 75) < 1e-9, '% age-predicted max HR (220 - age when selected)');
   const sixP = run(mk(['sixmw', 'prior'], 'sixmw.dist=330', 'prior.1.six=300', 'prior.1.date=2024-01-01', 'ctx.date=2025-01-01'));
-  ok(/meeting or exceeding the 30 m minimal important difference/.test(sixP.impression.join(' ')), '6MWD change 30 m meets MID');
+  ok(/beyond the 30 m minimal important difference/.test(sixP.impression.join(' ')) && /6MWD 300 → 330 m \(\+30, \+10%\), beyond the 30 m minimal important difference/.test(sixP.sections[0].lines.join(' ')), '6MWD change 30 m meets MID: ' + sixP.sections[0].lines.join(' '));
   const abg = run(mk(['gas'], 'ctx.age=40', 'gas.ph=7.40', 'gas.paco2=40', 'gas.pao2=90', 'gas.hco3=24')).facts.gas;
   ok(Math.abs(abg.aa - (0.21 * 713 - 40 / 0.8 - 90)) < 1e-9, 'A-a gradient'); ok(Math.abs(abg.aaMax - 14) < 1e-9, 'expected A-a upper limit age/4+4');
   ok(/Respiratory acidosis \(HCO3 fits an acute/.test(run(mk(['gas'], 'gas.ph=7.20', 'gas.paco2=70', 'gas.hco3=27')).impression.join(' ')), 'acute respiratory acidosis');
@@ -227,9 +227,10 @@ const hu = (r, idPrefix) => r.headsup.filter(h => h.id.indexOf(idPrefix) === 0)[
   const base = (priorFev1, date) => run(mk(['spiro', 'prior'], 'ctx.date=2025-03-01', 'ctx.sex=M', 'ctx.age=65', 'spiro.fev1_abs=1.70', 'spiro.fvc_abs=3.0', 'prior.1.date=' + date, 'prior.1.fev1=' + priorFev1));
   let r = base(2.0, '2024-03-01'); const m = r.facts.priors[0].metrics[0];
   ok(Math.abs(m.dPct - (-15)) < 1e-9, 'FEV1 -15% computed'); ok(Math.abs(r.facts.priors[0].years - 1.0) < 0.01, 'interval ~1 year');
-  ok(/15% change that ERS\/ATS 2022 describes/.test(r.impression.join(' ')), '15% threshold line at exactly -15%');
-  ok(/8%\/yr/.test(r.impression.join(' ')) && /meets the 8%\/yr rapid-decline/.test(r.impression.join(' ')), '8%/yr threshold line');
-  r = base(1.80, '2024-03-01'); ok(!/15% biological/.test(r.sections[1].lines.join(' ')) && !/meets the rapid/.test(r.sections[1].lines.join(' ')), '-5.6% triggers neither threshold');
+  ok(/FEV1 2\.00 → 1\.70 L \(-300 mL, -15%\), a significant decline/.test(r.sections[0].lines.join(' ')), 'section: change with the significance verdict at exactly -15%: ' + r.sections[0].lines.join(' '));
+  ok(/Compared with Mar 2024, FEV1 has fallen 15% \(-300 mL\), beyond the expected variability of the test/.test(r.impression.join(' ')), 'interpretation: significant decline named');
+  r = base(1.80, '2024-03-01'); ok(/FEV1 2\.00 → 1\.70 L/.test(r.sections[0].lines.join(' ')) === false && /1\.80 → 1\.70 L \(-100 mL, -6%\), not a significant change/.test(r.sections[0].lines.join(' ')), '-5.6% is not called significant');
+  ok(/the FEV1 change is within the expected variability/.test(r.impression.join(' ')), 'interpretation: within variability');
   r = base(1.80, '2023-03-01'); // 2 years, -5.6% total -> -2.8%/yr
   ok(Math.abs(r.facts.priors[0].metrics[0].pctPerYear - (-2.78)) < 0.05, 'annualised over 2 years');
   r = base(2.0, '2025-02-01'); ok(isNaN(r.facts.priors[0].metrics[0].pctPerYear), 'no annualisation under 3 months'); ok(hasHU(r, 'DE19'), 'short interval note');
@@ -237,7 +238,8 @@ const hu = (r, idPrefix) => r.headsup.filter(h => h.id.indexOf(idPrefix) === 0)[
   r = base(2.0, '2024-03-01'); ok(Math.abs(r.facts.priors[0].metrics[0].q0 - 4.0) < 1e-9 && Math.abs(r.facts.priors[0].metrics[0].q1 - 3.4) < 1e-9, 'FEV1Q male /0.5');
   // two priors
   const two = run(mk(['spiro', 'prior'], 'ctx.date=2025-03-01', 'spiro.fev1_abs=1.70', 'prior.1.date=2024-03-01', 'prior.1.fev1=1.9', 'prior.2.date=2022-03-01', 'prior.2.fev1=2.3'));
-  eq(two.facts.priors.length, 2, 'two prior studies'); ok(/prior study #2/.test(two.sections[1].lines.join(' ')), 'both priors reported');
+  eq(two.facts.priors.length, 2, 'two prior studies'); ok(/Compared with Mar 1, 2024 \(1 year earlier\)/.test(two.sections[0].lines.join(' ')) && /Compared with Mar 1, 2022 \(3 years earlier\)/.test(two.sections[0].lines.join(' ')), 'both priors reported in the spirometry section');
+  ok(/Over 3 years \(since Mar 2022\): FEV1 2\.30 → 1\.70 L/.test(two.impression.join(' ')), 'older prior summarised as a trajectory');
   // conditional change score (Box 2 example: z1=-0.78, z2=-1.60, 0.25 y, age 14 at t1 -> -2.17)
   const cc = run(mk(['spiro', 'prior'], 'ctx.date=2025-04-01', 'ctx.age=14.25', 'spiro.fev1=z-1.6', 'prior.1.date=2025-01-01', 'prior.1.fev1_z=-0.78', 'prior.1.fev1=2.9', 'spiro.fev1_abs=2.6'));
   ok(Math.abs(cc.facts.priors[0].ccs - (-2.17)) < 0.05, 'conditional change score reproduces ERS/ATS Box 2', String(cc.facts.priors[0].ccs));
@@ -246,7 +248,10 @@ const hu = (r, idPrefix) => r.headsup.filter(h => h.id.indexOf(idPrefix) === 0)[
   ok(hasHU(ild, 'PR6') && hasHU(ild, 'PR7'), 'ILD progression criteria (FVC >=5, DLCO >=10 points)');
   // FeNO significant change
   const fn = run(mk(['feno', 'prior'], 'ctx.date=2025-03-01', 'feno.val=75', 'prior.1.date=2024-03-01', 'prior.1.feno=55'));
-  ok(/not significant/.test(fn.sections[1].lines.join(' ')) === false || /significant/.test(fn.sections[1].lines.join(' ')), 'FeNO change rule evaluated');
+  ok(/FeNO 55 → 75 ppb \(\+20, \+36%\), a significant change/.test(fn.sections[0].lines.join(' ')), 'FeNO change rule evaluated in the FeNO section: ' + fn.sections[0].lines.join(' '));
+  // a prior typed without ticking a test counts
+  const auto = run(mk(['spiro'], 'ctx.date=2025-03-01', 'spiro.fev1_abs=1.70', 'prior.1.date=2024-03-01', 'prior.1.fev1=2.0'));
+  ok(auto.facts.on.prior === true && /Compared with Mar 1, 2024/.test(auto.sections[0].lines.join(' ')) && auto.state.tests.prior === false, 'a prior value alone switches the comparison on without touching the saved tests');
 })();
 
 /* ---------- heads-up (discordance) rules ---------- */
@@ -337,7 +342,7 @@ const hu = (r, idPrefix) => r.headsup.filter(h => h.id.indexOf(idPrefix) === 0)[
   // loops
   P.LOOPS.forEach(l => {
     const r = run(mk(['spiro'], 'spiro.ratio=wnl', 'spiro.fev1=wnl', 'spiro.fvc=wnl', 'fvl.loop=' + l[0], 'fvl.loop_repro=1'));
-    ok(/Loop shape/.test(r.sections.filter(x => x.key === 'fvl')[0].lines.join(' ')), 'loop description present: ' + l[0]);
+    ok(r.sections.filter(x => x.key === 'fvl')[0].lines.join(' ').indexOf(l[3]) === 0, 'loop description present: ' + l[0]);
   });
   eq(P.LOOPS.length, 14, '14 typical loops');
   ok(P.LOOPS.every(l => l[1] && l[2]), 'every loop has a label and caption');
@@ -359,8 +364,8 @@ const hu = (r, idPrefix) => r.headsup.filter(h => h.id.indexOf(idPrefix) === 0)[
   ok(hasHU(dT, 'PH15') && !hasHU(dT, 'PH17') && hasHU(dT, 'TQ10') && !hasHU(dT, 'TQ11'), 'Hb low and COHb high taps drive the heads-up rules');
   const dN = run(mk(['dlco'], 'ctx.smoke=current', 'dlco.dlco=mod'));
   ok(hasHU(dN, 'PH17') && hasHU(dN, 'TQ11') && !hasHU(dN, 'PH15'), 'no Hb/COHb information prompts a heads-up');
-  ok(/low hemoglobin would lower an unadjusted value/.test(dT.impression.join(' ')), 'impression mentions low Hb from the tap (basis not stated)');
-  ok(/may partly reflect reduced hemoglobin/.test(run(mk(['dlco'], 'dlco.dlco=mod', 'dlco.hbcat=low', 'dlco.basis=un')).impression.join(' ')), 'unadjusted basis with documented anemia');
+  ok(/part of the reduction could reflect anemia if the value is unadjusted/.test(dT.impression.join(' ')), 'impression mentions low Hb from the tap (basis not stated)');
+  ok(/part of the reduction may reflect the low hemoglobin/.test(run(mk(['dlco'], 'dlco.dlco=mod', 'dlco.hbcat=low', 'dlco.basis=un')).impression.join(' ')), 'unadjusted basis with documented anemia');
   // MIP / post
   const mT = run(mk(['mip', 'post'], 'ctx.sex=M', 'mip.mip=low', 'mip.cpfcat=vlow', 'post.fall=ge30', 'post.orthodeox=yes'));
   ok(/bilateral diaphragm weakness/.test(mT.impression.join(' ')) && /Orthodeoxia/.test(mT.impression.join(' ')), 'postural tap bands and orthodeoxia');
@@ -409,9 +414,9 @@ const hu = (r, idPrefix) => r.headsup.filter(h => h.id.indexOf(idPrefix) === 0)[
   eq(P.INDICATIONS.reduce((a, g) => a + g.opts.length, 0), 24, 'common indications count');
   ok(run(mk(['spiro'], 'ctx.indic=bogus,asthma')).facts.ctx.indicLabels.length === 1 || true, 'unknown indications ignored safely');
   // equations
-  ok(/spirometry GLI Global \(race-neutral\)/.test(run(mk(['spiro'], 'spiro.ratio=wnl')).text), 'default spirometry equation named');
-  ok(/lung volumes GLI-2021; DLCO GLI-2017/.test(run(mk(['vol', 'dlco'], 'vol.tlc=wnl', 'dlco.dlco=wnl')).text), 'default volume/DLCO equations named');
-  ok(/GLI-2012/.test(run(mk(['spiro'], 'ctx.ref_spiro=gli2012', 'spiro.ratio=wnl')).text) && hasHU(run(mk(['spiro'], 'ctx.ref_spiro=gli2012', 'spiro.ratio=wnl')), 'EQ1'), 'GLI-2012 named and flagged');
+  ok(/Reference values: GLI \(race-neutral spirometry\)/.test(run(mk(['spiro'], 'spiro.ratio=wnl')).text), 'default spirometry equation named');
+  ok(/Reference values: GLI \(2021 lung volumes, 2017 DLCO\)/.test(run(mk(['vol', 'dlco'], 'vol.tlc=wnl', 'dlco.dlco=wnl')).text), 'default volume/DLCO equations named');
+  ok(/GLI \(2012 spirometry\)/.test(run(mk(['spiro'], 'ctx.ref_spiro=gli2012', 'spiro.ratio=wnl')).text) && hasHU(run(mk(['spiro'], 'ctx.ref_spiro=gli2012', 'spiro.ratio=wnl')), 'EQ1'), 'GLI-2012 named and flagged');
   ok(hasHU(run(mk(['dlco'], 'ctx.ref_dlco=other', 'dlco.dlco=wnl')), 'EQ2'), 'non-GLI set flagged');
   ok(hasHU(run(mk(['sixmw'], 'ctx.age=60', 'ctx.hrmax_eq=fox', 'sixmw.hr_peak=120')), 'EQ3'), '220 - age flagged');
   eq(run(mk(['sixmw'], 'ctx.age=60')).facts.ctx.hrMax, 166, 'Tanaka HRmax is the default');
@@ -558,7 +563,7 @@ const hu = (r, idPrefix) => r.headsup.filter(h => h.id.indexOf(idPrefix) === 0)[
   ok(!/Differential considerations/.test(r.text) && !/ADDITIONAL STUDIES/.test(r.text), 'report carries no differential or study text until tapped');
   r = run(withReview(st, ['dx.dlco_isolated.ild_early', 'dx.dlco_isolated.pvd', 'dx.dlco_isolated.anemia', 'dx.dlco_isolated.cohb']));
   const sent = r.impression.filter(t => /^Differential considerations for the isolated reduction in DLCO include /.test(t));
-  ok(sent.length === 1 && /pulmonary vascular disease/.test(sent[0]) && /early interstitial lung disease \(gas transfer can fall before FVC or TLC\)/.test(sent[0]) && /anemia/.test(sent[0]) && /recent smoking or elevated carboxyhemoglobin/.test(sent[0]) && /which the physiologic pattern alone does not distinguish\.$/.test(sent[0]), 'tapped differentials join the interpretation as one sentence: ' + (sent[0] || '').slice(0, 160));
+  ok(sent.length === 1 && /pulmonary vascular disease/.test(sent[0]) && /early interstitial lung disease \(gas transfer can fall before FVC or TLC\)/.test(sent[0]) && /anemia/.test(sent[0]) && /recent smoking or elevated carboxyhemoglobin/.test(sent[0]) && /before the test\.$/.test(sent[0]), 'tapped differentials join the interpretation as one sentence: ' + (sent[0] || '').slice(0, 160));
   ok(!/ADDITIONAL STUDIES/.test(r.text), 'differentials alone add no study block');
   r = run(withReview(st, ['study.hb', 'study.hrct', 'study.hrct']));
   ok(/\nADDITIONAL STUDIES TO CONSIDER: Hemoglobin \(to adjust the DLCO\) and carboxyhemoglobin; high-resolution CT of the chest\.$/.test(r.text), 'tapped studies are listed once after the interpretation: ' + r.text.split('\n').slice(-1)[0]);
@@ -614,44 +619,52 @@ const hu = (r, idPrefix) => r.headsup.filter(h => h.id.indexOf(idPrefix) === 0)[
   ok(P.DX_GROUPS.length >= 19 && P.DX_GROUPS.every(g => /^[a-z_]+$/.test(g.key)), 'group keys are well formed');
 })();
 
-/* ---------- composed section sentences: same-state metrics are grouped ---------- */
+/* ---------- composed section sentences: the reading physician's voice ---------- */
 (function () {
   const line = (r, key) => r.sections.filter(x => x.key === key)[0].lines.join(' ');
   const lvl = (st, style) => { const c = JSON.parse(JSON.stringify(st)); c.settings.style = style; return run(c); };
+  const band = (x) => { x.settings.band = 0.25; return x; };
   let st = mk(['spiro', 'vol', 'dlco'], 'spiro.ratio=wnl', 'spiro.fev1=wnl', 'spiro.fvc=wnl', 'vol.tlc=wnl', 'vol.rv=wnl', 'vol.rvtlc=wnl', 'dlco.dlco=wnl', 'dlco.va=wnl', 'dlco.kco=wnl');
   let r = run(st);
-  eq(line(r, 'spiro'), 'FEV1, FVC and FEV1/FVC are all within reference limits.', 'normal spirometry is one sentence');
-  eq(line(r, 'vol'), 'TLC, RV and RV/TLC are all within reference limits.', 'normal volumes are one sentence');
-  ok(/^DLCO, VA and KCO are all within reference limits\./.test(line(r, 'dlco')), 'normal gas transfer is one sentence: ' + line(r, 'dlco'));
+  eq(line(r, 'spiro'), 'FEV1, FVC and FEV1/FVC are all normal.', 'normal spirometry is one sentence');
+  eq(line(r, 'vol'), 'TLC, RV and RV/TLC are all normal.', 'normal volumes are one sentence');
+  eq(line(r, 'dlco'), 'DLCO, VA and KCO are all normal.', 'normal gas transfer is one sentence; nothing said about the basis when DLCO is normal');
   r = run(mk(['spiro'], 'spiro.ratio=z-2.3', 'spiro.fev1=z-3.1', 'spiro.fvc=z-0.4'));
-  eq(line(r, 'spiro'), 'FEV1/FVC is reduced (z = -2.3), with FEV1 moderately reduced (z = -3.1); FVC is within reference limits (z = -0.4).', 'obstruction: the ratio leads and carries the FEV1 grade');
+  eq(line(r, 'spiro'), 'z-scores: FEV1 -3.1, FVC -0.4, FEV1/FVC -2.3. FEV1/FVC is reduced, with a moderately reduced FEV1 and a normal FVC.', 'obstruction: a z-score line, then the ratio leads and carries the others');
   r = run(mk(['spiro'], 'spiro.ratio=z-2.3', 'spiro.fev1=z-4.5', 'spiro.fvc=z-2.6'));
-  eq(line(r, 'spiro'), 'FEV1/FVC is reduced (z = -2.3), with FEV1 severely reduced (z = -4.5) and FVC moderately reduced (z = -2.6).', 'two grades hang off the ratio');
+  ok(/FEV1\/FVC is reduced, with a severely reduced FEV1 and a moderately reduced FVC\.$/.test(line(r, 'spiro')), 'two grades hang off the ratio: ' + line(r, 'spiro'));
   r = run(mk(['spiro'], 'spiro.ratio=z0.3', 'spiro.fev1=z-2.0', 'spiro.fvc=z-1.9'));
-  eq(line(r, 'spiro'), 'FEV1 and FVC are mildly reduced (z = -2.0 and -1.9); FEV1/FVC is within reference limits (z = +0.3).', 'same grade merges with both z-scores; the preserved ratio closes the sentence');
+  ok(/FEV1 and FVC are mildly reduced, with a normal FEV1\/FVC\.$/.test(line(r, 'spiro')), 'same grade merges; the preserved ratio rides along');
+  r = run(mk(['spiro'], 'spiro.ratio=wnl', 'spiro.fev1=mild', 'spiro.fvc=wnl'));
+  eq(line(r, 'spiro'), 'FEV1 is mildly reduced, with normal FVC and FEV1/FVC.', 'one abnormal index, two normal ones');
   r = run(mk(['spiro'], 'spiro.ratio=wnl', 'spiro.fev1=wnl', 'spiro.fvc=wnl', 'spiro.qual=D'));
-  ok(/FEV1, FVC and FEV1\/FVC are all within reference limits \(reduced confidence: see quality\)\./.test(line(r, 'spiro')), 'a quality limit on every metric is said once: ' + line(r, 'spiro'));
-  const band = (x) => { x.settings.band = 0.25; return x; };   // an earlier test turned the band off through the shared CFG
+  eq(line(r, 'spiro'), 'Acceptable quality with reduced confidence (grade D). FEV1, FVC and FEV1/FVC are all normal (reduced confidence).', 'quality once, confidence once');
   r = run(band(mk(['spiro'], 'spiro.ratio=z-1.5', 'spiro.fev1=z-1.0', 'spiro.fvc=z-0.5')));
-  eq(line(r, 'spiro'), 'FEV1, FVC and FEV1/FVC are all within reference limits (z = -1.0, -0.5 and -1.5); FEV1/FVC is near the LLN (a review flag, not a separate category).', 'near-LLN stays inside the normal group with its flag after');
-  r = run(band(mk(['spiro'], 'spiro.ratio=z-1.5', 'spiro.fev1=z-2.0', 'spiro.fvc=z-1.7')));
-  ok(/FEV1\/FVC is within reference limits \(z = -1.5\), near the LLN/.test(line(r, 'spiro')), 'a lone near-LLN metric carries the flag inline');
+  ok(/FEV1, FVC and FEV1\/FVC \(near the LLN\) are all normal\.$/.test(line(r, 'spiro')), 'near-LLN marked on the index: ' + line(r, 'spiro'));
   r = run(mk(['spiro'], 'spiro.ratio=z-1.5', 'spiro.fev1=z-1.0', 'spiro.fvc=z-2.5', 'spiro.qual_fvc=F'));
-  ok(/FVC and FEV1\/FVC are not interpretable \(the maneuver did not meet quality criteria; FVC z = -2.5, FEV1\/FVC z = -1.5\)\. FEV1 is within reference limits \(z = -1.0\)\./.test(line(r, 'spiro')), 'invalid metrics share one sentence and never join a state group: ' + line(r, 'spiro'));
-  r = run(mk(['vol'], 'vol.tlc=z2.1', 'vol.rv=z2.6', 'vol.rvtlc=z2.4', 'vol.frc=z0.5'));
-  eq(line(r, 'vol'), 'TLC, RV and RV/TLC are increased (z = +2.1, +2.6 and +2.4); FRC is within reference limits (z = +0.5).', 'hyperinflation volumes grouped');
+  ok(/FVC and FEV1\/FVC are not interpretable \(did not meet quality criteria\)\. FEV1 is normal\.$/.test(line(r, 'spiro')), 'invalid indices share one sentence and never join a state group: ' + line(r, 'spiro'));
+  r = run(mk(['vol'], 'vol.tlc=z2.1', 'vol.rv=z2.6', 'vol.rvtlc=z2.4', 'vol.frc=z0.5', 'vol.method=pleth'));
+  ok(r.sections[0].title === 'LUNG VOLUMES (plethysmography)' && /TLC, RV and RV\/TLC are elevated, with a normal FRC\.$/.test(line(r, 'vol')), 'hyperinflation volumes grouped; method in the title: ' + line(r, 'vol'));
+  r = run(mk(['vol'], 'vol.tlc=z-2.8', 'vol.rvtlc=wnl'));
+  ok(/TLC is moderately reduced, with a normal RV\/TLC\.$/.test(line(r, 'vol')), 'restriction: TLC leads');
   r = run(mk(['dlco'], 'dlco.dlco=z-2.9', 'dlco.va=z-0.3', 'dlco.kco=z-2.2'));
-  ok(/^DLCO is moderately reduced \(z = -2.9\) and KCO is reduced \(z = -2.2\); VA is within reference limits \(z = -0.3\)\./.test(line(r, 'dlco')), 'gas transfer composed: ' + line(r, 'dlco'));
+  ok(/DLCO is moderately reduced, with a reduced KCO and a normal VA\. Whether the value is hemoglobin-adjusted is not stated\.$/.test(line(r, 'dlco')), 'gas transfer composed; unknown basis noted only for a low DLCO: ' + line(r, 'dlco'));
   r = run(mk(['dlco'], 'dlco.dlco=mild', 'dlco.basis=un', 'dlco.dlco_adj=wnl', 'dlco.va=wnl', 'dlco.kco=wnl'));
-  ok(/^DLCO \(not adjusted for hemoglobin\) is mildly reduced; hemoglobin-adjusted DLCO, VA and KCO are within reference limits\./.test(line(r, 'dlco')), 'unadjusted and adjusted DLCO named in one sentence: ' + line(r, 'dlco'));
+  eq(line(r, 'dlco'), 'DLCO is mildly reduced before hemoglobin adjustment and normal after it, with normal VA and KCO.', 'unadjusted and adjusted DLCO in one sentence');
+  r = run(mk(['dlco'], 'dlco.dlco=mod', 'dlco.basis=un', 'dlco.dlco_adj=mod', 'dlco.va=wnl', 'dlco.kco=low', 'dlco.dlco_pct=52', 'dlco.hb=14'));
+  ok(/^DLCO 52% predicted\. DLCO is moderately reduced both unadjusted and after hemoglobin adjustment, with a reduced KCO and a normal VA\. Hemoglobin 14\.0 g\/dL\.$/.test(line(r, 'dlco')), 'both bases reduced: ' + line(r, 'dlco'));
   // levels
   st = mk(['spiro'], 'spiro.ratio=z-2.3', 'spiro.fev1=z-3.1', 'spiro.fvc=z-0.4', 'spiro.fev1_abs=1.55', 'spiro.fvc_abs=3.2', 'spiro.fev1_pct=48');
-  const stdT = line(lvl(st, 'standard'), 'spiro'), numT = line(lvl(st, 'numeric'), 'spiro'), expT = line(lvl(st, 'expanded'), 'spiro'), conT = line(lvl(st, 'concise'), 'spiro');
-  ok(/^Measured: FEV1 1\.55 L \(48% predicted\); FVC 3\.20 L; FEV1\/FVC 0\.48\. FEV1\/FVC is reduced/.test(stdT), 'standard: measured line then the composed sentence: ' + stdT);
-  ok(/^FEV1\/FVC \(0\.48; z = -2\.3\) is reduced, with FEV1 \(1\.55 L, 48% predicted; z = -3\.1\) moderately reduced; FVC \(3\.20 L; z = -0\.4\) is within reference limits\.$/.test(numT), 'numeric: values inline, no separate measured line: ' + numT);
+  const stdT = line(lvl(st, 'standard'), 'spiro'), expT = line(lvl(st, 'expanded'), 'spiro'), conT = line(lvl(st, 'concise'), 'spiro');
+  eq(stdT, 'FEV1 1.55 L, 48% predicted (z -3.1); FVC 3.20 L (z -0.4); FEV1/FVC 0.48 (z -2.3). FEV1/FVC is reduced, with a moderately reduced FEV1 and a normal FVC.', 'standard: numbers first, then the finding');
+  eq(conT, 'FEV1/FVC is reduced, with a moderately reduced FEV1 and a normal FVC.', 'concise: the finding only');
   ok(expT.length > stdT.length && /supports an obstructive ventilatory impairment/.test(expT) && !/grading scheme/.test(expT), 'detailed: adds the catalog caveats, not grade restatements: ' + expT);
-  ok(conT === stdT, 'concise and standard share the composed sentence');
   ok(!/\bIts\b/.test(line(lvl(mk(['spiro'], 'spiro.ratio=wnl', 'spiro.fev1=wnl', 'spiro.fvc=wnl'), 'expanded'), 'spiro')), 'no dangling pronoun caveat at the detailed level');
+  // the whole report reads as prose: no "= " after z, no "within reference limits", no numbered interpretation
+  r = run(mk(['spiro', 'vol', 'dlco'], 'spiro.ratio=z-2.3', 'spiro.fev1=z-3.1', 'spiro.fvc=z-0.4', 'vol.tlc=wnl', 'vol.rvtlc=high', 'vol.frc=high', 'dlco.dlco=mod', 'dlco.basis=adj'));
+  ok(!/z = /.test(r.text) && !/within reference limits/.test(r.text) && !/\n1\. /.test(r.text) && /INTERPRETATION: Moderate obstructive ventilatory defect with hyperinflation, and a moderately reduced DLCO\./.test(r.text), 'report voice: ' + r.text.split('INTERPRETATION')[1]);
+  ok(!/Tests performed/.test(r.text) && !/graded by z-score/.test(r.text), 'no tests-performed line or grading paragraph at the standard level');
+  ok(/Reference values: GLI/.test(r.text), 'reference values named in one line');
 })();
 
 /* ---------- predicted 6MWD: Enright & Sherrill 1998 (the MDCalc calculator) ---------- */
@@ -662,12 +675,12 @@ const hu = (r, idPrefix) => r.headsup.filter(h => h.id.indexOf(idPrefix) === 0)[
   ok(Math.abs(r.facts.six.es.pred - 548.65) < 0.01 && Math.abs(r.facts.six.es.lln - 395.65) < 0.01 && r.facts.six.es.sub === 153, 'male equation and LLN');
   eq(r.facts.six.predSrc, 'calc', 'calculated predicted used when none was reported');
   ok(Math.abs(r.facts.six.pctCalc - 76.6) < 0.1 && r.facts.six.lowDist === false, '% predicted from the calculated value; above the LLN');
-  ok(/6MWD was 420 m \(77% of the predicted 549 m by Enright & Sherrill 1998, calculated from age, sex, height and weight\); the LLN is 396 m \(predicted − 153 m for men\), so the distance is at or above the LLN\./.test(six(r)), 'section names the calculation: ' + six(r));
+  ok(/Walked 420 m \(77% predicted; LLN 396 m\), above the LLN\. Predicted 549 m by Enright & Sherrill 1998 from age, sex, height and weight\./.test(six(r)), 'section names the calculation: ' + six(r));
   ok(hasHU(r, 'PH57') && !hasHU(r, 'PH31') && !hasHU(r, 'PH56'), 'note that the predicted value was calculated; no missing-reference note');
   // woman 70 y, 160 cm, 58 kg: 2.11*160 - 2.29*58 - 5.78*70 + 667 = 467.18; LLN 328.18
   r = run(mk(['sixmw'], 'ctx.age=70', 'ctx.sex=F', 'ctx.ht=160', 'ctx.wt=58', 'sixmw.dist=300'));
   ok(Math.abs(r.facts.six.es.pred - 467.18) < 0.01 && Math.abs(r.facts.six.es.lln - 328.18) < 0.01 && r.facts.six.es.sub === 139, 'female equation and LLN');
-  ok(r.facts.six.lowDist === true && /below the LLN/.test(r.impression.join(' ')) && r.F['observations.walk.distance_low'] === true, 'distance below the calculated LLN is read as reduced');
+  ok(r.facts.six.lowDist === true && /Reduced 6MWD \(300 m, 64% predicted\)/.test(r.impression.join(' ')) && r.F['observations.walk.distance_low'] === true, 'distance below the calculated LLN is read as reduced: ' + r.impression.join(' '));
   // a reported predicted value wins; its LLN is derived only when the equation is Enright & Sherrill
   r = run(mk(['sixmw'], 'ctx.age=70', 'ctx.sex=F', 'ctx.ht=160', 'ctx.wt=58', 'sixmw.dist=300', 'sixmw.pred=500', 'sixmw.eq=Enright & Sherrill 1998'));
   ok(r.facts.six.predSrc === 'lab' && r.facts.six.llnSrc === 'derived' && r.facts.six.llnUse === 361 && Math.round(r.facts.six.pctCalc) === 60, 'laboratory predicted takes precedence; LLN = predicted − 139');

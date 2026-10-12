@@ -112,7 +112,7 @@ function buildFacts(st) {
   const c = st.ctx;
   const age = num(c.age), ht = num(c.ht), wt = num(c.wt);
   const bmi = (has(ht) && has(wt) && ht > 0) ? wt / Math.pow(ht / 100, 2) : NaN;
-  const f = { on: on, st: st, review: st.review || {}, style: (st.settings && st.settings.style) || 'standard' };
+  const f = { on: Object.assign({}, on), st: st, review: st.review || {}, style: (st.settings && st.settings.style) || 'standard' };
   const indic = Array.isArray(c.indic) ? c.indic : [];
   const indicLabels = INDICATIONS.reduce((a, g) => a.concat(g.opts), []).filter(o => indic.indexOf(o[0]) >= 0).map(o => o[1]);
   f.ctx = { age: age, sex: c.sex || '', ht: ht, wt: wt, bmi: bmi, obese: has(bmi) && bmi >= 30, smoke: c.smoke || '',
@@ -388,8 +388,10 @@ function buildFacts(st) {
   g.hyperC = g.co2Cat === 'hyper';
   g.any = has(g.ph) || has(g.pco2) || has(g.po2) || has(g.hco3) || has(g.sao2) || g.phC !== '' || g.co2C !== '' || g.hco3C !== '' || g.o2C !== '' || g.aaC !== '';
 
+  // a prior study counts as entered as soon as any of its values is typed (no separate test to tick)
+  f.on.prior = !!on.prior || (st.prior.list || []).some(p => PRIOR_FIELDS.some(fd => fd.type !== 'chk' && fd.id !== 'date' && String(p[fd.id] || '').trim() !== ''));
   f.priors = [];
-  if (on.prior) f.priors = priorFacts(st, f);
+  if (f.on.prior) f.priors = priorFacts(st, f);
   f.prior = { any: f.priors.some(p => p.metrics.length > 0) };
 
   // derived booleans used by several modules

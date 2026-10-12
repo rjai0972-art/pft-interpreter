@@ -71,6 +71,9 @@ function eduBlocks(id, topic) {
   topic.blocks.forEach(b => {
     if (b.terms) { eduTerms(id).forEach(x => out.push(x)); return; }
     if (b.catalog) { catalogBrowser().forEach(x => out.push(x)); return; }
+    if (b.examples) { out.push(h('div', { class: 'ex-list' }, X.EXAMPLES.map(e => h('button', { type: 'button', class: 'ex', 'data-example': e.name,
+      onclick: () => { const st = X.buildExample(P, e); if (!st.ctx.date) st.ctx.date = todayISO(); loadState(st, 'report', 'Loaded example: ' + e.name); } },
+      [h('b', { text: e.name }), h('span', { text: e.desc })])))); return; }
     if (b.src) { out.push(h('h3', { text: 'Sources' })); out.push(h('ul', { class: 'srcs' }, b.src.map(x => h('li', { text: x })))); return; }
     if (b.h) out.push(h('h3', { text: b.h }));
     if (b.p) out.push(h('p', { text: b.p }));

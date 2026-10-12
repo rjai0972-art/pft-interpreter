@@ -35,7 +35,7 @@ const pick = (a) => a[Math.floor(rnd() * a.length)];
       const qb = page.locator('#main .quick');
       for (let i = 0; i < await qb.count(); i++) if (rnd() < 0.5) await qb.nth(i).click();
       // numeric & text inputs
-      const inputs = page.locator('#main input[type=text]:not(.zbox input), #main input[type=date], .prior-card input:not([type=checkbox])');
+      const inputs = page.locator('#main input[type=text]:not(.zbox input), #main input[type=date], .prior-inline input:not([type=checkbox])');
       const cnt = await inputs.count();
       for (let i = 0; i < cnt; i++) {
         const el = inputs.nth(i); const t = await el.getAttribute('type');

@@ -98,7 +98,7 @@ function decodeCase(s) {
 /* -------------------------------------------------------------------- steps */
 function stepList() {
   const l = [{ id: 'tests', name: 'Tests' }, { id: 'ctx', name: 'Details' }];
-  P.TESTS.forEach(t => { if (S.tests[t.key]) l.push({ id: t.key, name: SHORT[t.key] || t.name }); });
+  P.TESTS.forEach(t => { if (S.tests[t.key] && !t.hidden) l.push({ id: t.key, name: SHORT[t.key] || t.name }); });
   l.push({ id: 'report', name: 'Report' });
   return l;
 }
@@ -184,8 +184,8 @@ function paramRow(mod, f) {
   const opts = P.KIND_OPTS[f.kind];
   const zid = uid('z');
   let zopen = S[mod][f.id].z !== '';
-  const btns = opts.map(o => h('button', { type: 'button', class: 'sg', 'data-v': o[0], 'aria-pressed': 'false', text: o[1],
-    onclick: () => { S[mod][f.id] = { c: o[0], z: '' }; zin.value = ''; sync(); } }));
+  const btns = opts.filter(o => o[0] !== 'nm').map(o => h('button', { type: 'button', class: 'sg', 'data-v': o[0], 'aria-pressed': 'false', text: o[1],
+    onclick: () => { const cur = S[mod][f.id]; S[mod][f.id] = (cur.c === o[0] && cur.z === '') ? { c: 'nm', z: '' } : { c: o[0], z: '' }; zin.value = ''; sync(); } }));
   const st = h('span', { class: 'st' });
   const zin = h('input', { type: 'text', class: 'num', id: zid, inputmode: 'decimal', autocomplete: 'off', placeholder: 'z-score', 'aria-label': f.label + ' z-score', value: S[mod][f.id].z,
     oninput: (e) => {
@@ -197,7 +197,7 @@ function paramRow(mod, f) {
   const zbtn = h('button', { type: 'button', class: 'zlink', 'aria-label': 'Type a z-score for ' + f.label, text: 'type z', 'aria-expanded': 'false',
     onclick: () => { zopen = !zopen; sync(); if (zopen) zin.focus(); } });
   const row = h('div', { class: 'prm', 'data-field': mod + '.' + f.id }, [
-    h('div', { class: 'prm-top' }, [prmLabel(mod, f), f.hint ? h('span', { class: 'hint', text: f.hint }) : null]),
+    h('div', { class: 'prm-top' }, [prmLabel(mod, f)]),
     h('div', { class: 'prm-row' }, [
       h('div', { class: 'seg', role: 'group', 'aria-label': f.label + ' category' }, btns),
       h('div', { class: 'zwrap' }, [zbtn, zbox])
@@ -222,8 +222,7 @@ function numField(mod, f) {
   widgets.push(() => { const v = S[mod][f.id]; inp.classList.toggle('bad', v !== '' && !hasNum(v)); if (document.activeElement !== inp && inp.value !== String(v)) inp.value = v; });
   return h('div', { class: 'fld' }, [
     h('div', { class: 'lab-row' }, [h('label', { for: id, text: f.label }), info(glossKey(mod, f.id))]),
-    h('div', { class: 'inwrap' }, [inp, f.unit ? h('span', { class: 'unit', text: f.unit }) : null]),
-    f.hint ? h('div', { class: 'hint', text: f.hint }) : null
+    h('div', { class: 'inwrap' }, [inp, f.unit ? h('span', { class: 'unit', text: f.unit }) : null])
   ]);
 }
 /* A "sel" field is shown as a row of tap buttons. A leading "Not …" option is not drawn: nothing pressed means not entered,
@@ -236,7 +235,7 @@ function choiceRow(mod, f) {
     onclick: () => { const cur = S[mod][f.id]; S[mod][f.id] = (cur === o[0] && blank) ? '' : o[0]; sync(); } }));
   widgets.push(() => btns.forEach(b => b.setAttribute('aria-checked', String(b.getAttribute('data-v') === S[mod][f.id]))));
   return h('div', { class: 'prm ch-row', 'data-field': mod + '.' + f.id }, [
-    h('div', { class: 'prm-top' }, [prmLabel(mod, f), f.hint ? h('span', { class: 'hint', text: f.hint }) : null]),
+    h('div', { class: 'prm-top' }, [prmLabel(mod, f)]),
     h('div', { class: 'seg' + (stack ? ' stack' : ''), role: 'radiogroup', 'aria-label': f.label }, btns)
   ]);
 }
@@ -271,8 +270,7 @@ function txtField(mod, f, type) {
   return h('div', { class: 'fld' + (type === 'date' ? '' : ' wide') }, [
     h('label', { for: id, text: f.label }),
     h('input', { type: type === 'date' ? 'date' : 'text', id: id, autocomplete: 'off', placeholder: f.ph || '', value: S[mod][f.id],
-      oninput: (e) => { S[mod][f.id] = e.target.value; sync(); } }),
-    f.hint ? h('div', { class: 'hint', text: f.hint }) : null
+      oninput: (e) => { S[mod][f.id] = e.target.value; sync(); } })
   ]);
 }
 
@@ -370,6 +368,10 @@ function groupEl(mod, g) {
       if (isEq) { tag.textContent = n ? n + ' changed from the recommended set' : 'recommended set selected'; tag.classList.toggle('chg', n > 0); }
       else { tag.textContent = n ? n + ' entered' : ''; tag.hidden = !n; }
     });
+  } else if (g.fold) {
+    const tag = h('span', { class: 'tag' });
+    el = h('details', { class: 'optgrp fold', open: g.fields.some(f => isFilled(mod, f)) }, [h('summary', {}, [h('span', { class: 't', text: g.title }), tag]), fields]);
+    widgets.push(() => { const n = g.fields.filter(f => isFilled(mod, f)).length; tag.textContent = n ? n + ' entered' : ''; tag.hidden = !n; });
   } else {
     const head = h('div', { class: 'grp-head' }, [h('h3', { text: g.title })]);
     if (g.quick) {
@@ -413,8 +415,8 @@ function navRow() {
     next ? h('button', { type: 'button', class: 'btn primary', onclick: () => goto(next.id), text: (next.id === 'report' ? 'View report' : 'Next: ' + next.name) + ' →' }) : null
   ]);
 }
-function stepHead(title, intro, src, gkey) {
-  return h('div', { class: 'step-head' }, [h('div', { class: 'sh-title' }, [h('h2', { text: title }), gkey ? info(gkey) : null]), intro ? h('p', { class: 'intro', text: intro }) : null, src ? h('p', { class: 'src', text: 'Basis: ' + src }) : null]);
+function stepHead(title, intro, src, gkey, keepIntro) {
+  return h('div', { class: 'step-head' }, [h('div', { class: 'sh-title' }, [h('h2', { text: title }), gkey ? info(gkey) : null]), keepIntro && intro ? h('p', { class: 'intro', text: intro }) : null]);
 }
 
 /* ------------------------------------------------------------- step: tests */
@@ -430,13 +432,14 @@ function zKey() {
 }
 function stepTests() {
   const main = $('main');
-  const groups = []; P.TESTS.forEach(t => { if (groups.indexOf(t.group) < 0) groups.push(t.group); });
+  const shown = P.TESTS.filter(t => !t.hidden);
+  const groups = []; shown.forEach(t => { if (groups.indexOf(t.group) < 0) groups.push(t.group); });
   const count = h('span', { class: 'count' });
   const cont = h('button', { type: 'button', class: 'btn primary', text: 'Continue →', onclick: () => goto('ctx') });
   const rows = {};
   const selBlock = groups.map(g => h('div', { class: 'sel-group' }, [
     h('h3', { text: g }),
-    h('div', { class: 'tgrid' }, P.TESTS.filter(t => t.group === g).map(t => {
+    h('div', { class: 'tgrid' }, shown.filter(t => t.group === g).map(t => {
       const id = uid('tt');
       const cb = h('input', { type: 'checkbox', id: id, 'data-test': t.key, checked: !!S.tests[t.key],
         onchange: (e) => { S.tests[t.key] = e.target.checked; sync(); } });
@@ -447,27 +450,18 @@ function stepTests() {
   ]));
   widgets.push(() => {
     let n = 0;
-    P.TESTS.forEach(t => { const r = rows[t.key]; r.cb.checked = !!S.tests[t.key]; r.lab.classList.toggle('on', !!S.tests[t.key]); if (S.tests[t.key]) n++; });
+    shown.forEach(t => { const r = rows[t.key]; r.cb.checked = !!S.tests[t.key]; r.lab.classList.toggle('on', !!S.tests[t.key]); if (S.tests[t.key]) n++; });
     count.textContent = n ? plural(n, 'test') + ' selected' : 'Select at least one test';
     cont.disabled = !n;
   });
   const presets = h('div', { class: 'presets' }, P.PRESETS.map(p => h('button', { type: 'button', class: 'chip', text: p.name,
     onclick: () => { Object.keys(S.tests).forEach(k => { S.tests[k] = p.tests.indexOf(k) >= 0; }); sync(); } })));
-  const left = h('div', { class: 'card' }, [
-    stepHead('Which tests were performed?', 'Tick everything done at this visit. Each ticked test becomes one step; the report lists only those tests. For a second visit, start a new case.'),
+  main.appendChild(h('div', { class: 'card' }, [
+    stepHead('Which tests were performed?', 'Tick what was done; each test becomes one step.', null, null, true),
     h('div', { class: 'sel-group' }, [h('h3', { text: 'Quick sets' }), presets]),
     selBlock,
     h('div', { class: 'start-row' }, [cont, count])
-  ]);
-  const ex = h('div', { class: 'card side-card' }, [
-    h('h3', { text: 'Worked examples' }),
-    h('div', { class: 'ex-list' }, X.EXAMPLES.map(e => h('button', { type: 'button', class: 'ex', 'data-example': e.name,
-      onclick: () => { const st = X.buildExample(P, e); if (!st.ctx.date) st.ctx.date = todayISO(); loadState(st, 'report', 'Loaded example: ' + e.name + '. Use the steps above to see the inputs.'); } },
-      [h('b', { text: e.name }), h('span', { text: e.desc })]))),
-    h('h3', {}, ['z-score key', info('z')]), zKey(),
-    methodNote()
-  ]);
-  main.appendChild(h('div', { class: 'grid-2 side' }, [left, ex]));
+  ]));
 }
 function methodNote() {
   const li = (t) => h('li', { text: t });
@@ -493,9 +487,9 @@ function stepCtx() {
   const bb = BANDS.map(o => h('button', { type: 'button', class: 'ch', role: 'radio', 'data-v': o[0], 'aria-checked': 'false', text: o[1], onclick: () => { S.settings.band = o[0]; sync(); } }));
   widgets.push(() => bb.forEach(b => b.setAttribute('aria-checked', String(Number(S.settings.band) === Number(b.getAttribute('data-v'))))));
   const card = h('div', { class: 'card' }, [
-    stepHead(m.title, 'The date is today by default. Tap the indications that apply; use the box underneath only for a reason that is not listed. Age, sex and height drive sex- and age-specific thresholds, BMI, annualised change and CPET cut-offs.', m.src),
+    stepHead(m.title, '', m.src),
     m.groups.map(g => groupEl('ctx', g)),
-    h('section', { class: 'grp' }, [h('div', { class: 'grp-head' }, [h('h3', { text: 'Interpretation settings' })]), h('div', { class: 'fields' }, [
+    h('details', { class: 'optgrp fold', 'data-group': 'settings' }, [h('summary', {}, [h('span', { class: 't', text: 'Settings: near-LLN flag and wording level' })]), h('div', { class: 'fields' }, [
       h('div', { class: 'prm ch-row', 'data-field': 'settings.band' }, [
         h('div', { class: 'prm-top' }, [h('span', { class: 'prm-l', text: 'Near-LLN review flag' }), h('span', { class: 'hint', text: 'A value this close above the LLN is marked "near the LLN". It stays within normal limits; this is a local review convention, not a category' })]),
         h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Near-LLN review flag' }, bb)
@@ -514,8 +508,71 @@ function stepModule(key) {
   const extra = [];
   if (key === 'fvl') extra.push(h('div', { class: 'learn-link' }, [h('button', { type: 'button', class: 'btn sm quiet', 'data-learn': 'loops', text: 'Learn: how to read a flow–volume loop and what each pattern means →', onclick: () => openLearn('loops') })]));
   if (key === 'sixmw') { extra.push(predCalcBlock()); extra.push(trendBlock()); }
-  $('main').appendChild(h('div', { class: 'card' }, [stepHead(m.title, m.intro, m.src, 'test.' + key), h('p', { class: 'fine tapnote', text: 'Tap a choice to select it; tap it again to clear it. Typed values are optional and sit under the collapsed panels.' }), extra.filter(function (x) { return x.getAttribute('data-trend') !== '1'; }), m.groups.map(g => groupEl(key, g)), extra.filter(function (x) { return x.getAttribute('data-trend') === '1'; }), liveBox(key), navRow()]));
+  const pb = PRIOR_ROWS[key] ? priorBlock(key) : null;
+  $('main').appendChild(h('div', { class: 'card' }, [stepHead(m.title, m.intro, m.src, 'test.' + key), extra.filter(function (x) { return x.getAttribute('data-trend') !== '1'; }), m.groups.map(g => groupEl(key, g)), extra.filter(function (x) { return x.getAttribute('data-trend') === '1'; }), pb, liveBox(key), navRow()]));
 }
+
+/* ------------------------------------------------- prior study, inline on the test step */
+/* Rows per test: [label, unit, current field (module.field), prior field]. The current value also feeds the numbers
+   line of the report; the prior value switches the comparison on by itself. */
+const PRIOR_ROWS = {
+  spiro: { rows: [['FEV1', 'L', 'fev1_abs', 'fev1'], ['FVC', 'L', 'fvc_abs', 'fvc'], ['FEV1', '% pred', 'fev1_pct', 'fev1_pct'], ['FVC', '% pred', 'fvc_pct', 'fvc_pct']], cmp: ['ref_diff', 'bd_diff', 'qual_diff'] },
+  vol: { rows: [['TLC', 'L', 'tlc_abs', 'tlc']], cmp: ['method_diff', 'ref_diff'] },
+  dlco: { rows: [['DLCO', 'mL/min/mmHg', 'dlco_abs', 'dlco'], ['DLCO', '% pred', 'dlco_pct', 'dlco_pct']], cmp: ['hb_diff', 'ref_diff'] },
+  feno: { rows: [['FeNO', 'ppb', 'val', 'feno']], cmp: [] }
+};
+const priorOpen = {};
+function priorHasValues(key) { const def = PRIOR_ROWS[key]; return S.prior.list.some(p => def.rows.some(r => String(p[r[3]] || '').trim() !== '')); }
+function priorBlock(key) {
+  const def = PRIOR_ROWS[key];
+  const INTERVALS = [['3 mo', 3], ['6 mo', 6], ['1 yr', 12], ['2 yr', 24], ['3 yr', 36]];
+  const body = h('div', { class: 'prior-body' });
+  const cbId = uid('pc');
+  const cb = h('input', { type: 'checkbox', id: cbId, onchange: (e) => {
+    priorOpen[key] = e.target.checked;
+    if (!e.target.checked) { S.prior.list.forEach(p => def.rows.forEach(r => { p[r[3]] = ''; })); }
+    paint(); sync();
+  } });
+  function numIn(get, set, ph) {
+    const inp = h('input', { type: 'text', class: 'num', inputmode: 'decimal', autocomplete: 'off', placeholder: ph || '', value: get(), oninput: (e) => { set(e.target.value); sync(); } });
+    widgets.push(() => { const v = get(); inp.classList.toggle('bad', v !== '' && !hasNum(v)); if (document.activeElement !== inp && inp.value !== String(v)) inp.value = v; });
+    return inp;
+  }
+  function paint() {
+    body.textContent = '';
+    const open = priorOpen[key] || priorHasValues(key);
+    cb.checked = open;
+    body.hidden = !open;
+    if (!open) return;
+    const priors = S.prior.list;
+    const head = h('div', { class: 'pr-row pr-head' }, [h('span'), h('span', { text: 'This study' })].concat(priors.map((p, i) => h('span', { class: 'pr-col' }, [h('span', { text: priors.length > 1 ? 'Prior ' + (i + 1) : 'Prior study' }), priors.length > 1 ? h('button', { type: 'button', class: 'lnk', text: 'remove', onclick: () => { priors.splice(i, 1); paint(); sync(); } }) : null]))));
+    body.appendChild(head);
+    const dateRow = h('div', { class: 'pr-row' }, [h('span', { class: 'pr-l', text: 'Date' }), h('span', { class: 'fine', text: S.ctx.date ? dateShort(S.ctx.date) : 'set on Details' })].concat(priors.map(p => {
+      const inp = h('input', { type: 'date', value: p.date, oninput: (e) => { p.date = e.target.value; sync(); } });
+      widgets.push(() => { if (document.activeElement !== inp && inp.value !== p.date) inp.value = p.date; });
+      return h('span', { class: 'pr-cell' }, [inp, h('span', { class: 'qd' }, INTERVALS.map(iv => h('button', { type: 'button', class: 'lnk', 'data-months': String(iv[1]), text: iv[0], title: iv[0] + ' before this study', onclick: () => { p.date = shiftMonths(S.ctx.date, iv[1]); sync(); } })))]);
+    })));
+    body.appendChild(dateRow);
+    def.rows.forEach(r => {
+      body.appendChild(h('div', { class: 'pr-row' }, [h('span', { class: 'pr-l', text: r[0] + ' (' + r[1] + ')' }),
+        h('span', { class: 'pr-cell' }, [numIn(() => S[key][r[2]], (v) => { S[key][r[2]] = v; })])].concat(priors.map(p => h('span', { class: 'pr-cell' }, [numIn(() => p[r[3]], (v) => { p[r[3]] = v; })])))));
+    });
+    const foot = h('div', { class: 'pr-foot' });
+    if (priors.length < P.MAX_PRIORS) foot.appendChild(h('button', { type: 'button', class: 'btn sm quiet', text: '+ Older study', onclick: () => { priors.push(P.blankPrior()); paint(); sync(); } }));
+    if (def.cmp.length) {
+      const flags = def.cmp.map(id => P.PRIOR_FIELDS.filter(f => f.id === id)[0]).filter(Boolean);
+      foot.appendChild(h('details', { class: 'plain pr-cmp', 'data-group': 'cmp' }, [h('summary', { text: 'Not directly comparable? (different equations, bronchodilator state, method…)' }),
+        h('div', {}, priors.map((p, i) => h('div', { class: 'pr-cmpcol' }, [priors.length > 1 ? h('b', { text: 'Prior ' + (i + 1) }) : null].concat(flags.map(f => { const id = uid('pf'); return h('div', { class: 'chkrow' }, [h('input', { type: 'checkbox', id: id, checked: !!p[f.id], onchange: (e) => { p[f.id] = e.target.checked; sync(); } }), h('label', { for: id, text: f.label })]); })))))]));
+    }
+    body.appendChild(foot);
+  }
+  paint();
+  return h('section', { class: 'grp prior-inline', 'data-prior-block': key }, [
+    h('div', { class: 'chkrow big' }, [cb, h('label', { for: cbId, text: 'Compare with a prior study' })]),
+    body
+  ]);
+}
+function dateShort(iso) { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso); return m ? (+m[2]) + '/' + (+m[3]) + '/' + m[1] : iso; }
 
 /* --------------------------------------------------------------- step: prior */
 function curPlaceholder(id) {
@@ -523,74 +580,13 @@ function curPlaceholder(id) {
     dlco_pct: (isFinite(f.dl.adjPct) ? f.dl.adjPct : f.dl.pct), six: f.six.dist, feno: f.feno.v })[id];
   return (typeof v === 'number' && isFinite(v)) ? String(Math.round(v * 100) / 100) : '';
 }
-function stepPrior() {
-  const main = $('main');
-  const m = { title: 'Comparison with prior PFT(s)', intro: 'Pick how long ago the prior study was, then enter whatever values it has. The report gives absolute, % and annualised change with the threshold markers. Use % predicted only when both studies used the same reference equations; otherwise compare absolute values.',
-    src: 'ERS/ATS 2022 (change thresholds, FEV1Q, conditional change score for children); ATS/ERS/JRS/ALAT 2022 (progression criteria in fibrosing ILD); annualised decline marker ≥ 8%/yr.' };
-  const warn = h('p', { class: 'warn-line', text: 'The date of this study is not entered (Details step), so changes cannot be annualised.' });
-  widgets.push(() => { warn.hidden = !!S.ctx.date; });
-  const curInputs = P.CUR_FIELDS.map(f => {
-    const id = uid('cur');
-    const inp = h('input', { type: 'text', class: 'num', id: id, inputmode: 'decimal', autocomplete: 'off', value: S.prior.cur[f.id], oninput: (e) => { S.prior.cur[f.id] = e.target.value; sync(); } });
-    widgets.push(() => { const ph = curPlaceholder(f.id); inp.placeholder = ph ? 'from this study: ' + ph : 'not entered'; });
-    return h('div', { class: 'fld' }, [h('label', { for: id, text: f.label }), h('div', { class: 'inwrap' }, [inp, h('span', { class: 'unit', text: f.unit })])]);
-  });
-  const curTag = h('span', { class: 'tag' });
-  widgets.push(() => { const n = P.CUR_FIELDS.filter(f => S.prior.cur[f.id] !== '').length; curTag.textContent = n ? n + ' entered' : ''; curTag.hidden = !n; });
-  const PRIMARY = ['date', 'fev1', 'fvc', 'fev1_pct', 'fvc_pct'];
-  const cards = h('div', { 'data-priors': '1' });
-  function priorInput(p, f) {
-    const id = uid('pr');
-    if (f.type === 'chk') {
-      return h('div', { class: 'chkrow' }, [h('input', { type: 'checkbox', id: id, checked: !!p[f.id], onchange: (e) => { p[f.id] = e.target.checked; sync(); } }), h('label', { for: id, text: f.label })]);
-    }
-    const inp = h('input', { type: f.type === 'date' ? 'date' : 'text', class: f.type === 'date' ? null : 'num', id: id, inputmode: f.type === 'date' ? null : 'decimal', autocomplete: 'off', value: p[f.id],
-      oninput: (e) => { p[f.id] = e.target.value; sync(); } });
-    return h('div', { class: 'fld' }, [h('label', { for: id, text: f.label }), f.type === 'date' ? inp : h('div', { class: 'inwrap' }, [inp, h('span', { class: 'unit', text: f.unit })])]);
-  }
-  function paintCards() {
-    cards.textContent = '';
-    S.prior.list.forEach((p, i) => {
-      const prim = P.PRIOR_FIELDS.filter(f => PRIMARY.indexOf(f.id) >= 0), more = P.PRIOR_FIELDS.filter(f => PRIMARY.indexOf(f.id) < 0 && f.type !== 'chk'), cmp = P.PRIOR_FIELDS.filter(f => f.type === 'chk');
-      const moreOpen = more.some(f => p[f.id] !== '') || ['vol', 'dlco', 'sixmw', 'feno'].some(k => S.tests[k]);
-      const cmpOpen = cmp.some(f => !!p[f.id]);
-      const INTERVALS = [['3 months', 3], ['6 months', 6], ['1 year', 12], ['2 years', 24], ['3 years', 36], ['5 years', 60]];
-      const quick = h('div', { class: 'qdates' }, [h('span', { class: 'hint', text: 'Prior study was about' })].concat(INTERVALS.map(iv =>
-        h('button', { type: 'button', class: 'cp', 'data-months': String(iv[1]), text: iv[0] + ' before',
-          onclick: () => { p.date = shiftMonths(S.ctx.date, iv[1]); paintCards(); sync(); } }))));
-      cards.appendChild(h('div', { class: 'prior-card', 'data-prior': String(i + 1) }, [
-        h('div', { class: 'ph' }, [h('b', { text: 'Prior study #' + (i + 1) }),
-          S.prior.list.length > 1 ? h('button', { type: 'button', class: 'btn sm quiet', text: 'Remove', onclick: () => { S.prior.list.splice(i, 1); paintCards(); sync(); } }) : null]),
-        quick,
-        h('div', { class: 'fields' }, prim.map(f => priorInput(p, f))),
-        h('details', { class: 'optgrp', open: moreOpen }, [h('summary', {}, [h('span', { class: 't', text: 'More measures: FEV1 z-score, TLC, DLCO, 6MWD, FeNO' })]), h('div', { class: 'fields' }, more.map(f => priorInput(p, f)))]),
-        h('details', { class: 'optgrp', open: cmpOpen, 'data-group': 'cmp' }, [h('summary', {}, [h('span', { class: 't', text: 'Comparability: tick anything that differs between the two studies' })]),
-          h('p', { class: 'fine', text: 'A percent-predicted change on different reference equations, a DLCO change on a different hemoglobin basis, or spirometry in a different bronchodilator state is reported with that caveat and is not read as a physiologic change.' }),
-          h('div', { class: 'fields' }, cmp.map(f => priorInput(p, f)))])
-      ]));
-    });
-    addBtn.hidden = S.prior.list.length >= P.MAX_PRIORS;
-  }
-  const addBtn = h('button', { type: 'button', class: 'btn', text: '+ Add another prior study', onclick: () => { S.prior.list.push(P.blankPrior()); paintCards(); sync(); } });
-  paintCards();
-  main.appendChild(h('div', { class: 'card' }, [
-    stepHead(m.title, m.intro, m.src, 'test.prior'),
-    h('section', { class: 'grp' }, [h('div', { class: 'grp-head' }, [h('h3', { text: 'Prior studies, most recent first' })]), warn, cards, h('div', { style: 'margin-top:12px' }, [addBtn])]),
-    h('details', { class: 'optgrp', 'data-group': 'current', open: P.CUR_FIELDS.some(f => S.prior.cur[f.id] !== '') }, [
-      h('summary', {}, [h('span', { class: 't', text: 'Override the current values (optional): blank means taken from this study' }), curTag]),
-      h('div', { class: 'fields' }, curInputs)]),
-    liveBox('prior'),
-    navRow()
-  ]));
-}
-
 /* ------------------------------------------------------------- wording level */
-const STYLE_OPTS = [['concise', 'Concise'], ['standard', 'Standard'], ['expanded', 'Detailed'], ['numeric', 'With numbers']];
+const STYLE_OPTS = [['concise', 'Concise'], ['standard', 'Standard'], ['expanded', 'Detailed']];
 function styleRow() {
   const btns = STYLE_OPTS.map(o => h('button', { type: 'button', class: 'ch', role: 'radio', 'data-v': o[0], 'aria-checked': 'false', text: o[1], onclick: () => { S.settings.style = o[0]; sync(); } }));
   widgets.push(() => btns.forEach(b => b.setAttribute('aria-checked', String(S.settings.style === b.getAttribute('data-v')))));
   return h('div', { class: 'prm ch-row', 'data-field': 'settings.style' }, [
-    h('div', { class: 'prm-top' }, [h('span', { class: 'prm-l', text: 'Wording level' }), h('span', { class: 'hint', text: 'How each finding is phrased in the test sections: concise sentences, standard, detailed with the caveat, or with the measured numbers when they were entered' })]),
+    h('div', { class: 'prm-top' }, [h('span', { class: 'prm-l', text: 'Wording level' }), h('span', { class: 'hint', text: 'Concise: findings only. Standard: numbers, then findings. Detailed: adds the caveats.' })]),
     h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Wording level' }, btns)
   ]);
 }
@@ -602,12 +598,13 @@ function suggestCard() {
     onclick: () => { if (S.review[sg.id]) delete S.review[sg.id]; else S.review[sg.id] = true; sync(); } },
     [h('span', { class: 'sug-l', text: sg.label }), h('span', { class: 'sug-t', text: sg.text })]));
   const n = list.filter(x => x.on).length;
-  return h('section', { class: 'card sugs', id: 'suggest', 'aria-labelledby': 'sg-h' }, [
-    h('div', { class: 'hu-head' }, [h('h2', { id: 'sg-h', text: 'Suggested additions (tap to include)' }), h('span', { class: 'chip ' + (n ? 'ok' : 'note'), text: n ? n + ' included' : 'none included' })]),
-    h('p', { class: 'fine', text: 'Interpretive wording that needs your judgement: the numbers make it relevant, but it is never inserted on its own. Tapped sentences join the Interpretation; tap again to remove.' }),
+  return h('details', { class: 'card sugs fold-card', id: 'suggest', open: n > 0 || foldOpen.suggest, ontoggle: (e) => { foldOpen.suggest = e.target.open; } }, [
+    h('summary', { class: 'hu-head' }, [h('h2', { id: 'sg-h', text: 'Optional wording' }), h('span', { class: 'chip ' + (n ? 'ok' : 'note'), text: n ? n + ' included' : plural(list.length, 'suggestion') })]),
+    h('p', { class: 'fine', text: 'Interpretive sentences the numbers make relevant. Tap to add one to the interpretation; tap again to remove.' }),
     h('div', { class: 'sug-list' }, chips)
   ]);
 }
+const foldOpen = { suggest: false, dx: false, hu: false };
 
 /* Differential considerations and additional studies, offered per verified finding and included only when tapped. */
 function dxToggle(id) { if (S.review[id]) delete S.review[id]; else S.review[id] = true; sync(); }
@@ -630,10 +627,10 @@ function dxCard() {
   if (!groups.length) return null;
   const nDx = groups.reduce((a, g) => a + g.dx.filter(x => x.on).length, 0);
   const nSt = (R.studies || []).length;
-  const sum = h('span', { class: 'chip ' + (nDx || nSt ? 'ok' : 'note'), text: nDx || nSt ? [nDx ? plural(nDx, 'differential') : '', nSt ? plural(nSt, 'study', 'studies') : ''].filter(Boolean).join(', ') + ' included' : 'none included' });
-  const card = h('section', { class: 'card dxs', id: 'differentials', 'aria-labelledby': 'dx-h' }, [
-    h('div', { class: 'hu-head' }, [h('h2', { id: 'dx-h', text: 'Differentials and additional studies (tap to include)' }), sum]),
-    h('p', { class: 'fine', text: 'For each verified finding: the physiologic causes that produce it and the studies that sort them out. Nothing is inserted on its own. Tapped differentials join the Interpretation as one sentence per finding; tapped studies are listed once under "Additional studies to consider". Tap again to remove.' })
+  const sum = h('span', { class: 'chip ' + (nDx || nSt ? 'ok' : 'note'), text: nDx || nSt ? [nDx ? plural(nDx, 'differential') : '', nSt ? plural(nSt, 'study', 'studies') : ''].filter(Boolean).join(', ') + ' included' : 'for ' + plural(groups.length, 'finding') });
+  const card = h('details', { class: 'card dxs fold-card', id: 'differentials', open: nDx + nSt > 0 || foldOpen.dx, ontoggle: (e) => { foldOpen.dx = e.target.open; } }, [
+    h('summary', { class: 'hu-head' }, [h('h2', { id: 'dx-h', text: 'Differentials and additional studies' }), sum]),
+    h('p', { class: 'fine', text: 'Tap a differential to add it to the interpretation (one sentence per finding) and a study to list it under "Additional studies to consider". Tap again to remove.' })
   ]);
   groups.forEach(g => card.appendChild(h('div', { class: 'dx-group', 'data-dx-group': g.key }, [
     h('h3', { text: 'For ' + g.title }),
@@ -662,7 +659,7 @@ function reportDoc() {
   ])));
   const codes = uniq(R.sections.reduce((a, s) => a.concat(s.codes || []), []));
   doc.appendChild(h('div', { class: 'interp' }, [h('h3', { text: 'Interpretation' }),
-    R.impression.length ? h('ol', {}, R.impression.map(t => h('li', { text: t }))) : h('p', { class: 'fine', text: 'No interpretable data entered.' }),
+    R.impression.length ? h('p', { class: 'impr-p' }, R.impression.map(t => h('span', { class: 'impr-s', text: t + ' ' }))) : h('p', { class: 'fine', text: 'No interpretable data entered.' }),
     codes.length ? h('div', { class: 'codes-row', 'data-codes': codes.join(',') }, [h('span', { class: 'fine' }, ['Annals ATS 2025 codes', h('span', { class: 'noprint', text: ' (tap for meaning)' })]), h('span', { class: 'codes' }, codes.map(codeChip))]) : null]));
   const sb = studiesBlock(); if (sb) doc.appendChild(sb);
   return doc;
@@ -679,9 +676,9 @@ function huItem(x) {
     h('button', { type: 'button', class: 'rt', 'aria-pressed': String(fbk === 'n'), 'data-rate': 'n', text: 'Not useful', onclick: () => { fbSet(x.id, x.title, fbGet(x.id) === 'n' ? '' : 'n'); repaintRate(); } })
   ]);
   function repaintRate() { rate.querySelectorAll('.rt').forEach(b => b.setAttribute('aria-pressed', String(fbGet(x.id) === b.getAttribute('data-rate')))); }
-  return h('div', { class: 'hu-item', 'data-lvl': x.lvl, 'data-id': x.id }, [
-    h('div', { class: 'lv' }, [h('span', { class: 'chip ' + x.lvl, text: LVL[x.lvl] || x.lvl }), h('span', { class: 'cat', text: x.cat })]),
-    h('div', {}, [h('h4', { text: x.title }), h('p', { text: x.text }), x.look && x.look.length ? lookFigures(x.look) : null, canRate ? rate : null])
+  return h('details', { class: 'hu-item', 'data-lvl': x.lvl, 'data-id': x.id, open: x.lvl === 'alert' }, [
+    h('summary', {}, [h('span', { class: 'chip ' + x.lvl, text: LVL[x.lvl] || x.lvl }), h('span', { class: 'hu-t', text: x.title })]),
+    h('div', { class: 'hu-b' }, [h('span', { class: 'cat', text: x.cat }), h('p', { text: x.text }), x.look && x.look.length ? lookFigures(x.look) : null, canRate ? rate : null])
   ]);
 }
 function headsupCard() {
@@ -691,8 +688,8 @@ function headsupCard() {
   const c = R.counts;
   const sum = h('div', { class: 'hu-sum' }, ['alert', 'caution', 'tip', 'note'].filter(k => c[k]).map(k => h('span', { class: 'chip ' + k, text: c[k] + ' ' + (k === 'tip' ? 'look-for' : k) })));
   const card = h('section', { class: 'card hu', id: 'headsup', 'aria-labelledby': 'hu-h' }, [
-    h('div', { class: 'hu-head' }, [h('h2', { id: 'hu-h', text: 'Heads-up: discordance and what to look for' }), sum]),
-    h('p', { class: 'fine', text: 'For the interpreter, not part of the report: internal inconsistencies, data-entry problems, technique and quality issues, the waveform to check on the tracing, missing tests that would change the reading, and changes on prior studies.' })
+    h('div', { class: 'hu-head' }, [h('h2', { id: 'hu-h', text: 'Heads-up' }), sum]),
+    h('p', { class: 'fine', text: 'For you, not the report: discordance, data-entry checks, technique, what to look for on the tracing, and missing tests that would change the reading. Tap an item to open it.' })
   ]);
   if (!all.length) {
     card.appendChild(h('div', { class: 'hu-empty' }, [h('span', { class: 'chip ok', text: R.anyData ? 'Clear' : 'Waiting' }),
@@ -715,9 +712,9 @@ function stepReport() {
       h('button', { type: 'button', class: 'btn', id: 'save-bank', text: 'Save to case bank', onclick: () => { const pn = $('bank-save'); if (pn) { pn.hidden = !pn.hidden; if (!pn.hidden) { const i = pn.querySelector('input[type=text]'); if (i) i.focus(); } } } })
     ])]),
     bankSavePanel(),
-    h('div', { id: 'fallback', class: 'fallback' })
+    h('div', { id: 'fallback', class: 'fallback' }),
+    h('div', { class: 'style-inline' }, [styleRow()])
   ]));
-  main.appendChild(h('div', { class: 'card' }, [styleRow()]));
   // the report, the suggested additions and the heads-up repaint whenever the result changes (wording level, a tapped suggestion)
   const live = h('div', { id: 'report-live' });
   let liveKey = null;
@@ -784,7 +781,7 @@ function paintPreview() {
   const had = prev.impr || [];
   doc.appendChild(h('div', { class: 'interp' }, [h('h3', { text: 'Interpretation' }),
     R.impression.length
-      ? h('ol', {}, R.impression.map(t => h('li', { class: prev.impr && had.indexOf(t) < 0 ? 'chg' : '', text: t })))
+      ? h('p', { class: 'impr-p' }, R.impression.map(t => h('span', { class: 'impr-s' + (prev.impr && had.indexOf(t) < 0 ? ' chg' : ''), text: t + ' ' })))
       : h('p', { class: 'pv-empty', text: 'The synthesis appears here once values are entered.' }),
     codes.length ? h('div', { class: 'codes-row' }, [h('span', { class: 'fine', text: 'Annals ATS 2025 codes' }), h('span', { class: 'codes' }, codes.map(codeChip))]) : null]));
   const sbp = studiesBlock(); if (sbp) doc.appendChild(sbp);
@@ -846,7 +843,6 @@ function render() {
   else if (mode === 'bank') stepBank();
   else if (step === 'tests') stepTests();
   else if (step === 'ctx') stepCtx();
-  else if (step === 'prior') stepPrior();
   else if (step === 'report') stepReport();
   else stepModule(step);
   renderPreview();

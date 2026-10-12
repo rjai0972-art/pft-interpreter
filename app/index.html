@@ -227,13 +227,13 @@ textarea.case { width: 100%; min-height: 90px; padding: 8px 10px; border: 1px so
 .hu-head { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: baseline; justify-content: space-between; margin-bottom: 4px; }
 .hu-head h2 { font-size: 22px; font-weight: 650; }
 .hu-sum { display: flex; flex-wrap: wrap; gap: 6px; }
-.hu-item { display: grid; grid-template-columns: 82px minmax(0, 1fr); gap: 4px 14px; padding: 12px 0; border-top: 1px solid var(--line); }
+.hu-item { display: block; padding: 8px 0; border-top: 1px solid var(--line); }
 .hu-item .lv { display: grid; gap: 4px; align-content: start; }
 .hu-item .cat { font-size: 11.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
 .hu-item h4 { font-size: 14.5px; font-weight: 650; }
 .hu-item p { font-size: 14px; color: var(--ink-2); max-width: 85ch; }
 .hu-empty { padding: 14px 0 4px; display: flex; gap: 10px; align-items: center; color: var(--ink-2); }
-@media (max-width: 560px) { .hu-item { grid-template-columns: minmax(0, 1fr); } .hu-item .lv { display: flex; align-items: center; gap: 8px; } }
+
 
 /* ---- method ---- */
 details.method { margin-top: 4px; }
@@ -579,6 +579,40 @@ details.optgrp > .fine { padding-bottom: 0; }
 .cat-ph .tf.mode-review { color: var(--accent); }
 .cat-ph .tf.mode-documented_observation { color: var(--muted); }
 
+/* ---- minimalist pass ---- */
+.optgrp.fold { margin-top: 14px; }
+.optgrp.fold > summary .t { font-weight: 650; }
+.prior-inline { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
+.chkrow.big label { font-weight: 650; font-size: 15px; }
+.prior-body { margin-top: 10px; display: grid; gap: 8px; }
+.pr-row { display: grid; grid-template-columns: minmax(110px, 1.1fr) repeat(auto-fit, minmax(150px, 1fr)); gap: 8px 12px; align-items: center; }
+.pr-row.pr-head span { font-size: 12px; font-weight: 650; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+.pr-col { display: flex; gap: 8px; align-items: baseline; }
+.pr-l { font-size: 13.5px; color: var(--ink-2); }
+.pr-cell { display: flex; flex-direction: column; gap: 4px; }
+.pr-cell input.num { width: 100%; max-width: 150px; }
+.pr-cell input[type=date] { max-width: 170px; }
+.qd { display: flex; flex-wrap: wrap; gap: 8px; }
+.pr-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 4px; }
+.pr-cmp summary { font-size: 13px; }
+.pr-cmpcol { display: grid; gap: 4px; margin-top: 6px; }
+.fold-card > summary { cursor: pointer; list-style: none; }
+.fold-card > summary::-webkit-details-marker { display: none; }
+.fold-card > summary h2 { font-size: 17px; }
+.fold-card > summary h2::before { content: '▸ '; color: var(--muted); font-size: 13px; }
+.fold-card[open] > summary h2::before { content: '▾ '; }
+.style-inline { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.style-inline .prm-top .hint { display: block; }
+.impr-p { font-size: 16.5px; line-height: 1.6; max-width: 80ch; margin: 0; }
+.impr-s.chg { background: var(--accent-soft); border-radius: 3px; }
+.hu-item { border-top: 1px solid var(--line); padding: 8px 0; }
+.hu-item > summary { display: flex; align-items: center; gap: 10px; cursor: pointer; list-style: none; }
+.hu-item > summary::-webkit-details-marker { display: none; }
+.hu-item .hu-t { font-weight: 600; font-size: 14.5px; }
+.hu-item .hu-b { padding: 6px 0 2px 0; display: grid; gap: 6px; }
+.hu-item .hu-b .cat { font-size: 11.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.hu-item .hu-b p { margin: 0; font-size: 14px; line-height: 1.5; }
+
 </style>
 </head>
 <body>
@@ -589,7 +623,7 @@ details.optgrp > .fine { padding-bottom: 0; }
       <svg viewBox="0 0 40 32" aria-hidden="true" focusable="false"><path d="M4 14C6 5 9 3 12 3L36 14C33 28 8 29 4 14Z" fill="var(--accent-soft)" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
       <div>
         <h1>PFT Interpreter</h1>
-        <p>ERS/ATS 2022 · phrase catalog v1 · Annals ATS 2025 codes · z-score / LLN</p>
+        <p>ERS/ATS 2022 · z-score / LLN</p>
       </div>
     </div>
     <div class="top-actions">
@@ -655,7 +689,7 @@ function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
 function sentence(s) {
   s = String(s || '').trim();
   if (!s) return '';
-  if (!/^[a-z][A-Z]/.test(s)) s = cap(s);      // keep "pH", "mL" etc. as written
+  if (!/^[a-z][A-Z]/.test(s) && !/^z[- ]/.test(s)) s = cap(s);      // keep "pH", "mL", "z-scores" as written
   return /[.!?]$/.test(s) ? s : s + '.';
 }
 function ageInterp(lo, hi, age, a0, a1) { // linear interpolation helper
@@ -751,7 +785,7 @@ const TESTS = [
   { key: 'sixmw',  group: 'Exercise & gas exchange', name: '6-minute walk test',             desc: 'Distance, desaturation, HR recovery' },
   { key: 'cpet',   group: 'Exercise & gas exchange', name: 'Cardiopulmonary exercise test',  desc: 'Peak VO2, reserves, gas-exchange pattern' },
   { key: 'gas',    group: 'Exercise & gas exchange', name: 'Arterial blood gas',             desc: 'pH, PaCO2, PaO2, A–a gradient' },
-  { key: 'prior',  group: 'Comparison',            name: 'Comparison with prior PFT(s)',     desc: '% change, annualised decline, thresholds' }
+  { key: 'prior',  group: 'Comparison',            name: 'Comparison with prior PFT(s)',     desc: '% change, annualised decline, thresholds', hidden: true }
 ];
 
 const PRESETS = [
@@ -759,7 +793,7 @@ const PRESETS = [
   { name: 'Spirometry only',             tests: ['spiro', 'fvl'] },
   { name: 'Spirometry + BD',             tests: ['spiro', 'fvl', 'bd'] },
   { name: 'Spiro + BD + volumes + FeNO', tests: ['spiro', 'fvl', 'bd', 'vol', 'feno'] },
-  { name: 'ILD work-up',                 tests: ['spiro', 'fvl', 'vol', 'dlco', 'sixmw', 'prior'] },
+  { name: 'ILD work-up',                 tests: ['spiro', 'fvl', 'vol', 'dlco', 'sixmw'] },
   { name: 'Neuromuscular',               tests: ['spiro', 'fvl', 'vol', 'mip', 'post'] },
   { name: 'Asthma: spiro + BD + FeNO',   tests: ['spiro', 'fvl', 'bd', 'feno'] },
   { name: 'Methacholine challenge',      tests: ['spiro', 'fvl', 'bronch'] },
@@ -809,7 +843,7 @@ const LOOPS = [
 ];
 
 const Q_OPTS = [['', 'Not graded'], ['A', 'A'], ['B', 'B'], ['C', 'C'], ['D', 'D'], ['E', 'E'], ['U', 'U'], ['F', 'F']];
-const QC_OPTS = [['', 'Acceptable'], ['limited', 'Technical factors reduce confidence'], ['inv', 'Not interpretable']];
+const QC_OPTS = [['', 'Not noted (acceptable)'], ['limited', 'Technical factors reduce confidence'], ['inv', 'Not interpretable']];
 /* Documented maneuver limitations (ATS/ERS 2019 acceptability criteria). Each one limits a named component; none is inferred from a number. */
 const LIMITS = [
   { title: 'Documented limitations (tap what the lab or the tracing shows)', opts: [
@@ -859,10 +893,10 @@ const SCHEMA = {
         P('fvc', 'FVC', 'gradeH', { hint: 'Low FVC with a low ratio = air trapping or coexisting restriction; needs lung volumes' }),
         P('fef', 'FEF25–75% (informational)', 'both', { hint: 'Not used to define obstruction or severity (ERS/ATS 2022)' })
       ] },
-      { title: 'Quality (graded separately for FEV1 and FVC)', fields: [
+      { title: 'Quality (graded separately for FEV1 and FVC)', fold: true, fields: [
         S('qual_fev1', 'FEV1 grade', Q_OPTS, { hint: 'ATS/ERS 2019: A–B good; C–E usable, reduced confidence; U usable only; F not usable' }),
         S('qual_fvc', 'FVC grade', Q_OPTS, { hint: 'A cough in the first second can spoil FEV1 while FVC stays usable, and early termination spoils FVC while FEV1 stays usable' }),
-        S('effort', 'Effort / cooperation', [['', 'Adequate'], ['poor', 'Submaximal effort'], ['weak', 'Weakness suspected']]),
+        S('effort', 'Effort / cooperation', [['', 'Not noted'], ['poor', 'Submaximal effort'], ['weak', 'Weakness suspected']]),
         M('limits', 'Limitations noted on the report', LIMITS, { hint: 'Only tap what is documented; the interpretation states which component each limitation affects' })
       ] },
       { title: 'Measured values (optional)', opt: true, fields: [
@@ -884,7 +918,7 @@ const SCHEMA = {
         P('post_ratio', 'Post-BD FEV1/FVC', 'ratio', { hint: 'Persistently below the LLN after the bronchodilator = persistent airflow obstruction' }),
         P('post_fev1', 'Post-BD FEV1', 'grade')
       ] },
-      { title: 'Administration', fields: [
+      { title: 'Administration', fold: true, fields: [
         S('agent', 'Bronchodilator given', [['', 'Not recorded'], ['albuterol 400 mcg', 'Albuterol 400 mcg'], ['albuterol plus ipratropium', 'Albuterol + ipratropium'], ['another bronchodilator', 'Other']]),
         S('held', 'Home bronchodilators', HELD_OPTS)
       ] },
@@ -907,7 +941,7 @@ const SCHEMA = {
         { id: 'loop', label: 'Loop shape', type: 'sel', ui: 'loop', opts: [['', 'Not described']].concat(LOOPS.map(l => [l[0], l[1]])) },
         C('loop_repro', 'Flattening or plateau is reproducible on repeat maneuvers')
       ] },
-      { title: 'Flow indices', fields: [
+      { title: 'Flow indices', fold: true, fields: [
         P('pef', 'PEF', 'lo', { hint: 'Below the LLN is expected with central/upper-airway obstruction, weakness or poor effort' }),
         S('fevpef', 'FEV1/PEF (mL/L/min)', [NR, ['hi', 'Above 8'], ['ok', '8 or below']], { hint: 'Above 8 suggests central or upper-airway obstruction' }),
         S('fifratio', 'FIF50/FEF50', [NR, ['lt', 'Below 1'], ['eq', 'About 1'], ['gt', 'Above 1']], { hint: 'ERS/ATS 2022 Table 6: < 1 variable extrathoracic; ≈ 1 fixed; > 1 variable intrathoracic' }),
@@ -957,12 +991,12 @@ const SCHEMA = {
         P('va', 'VA', 'both'),
         P('kco', 'KCO (DLCO/VA)', 'both')
       ] },
-      { title: 'Blood and quality', fields: [
+      { title: 'Blood and quality', fold: true, fields: [
         S('hbcat', 'Hemoglobin', [NR, ['low', 'Low (anemia)'], ['nl', 'Normal'], ['high', 'High']]),
         S('cohbcat', 'Carboxyhemoglobin', [['', 'Not recorded'], ['nl', 'Below 2%'], ['hi', '2% or higher']], { hint: 'Raised COHb lowers DLCO by about 1% per 1%' }),
         S('vatlc', 'VA/TLC', [NR, ['ok', '0.85 or higher'], ['low', 'Below 0.85']], { hint: '0.85 is the Annals ATS 2025 convention, not a universal cut-off' }),
         S('qc', 'Test quality', QC_OPTS, { hint: 'Standard reporting needs two grade-A maneuvers within 2 mL/min/mmHg; a single usable maneuver is a limitation' }),
-        S('single', 'Number of usable maneuvers', [['', 'Two or more'], ['one', 'Only one usable maneuver']])
+        S('single', 'Number of usable maneuvers', [['', 'Not noted'], ['one', 'Only one usable maneuver']])
       ] },
       { title: 'Measured values (optional)', opt: true, fields: [
         N('hb', 'Hemoglobin', 'g/dL', { step: 0.1, min: 3, max: 25 }),
@@ -1004,7 +1038,7 @@ const SCHEMA = {
         P('mip', 'MIP (maximal inspiratory pressure)', 'lo'), P('mep', 'MEP (maximal expiratory pressure)', 'lo'), P('snip', 'SNIP (sniff nasal pressure)', 'lo'),
         S('p01', 'P0.1 (respiratory drive)', [['', 'Not done'], ['low', 'Low'], ['wnl', 'Normal'], ['high', 'Elevated']]),
         S('cpfcat', 'Cough peak flow', [['', 'Not done'], ['ok', '270 L/min or more'], ['low', '161–269 L/min'], ['vlow', '160 L/min or less']], { hint: 'Below 270 L/min: reduced cough effectiveness; 160 or less: ineffective cough' }),
-        S('effort', 'Effort and technique', [['', 'Adequate'], ['poor', 'Submaximal effort suspected'], ['bulbar', 'Mouth seal / bulbar limitation'], ['inv', 'Not interpretable']])
+        S('effort', 'Effort and technique', [['', 'Not noted'], ['poor', 'Submaximal effort suspected'], ['bulbar', 'Mouth seal / bulbar limitation'], ['inv', 'Not interpretable']])
       ] },
       { title: 'Measured values (optional)', opt: true, fields: [
         N('mip_v', 'MIP (enter as a magnitude)', 'cmH2O', { step: 1, min: 0, hint: 'A negative sign is ignored: −60 is weaker than −100' }),
@@ -1062,7 +1096,7 @@ const SCHEMA = {
       ] },
       { title: 'Methacholine result', when: { f: 'type', is: ['mch'] }, fields: [
         S('mch_cat', 'Result as categorised by the lab', [NR, ['neg', 'Negative'], ['bl', 'Borderline'], ['mild', 'Mild'], ['mod', 'Moderate'], ['marked', 'Marked']], { hint: 'ERS 2017: PC20 > 16 normal; 4–16 borderline; 1–4 mild; 0.25–1 moderate; < 0.25 marked (mg/mL); PD20 > 400, 100–400, 25–100, 6–25, < 6 µg' }),
-        S('complete', 'Protocol', [['', 'Completion not recorded'], ['y', 'Completed to the planned maximum'], ['n', 'Stopped before the planned maximum']], { hint: 'A study stopped early is incomplete, not negative' }),
+        S('complete', 'Protocol', [['', 'Not recorded'], ['y', 'Completed to the planned maximum'], ['n', 'Stopped before the planned maximum']], { hint: 'A study stopped early is incomplete, not negative' }),
         S('held', 'Relevant medications', [['', 'Not recorded'], ['y', 'Withheld per protocol'], ['n', 'Not withheld']]),
         C('diluent', 'FEV1 fell substantially after diluent, or the baseline was unstable'),
         C('indet', 'Technically indeterminate (unreliable serial FEV1 measurements)')
@@ -1075,7 +1109,7 @@ const SCHEMA = {
         S('ex_res', 'Result', [NR, ['neg', 'Negative (fall < 10%)'], ['mild', 'Mild (10–24%)'], ['mod', 'Moderate (25–49%)'], ['sev', 'Severe (50% or more)'], ['ind', 'Single time point only']]),
         C('ex_consec', 'Fall of 10% or more at two consecutive time points')
       ] },
-      { title: 'After challenge', fields: [
+      { title: 'After challenge', fold: true, fields: [
         S('rev', 'Reversal with bronchodilator', [['', 'Not recorded'], ['y', 'Reversed'], ['n', 'Did not reverse']])
       ] },
       { title: 'Methacholine values (optional)', opt: true, when: { f: 'type', is: ['mch'] }, fields: [
@@ -1108,8 +1142,8 @@ const SCHEMA = {
         S('dist_cat', 'Distance walked', [NR, ['wnl', 'Within normal limits'], ['low', 'Below the LLN']]),
         S('desat', 'Desaturation', [NR, ['none', 'None significant'], ['fall', 'Fall of 4 points or more, nadir above 88%'], ['le88', 'Nadir 88% or lower']]),
         S('hrr', 'Heart-rate recovery at 1 minute', [NR, ['nl', 'Normal'], ['abn', 'Abnormal (13–18 bpm or less)']]),
-        S('o2', 'Oxygen', [['', 'Room air'], ['o2', 'Supplemental oxygen']]),
-        S('stop', 'Completion', [['', 'Completed 6 minutes'], ['early', 'Stopped early']])
+        S('o2', 'Oxygen', [['', 'Not noted (room air)'], ['o2', 'Supplemental oxygen']]),
+        S('stop', 'Completion', [['', 'Not noted (completed)'], ['early', 'Stopped early']])
       ] },
       { title: 'Measured values (optional)', opt: true, fields: [
         N('dist', '6MWD', 'm', { step: 1 }), N('pred', 'Predicted', 'm', { step: 1 }), N('lln', 'LLN', 'm', { step: 1 }), N('pct', '% predicted', '%', { step: 1 }),
@@ -1173,7 +1207,7 @@ const SCHEMA = {
         S('co2_c', 'PaCO2', [NR, ['hypo', 'Low (below 35)'], ['nl', 'Normal'], ['hyper', 'High (above 45)']]),
         S('hco3_c', 'HCO3', [NR, ['lo', 'Low (below 22)'], ['nl', 'Normal'], ['hi', 'High (above 26)']]),
         S('o2_c', 'PaO2', [NR, ['nl', 'Normal'], ['mild', 'Mildly low (60–79)'], ['hyp', 'Hypoxemic (below 60)']]),
-        S('fio2_c', 'Inspired oxygen', [['', 'Room air'], ['o2', 'Supplemental oxygen']]),
+        S('fio2_c', 'Inspired oxygen', [['', 'Not noted (room air)'], ['o2', 'Supplemental oxygen']]),
         S('aa_c', 'A–a gradient (room air)', [['', 'Not assessed'], ['nl', 'Normal for age'], ['wide', 'Widened']])
       ] },
       { title: 'Measured values (optional)', opt: true, fields: [
@@ -1235,7 +1269,7 @@ function blankTrendRow() { return { date: '', dist: '', nadir: '', o2: '' }; }
 
 function defaultState() {
   const st = { v: 3, tests: {}, settings: { band: CFG.band, headsupInCopy: false, style: 'standard' }, review: {}, prior: { cur: {}, list: [blankPrior()] }, trend6: { list: [blankTrendRow()] } };
-  TESTS.forEach(t => { st.tests[t.key] = (t.key === 'spiro' || t.key === 'fvl'); });
+  TESTS.forEach(t => { st.tests[t.key] = false; });
   Object.keys(SCHEMA).forEach(k => { st[k] = blankModule(k); });
   CUR_FIELDS.forEach(f => { st.prior.cur[f.id] = ''; });
   return st;
@@ -1582,7 +1616,7 @@ function differentialText(groups) {
   const sentences = [], studies = [], seen = {};
   groups.forEach(g => {
     const on = g.dx.filter(d => d.on).map(d => d.text);
-    if (on.length) sentences.push('Differential considerations for ' + g.title + ' include ' + joinList(on) + ', which the physiologic pattern alone does not distinguish.');
+    if (on.length) sentences.push('Differential considerations for ' + g.title + ' include ' + joinList(on) + '.');
     g.studies.forEach(s => { if (s.on && !seen[s.id]) { seen[s.id] = 1; studies.push(s.text); } });
   });
   return { sentences: sentences, studies: studies };
@@ -1728,7 +1762,7 @@ function buildFacts(st) {
   const c = st.ctx;
   const age = num(c.age), ht = num(c.ht), wt = num(c.wt);
   const bmi = (has(ht) && has(wt) && ht > 0) ? wt / Math.pow(ht / 100, 2) : NaN;
-  const f = { on: on, st: st, review: st.review || {}, style: (st.settings && st.settings.style) || 'standard' };
+  const f = { on: Object.assign({}, on), st: st, review: st.review || {}, style: (st.settings && st.settings.style) || 'standard' };
   const indic = Array.isArray(c.indic) ? c.indic : [];
   const indicLabels = INDICATIONS.reduce((a, g) => a.concat(g.opts), []).filter(o => indic.indexOf(o[0]) >= 0).map(o => o[1]);
   f.ctx = { age: age, sex: c.sex || '', ht: ht, wt: wt, bmi: bmi, obese: has(bmi) && bmi >= 30, smoke: c.smoke || '',
@@ -2004,8 +2038,10 @@ function buildFacts(st) {
   g.hyperC = g.co2Cat === 'hyper';
   g.any = has(g.ph) || has(g.pco2) || has(g.po2) || has(g.hco3) || has(g.sao2) || g.phC !== '' || g.co2C !== '' || g.hco3C !== '' || g.o2C !== '' || g.aaC !== '';
 
+  // a prior study counts as entered as soon as any of its values is typed (no separate test to tick)
+  f.on.prior = !!on.prior || (st.prior.list || []).some(p => PRIOR_FIELDS.some(fd => fd.type !== 'chk' && fd.id !== 'date' && String(p[fd.id] || '').trim() !== ''));
   f.priors = [];
-  if (on.prior) f.priors = priorFacts(st, f);
+  if (f.on.prior) f.priors = priorFacts(st, f);
   f.prior = { any: f.priors.some(p => p.metrics.length > 0) };
 
   // derived booleans used by several modules
@@ -2598,101 +2634,115 @@ function placeholderValues(f) {
 /* A bronchodilator change near the 10% threshold keeps enough precision that the printed number agrees with the decision. */
 function pctPrecise(x) { const r1_ = fmt(x, 1); return (r1_ === '10.0' && x !== 10) ? fmt(x, 2) : r1_; }
 
-/* Metric sentence from the catalog: the severity phrase for a graded low value, otherwise the state phrase; z-score appended. */
-function withZ(text, r) {
-  if (!text || !r || r.z === null) return text;
-  const t = text.replace(/\.$/, '');
-  return /z-score [-+\u2212]?\d/.test(t) ? t + '.' : t + ' (' + r.zTxt + ').';
-}
-/* "." before a parenthetical note: "FVC is reduced (reduced confidence)." */
+/* ---------------------------------------------------------------- voice
+   The sections are written the way a reading physician dictates them: the
+   numbers first (when they were entered), then one plain sentence that groups
+   the indices by state ("FEV1/FVC is reduced, with a moderately reduced FEV1
+   and a normal FVC"), nothing restated, nothing explained in the section. */
+const STATE_WORD = { normal: 'normal', low: 'reduced', mild: 'mildly reduced', moderate: 'moderately reduced', severe: 'severely reduced', high: 'elevated' };
+function zTag(r) { return r && r.z !== null ? 'z ' + fz(r.z) : ''; }
+function an(word) { return (/^[aeiou]/i.test(word) ? 'an ' : 'a ') + word; }
+function joinNames(a) { return a.length <= 2 ? a.join(' and ') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1]; }
+function metricState(r) { return r.low ? (r.sev || 'low') : (r.high ? 'high' : 'normal'); }
+/* name: as printed; r: the result object; base: catalog phrase base (detailed-level caveats); num: () => measured value text; lead: the defining index */
+function metricItem(name, r, base, num, lead, zInNum) { return { name: name, r: r, base: base, num: num || null, lead: !!lead, zInNum: !!zInNum }; }
+/* "." before a parenthetical note */
 function note(text, extra) { if (!text) return text; if (!extra) return text; return text.replace(/\.$/, '') + ' (' + extra + ').'; }
-const METRIC_STYLE = { concise: 'concise', standard: 'concise', expanded: 'expanded', numeric: 'numeric' };
+/* A single index in a sentence of its own (post-bronchodilator values): "Post-bronchodilator FEV1/FVC is reduced (z -2.5)." */
 function metricLine(f, base, r, name) {
   if (!r || !r.measured) return '';
-  if (r.invalid) return name + ' is not interpretable (the maneuver did not meet quality criteria)' + (r.zTxt ? ' (' + r.zTxt + ')' : '') + '.';
-  const V = f.vals, style = METRIC_STYLE[f.style] || 'concise';
-  let id = null;
-  if (r.low && r.sev && catPhrase(base + '.' + r.sev)) id = base + '.' + r.sev;
-  else if (r.low) id = base + '.low';
-  else if (r.high) id = base + '.high';
-  else id = base + '.normal';
-  let t = ptext(id, style, V);
-  if (!t) t = describe(name, r);
-  else t = withZ(t, r);
-  if (r.bl) t = t.replace(/\.$/, '') + ', near the LLN (a review flag, not a separate category).';
-  if (r.limited) t = note(t, 'reduced confidence: see quality');
-  return t;
+  if (r.invalid) return name + ' is not interpretable (did not meet quality criteria).';
+  const z = zTag(r);
+  return name + ' is ' + STATE_WORD[metricState(r)] + (z ? ' (' + z + ')' : '') + (r.bl ? ', near the LLN' : '') + (r.limited ? ' (reduced confidence)' : '') + '.';
 }
-
-/* One composed sentence for the metrics of a section instead of one sentence per metric: metrics in the same state are
-   grouped ("FEV1, FVC and FEV1/FVC are all within reference limits"; "FEV1/FVC is reduced (z = −2.3) and FEV1 is
-   moderately reduced (z = −3.1); FVC is within reference limits"). Abnormal groups lead, in the reasoning order the
-   items were given; the normal group closes the sentence. A metric that failed quality keeps its own sentence. The
-   detailed level adds the catalog's caveat for each metric; the numeric level prints the measured values. */
-const STATE_PRED = { normal: 'within reference limits', bl: 'within reference limits but near the LLN (a review flag, not a separate category)', low: 'reduced', mild: 'mildly reduced', moderate: 'moderately reduced', severe: 'severely reduced', high: 'increased' };
-function joinNames(a) { return a.length <= 2 ? a.join(' and ') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1]; }
-function metricState(r) { return r.low ? (r.sev || 'low') : (r.high ? 'high' : (r.bl ? 'bl' : 'normal')); }
-function metricItem(name, r, base, num, lead) { return { name: name, r: r, base: base, num: num || null, lead: !!lead }; }
-function metricGroup(f, items) {
-  const style = f.style, V = f.vals, out = [];
+/* "FEV1 1.55 L (48% predicted, z -3.1); FVC 3.20 L (z -0.9); FEV1/FVC 0.48 (z -3.4)." — only indices with a number */
+function valuesLine(items) {
+  const parts = [], live = items.filter(it => it.r && it.r.measured);
+  const anyValue = live.some(it => it.num && it.num());
+  live.forEach(it => {
+    const v = it.num ? (it.num() || '') : '', z = it.zInNum ? '' : zTag(it.r);
+    if (!v && !z) return;
+    if (anyValue) parts.push(it.name + ' ' + (v ? v + (z ? ' (' + z + ')' : '') : z));
+    else parts.push(it.name + ' ' + z.replace(/^z /, ''));
+  });
+  if (!parts.length) return '';
+  return (anyValue ? '' : 'z-scores: ') + parts.join(anyValue ? '; ' : ', ') + '.';
+}
+/* The finding sentence(s) for a set of indices. Groups by state; the defining index leads when it is abnormal; a lone
+   normal index rides along as "with a normal X"; several normal indices close in a sentence of their own. */
+function findingSentences(items, opts) {
+  opts = opts || {};
+  const out = [];
   const live = items.filter(it => it.r && it.r.measured);
   const inv = live.filter(it => it.r.invalid);
-  if (inv.length) out.push(joinNames(inv.map(it => it.name)) + (inv.length > 1 ? ' are' : ' is') + ' not interpretable (the maneuver did not meet quality criteria' + (inv.some(it => it.r.zTxt) ? '; ' + inv.filter(it => it.r.zTxt).map(it => (inv.length > 1 ? it.name + ' ' : '') + it.r.zTxt).join(', ') : '') + ').');
+  if (inv.length) out.push(joinNames(inv.map(it => it.name)) + (inv.length > 1 ? ' are' : ' is') + ' not interpretable (did not meet quality criteria).');
   const ok = live.filter(it => !it.r.invalid);
   if (!ok.length) return out;
+  const allLimited = ok.every(it => it.r.limited);
+  const nm = (it) => it.name + (it.r.bl ? ' (near the LLN)' : '') + (it.r.limited && !allLimited ? ' (reduced confidence)' : '');
   const groups = [], idx = {};
-  ok.forEach(it => { let k = metricState(it.r); if (k === 'bl') k = 'normal'; if (idx[k] === undefined) { idx[k] = groups.length; groups.push({ k: k, items: [] }); } groups[idx[k]].items.push(it); });
-  // the defining measurement (FEV1/FVC) leads when it is abnormal; otherwise groups keep the order the items were given
-  const abn = groups.filter(g => g.k !== 'normal').sort((a, b) => (b.items.some(it => it.lead) ? 1 : 0) - (a.items.some(it => it.lead) ? 1 : 0));
-  const nl = groups.filter(g => g.k === 'normal');
-  const near = ok.filter(it => it.r.bl);
-  const single = groups.length === 1;
+  ok.forEach(it => { const k = metricState(it.r); if (idx[k] === undefined) { idx[k] = groups.length; groups.push({ k: k, items: [] }); } groups[idx[k]].items.push(it); });
   groups.forEach(g => { if (g.k !== 'normal') g.items.sort((a, b) => (b.lead ? 1 : 0) - (a.lead ? 1 : 0)); });
-  const clause = (g, noVerb) => {
-    const n = g.items.length, verb = noVerb ? ' ' : (n > 1 ? ' are ' : ' is ');
-    const all = single ? (n >= 3 ? 'all ' : (n === 2 ? 'both ' : '')) : '';
-    const allLimited = g.items.every(it => it.r.limited), someLimited = g.items.some(it => it.r.limited);
-    const pred = STATE_PRED[g.k];
-    const tail = allLimited ? ' (reduced confidence: see quality)' : '';
-    const perItem = style === 'numeric' || (someLimited && !allLimited);
-    if (perItem) {
-      const parts = g.items.map(it => {
-        const d = [];
-        if (style === 'numeric' && it.num) { const t = it.num(V); if (t) d.push(t); }
-        if (it.r.zTxt) d.push(it.r.zTxt);
-        if (it.r.limited && !allLimited) d.push('reduced confidence: see quality');
-        return it.name + (d.length ? ' (' + d.join('; ') + ')' : '');
-      });
-      return joinNames(parts) + verb + all + pred + tail;
+  const abn = groups.filter(g => g.k !== 'normal').sort((a, b) => (b.items.some(it => it.lead) ? 1 : 0) - (a.items.some(it => it.lead) ? 1 : 0));
+  const nl = groups.filter(g => g.k === 'normal')[0];
+  const names = (g) => joinNames(g.items.map(nm));
+  const isAre = (g) => g.items.length > 1 ? ' are ' : ' is ';
+  const withPhrase = (g) => (g.items.length === 1 ? an(STATE_WORD[g.k]) : STATE_WORD[g.k]) + ' ' + names(g);
+  let first = '', second = '';
+  if (!abn.length) {
+    const n = nl.items.length;
+    first = names(nl) + isAre(nl) + (n >= 3 ? 'all ' : (n === 2 ? 'both ' : '')) + 'normal';
+  } else {
+    const leadFirst = abn[0].items.some(it => it.lead) || opts.leadAny;
+    const rest = abn.slice(1).map(withPhrase);
+    const nlRide = nl && nl.items.length <= 2;            // one or two normal indices ride along: "with a normal FVC and FEV1/FVC"
+    const nlPhrase = nl ? (nl.items.length === 1 ? 'a normal ' : 'normal ') + names(nl) : '';
+    if (nlRide) rest.push(nlPhrase);
+    if (leadFirst || abn.length === 1) {
+      first = (opts.leadClause || (names(abn[0]) + isAre(abn[0]) + STATE_WORD[abn[0].k])) + (rest.length ? ', with ' + joinNames(rest) : '');
+    } else {
+      first = abn.map(g => names(g) + isAre(g) + STATE_WORD[g.k]).join(abn.length === 2 ? ' and ' : '; ');
+      if (nlRide) first += ', with ' + nlPhrase;
     }
-    const zs = g.items.map(it => it.r.zTxt).filter(Boolean);
-    let t = joinNames(g.items.map(it => it.name)) + verb + all + pred;
-    if (zs.length === 1) t += ' (' + zs[0] + ')';
-    else if (zs.length > 1) t += ' (z = ' + joinNames(zs.map(z => z.replace(/^z = /, ''))) + ')';
-    return t + tail;
-  };
-  // "FEV1/FVC is reduced (z = −2.3), with FEV1 moderately reduced (z = −3.1)": the defining measurement carries the others
-  const leadFirst = abn.length > 1 && abn[0].items.some(it => it.lead);
-  const abnTxt = leadFirst ? clause(abn[0]) + ', with ' + abn.slice(1).map(g => clause(g, true)).join(' and ') : abn.map(g => clause(g)).join(abn.length === 2 ? ' and ' : '; ');
-  const nlCount = nl.reduce((a, g) => a + g.items.length, 0);
-  const nearAll = near.length > 0 && near.length === nlCount;
-  const nlTxt = nl.map(clause).join('; ') + (nearAll ? (nlCount > 1 ? ', all' : ',') + ' near the LLN (a review flag, not a separate category)' : '');
-  const nearTxt = near.length && !nearAll ? joinNames(near.map(it => it.name)) + (near.length > 1 ? ' are' : ' is') + ' near the LLN (a review flag, not a separate category)' : '';
-  out.push(cap([abnTxt, nlTxt, nearTxt].filter(Boolean).join('; ')) + '.');
-  if (style === 'expanded') {
-    const seen = {};
-    ok.forEach(it => {
-      const k = metricState(it.r), id = it.base + '.' + (k === 'bl' ? 'normal' : k);
-      const full = ptext(id, 'expanded', V) || (k !== 'normal' && k !== 'high' ? ptext(it.base + '.low', 'expanded', V) : '');
-      if (!full) return;
-      const m = /^[^.;]+[.;]\s+(.+)$/.exec(full.trim());
-      // a two-part template contributes its caveat (the part after the finding); a one-sentence template is kept whole
-      // unless it only restates the grade
-      const tail = m ? cap(m[1].trim()).replace(/\.?$/, '.') : (/grading scheme/.test(full) ? '' : full.trim());
-      if (tail && tail.length > 40 && !seen[tail] && !/^Its\b/.test(tail)) { seen[tail] = 1; out.push(tail); }
-    });
+    if (nl && !nlRide) second = names(nl) + ' are normal';
   }
+  if (allLimited) first += ' (reduced confidence)';
+  out.push(cap(first) + '.');
+  if (second) out.push(cap(second) + '.');
   return out;
+}
+/* Detailed level: the catalog's caveat for each index, once each. */
+function caveatLines(f, items) {
+  if (f.style !== 'expanded') return [];
+  const out = [], seen = {}, V = f.vals;
+  items.filter(it => it.r && it.r.measured && !it.r.invalid && it.base).forEach(it => {
+    const k = metricState(it.r), id = it.base + '.' + k;
+    const full = ptext(id, 'expanded', V) || (k !== 'normal' && k !== 'high' ? ptext(it.base + '.low', 'expanded', V) : '');
+    if (!full) return;
+    const m = /^[^.;]+[.;]\s+(.+)$/.exec(full.trim());
+    const tail = m ? cap(m[1].trim()).replace(/\.?$/, '.') : (/grading scheme/.test(full) ? '' : full.trim());
+    if (tail && tail.length > 40 && !seen[tail] && !/^Its\b/.test(tail)) { seen[tail] = 1; out.push(tail); }
+  });
+  return out;
+}
+/* The standard block for a section: values line (standard and detailed levels), finding sentence(s), caveats (detailed). */
+function metricBlock(f, items, opts) {
+  const out = [];
+  if (f.style !== 'concise') { const v = valuesLine((opts && opts.valueItems) || items); if (v) out.push(v); }
+  findingSentences(items, opts).forEach(l => out.push(l));
+  caveatLines(f, items).forEach(l => out.push(l));
+  return out;
+}
+/* "Mar 1, 2024" */
+const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+function dateWords(iso) { const d = parseDate(iso); return d ? MON[d.getUTCMonth()] + ' ' + d.getUTCDate() + ', ' + d.getUTCFullYear() : String(iso || ''); }
+function monthWords(iso) { const d = parseDate(iso); return d ? MON[d.getUTCMonth()] + ' ' + d.getUTCFullYear() : String(iso || ''); }
+function intervalWords(yrs) {
+  if (!has(yrs) || yrs <= 0) return '';
+  const mo = Math.round(yrs * 12);
+  if (mo < 12) return mo + (mo === 1 ? ' month' : ' months');
+  const y = Math.round(yrs * 2) / 2;
+  return (y === Math.floor(y) ? String(y) : y.toFixed(1)) + (y === 1 ? ' year' : ' years');
 }
 
 /* ------------------------------------------------------------- prior facts */
@@ -2753,60 +2803,49 @@ function priorFacts(st, f) {
 
 /* ------------------------------------------------------------ spirometry */
 function gradeWord(g) {
-  if (g === 'A' || g === 'B') return 'good (grade ' + g + ')';
-  if (g === 'C' || g === 'D' || g === 'E') return 'acceptable and usable with reduced confidence (grade ' + g + ')';
-  if (g === 'U') return 'usable only (grade U: no fully acceptable maneuver)';
+  if (g === 'A' || g === 'B') return 'good quality (grade ' + g + ')';
+  if (g === 'C' || g === 'D' || g === 'E') return 'acceptable quality with reduced confidence (grade ' + g + ')';
+  if (g === 'U') return 'usable only (grade U)';
   if (g === 'F') return 'not usable (grade F)';
   return '';
 }
 function qualLines(f) {
-  const s = f.sp, out = [], V = f.vals, st = f.style;
+  const s = f.sp, out = [], V = f.vals, st = f.style === 'numeric' ? 'standard' : f.style;
   if (s.qual1 && s.qual2) {
-    if (s.qual1 === s.qual2) out.push('Spirometry quality for FEV1 and FVC is ' + gradeWord(s.qual1));
-    else out.push('Spirometry quality is graded separately: FEV1 ' + gradeWord(s.qual1) + '; FVC ' + gradeWord(s.qual2));
-  } else if (s.qual1) out.push('FEV1 quality is ' + gradeWord(s.qual1) + '; the FVC grade was not entered');
-  else if (s.qual2) out.push('FVC quality is ' + gradeWord(s.qual2) + '; the FEV1 grade was not entered');
-  if (s.relF === 'invalid' && s.relV !== 'invalid') out.push('FEV1 is not interpretable; FVC remains usable');
-  if (s.relV === 'invalid' && s.relF !== 'invalid') out.push('FVC is not interpretable; FEV1 remains usable');
+    if (s.qual1 === s.qual2) out.push(cap(gradeWord(s.qual1)));
+    else out.push('Quality: FEV1 grade ' + s.qual1 + ', FVC grade ' + s.qual2);
+  } else if (s.qual1) out.push('FEV1 grade ' + s.qual1 + ' (FVC not graded)');
+  else if (s.qual2) out.push('FVC grade ' + s.qual2 + ' (FEV1 not graded)');
+  if (s.relF === 'invalid' && s.relV !== 'invalid') out.push('FEV1 is not usable; FVC is');
+  if (s.relV === 'invalid' && s.relF !== 'invalid') out.push('FVC is not usable; FEV1 is');
   const ids = { repeat: 'quality.limited_repeatability', early: 'quality.early_termination', cough: 'quality.cough_first_second', insp: 'quality.incomplete_inspiration', slow: 'quality.slow_start', leak: 'quality.leak', glottic: 'quality.glottic_closure', varef: 'quality.variable_effort', fatigue: 'quality.fatigue', symptom: 'quality.symptoms' };
   const seen = {};
-  s.limits.forEach(k => { if (ids[k] && !seen[k]) { seen[k] = 1; const t = ptext(ids[k], st === 'numeric' ? 'standard' : st, V); if (t) out.push(t); } });
-  if (s.loop === 'early' && !seen.early) out.push(note(ptext('quality.early_termination', 'standard', V), 'early termination seen on the loop'));
-  if (s.loop === 'cough' && !seen.cough) out.push(note(ptext('quality.cough_first_second', 'standard', V), 'cough artifact seen on the loop'));
-  if (s.loop === 'slow' && !seen.slow) out.push(note(ptext('quality.slow_start', 'standard', V), 'hesitant start seen on the loop'));
-  if (f.poorEffort) out.push(s.effort === 'weak' ? 'Effort: muscle weakness suspected from the maneuver (no sharp peak flow)' : 'Effort: submaximal effort or cooperation concern noted');
+  s.limits.forEach(k => { if (ids[k] && !seen[k]) { seen[k] = 1; const t = ptext(ids[k], st === 'expanded' ? 'expanded' : 'concise', V); if (t) out.push(t); } });
+  if (s.loop === 'early' && !seen.early) out.push('Early termination on the loop; FVC may be underestimated');
+  if (s.loop === 'cough' && !seen.cough) out.push('Cough artifact in the first second on the loop');
+  if (s.loop === 'slow' && !seen.slow) out.push('Hesitant start on the loop');
+  if (f.poorEffort) out.push(s.effort === 'weak' ? 'Weak effort without a sharp peak flow, raising the question of muscle weakness' : 'Submaximal effort');
   return out;
 }
-function inlineNum(f, r) { return f.style === 'numeric' && r && r.measured && !r.invalid; }
-function measuredLine(f) {
-  const s = f.sp, a = [];
-  if (!inlineNum(f, s.fev1)) {
-    if (has(s.fev1L)) a.push('FEV1 ' + fmt(s.fev1L, 2) + ' L' + (has(s.fev1pct) ? ' (' + Math.round(s.fev1pct) + '% predicted)' : ''));
-    else if (has(s.fev1pct)) a.push('FEV1 ' + Math.round(s.fev1pct) + '% predicted');
-  }
-  if (!inlineNum(f, s.fvc)) {
-    if (has(s.fvcL)) a.push('FVC ' + fmt(s.fvcL, 2) + ' L' + (has(s.fvcpct) ? ' (' + Math.round(s.fvcpct) + '% predicted)' : ''));
-    else if (has(s.fvcpct)) a.push('FVC ' + Math.round(s.fvcpct) + '% predicted');
-  }
-  if (has(s.ratioCalc) && !inlineNum(f, s.ratio)) a.push('FEV1/FVC ' + fmt(s.ratioCalc, 2));
-  return a.length ? 'Measured: ' + a.join('; ') : '';
+function spiroItems(f) {
+  const s = f.sp;
+  const nv = (L, pct) => () => [has(L) ? fmt(L, 2) + ' L' : '', has(pct) ? Math.round(pct) + '% predicted' : ''].filter(Boolean).join(', ');
+  return [
+    metricItem('FEV1', s.fev1, 'metric.fev1', nv(s.fev1L, s.fev1pct)),
+    metricItem('FVC', s.fvc, 'metric.fvc', nv(s.fvcL, s.fvcpct)),
+    metricItem('FEV1/FVC', s.ratio, 'metric.ratio', () => has(s.ratioCalc) ? fmt(s.ratioCalc, 2) : '', true)
+  ];
 }
-
 function secSpiro(f) {
   const sec = newSec('spiro', 'SPIROMETRY'), s = f.sp, pat = s.pat;
   if (!s.any && !s.anyQ) { sec.empty = true; sec.lines.push('No spirometry values entered.'); return sec; }
   qualLines(f).forEach(l => put(sec, l));
-  put(sec, measuredLine(f));
-  const nv = (L, pct) => (V) => [has(L) ? fmt(L, 2) + ' L' : '', has(pct) ? Math.round(pct) + '% predicted' : ''].filter(Boolean).join(', ');
-  metricGroup(f, [
-    metricItem('FEV1', s.fev1, 'metric.fev1', nv(s.fev1L, s.fev1pct)),
-    metricItem('FVC', s.fvc, 'metric.fvc', nv(s.fvcL, s.fvcpct)),
-    metricItem('FEV1/FVC', s.ratio, 'metric.ratio', () => has(s.ratioCalc) ? fmt(s.ratioCalc, 2) : '', true)
-  ]).forEach(l => put(sec, l));
+  metricBlock(f, spiroItems(f)).forEach(l => put(sec, l));
   const fx = f.F['spirometry.fixed_ratio_discordance'];
-  if (fx === 'fixed_only') put(sec, ptext('metric.ratio.fixed_only', 'standard', f.vals));
-  else if (fx === 'lln_only') put(sec, ptext('metric.ratio.lln_only', 'standard', f.vals));
-  if (s.fef.measured && !s.fef.invalid) put(sec, note(s.fef.low ? ptext('flow.fef_low', 'concise') : ptext('flow.fef_normal', 'concise'), 'informational; not used to define obstruction or severity'));
+  if (fx === 'fixed_only') put(sec, 'FEV1/FVC is below 0.70 but above the LLN; by the LLN criterion there is no obstruction');
+  else if (fx === 'lln_only') put(sec, 'FEV1/FVC is below the LLN although above 0.70; the LLN criterion applies');
+  if (s.fef.measured && !s.fef.invalid) put(sec, 'FEF25–75% is ' + (s.fef.low ? 'reduced' : 'normal') + (f.style === 'expanded' ? ' (not used to define obstruction or grade severity)' : ''));
+  priorLines(f, ['fev1', 'fvc', 'fev1_pct', 'fvc_pct']).forEach(l => put(sec, l));
   if (pat.code) sec.codes.push(pat.code);
   pat.codes.forEach(c => sec.codes.push(c));
   sec.codes = uniq(sec.codes);
@@ -2817,36 +2856,37 @@ function secSpiro(f) {
 function secBD(f) {
   const sec = newSec('bd', 'BRONCHODILATOR RESPONSE'), b = f.bd, V = f.vals;
   if (!b.any) { sec.empty = true; sec.lines.push('No bronchodilator data entered.'); return sec; }
-  if (b.agent) put(sec, 'Bronchodilator given: ' + b.agent);
-  if (b.held === 'y') put(sec, 'Home bronchodilators were withheld before testing');
-  else if (b.held === 'n') put(sec, ptext('bd.medication', 'standard'));
+  const pre = [];
+  if (b.agent) pre.push(cap(b.agent));
+  if (b.held === 'y') pre.push('home bronchodilators withheld');
+  else if (b.held === 'n') pre.push('bronchodilators taken before testing');
+  if (pre.length) put(sec, pre.join('; '));
   if (b.qc === 'limited') put(sec, 'Technical factors reduce confidence in the post-bronchodilator maneuvers');
   if (b.qc === 'inv') put(sec, 'The post-bronchodilator maneuvers are not interpretable');
-  const line = (name, pre, post, dpp) => {
-    if (has(pre) && has(post)) {
-      const dm = (post - pre) * 1000, dr = pre > 0 ? (post - pre) / pre * 100 : NaN;
-      let t = name + ' changed from ' + fmt(pre, 2) + ' L to ' + fmt(post, 2) + ' L (' + fsign(dm, 0) + ' mL';
-      if (has(dr)) t += ', ' + fsign(dr, 1) + '% of baseline';
-      if (has(dpp)) t += ', ' + fsign(dpp, 1) + '% of predicted';
-      put(sec, t + ')');
-    } else if (has(dpp)) put(sec, name + ' changed by ' + fsign(dpp, 1) + '% of predicted');
+  const line = (name, p0, p1, dpp) => {
+    if (has(p0) && has(p1)) {
+      const dm = (p1 - p0) * 1000;
+      return name + ' ' + fmt(p0, 2) + ' → ' + fmt(p1, 2) + ' L (' + fsign(dm, 0) + ' mL' + (has(dpp) ? ', ' + fsign(dpp, 1) + '% of predicted' : (p0 > 0 ? ', ' + fsign((p1 - p0) / p0 * 100, 0) + '%' : '')) + ')';
+    }
+    if (has(dpp)) return name + ' ' + fsign(dpp, 1) + '% of predicted';
+    return '';
   };
-  if (f.style === 'numeric' && b.currentComputable && ptext('bd.current_numeric', 'numeric', V)) put(sec, ptext('bd.current_numeric', 'numeric', V));
-  else { line('FEV1', b.f1pre, b.f1post, b.dF); line('FVC', b.vpre, b.vpost, b.dV); }
+  if (f.style !== 'concise') { const nums = [line('FEV1', b.f1pre, b.f1post, b.dF), line('FVC', b.vpre, b.vpost, b.dV)].filter(Boolean); if (nums.length) put(sec, nums.join('; ')); }
   const resp = f.F['bronchodilator.response'];
-  if (resp === 'both' || resp === 'fev1' || resp === 'fvc') { sec.codes.push('S62'); put(sec, note(ptext('bd.' + resp, 'standard', V), 'increase of more than 10% of the predicted value')); }
-  else if (resp === 'negative') { sec.codes.push('S61'); put(sec, note(ptext('bd.negative', 'standard', V), 'both FEV1 and FVC assessed; neither increased by more than 10% of predicted')); }
+  if (resp === 'both' || resp === 'fev1' || resp === 'fvc') { sec.codes.push('S62'); put(sec, 'Significant response in ' + (resp === 'both' ? 'FEV1 and FVC' : resp.toUpperCase()) + ' (increase of more than 10% of predicted)'); }
+  else if (resp === 'negative') { sec.codes.push('S61'); put(sec, 'No significant response (neither FEV1 nor FVC increased by more than 10% of predicted)'); }
   else if (resp === 'indeterminate') {
     let why = '';
-    if (b.rel === 'invalid') why = 'the post-bronchodilator maneuvers are not interpretable';
+    if (b.rel === 'invalid') why = 'post-bronchodilator maneuvers not interpretable';
     else if (b.resp === 'ind') why = 'reported as not assessable';
-    else if (!(b.assessedF && b.assessedV)) why = 'only ' + (b.assessedF ? 'FEV1' : (b.assessedV ? 'FVC' : 'incomplete data')) + ' could be assessed, so a negative response cannot be established';
-    put(sec, note(ptext('bd.indeterminate', 'standard', V), why));
+    else if (!(b.assessedF && b.assessedV)) why = 'only ' + (b.assessedF ? 'FEV1' : (b.assessedV ? 'FVC' : 'incomplete data')) + ' could be assessed';
+    put(sec, 'Response not assessable' + (why ? ' (' + why + ')' : ''));
   }
-  if (b.legacyAvail) put(sec, 'By the legacy 2005 profile (increase of at least 12% from baseline and at least 200 mL), ' + (b.legacyF && b.legacyV ? 'both FEV1 and FVC qualify' : (b.legacyF ? 'FEV1 qualifies' : (b.legacyV ? 'FVC qualifies' : 'neither FEV1 nor FVC qualifies'))) + (b.discordant ? '; the two definitions disagree for this study' : ''));
-  if (b.drop) put(sec, 'FEV1 or FVC decreased by more than 10% of predicted after bronchodilator');
-  if (b.postRatio.measured) put(sec, metricLine(f, 'metric.ratio', b.postRatio, 'Post-bronchodilator FEV1/FVC').replace(/^FEV1\/FVC/, 'Post-bronchodilator FEV1/FVC'));
-  if (b.postFev1.measured) put(sec, metricLine(f, 'metric.fev1', b.postFev1, 'Post-bronchodilator FEV1').replace(/^FEV1/, 'Post-bronchodilator FEV1'));
+  if (b.legacyAvail && f.style === 'expanded') put(sec, 'By the 2005 criterion (12% and 200 mL from baseline), ' + (b.legacyF && b.legacyV ? 'both FEV1 and FVC qualify' : (b.legacyF ? 'FEV1 qualifies' : (b.legacyV ? 'FVC qualifies' : 'neither qualifies'))) + (b.discordant ? '; the two criteria disagree' : ''));
+  else if (b.legacyAvail && b.discordant) put(sec, 'The 2005 criterion (12% and 200 mL) ' + (b.legacyF || b.legacyV ? 'would call this a significant response' : 'would not call this significant'));
+  if (b.drop) put(sec, 'FEV1 or FVC fell by more than 10% of predicted after bronchodilator');
+  if (b.postRatio.measured) put(sec, metricLine(f, 'metric.ratio', b.postRatio, 'Post-bronchodilator FEV1/FVC').replace(/ is reduced/, ' remains reduced'));
+  if (b.postFev1.measured) put(sec, metricLine(f, 'metric.fev1', b.postFev1, 'Post-bronchodilator FEV1'));
   return sec;
 }
 
@@ -2857,7 +2897,7 @@ function secFvl(f) {
   if (!v.any) { sec.empty = true; sec.lines.push('No flow-volume loop or flow-index values entered.'); return sec; }
   const L = v.loop, info = loopInfo(L), flat = (L === 'expflat' || L === 'inspflat' || L === 'bothflat');
   if (info) {
-    put(sec, 'Loop shape: ' + info[3]);
+    put(sec, info[3]);
     if (flat) put(sec, v.repro ? 'The flattening is reproducible on repeat maneuvers' : 'The flattening is not reproducible on repeat maneuvers');
     if (flat && v.repro) sec.codes.push(L === 'expflat' ? 'S51' : (L === 'inspflat' ? 'S52' : 'S53'));
   }
@@ -2878,47 +2918,40 @@ function secFvl(f) {
 function loopLines(f) {
   const v = f.fvl, L = v.loop, R = f.sp.ratio, T = f.vol.tlc, out = [];
   const flat = (L === 'expflat' || L === 'inspflat' || L === 'bothflat');
-  if (L === 'concave') out.push(R.low ? 'The concave expiratory limb of the flow-volume loop is concordant with the airflow obstruction.' : 'Expiratory concavity supports airflow limitation at low lung volumes or loss of elastic recoil, but is not specific for a particular airway disorder.');
-  else if (L === 'sevobs') out.push('The loop shape (low early peak, marked scooping, long low-flow tail) is the contour seen with severe airflow obstruction and air trapping.');
-  else if (L === 'convex') out.push('The small loop with preserved contour is compatible with a reduced vital capacity' + (T.low ? ', concordant with the reduced TLC.' : (T.measured && T.wnl ? ', but the shape is not specific and TLC is within reference limits.' : '; restriction requires confirmation with TLC.')));
-  else if (L === 'effort') out.push('The blunted or late peak with an irregular curve suggests submaximal effort; FEV1 and FVC may be underestimated.');
-  else if (L === 'weak') out.push('The low rounded peak flow with a reduced inspiratory limb is a contour seen with respiratory-muscle weakness; it does not establish weakness on its own.');
-  else if (L === 'slow') out.push('The slow rise to the peak suggests a hesitant start; FEV1 and PEF may be underestimated unless the back-extrapolated volume was acceptable (under 5% of FVC or 0.100 L).');
-  else if (L === 'cough') out.push('The early cough artifact can lower the FEV1 falsely.');
-  else if (L === 'early') out.push('Early termination of exhalation makes FVC and FEV1/FVC unreliable and can artificially preserve the ratio.');
-  else if (L === 'saw') out.push(ptext('loop.sawtooth', 'expanded'));
-  else if (L === 'unilat') out.push(ptext('loop.biphasic', 'expanded'));
+  if (L === 'concave') { if (!R.low) out.push('The concave expiratory limb suggests airflow limitation at low lung volumes, which is not specific.'); }
+  else if (L === 'sevobs') { if (!R.low) out.push('The loop contour is that of severe obstruction with air trapping.'); }
+  else if (L === 'convex') { if (!T.low) out.push('The small loop with a preserved contour fits a reduced vital capacity' + (T.measured && T.wnl ? ', although TLC is normal' : '; lung volumes would confirm restriction') + '.'); }
+  else if (L === 'effort') out.push('The blunted, irregular loop suggests submaximal effort; FEV1 and FVC may be underestimated.');
+  else if (L === 'weak') out.push('The low rounded peak with a weak inspiratory limb is the contour of respiratory-muscle weakness, which the loop alone does not establish.');
+  else if (L === 'slow') out.push('The slow rise to peak suggests a hesitant start; FEV1 and PEF may be underestimated.');
+  else if (L === 'cough') out.push('The early cough artifact can lower the FEV1.');
+  else if (L === 'early') out.push('Early termination makes the FVC and FEV1/FVC unreliable and can falsely preserve the ratio.');
+  else if (L === 'saw') out.push('The saw-tooth pattern is seen with upper-airway instability (sleep apnea, tremor, neuromuscular disease).');
+  else if (L === 'unilat') out.push('The biphasic expiratory limb is seen with unilateral main-bronchus obstruction or a single-lung transplant.');
   else if (flat) {
-    if (v.repro) out.push(L === 'bothflat' ? ptext('loop.both_flattened', 'expanded') : (L === 'inspflat' ? ptext('loop.inspiratory_flattening', 'expanded') : ptext('loop.expiratory_flattening', 'expanded')));
-    else out.push(ptext('loop.nonreproducible_flattening', 'expanded'));
+    if (v.repro) out.push(L === 'bothflat' ? 'Reproducible flattening of both limbs indicates a fixed central-airway obstruction.' : (L === 'inspflat' ? 'Reproducible inspiratory flattening indicates variable extrathoracic obstruction (vocal-cord dysfunction or paralysis, goiter).' : 'Reproducible expiratory flattening indicates variable intrathoracic obstruction (tracheomalacia, intrathoracic tracheal lesion).'));
+    else out.push('The flattening is not reproducible, so central-airway obstruction is not established; repeat loops are suggested if the suspicion persists.');
   }
-  if (v.fevPefHi === true) out.push('FEV1/PEF above 8 mL/L/min raises the question of central or upper-airway obstruction (poor initial effort can also raise this ratio); inspiratory and expiratory flow-volume loops are advised.');
+  if (v.fevPefHi === true) out.push('FEV1/PEF above 8 mL/L/min raises the question of central or upper-airway obstruction (poor initial effort can also do this); inspiratory and expiratory loops are suggested.');
   if (v.fifCat) {
     const reduced = v.pef.low || v.fif50c.low || flat;
-    if (reduced) out.push('With reduced flows, FIF50/FEF50 ' + (v.fifCat === 'lt' ? 'below 1 fits a variable extrathoracic pattern' : (v.fifCat === 'gt' ? 'above 1 fits a variable intrathoracic pattern' : 'of about 1 fits a fixed obstruction pattern')) + '.');
+    if (reduced) out.push('With reduced flows, FIF50/FEF50 ' + (v.fifCat === 'lt' ? 'below 1 fits a variable extrathoracic pattern' : (v.fifCat === 'gt' ? 'above 1 fits a variable intrathoracic pattern' : 'of about 1 fits a fixed obstruction')) + '.');
   }
   return out;
 }
 
 /* ------------------------------------------------------------- lung volumes */
+const VOL_METHOD = { pleth: 'plethysmography', n2: 'nitrogen washout', he: 'helium dilution', sb: 'single-breath dilution' };
 function secVol(f) {
-  const sec = newSec('vol', 'LUNG VOLUMES'), v = f.vol, vp = v.pat;
+  const v = f.vol, vp = v.pat;
+  const sec = newSec('vol', 'LUNG VOLUMES' + (VOL_METHOD[v.method] ? ' (' + VOL_METHOD[v.method] + ')' : ''));
   if (!v.any) { sec.empty = true; sec.lines.push('No lung-volume values entered.'); return sec; }
-  const mth = { pleth: 'body plethysmography', n2: 'nitrogen washout', he: 'helium dilution', sb: 'single-breath dilution' }[v.method];
-  if (mth) put(sec, 'Lung volumes were measured by ' + mth);
-  if (v.qc === 'limited') put(sec, ptext('quality.volume_limited', 'standard'));
+  if (v.qc === 'limited') put(sec, 'Technical factors reduce confidence in the lung-volume measurements');
   if (v.qc === 'inv') put(sec, 'The lung-volume measurements are not interpretable');
-  const vals = [], inl = (r) => inlineNum(f, r) && v.qc !== 'inv';
-  if (has(v.tlcL) && !inl(v.tlc)) vals.push('TLC ' + fmt(v.tlcL, 2) + ' L');
-  if (has(v.rvL) && !inl(v.rv)) vals.push('RV ' + fmt(v.rvL, 2) + ' L');
-  if (has(v.rvtlcCalc) && !inl(v.rvtlc)) vals.push('RV/TLC ' + fmt(v.rvtlcCalc, 0) + '%');
-  if (has(v.frcL) && !inl(v.frc)) vals.push('FRC ' + fmt(v.frcL, 2) + ' L');
-  if (has(v.svcL) && !inl(v.svc)) vals.push('SVC ' + fmt(v.svcL, 2) + ' L');
-  if (vals.length) put(sec, 'Measured: ' + vals.join('; '));
   if (v.qc !== 'inv') {
     const L_ = (x) => () => has(x) ? fmt(x, 2) + ' L' : '';
-    metricGroup(f, [
-      metricItem('TLC', v.tlc, 'volume.tlc', L_(v.tlcL)),
+    metricBlock(f, [
+      metricItem('TLC', v.tlc, 'volume.tlc', L_(v.tlcL), true),
       metricItem('RV', v.rv, 'volume.rv', L_(v.rvL)),
       metricItem('RV/TLC', v.rvtlc, 'volume.rv_tlc', () => has(v.rvtlcCalc) ? fmt(v.rvtlcCalc, 0) + '%' : ''),
       metricItem('FRC', v.frc, 'volume.frc', L_(v.frcL)),
@@ -2927,52 +2960,53 @@ function secVol(f) {
       metricItem('ERV', v.erv, 'volume.erv'),
       metricItem('IC', v.ic, 'volume.ic')
     ]).forEach(l => put(sec, l));
-  }
+  } else if (has(v.tlcL) || has(v.rvL)) put(sec, 'Measured: ' + [has(v.tlcL) ? 'TLC ' + fmt(v.tlcL, 2) + ' L' : '', has(v.rvL) ? 'RV ' + fmt(v.rvL, 2) + ' L' : ''].filter(Boolean).join('; '));
   if (vp.code) sec.codes.push(vp.code);
   if (has(f.sp.fvcL) && has(v.svcL)) {
     const dd = (v.svcL - f.sp.fvcL) * 1000;
-    if (dd > 100) { put(sec, 'SVC exceeds FVC by ' + fmt(dd, 0) + ' mL'); }
+    if (dd > 100) put(sec, 'SVC exceeds FVC by ' + fmt(dd, 0) + ' mL');
   }
+  priorLines(f, ['tlc']).forEach(l => put(sec, l));
   return sec;
 }
 
 /* -------------------------------------------------------------------- DLCO */
-function dlcoLabel(f) { const d = f.dl; return d.reportedAdjusted ? 'Hemoglobin-adjusted DLCO' : (d.basis === 'un' ? 'DLCO (not adjusted for hemoglobin)' : 'DLCO'); }
+function dlcoLabel(f) { const d = f.dl; return d.reportedAdjusted ? 'Hemoglobin-adjusted DLCO' : 'DLCO'; }
 function secDlco(f) {
-  const sec = newSec('dlco', 'DLCO'), d = f.dl, pat = d.pat, V = f.vals;
+  const sec = newSec('dlco', 'DLCO'), d = f.dl, pat = d.pat, V = f.vals, D = d.dlco;
   if (!d.any) { sec.empty = true; sec.lines.push('No diffusing-capacity values entered.'); return sec; }
-  if (d.qc === 'limited') put(sec, ptext('quality.dlco_limited', 'standard'));
-  if (d.qc === 'inv') put(sec, ptext('dlco.invalid', 'standard'));
-  if (d.single) put(sec, ptext('quality.dlco_single', 'standard'));
-  const vals = [], inlD = inlineNum(f, d.dlco) && d.qc !== 'inv';
-  if (!inlD) {
-    if (has(d.abs)) vals.push('DLCO ' + fmt(d.abs, 1) + ' mL/min/mmHg' + (has(d.pct) ? ' (' + Math.round(d.pct) + '% predicted' + (d.reportedAdjusted ? ', Hb-adjusted' : (d.basis === 'un' ? ', not Hb-adjusted' : '')) + ')' : ''));
-    else if (has(d.pct)) vals.push('DLCO ' + Math.round(d.pct) + '% predicted' + (d.reportedAdjusted ? ' (Hb-adjusted)' : (d.basis === 'un' ? ' (not Hb-adjusted)' : '')));
-  }
-  if (has(d.vaL) && !(inlineNum(f, d.va) && d.qc !== 'inv')) vals.push('VA ' + fmt(d.vaL, 2) + ' L');
-  if (has(d.vatlc)) vals.push('VA/TLC ' + fmt(d.vatlc, 2));
-  if (vals.length) put(sec, 'Measured: ' + vals.join('; '));
+  if (d.qc === 'limited') put(sec, 'Technical factors reduce confidence in the DLCO measurement');
+  if (d.qc === 'inv') put(sec, 'The DLCO measurement is not interpretable');
+  if (d.single) put(sec, 'Only one acceptable DLCO maneuver was obtained');
   if (d.qc !== 'inv') {
-    const lab = dlcoLabel(f);
-    const items = [metricItem(lab, d.dlco, 'dlco', () => [has(d.abs) ? fmt(d.abs, 1) + ' mL/min/mmHg' : '', has(d.pct) ? Math.round(d.pct) + '% predicted' : ''].filter(Boolean).join(', '))];
-    if (d.adj.measured && !d.reportedAdjusted) items.push(metricItem('hemoglobin-adjusted DLCO', d.adj, 'dlco', () => has(d.adjPct) ? Math.round(d.adjPct) + '% predicted' : ''));
+    const paired = D.measured && d.adj.measured && !d.reportedAdjusted;
+    const dlcoNum = () => [has(d.abs) ? fmt(d.abs, 1) + ' mL/min/mmHg' : '', has(d.pct) ? Math.round(d.pct) + '% predicted' : ''].filter(Boolean).join(', ');
+    const items = [metricItem(dlcoLabel(f), D, 'dlco', dlcoNum, true)];
     items.push(metricItem('VA', d.va, 'diffusion.va', () => has(d.vaL) ? fmt(d.vaL, 2) + ' L' : ''));
     items.push(metricItem('KCO', d.kco, 'diffusion.kco'));
-    metricGroup(f, items).forEach(l => put(sec, l));
-    // basis sentence: only when the line above has not already said it
-    if (d.dlco.measured && d.reportedAdjusted) put(sec, ptext('dlco.hb_adjusted', 'standard', V));
-    else if (d.dlco.measured && !d.adj.measured && f.F['observations.dlco.hb_unadjusted']) put(sec, ptext('dlco.hb_unadjusted', 'concise', V));
-    else if (d.dlco.measured && !d.adj.measured && f.F['observations.dlco.hb_unknown']) put(sec, ptext('dlco.hb_unknown', 'standard', V));
+    const opts = {};
+    if (paired) opts.valueItems = [items[0], metricItem('hemoglobin-adjusted DLCO', d.adj, null), items[1], items[2]];
+    if (paired && !D.invalid && !d.adj.invalid) {
+      const k1 = metricState(D), k2 = metricState(d.adj);
+      opts.leadClause = k1 === k2 ? 'DLCO is ' + STATE_WORD[k1] + ' both unadjusted and after hemoglobin adjustment'
+        : 'DLCO is ' + STATE_WORD[k1] + ' before hemoglobin adjustment and ' + STATE_WORD[k2] + ' after it';
+      opts.leadAny = true;
+      if (k1 === 'normal') { // the lead is "normal" but carries the clause: keep it out of the normal group
+        items[0] = metricItem(dlcoLabel(f), Object.assign({}, D, { low: true, sev: null }), 'dlco', dlcoNum, true);
+      }
+    }
+    metricBlock(f, items, opts).forEach(l => put(sec, l));
+    if (D.measured && D.low && !d.reportedAdjusted && !d.adj.measured && f.F['observations.dlco.hb_unknown']) put(sec, 'Whether the value is hemoglobin-adjusted is not stated');
   }
   if (has(d.hb)) {
-    put(sec, 'Hemoglobin is ' + fmt(d.hb, 1) + ' g/dL' + (d.anemic ? ' (below the usual lower limit)' : ''));
-    if (has(d.adjPct) && !d.hasAdj) put(sec, 'Hemoglobin-adjusted DLCO would be approximately ' + Math.round(d.adjPct) + '% predicted (estimate from the ERS/ATS 2017 equation with reference Hb ' + d.hbRef + ' g/dL; the laboratory adjustment is preferred)');
-  } else if (d.hbcat) put(sec, 'Hemoglobin is ' + ({ low: 'low (anemia)', nl: 'normal', high: 'high' })[d.hbcat] + ' per the report');
-  if (has(d.cohb)) put(sec, 'Carboxyhemoglobin is ' + fmt(d.cohb, 1) + '%');
-  else if (d.cohbcat === 'hi') put(sec, 'Carboxyhemoglobin is 2% or higher');
-  if (d.qc === 'inv') metricGroup(f, [metricItem('VA', d.va, 'diffusion.va'), metricItem('KCO', d.kco, 'diffusion.kco')]).forEach(l => put(sec, l));
-  if (has(d.vatlc)) put(sec, 'VA/TLC is ' + fmt(d.vatlc, 2) + (d.vatlc < 0.85 ? ' (below the 0.85 convention)' : ''));
-  else if (d.vatlcSel === 'low') put(sec, 'VA/TLC is below 0.85');
+    put(sec, 'Hemoglobin ' + fmt(d.hb, 1) + ' g/dL' + (d.anemic ? ' (low)' : ''));
+    if (has(d.adjPct) && !d.hasAdj && f.style !== 'concise') put(sec, 'Hemoglobin-adjusted DLCO would be about ' + Math.round(d.adjPct) + '% predicted (ERS/ATS 2017 equation, reference Hb ' + d.hbRef + ' g/dL)');
+  } else if (d.hbcat) put(sec, 'Hemoglobin ' + ({ low: 'low (anemia)', nl: 'normal', high: 'high' })[d.hbcat] + ' per the report');
+  if (has(d.cohb)) put(sec, 'Carboxyhemoglobin ' + fmt(d.cohb, 1) + '%');
+  else if (d.cohbcat === 'hi') put(sec, 'Carboxyhemoglobin 2% or higher');
+  if (has(d.vatlc)) put(sec, 'VA/TLC ' + fmt(d.vatlc, 2) + (d.vatlc < 0.85 ? ' (below 0.85)' : ''));
+  else if (d.vatlcSel === 'low') put(sec, 'VA/TLC below 0.85');
+  priorLines(f, ['dlco', 'dlco_pct']).forEach(l => put(sec, l));
   pat.codes.forEach(c => sec.codes.push(c));
   sec.codes = uniq(sec.codes);
   return sec;
@@ -3015,15 +3049,15 @@ function secMip(f) {
     const vs = has(val) ? fmt(val, 0) + ' cmH2O' : '';
     const ref = has(thr) ? (src === 'lab' ? 'lab lower limit ' + fmt(thr, 0) + ' cmH2O' : 'screening threshold ' + fmt(thr, 0) + ' cmH2O') : '';
     if (st_ === 'invalid') put(sec, name + ' is not interpretable' + (vs ? ' (' + vs + ')' : ''));
-    else if (st_ === 'low') put(sec, name + ' magnitude is below its reference limit' + (vs || ref ? ' (' + [vs, ref].filter(Boolean).join('; ') + ')' : ''));
-    else if (st_ === 'normal') put(sec, name + ' magnitude is within its reference range' + (vs || ref ? ' (' + [vs, ref].filter(Boolean).join('; ') + ')' : ''));
-    else put(sec, name + ' is ' + vs + (sexNeeded ? '; sex (or the lab lower limit) is needed to compare it with a reference' : ''));
+    else if (st_ === 'low') put(sec, name + (vs ? ' ' + vs : '') + ' is reduced' + (ref && f.style !== 'concise' ? ' (' + ref + ')' : ''));
+    else if (st_ === 'normal') put(sec, name + (vs ? ' ' + vs : '') + ' is normal' + (ref && f.style !== 'concise' ? ' (' + ref + ')' : ''));
+    else put(sec, name + ' ' + vs + (sexNeeded ? ' (sex or the lab lower limit is needed to compare it with a reference)' : ''));
   };
   one('MIP', m.mipV, m.mip, m.thr.mip, m.thrSrc.mip, true);
   one('MEP', m.mepV, m.mep, m.thr.mep, m.thrSrc.mep, true);
   one('SNIP', m.snipV, m.snip, m.thr.snip, m.thrSrc.snip, false);
   if ((m.mip === 'low' || m.mep === 'low' || m.snip === 'low' || m.mip === 'normal' || m.mep === 'normal') && [m.thrSrc.mip, m.thrSrc.mep].some(x => x === 'screen') && (has(m.mipV) || has(m.mepV)) && !(m.mipC.measured && m.mepC.measured))
-    put(sec, 'Screening thresholds are the commonly cited values (MIP 75/50 and MEP 100/80 cmH2O for men/women, SNIP 40 cmH2O), not a validated lower limit of normal; the laboratory reference takes precedence when available');
+    if (f.style === 'expanded') put(sec, 'Screening thresholds are the commonly cited values (MIP 75/50 and MEP 100/80 cmH2O for men/women, SNIP 40 cmH2O), not a validated lower limit of normal; the laboratory reference takes precedence when available');
   if (m.p01 === 'low') put(sec, 'P0.1 is low'); else if (m.p01 === 'high') put(sec, 'P0.1 is elevated'); else if (m.p01 === 'wnl') put(sec, 'P0.1 is within normal limits');
   if (has(m.cpf)) put(sec, 'Peak cough flow is ' + fmt(m.cpf, 0) + ' L/min');
   else if (m.cpfCat === 'vlow') put(sec, 'Peak cough flow is 160 L/min or less');
@@ -3037,14 +3071,15 @@ function secMip(f) {
   const lowI = m.mip === 'low' || m.snip === 'low', lowE = m.mep === 'low';
   const hy = hyperCtx(f) ? ' Hyperinflation can lower volitional pressures and may contribute.' : '';
   const pair = (id) => ptext(id, 'concise').replace(/\.$/, '') + '; ' + ptext(id, 'expanded').charAt(0).toLowerCase() + ptext(id, 'expanded').slice(1);
-  if (m.mip === 'low' && m.mep === 'low') sec.impr.push(pair('muscle.pattern.both_low') + hy);
-  else if (m.mip === 'low' && m.mep === 'normal') sec.impr.push(pair('muscle.pattern.mip_low_mep_preserved') + hy);
-  else if (m.mep === 'low' && m.mip === 'normal') sec.impr.push(pair('muscle.pattern.mep_low_mip_preserved') + hy);
-  else if (lowI || lowE) sec.impr.push((lowI ? 'Inspiratory' : 'Expiratory') + ' pressure magnitude is below its reference limit; this may reflect muscle weakness, submaximal effort or technique.' + hy);
-  else if (m.mip === 'normal' && m.mep === 'normal') sec.impr.push(ptext('muscle.pattern.both_normal', 'expanded'));
-  else if (m.mip === 'normal' || m.mep === 'normal' || m.snip === 'normal') sec.impr.push('The measured respiratory pressure is within its reference range on this effort-dependent test.');
-  if (has(m.cpf) ? m.cpf <= 160 : m.cpfCat === 'vlow') sec.impr.push('Peak cough flow is 160 L/min or less, the range associated with ineffective cough in neuromuscular disease guidance (a disease-specific threshold, not a healthy-adult reference limit).');
-  else if (has(m.cpf) ? m.cpf < 270 : m.cpfCat === 'low') sec.impr.push('Peak cough flow is below 270 L/min, the threshold used for reduced airway-clearance reserve in neuromuscular disease guidance (not a healthy-adult reference limit).');
+  const ex = f.style === 'expanded';
+  if (m.mip === 'low' && m.mep === 'low') sec.impr.push(ex ? pair('muscle.pattern.both_low') + hy : 'MIP and MEP are both reduced, which raises concern for generalized respiratory-muscle weakness if effort was adequate.' + hy);
+  else if (m.mip === 'low' && m.mep === 'normal') sec.impr.push(ex ? pair('muscle.pattern.mip_low_mep_preserved') + hy : 'MIP is reduced with a preserved MEP, the pattern of inspiratory (diaphragm) weakness.' + hy);
+  else if (m.mep === 'low' && m.mip === 'normal') sec.impr.push(ex ? pair('muscle.pattern.mep_low_mip_preserved') + hy : 'MEP is reduced with a preserved MIP, which points to expiratory (abdominal) muscle weakness or poor effort.' + hy);
+  else if (lowI || lowE) sec.impr.push((lowI ? 'Inspiratory' : 'Expiratory') + ' pressure is reduced; this may reflect muscle weakness, submaximal effort or technique.' + hy);
+  else if (m.mip === 'normal' && m.mep === 'normal') sec.impr.push(ex ? ptext('muscle.pattern.both_normal', 'expanded') : 'Normal respiratory muscle pressures.');
+  else if (m.mip === 'normal' || m.mep === 'normal' || m.snip === 'normal') sec.impr.push('The measured respiratory pressure is normal.');
+  if (has(m.cpf) ? m.cpf <= 160 : m.cpfCat === 'vlow') sec.impr.push('Peak cough flow is 160 L/min or less, in the range associated with an ineffective cough in neuromuscular disease.');
+  else if (has(m.cpf) ? m.cpf < 270 : m.cpfCat === 'low') sec.impr.push('Peak cough flow is below 270 L/min, the threshold for reduced airway-clearance reserve in neuromuscular disease.');
   if (m.p01 === 'low') sec.impr.push('Low P0.1 suggests blunted respiratory drive.'); else if (m.p01 === 'high') sec.impr.push('Elevated P0.1 indicates increased respiratory drive.');
   return sec;
 }
@@ -3057,20 +3092,20 @@ function secPost(f) {
   if (p.limited) put(sec, ptext('muscle.supine_limited', 'standard'));
   if (p.dropComputable) {
     put(sec, nm + ' fell from ' + fmt(p.up, 2) + ' L upright to ' + fmt(p.sup, 2) + ' L supine, a ' + fmt(p.drop, 1) + '% decrease');
-    if (p.drop >= 30) sec.impr.push('The postural fall in vital capacity (' + fmt(p.drop, 0) + '%) is well above the 15% screening clue (ERS 2019) and in the range cited for bilateral diaphragm weakness (30% or more); this supports possible diaphragmatic dysfunction but does not prove it.');
-    else if (p.drop >= 20) sec.impr.push('The postural fall in vital capacity (' + fmt(p.drop, 0) + '%) exceeds the 15% screening clue (ERS 2019) and the 20% threshold cited for diaphragm weakness; this supports possible diaphragmatic dysfunction but does not prove it.');
-    else if (p.drop >= 15) sec.impr.push('The postural fall in vital capacity (' + fmt(p.drop, 0) + '%) reaches the 15% screening clue discussed in the ERS 2019 statement; baseline mechanics and the clinical question determine its importance.');
-    else if (p.drop >= 10) sec.impr.push('The postural fall in vital capacity (' + fmt(p.drop, 0) + '%) is above the change expected in health (under 10%) but below the 15% screening clue.');
-    else sec.impr.push('No excessive postural fall in vital capacity (' + fmt(p.drop, 0) + '%; under 10% is expected in health).');
+    if (p.drop >= 30) sec.impr.push('The ' + fmt(p.drop, 0) + '% fall in vital capacity when supine is in the range seen with bilateral diaphragm weakness (30% or more).');
+    else if (p.drop >= 20) sec.impr.push('The ' + fmt(p.drop, 0) + '% fall in vital capacity when supine exceeds the 20% threshold for diaphragm weakness.');
+    else if (p.drop >= 15) sec.impr.push('The ' + fmt(p.drop, 0) + '% fall in vital capacity when supine reaches the 15% screening threshold for diaphragm weakness.');
+    else if (p.drop >= 10) sec.impr.push('The ' + fmt(p.drop, 0) + '% fall in vital capacity when supine is above the usual change in health (under 10%) but below the 15% screening threshold.');
+    else sec.impr.push('No excessive postural fall in vital capacity (' + fmt(p.drop, 0) + '%).');
   } else if (p.supineHigher) {
     put(sec, nm + ' was ' + fmt(p.up, 2) + ' L upright and ' + fmt(p.sup, 2) + ' L supine (higher supine, an increase of ' + fmt(-p.drop, 1) + '%)');
     sec.impr.push('Vital capacity increased when supine; this is not a postural decrease and should prompt a check of the maneuvers and the entries.');
   } else if (p.fallSel && !p.limited) {
     const band = { ge30: '30% or more', b20_30: '20–29%', b10_20: '10–19%', lt10: 'under 10%' }[p.band];
     if (band) put(sec, 'The supine fall in ' + nm + ' is ' + band);
-    if (p.band === 'ge30') sec.impr.push('A postural fall in vital capacity of 30% or more is in the range cited for bilateral diaphragm weakness; this supports possible diaphragmatic dysfunction but does not prove it.');
-    else if (p.band === 'b20_30') sec.impr.push('A postural fall in vital capacity of 20–29% exceeds the 15% screening clue (ERS 2019) and the 20% threshold cited for diaphragm weakness; this supports possible diaphragmatic dysfunction but does not prove it.');
-    else if (p.band === 'b10_20') sec.impr.push('A postural fall in vital capacity of 10–19% is above the change expected in health; whether it is excessive depends on the exact value (15% is the screening clue) and the clinical question.');
+    if (p.band === 'ge30') sec.impr.push('A fall in vital capacity of 30% or more when supine is in the range seen with bilateral diaphragm weakness.');
+    else if (p.band === 'b20_30') sec.impr.push('A fall in vital capacity of 20–29% when supine exceeds the 20% threshold for diaphragm weakness.');
+    else if (p.band === 'b10_20') sec.impr.push('A fall in vital capacity of 10–19% when supine is above the usual change in health; whether it is excessive depends on the exact value (15% is the screening threshold).');
     else if (p.band === 'lt10') sec.impr.push('No excessive postural fall in vital capacity.');
   }
   if (!has(p.dSpO2) && !has(p.dPaO2) && p.orthSel === 'yes') { put(sec, 'Orthodeoxia is reported'); sec.impr.push('Orthodeoxia reported (oxygen saturation falls by 5 points or more on standing).'); }
@@ -3092,7 +3127,7 @@ function secFeno(f) {
   const sec = newSec('feno', 'FeNO'), n = f.feno, V = f.vals;
   if (!n.any) { sec.empty = true; sec.lines.push('No FeNO value entered.'); return sec; }
   const b = fenoBand(f);
-  put(sec, 'FeNO is ' + (has(n.v) ? fmt(n.v, 0) + ' ppb, which is ' : '') + b.cat + ' by the ' + (n.child ? 'ATS 2011 pediatric (under 12 years)' : 'ATS 2011 adult') + ' cut-points (low below ' + b.lo + ', high above ' + b.hi + ' ppb)');
+  put(sec, 'FeNO ' + (has(n.v) ? fmt(n.v, 0) + ' ppb, ' : 'is ') + b.cat + (f.style === 'expanded' ? ' by the ' + (n.child ? 'ATS 2011 pediatric (under 12 years)' : 'ATS 2011 adult') + ' cut-points (low below ' + b.lo + ', high above ' + b.hi + ' ppb)' : (n.child ? ' (pediatric cut-points)' : '')));
   if (n.ics === 'y') put(sec, 'The patient is taking inhaled corticosteroids');
   if (f.ctx.smoke === 'current') put(sec, 'The patient is a current smoker');
   if (n.confound) put(sec, ptext('feno.uninterpretable', 'standard') + ' (recent exercise, spirometry, nitrate-rich food or viral infection recorded)');
@@ -3103,6 +3138,7 @@ function secFeno(f) {
   else sec.impr.push('FeNO requires caution because a confounder was recorded; no category-based implication is drawn.');
   if (n.ics === 'y' && b.cat === 'low') sec.impr.push(ptext('feno.on_ics', 'expanded'));
   if (n.ics === 'y' && b.cat === 'high') sec.impr.push(ptext('feno.high_on_ics', 'expanded'));
+  priorLines(f, ['feno']).forEach(l => put(sec, l));
   return sec;
 }
 
@@ -3180,53 +3216,60 @@ function secSix(f) {
   if (!x.any && !tr.multi) { sec.empty = true; sec.lines.push('No 6-minute walk values entered.'); return sec; }
   const early = x.stop === 'early';
   if (has(x.dist)) {
-    let t = (early ? 'Distance walked before stopping' : '6MWD') + ' was ' + fmt(x.dist, 0) + ' m' + (early && has(x.timeMin) ? ' in ' + fmt(x.timeMin, 1) + ' minutes' : '');
-    if (!early && has(x.pctCalc)) {
-      t += ' (' + Math.round(x.pctCalc) + '% of ' + (has(x.predUse) ? 'the predicted ' + fmt(x.predUse, 0) + ' m' : 'predicted');
-      if (x.predSrc === 'calc') t += ' by ' + x.eqUse + ', calculated from age, sex, height and weight';
-      else if (x.eqUse) t += ', ' + x.eqUse;
-      t += ')';
+    if (early) put(sec, 'Stopped' + (has(x.timeMin) ? ' at ' + fmt(x.timeMin, 1) + ' minutes' : ' early') + ' after ' + fmt(x.dist, 0) + ' m' + (x.stopWhy ? ' because of ' + x.stopWhy : ''));
+    else {
+      let t = 'Walked ' + fmt(x.dist, 0) + ' m';
+      if (has(x.pctCalc)) t += ' (' + Math.round(x.pctCalc) + '% predicted' + (has(x.llnUse) ? '; LLN ' + fmt(x.llnUse, 0) + ' m' : '') + ')';
+      else if (has(x.llnUse)) t += ' (LLN ' + fmt(x.llnUse, 0) + ' m)';
+      if (has(x.llnUse)) t += ', ' + (x.dist < x.llnUse ? 'below' : 'above') + ' the LLN';
+      put(sec, t);
+      if (x.predSrc === 'calc' && f.style !== 'concise') put(sec, 'Predicted ' + fmt(x.predUse, 0) + ' m by Enright & Sherrill 1998 from age, sex, height and weight');
+      else if (x.eqUse && f.style === 'expanded') put(sec, 'Reference equation: ' + x.eqUse);
     }
-    if (!early && has(x.llnUse)) t += '; the LLN is ' + fmt(x.llnUse, 0) + ' m' + (x.llnSrc === 'calc' || x.llnSrc === 'derived' ? ' (predicted − ' + x.es.sub + ' m for ' + (x.es.sex === 'M' ? 'men' : 'women') + ')' : '') + ', so the distance is ' + (x.dist < x.llnUse ? 'below' : 'at or above') + ' the LLN';
-    put(sec, t);
-    if (!x.eqUse && has(x.pctCalc)) put(sec, 'The reference equation is not named');
   }
-  if (!has(x.dist) && x.distCat) put(sec, 'The walk distance is ' + (x.distCat === 'low' ? 'below the LLN' : 'within normal limits') + ' per the report');
-  if (x.onO2) put(sec, 'The walk was performed on ' + x.o2text + '; saturations below are on oxygen');
+  if (!has(x.dist) && x.distCat) put(sec, 'Walk distance ' + (x.distCat === 'low' ? 'below the LLN' : 'within normal limits') + ' per the report');
+  if (x.onO2) put(sec, 'Performed on ' + x.o2text);
   if (has(x.s0) || has(x.sn)) {
-    let t = has(x.s0) ? 'SpO2 was ' + fmt(x.s0, 0) + '% at baseline' + (has(x.sn) ? ' with a nadir of ' + fmt(x.sn, 0) + '%' : '') + (has(x.se) ? ' and ' + fmt(x.se, 0) + '% at the end' : '')
-      : 'The SpO2 nadir was ' + fmt(x.sn, 0) + '%' + (has(x.se) ? ' and ' + fmt(x.se, 0) + '% at the end' : '');
-    put(sec, t);
-    if (has(x.drop) && x.drop > 0) put(sec, 'SpO2 fell by ' + fmt(x.drop, 0) + ' points');
-    if (has(x.dsp)) put(sec, 'The distance–saturation product (distance × nadir SpO2 as a fraction) is ' + fmt(x.dsp, 0) + ' m%');
+    const bits = [];
+    if (has(x.s0)) bits.push(fmt(x.s0, 0) + '% at rest');
+    if (has(x.sn)) bits.push('nadir ' + fmt(x.sn, 0) + '%');
+    if (has(x.se)) bits.push(fmt(x.se, 0) + '% at the end');
+    put(sec, 'SpO2 ' + bits.join(', ') + (has(x.drop) && x.drop > 0 ? ' (fall of ' + fmt(x.drop, 0) + ' points)' : ''));
+    if (has(x.dsp) && f.style === 'expanded') put(sec, 'Distance–saturation product ' + fmt(x.dsp, 0) + ' m%');
   }
   if (!has(x.s0) && !has(x.sn) && x.desatSel) {
-    if (x.desatSel === 'none') put(sec, 'There was no qualifying exertional desaturation per the report');
-    else if (x.desatSel === 'fall') put(sec, 'SpO2 fell by 4 points or more, with a nadir above 88%, per the report');
-    else put(sec, 'The SpO2 nadir was 88% or lower per the report');
+    if (x.desatSel === 'none') put(sec, 'No significant desaturation per the report');
+    else if (x.desatSel === 'fall') put(sec, 'SpO2 fell by 4 points or more with a nadir above 88% per the report');
+    else put(sec, 'SpO2 nadir 88% or lower per the report');
   }
-  if (has(x.hp)) put(sec, 'Peak HR was ' + fmt(x.hp, 0) + ' bpm' + (has(x.hrPct) ? ' (' + Math.round(x.hrPct) + '% of age-predicted maximum, ' + (f.ctx.eq.hrmax === 'fox' ? '220 − age' : 'Tanaka 208 − 0.7 × age') + ')' : ''));
-  if (has(x.hrr1)) put(sec, 'Heart-rate recovery at 1 minute was ' + fmt(x.hrr1, 0) + ' bpm');
-  else if (x.hrrSel === 'abn') put(sec, 'Heart-rate recovery at 1 minute is abnormal per the report (13–18 bpm or less)');
-  else if (x.hrrSel === 'nl') put(sec, 'Heart-rate recovery at 1 minute is normal per the report');
-  if (has(x.b0) || has(x.b1)) put(sec, 'Borg dyspnea was ' + (has(x.b0) ? fmt(x.b0, 1) : '?') + ' at baseline and ' + (has(x.b1) ? fmt(x.b1, 1) : '?') + ' at the end');
-  if (early) put(sec, 'The test was stopped early' + (x.stopWhy ? ' because of ' + x.stopWhy : '') + '; the achieved time and distance are reported rather than a completed six-minute result');
-  const bits = [];
-  if (has(x.dist)) bits.push((early ? 'walked ' + fmt(x.dist, 0) + ' m before stopping early' : '6MWD ' + fmt(x.dist, 0) + ' m' + (has(x.pctCalc) ? ' (' + Math.round(x.pctCalc) + '% predicted)' : '') + (x.lowDist ? ', below the LLN' : '')));
-  else if (x.distCat) bits.push('walk distance ' + (x.lowDist ? 'below the LLN' : 'within normal limits'));
+  const hr = [];
+  if (has(x.hp)) hr.push('Peak HR ' + fmt(x.hp, 0) + ' bpm' + (has(x.hrPct) ? ' (' + Math.round(x.hrPct) + '% of predicted maximum)' : ''));
+  if (has(x.hrr1)) hr.push('1-minute HR recovery ' + fmt(x.hrr1, 0) + ' bpm');
+  else if (x.hrrSel === 'abn') hr.push('HR recovery at 1 minute abnormal per the report');
+  else if (x.hrrSel === 'nl') hr.push('HR recovery at 1 minute normal per the report');
+  if (hr.length) put(sec, hr.join('; '));
+  if (has(x.b0) || has(x.b1)) put(sec, 'Borg dyspnea ' + (has(x.b0) ? fmt(x.b0, 1) : '?') + ' at rest, ' + (has(x.b1) ? fmt(x.b1, 1) : '?') + ' at the end');
+  priorLines(f, ['six']).forEach(l => put(sec, l));
+  // the interpretation sentence: "Reduced 6MWD (380 m, 76% predicted) with exertional desaturation to 85% and abnormal heart-rate recovery."
+  let lead = '';
+  if (has(x.dist)) lead = early ? 'Walk stopped early after ' + fmt(x.dist, 0) + ' m' : (x.lowDist ? 'Reduced' : (x.wnlDist ? 'Normal' : '')) + ' 6MWD (' + fmt(x.dist, 0) + ' m' + (has(x.pctCalc) ? ', ' + Math.round(x.pctCalc) + '% predicted' : '') + ')';
+  else if (x.distCat) lead = (x.lowDist ? 'Reduced' : 'Normal') + ' walk distance';
+  lead = lead.replace(/^ /, '');
   const o2note = x.onO2 ? ' on ' + x.o2text : '';
-  if (has(x.sn)) bits.push(x.desat ? 'exertional desaturation to ' + fmt(x.sn, 0) + '%' + o2note + (x.sn <= 88 && !x.onO2 ? ' (at or below 88%, the threshold commonly used in the United States for ambulatory oxygen qualification)' : '') : 'no qualifying desaturation (nadir ' + fmt(x.sn, 0) + '%' + o2note + ')' + (x.onO2 ? ', which does not establish room-air oxygenation' : ''));
-  else if (x.desatSel) bits.push(x.desatSel === 'none' ? 'no qualifying desaturation' + o2note + (x.onO2 ? ' (room-air oxygenation not established)' : '') : (x.desatSel === 'fall' ? 'exertional desaturation (fall of 4 points or more)' + o2note : 'exertional desaturation to 88% or lower' + o2note + (!x.onO2 ? ' (the threshold commonly used in the United States for ambulatory oxygen qualification)' : '')));
-  if (has(x.dsp) && x.dsp < 200) bits.push('distance–saturation product below 200 m%, which predicted 12-month mortality in idiopathic pulmonary fibrosis (Lettieri 2006)');
-  if (has(x.hrr1) ? x.hrr1 <= 18 : x.hrrSel === 'abn') bits.push(has(x.hrr1) && x.hrr1 > 13 ? 'borderline heart-rate recovery (abnormal definitions range up to 18 bpm)' : 'abnormal heart-rate recovery');
+  const q = [];
+  if (has(x.sn)) q.push(x.desat ? 'exertional desaturation to ' + fmt(x.sn, 0) + '%' + o2note : 'no significant desaturation (nadir ' + fmt(x.sn, 0) + '%' + o2note + ')' + (x.onO2 ? ', which does not establish room-air oxygenation' : ''));
+  else if (x.desatSel) q.push(x.desatSel === 'none' ? 'no significant desaturation' + o2note : (x.desatSel === 'fall' ? 'exertional desaturation (fall of 4 points or more)' + o2note : 'exertional desaturation to 88% or below' + o2note));
+  if (has(x.hrr1) ? x.hrr1 <= 18 : x.hrrSel === 'abn') q.push(has(x.hrr1) && x.hrr1 > 13 ? 'borderline heart-rate recovery' : 'abnormal heart-rate recovery');
+  let t = lead ? lead + (q.length ? ' with ' + joinNames(q) : '') : (q.length ? cap(joinNames(q)) : '');
+  if (has(x.dsp) && x.dsp < 200) t += (t ? '; the' : 'The') + ' distance–saturation product is below 200 m%, a marker associated with 12-month mortality in IPF';
   if (tr.multi) {
     const c = tr.vsPrev, dir = c.cls === 'down' ? 'lower' : 'higher';
-    bits.push('6MWD ' + (c.cls === 'stable' ? 'is similar to' : fmt(Math.abs(c.dAbs), 0) + ' m ' + dir + ' than') + ' the previous walk (' + c.from.ds + ', ' + fmt(c.from.dist, 0) + ' m)' +
-      (c.cls === 'stable' ? ' (change ' + fsign(c.dAbs, 0) + ' m, within the 30 m minimal important difference)' : ', beyond the 30 m minimal important difference'));
+    t += (t ? '. ' : '') + '6MWD is ' + (c.cls === 'stable' ? 'similar to' : fmt(Math.abs(c.dAbs), 0) + ' m ' + dir + ' than') + ' the previous walk (' + fmt(c.from.dist, 0) + ' m on ' + dateWords(c.from.ds) + ')' +
+      (c.cls === 'stable' ? ', within the 30 m minimal important difference' : ', beyond the 30 m minimal important difference');
     sec.trend = trendLines(tr);
     sec.trend.forEach(l => put(sec, l));
   }
-  if (bits.length) sec.impr.push(cap(bits.join('; ')) + (x.lowDist ? '. A reduced distance reflects functional limitation and is not specific for a pulmonary mechanism.' : '.'));
+  if (t) sec.impr.push(t.replace(/\.?$/, '.'));
   return sec;
 }
 
@@ -3429,71 +3472,93 @@ function secGas(f) {
 }
 
 /* ---------------------------------------------------------------- comparison */
-function secPrior(f) {
-  const sec = newSec('prior', 'COMPARISON WITH PRIOR STUDIES');
-  if (!f.prior.any) { sec.empty = true; sec.lines.push(f.priors.length ? 'No matching prior and current values were entered.' : 'No prior study entered.'); return sec; }
+/* ---------------------------------------------------------------- comparison
+   Prior studies are reported inside the section they belong to: "Compared with Mar 1, 2024 (1 year earlier): FEV1
+   1.85 → 1.55 L (−300 mL, −16%), a significant decline; FVC 3.30 → 3.20 L (−3%), no significant change." */
+const PRIOR_KEYS = { spiro: ['fev1', 'fvc', 'fev1_pct', 'fvc_pct'], vol: ['tlc'], dlco: ['dlco', 'dlco_pct'], six: ['six'], feno: ['feno'] };
+/* significance of one serial change: { sig: true|false|null, word } — null when no accepted threshold applies */
+function serialVerdict(f, m, p) {
+  const within1y = !has(p.years) || p.years <= 1.1;
+  const ild = f.ctx.hasInd('ild') || f.ctx.hasInd('ctd') || f.ctx.hasInd('sarc');
+  const dirW = m.dAbs < 0 ? 'decline' : 'increase';
+  const v = { sig: null, word: '', ppf: false, dir: dirW, why: '' };
+  if (!m.comparable) { v.why = p.cmp.ref && m.pp ? 'different reference equations' : (p.cmp.bd && /fev1|fvc/.test(m.k) ? 'different bronchodilator state' : (p.cmp.hb && /dlco/.test(m.k) ? 'different hemoglobin-adjustment basis' : (p.cmp.qual ? 'different test quality' : 'different method'))); return v; }
+  if (m.dAbs === 0) { v.sig = false; v.word = 'unchanged'; return v; }
+  if (m.k === 'fev1' || m.k === 'fvc') { v.sig = Math.abs(m.dPct) >= 15; v.word = v.sig ? 'a significant ' + dirW : 'not a significant change'; }
+  else if (m.k === 'fev1_pct' || m.k === 'fvc_pct') {
+    v.sig = Math.abs(m.relOfPct) >= 15; v.word = v.sig ? 'a significant ' + dirW : 'not a significant change';
+    if (m.k === 'fvc_pct' && m.dAbs <= -5 && within1y) v.ppf = ild ? 'meets' : 'would meet';
+  }
+  else if (m.k === 'dlco' || m.k === 'dlco_pct') {
+    const rel = m.pp ? m.relOfPct : m.dPct;
+    v.sig = Math.abs(rel) >= 10; v.word = v.sig ? 'a significant ' + dirW : 'not a significant change';
+    if (m.k === 'dlco_pct' && m.dAbs <= -10 && within1y) v.ppf = ild ? 'meets' : 'would meet';
+  }
+  else if (m.k === 'six') { v.sig = Math.abs(m.dAbs) >= 30; v.word = v.sig ? 'beyond the 30 m minimal important difference' : 'within the 30 m minimal important difference'; }
+  else if (m.k === 'feno') { v.sig = m.prior > 50 ? Math.abs(m.dAbs) / m.prior * 100 > 20 : Math.abs(m.dAbs) > 10; v.word = v.sig ? 'a significant change' : 'within the expected variability'; }
+  else if (m.k === 'tlc') { v.sig = null; v.word = ''; }
+  return v;
+}
+function serialPhrase(f, m, p) {
+  const v = serialVerdict(f, m, p);
+  let t;
+  if (m.pp) t = m.name + ' ' + fmt(m.prior, 0) + ' → ' + fmt(m.cur, 0) + '% predicted (' + fsign(m.dAbs, 0) + ' points)';
+  else if (m.k === 'fev1' || m.k === 'fvc' || m.k === 'tlc') t = m.name + ' ' + fmt(m.prior, 2) + ' → ' + fmt(m.cur, 2) + ' L (' + fsign(m.dAbs * 1000, 0) + ' mL' + (has(m.dPct) ? ', ' + fsign(m.dPct, 0) + '%' : '') + ')';
+  else t = m.name + ' ' + fmt(m.prior, m.d) + ' → ' + fmt(m.cur, m.d) + ' ' + m.unit + ' (' + fsign(m.dAbs, m.d) + (has(m.dPct) ? ', ' + fsign(m.dPct, 0) + '%' : '') + ')';
+  if (v.why) t += ', not directly comparable (' + v.why + ')';
+  else if (v.word) t += ', ' + v.word;
+  return t;
+}
+function priorHead(p) { return 'Compared with ' + (p.dateOk ? dateWords(p.date) : 'prior study #' + p.idx) + (intervalWords(p.years) ? ' (' + intervalWords(p.years) + ' earlier)' : '') + ': '; }
+function priorLines(f, keys) {
+  const out = [];
+  if (!f.on.prior || !f.prior.any) return out;
   f.priors.forEach(p => {
-    if (!p.metrics.length) return;
-    const head = 'Compared with prior study #' + p.idx + (p.dateOk ? ' (' + p.date + ')' : '') + (has(p.years) && p.years > 0 ? ', ' + fmt(p.years, 2) + ' years earlier' : '');
-    put(sec, head);
-    const lim = [];
-    if (p.cmp.ref) lim.push('different reference equations (percent-predicted changes are not comparable)');
-    if (p.cmp.bd) lim.push('different bronchodilator state');
-    if (p.cmp.method) lim.push('different equipment or lung-volume method');
-    if (p.cmp.hb) lim.push('different hemoglobin-adjustment basis for DLCO');
-    if (p.cmp.qual) lim.push('different test quality');
-    if (lim.length) put(sec, 'Comparability is limited: ' + lim.join('; '));
-    p.metrics.forEach(m => {
-      const dd = m.d;
-      let t = m.name + ' ' + fmt(m.prior, dd) + ' → ' + fmt(m.cur, dd) + ' ' + m.unit + ' (' + fsign(m.dAbs, dd) + (m.pp ? ' percentage points' : '');
-      if (has(m.dPct)) t += ', ' + fsign(m.dPct, 1) + '% of the prior value';
-      if (has(m.relOfPct)) t += ', ' + fsign(m.relOfPct, 1) + '% relative change of the percent-predicted number';
-      t += ')';
-      if (has(m.pctPerYear)) t += '; annualised ' + fsign(m.pctPerYear, 1) + '%/yr';
-      if (m.k === 'fev1' && has(m.perYear)) t += ' (' + fsign(m.perYear * 1000, 0) + ' mL/yr)';
-      put(sec, t);
-      if (m.k === 'fev1' && has(m.q0)) put(sec, 'FEV1Q (FEV1 divided by ' + (f.ctx.sex === 'M' ? '0.5' : '0.4') + ' L) changed from ' + fmt(m.q0, 2) + ' to ' + fmt(m.q1, 2));
-    });
-    if (has(p.ccs)) put(sec, 'Conditional change score for FEV1 is ' + fz(p.ccs) + ' (r = ' + fmt(p.ccsR, 3) + ')');
-
-    // interpretation: one sentence per measure, the basis of each number named, thresholds labelled with their framework
-    const within1y = !has(p.years) || p.years <= 1.1;
-    const ild = f.ctx.hasInd('ild') || f.ctx.hasInd('ctd') || f.ctx.hasInd('sarc');
-    const dir = (m) => m.dAbs < 0 ? 'decreased' : (m.dAbs > 0 ? 'increased' : 'is unchanged');
-    const where = ' since prior study #' + p.idx;
-    const caveat = (m) => m.comparable ? '' : ' (comparison limited: ' + (p.cmp.ref && m.pp ? 'different reference equations' : (p.cmp.bd && /fev1|fvc/.test(m.k) ? 'different bronchodilator state' : (p.cmp.hb && /dlco/.test(m.k) ? 'different hemoglobin-adjustment basis' : 'different test quality'))) + ')';
-    p.metrics.forEach(m => {
-      if (m.k === 'fev1' || m.k === 'fvc') {
-        const th = [];
-        if (m.comparable && Math.abs(m.dPct) >= 15) th.push('beyond the 15% change that ERS/ATS 2022 describes as exceeding expected variability');
-        if (m.comparable && has(m.pctPerYear) && m.pctPerYear <= -8) th.push('meets the 8%/yr rapid-decline marker');
-        let t = m.name + ' ' + dir(m) + ' by ' + fmt(Math.abs(m.dPct), 1) + '% of the prior value (' + fsign(m.dAbs * 1000, 0) + ' mL)' + where + (has(m.pctPerYear) ? ' (' + fsign(m.pctPerYear, 1) + '%/yr)' : '');
-        t += th.length ? ', ' + th.join(' and ') : (m.comparable && m.dAbs < 0 ? ', below both the 15% and the 8%/yr markers' : '');
-        t += caveat(m);
-        if (m.k === 'fev1' && has(m.q0)) t += '. FEV1Q ' + (m.q1 < m.q0 ? 'fell' : 'rose') + ' by ' + fmt(Math.abs(m.q0 - m.q1), 2) + ' units; healthy adults lose about 1 unit every 18 years';
-        sec.impr.push(sentence(t));
-      } else if (m.k === 'fev1_pct') {
-        sec.impr.push('FEV1 changed by ' + fsign(m.dAbs, 0) + ' percentage points of predicted' + where + caveat(m) + '.');
-      } else if (m.k === 'fvc_pct') {
-        const ppf = m.comparable && m.dAbs <= -5 && within1y && ild;
-        sec.impr.push('FVC changed by ' + fsign(m.dAbs, 0) + ' percentage points of predicted' + where + caveat(m) + (ppf ? '; in a non-IPF fibrotic interstitial lung disease this meets the FVC component of the physiologic criterion for progressive pulmonary fibrosis (absolute decline of at least 5 points within a year; ATS/ERS/JRS/ALAT 2022), which is one domain only and requires the symptom or radiologic domain and exclusion of other causes' : (m.comparable && m.dAbs <= -5 && within1y ? '; a decline of 5 points or more within a year is the FVC component of the progressive-pulmonary-fibrosis physiologic criterion when the setting is a fibrotic interstitial lung disease' : '')) + '.');
-      } else if (m.k === 'dlco_pct') {
-        const ppf = m.comparable && m.dAbs <= -10 && within1y && ild;
-        sec.impr.push('DLCO (' + (f.dl.hasAdj ? 'hemoglobin-adjusted' : 'adjustment basis as entered') + ') changed by ' + fsign(m.dAbs, 0) + ' percentage points of predicted' + where + caveat(m) + (ppf ? '; in a non-IPF fibrotic interstitial lung disease this meets the DLCO component of the physiologic criterion for progressive pulmonary fibrosis (absolute decline of at least 10 points within a year; ATS/ERS/JRS/ALAT 2022), the same physiologic domain as the FVC criterion' : '') + '.');
-      } else if (m.k === 'six') {
-        if (!f.trend6.multi) sec.impr.push('6MWD ' + dir(m) + ' by ' + fmt(Math.abs(m.dAbs), 0) + ' m (' + fmt(Math.abs(m.dPct), 1) + '%)' + where + ', ' + (Math.abs(m.dAbs) >= 30 ? 'meeting or exceeding' : 'below') + ' the 30 m minimal important difference.');
-      } else if (m.k === 'feno') {
-        const sig = m.prior > 50 ? Math.abs(m.dAbs) / m.prior * 100 > 20 : Math.abs(m.dAbs) > 10;
-        sec.impr.push('FeNO ' + dir(m) + ' by ' + fmt(Math.abs(m.dAbs), 0) + ' ppb' + where + '; the change is ' + (sig ? 'beyond' : 'within') + ' the ATS 2011 change thresholds (more than 20% when the prior value is above 50 ppb, or more than 10 ppb when it is 50 ppb or below).');
-      } else if (m.k === 'tlc') {
-        sec.impr.push('TLC ' + dir(m) + ' by ' + fmt(Math.abs(m.dPct), 1) + '% of the prior value' + where + caveat(m) + '; no validated longitudinal threshold exists for TLC, so method and variability determine its importance.');
-      } else {
-        sec.impr.push(m.name + ' ' + dir(m) + ' by ' + (has(m.dPct) ? fmt(Math.abs(m.dPct), 1) + '% of the prior value' : fmt(Math.abs(m.dAbs), m.d) + ' ' + m.unit) + where + caveat(m) + '.');
-      }
-    });
-    if (has(p.ccs)) sec.impr.push('The conditional change score for FEV1 (' + fz(p.ccs) + ') is ' + (Math.abs(p.ccs) > 1.96 ? 'outside' : 'within') + ' the ±1.96 range expected in healthy children and young people.');
+    const ms = p.metrics.filter(m => keys.indexOf(m.k) >= 0);
+    if (!ms.length) return;
+    out.push(priorHead(p) + ms.map(m => serialPhrase(f, m, p)).join('; '));
+    if (f.style === 'expanded') {
+      const fm = ms.filter(m => m.k === 'fev1')[0];
+      if (fm && has(fm.pctPerYear)) out.push('Annualised FEV1 change ' + fsign(fm.pctPerYear, 1) + '%/yr (' + fsign(fm.perYear * 1000, 0) + ' mL/yr)' + (has(fm.q0) ? '; FEV1Q ' + fmt(fm.q0, 2) + ' → ' + fmt(fm.q1, 2) : ''));
+    }
   });
-  return sec;
+  return out;
+}
+/* The serial sentences of the interpretation: the most recent prior in detail, older priors as a trajectory. */
+function priorImpression(f) {
+  const out = [];
+  if (!f.on.prior || !f.prior.any) return out;
+  f.priors.forEach((p, i) => {
+    if (!p.metrics.length) return;
+    const when = p.dateOk ? monthWords(p.date) : 'the prior study';
+    if (i === 0) {
+      const sig = [], stable = [], limited = [], ppf = [];
+      p.metrics.forEach(m => {
+        const v = serialVerdict(f, m, p);
+        const chg = m.pp ? fsign(m.dAbs, 0) + ' points of predicted' : (m.k === 'six' ? fsign(m.dAbs, 0) + ' m' : (m.k === 'feno' ? fsign(m.dAbs, 0) + ' ppb' : (has(m.dPct) ? fsign(m.dPct, 0) + '%' : fsign(m.dAbs, m.d) + ' ' + m.unit)));
+        const nm = m.name + (m.k === 'dlco_pct' && f.dl.hasAdj ? ' (hemoglobin-adjusted)' : '');
+        if (v.why) limited.push(nm + ' (' + v.why + ')');
+        else if (v.sig === true) sig.push(nm + ' ' + (m.dAbs < 0 ? 'has fallen ' : 'has risen ') + chg.replace(/^[+-]/, '') + (m.k === 'fev1' || m.k === 'fvc' ? ' (' + fsign(m.dAbs * 1000, 0) + ' mL)' : ''));
+        else if (v.sig === false) stable.push(nm);
+        if (v.ppf) ppf.push({ m: m, v: v });
+      });
+      let t = '';
+      if (sig.length) t = 'Compared with ' + when + ', ' + joinNames(sig) + (sig.length === 1 && /^6MWD/.test(sig[0]) ? ', beyond the 30 m minimal important difference' : ', beyond the expected variability of the test');
+      if (stable.length) t += (t ? '; the ' : 'Compared with ' + when + ', the ') + joinNames(stable) + ' change' + (stable.length > 1 ? 's are' : ' is') + ' within the expected variability';
+      if (limited.length) t += (t ? '. ' : 'Compared with ' + when + ', ') + cap(joinNames(limited) + (limited.length > 1 ? ' are' : ' is') + ' not directly comparable');
+      if (t) out.push(t.replace(/\.?$/, '.'));
+      if (ppf.length) {
+        const parts = ppf.map(x => x.m.name + ' ' + fsign(x.m.dAbs, 0) + ' points');
+        const meets = ppf.every(x => x.v.ppf === 'meets');
+        out.push('The ' + joinNames(ppf.map(x => x.m.name)) + ' decline' + (ppf.length > 1 ? 's' : '') + ' within a year (' + parts.join(', ') + ') ' + (meets ? 'meet' : 'would meet') + (ppf.length > 1 || !meets ? '' : 's') + ' the physiologic criterion for progressive pulmonary fibrosis' + (meets ? '' : ' in a fibrotic interstitial lung disease') + ' (ATS/ERS/JRS/ALAT 2022); FVC and DLCO count as one domain, and PPF also needs the symptom or radiologic domain and no alternative explanation.');
+      }
+      if (has(p.ccs)) out.push('The conditional change score for FEV1 (' + fz(p.ccs) + ') is ' + (Math.abs(p.ccs) > 1.96 ? 'outside' : 'within') + ' the range expected in healthy children and young people.');
+    } else {
+      const parts = p.metrics.map(m => m.name + ' ' + (m.pp ? fmt(m.prior, 0) + ' → ' + fmt(m.cur, 0) + '% predicted' : (m.k === 'fev1' || m.k === 'fvc' || m.k === 'tlc' ? fmt(m.prior, 2) + ' → ' + fmt(m.cur, 2) + ' L' : fmt(m.prior, m.d) + ' → ' + fmt(m.cur, m.d) + ' ' + m.unit)));
+      out.push('Over ' + (intervalWords(p.years) || 'the longer interval') + ' (since ' + when + '): ' + parts.join(', ') + '.');
+    }
+  });
+  return out;
 }
 
 /* ==========================================================================
@@ -3508,65 +3573,57 @@ function secPrior(f) {
 
 const SEV_CAP = { mild: 'Mild', moderate: 'Moderate', severe: 'Severe' };
 function sevOf(r) { return r && r.sev ? r.sev : null; }
+/* "a moderately reduced DLCO" / "a normal DLCO" — as a trailing phrase of the pattern sentence */
 function dlcoWord(f) {
   const d = f.dl, D = d.dlco;
   if (!(f.on.dlco && d.any && D.measured) || D.invalid) return '';
-  const lab = d.reportedAdjusted ? 'hemoglobin-adjusted DLCO' : 'DLCO';
-  const z = D.z !== null ? ' (z ' + fz(D.z) + ')' : '';
-  if (D.low) return 'a ' + (D.sev ? SEV_ADV[D.sev] + ' reduced ' : 'reduced ') + lab + z;
-  if (D.high) return 'an increased ' + lab + z;
-  if (D.bl) return 'a ' + lab + ' within normal limits but near the LLN' + z;
-  return 'a ' + lab + ' within normal limits' + z;
+  if (D.low) return 'a ' + (D.sev ? SEV_ADV[D.sev] + ' reduced ' : 'reduced ') + 'DLCO';
+  if (D.high) return 'an elevated DLCO';
+  if (D.bl) return 'a normal DLCO close to the LLN';
+  return 'a normal DLCO';
 }
-/* standalone sentence when no ventilatory lead carries the DLCO: "DLCO is moderately reduced (z -3.0)." */
+/* standalone: "DLCO is moderately reduced." */
 function dlcoSentence(f) {
-  const d = f.dl, D = d.dlco;
-  if (!(f.on.dlco && d.any && D.measured) || D.invalid) return '';
-  const lab = d.reportedAdjusted ? 'Hemoglobin-adjusted DLCO' : 'DLCO';
-  const z = D.z !== null ? ' (z ' + fz(D.z) + ')' : '';
-  if (D.low) return lab + ' is ' + (D.sev ? SEV_ADV[D.sev] + ' reduced' : 'reduced') + z + '.';
-  if (D.high) return lab + ' is increased' + z + '.';
-  if (D.bl) return lab + ' is within normal limits but near the LLN' + z + '.';
-  return lab + ' is within normal limits' + z + '.';
+  const w = dlcoWord(f);
+  return w ? cap(w.replace(/^an? /, 'DLCO is ').replace(/ DLCO$/, '').replace('DLCO is normal DLCO', 'DLCO is normal')) + '.' : '';
 }
-function withDlco(lead, f) { const w = dlcoWord(f); if (!w) return lead; return lead + (/ with /.test(lead) ? ' and ' : ' with ') + w; }
-/* short z for inline use: "z -3.4" */
-function zs(r) { return r && r.z !== null ? ' z ' + fz(r.z) : ''; }
-function zc(label, r) { return r && r.z !== null ? label + ' z ' + fz(r.z) : label; }
+function withDlco(lead, f) {
+  const w = dlcoWord(f); if (!w) return lead;
+  if (/ with /.test(lead.replace(/\([^)]*\)/g, ''))) return lead + ', and ' + w;
+  return lead + ' with ' + w;
+}
 function volClause(f) {
   const v = f.vol, vp = v.pat;
   if (!(f.on.vol && v.any) || v.qc === 'inv' || !v.tlc.measured) return '';
-  if (vp.hyperTlc) return ' with hyperinflation and air trapping (TLC and RV/TLC above the ULN' + (v.frctlc.high || v.frc.high ? ', resting volume elevated' : '') + ')';
-  if (vp.hyperinflation) return ' with hyperinflation (elevated RV/TLC and ' + (v.frctlc.high ? 'FRC/TLC' : 'FRC') + ', TLC within limits)';
-  if (vp.airTrapping) return ' with air trapping (RV/TLC above the ULN' + (v.tlc.high ? ' and TLC above the ULN' : ', TLC not reduced') + ')';
-  if (vp.normal) return ' without air trapping or hyperinflation on lung volumes';
-  if (vp.fractionsMissing && v.tlc.wnl) return ' (TLC within limits; RV/TLC not entered, so air trapping is not assessed)';
+  if (vp.hyperTlc) return ' with hyperinflation and air trapping';
+  if (vp.hyperinflation) return ' with hyperinflation';
+  if (vp.airTrapping) return ' with air trapping';
+  if (vp.normal) return ' without hyperinflation or air trapping';
+  if (vp.fractionsMissing && v.tlc.wnl) return ' with a normal TLC (RV/TLC not entered, so air trapping is not assessed)';
   return '';
 }
+function sevRed(r, what) { const sv = sevOf(r); return (sv ? 'a ' + SEV_ADV[sv] + ' reduced ' : 'a reduced ') + what; }
 
 /* -------------------------------------------------------- ventilatory core */
 function ventCore(f) {
-  const s = f.sp, R = s.ratio, A = s.fev1, B = s.fvc, sp = s.pat, v = f.vol, vp = v.pat, T = v.tlc, d = f.dl;
+  const s = f.sp, R = s.ratio, A = s.fev1, B = s.fvc, sp = s.pat, v = f.vol, vp = v.pat, T = v.tlc;
   const out = [];
   const haveSp = f.on.spiro && s.any, haveVol = f.on.vol && v.any;
   if (!haveSp && !haveVol) return out;
   const sevA = sevOf(A), sevB = sevOf(B);
-  const bmiNote = f.ctx.obese ? ' With a BMI of ' + fmt(f.ctx.bmi, 1) + ', obesity may contribute to the restrictive pattern.' : '';
+  const bmiNote = f.ctx.obese ? ' With a BMI of ' + fmt(f.ctx.bmi, 1) + ', obesity may contribute.' : '';
 
-  if (!haveSp) {
-    out.push(withDlco(volOnlyLead(f), f) + '.');
-    return out;
-  }
+  if (!haveSp) { out.push(withDlco(volOnlyLead(f), f) + '.'); return out; }
 
   /* pattern cannot be classified */
   if (sp.indeterminate) {
-    if (s.fvcUnder && R.measured && !R.low) out.push('FEV1/FVC is preserved, but early termination may have underestimated FVC and raised the ratio, so the spirometric pattern (normal versus nonspecific or restrictive) cannot be reliably classified; repeat testing is advised if the result would change management.' + (T.low ? ' TLC is below the LLN, which confirms restriction independently of the spirometry.' : ''));
+    if (s.fvcUnder && R.measured && !R.low) out.push('Early termination may have underestimated the FVC and raised the FEV1/FVC, so the spirometric pattern cannot be classified reliably; repeat testing is suggested if it would change management.' + (T.low ? ' TLC is reduced, which establishes restriction independently.' : ''));
     else out.push('The spirometric pattern cannot be classified because ' + sp.reason + '.');
     const w = dlcoSentence(f); if (w) out.push(w);
     return out;
   }
   if (sp.kind === 'noratio') {
-    out.push('FEV1/FVC was not entered, so airflow obstruction cannot be assessed' + ((A.low || B.low) ? '; the reduced ' + (A.low && B.low ? 'FEV1 and FVC' : (A.low ? 'FEV1' : 'FVC')) + ' cannot be classified without the ratio' : '') + '.');
+    out.push('FEV1/FVC was not entered, so obstruction cannot be assessed' + ((A.low || B.low) ? ' and the reduced ' + (A.low && B.low ? 'FEV1 and FVC' : (A.low ? 'FEV1' : 'FVC')) + ' cannot be classified' : '') + '.');
     if (haveVol && vp.restriction) out.push(withDlco(volOnlyLead(f), f) + '.');
     else { const w = dlcoSentence(f); if (w) out.push(w); }
     return out;
@@ -3575,110 +3632,107 @@ function ventCore(f) {
   /* obstruction */
   if (R.low) {
     if (sp.kind === 'effort' && !T.low) {
-      out.push('Low FEV1/FVC with a reduced FVC; submaximal effort (or muscle weakness) is a likely explanation for the reduced spirometric values. Repeat testing if clinically needed.');
+      out.push('Reduced FEV1/FVC and FVC, most likely from submaximal effort or muscle weakness; repeat testing is suggested if clinically needed.');
       const w = dlcoSentence(f); if (w) out.push(w);
       return out;
     }
     if (sp.mixed) {
-      let t = 'Mixed obstructive and restrictive ventilatory impairment (' + zc('FEV1/FVC', R) + ' and ' + zc('TLC', T) + ' are both below the LLN)';
+      let t = 'Mixed obstructive and restrictive ventilatory defect';
       const q = [];
-      if (sevA) q.push('a ' + sevA + ' reduction in FEV1 (z ' + fz(A.z) + ')'.replace(' (z null)', '')); else if (A.measured && !A.invalid && A.wnl) q.push('a preserved FEV1');
-      if (vp.sev) q.push('a ' + vp.sev + ' reduction in TLC');
-      if (q.length) t += ', with ' + q.join(' and ');
-      if (v.rvtlc.high) t += '; RV/TLC is elevated, which in restriction partly reflects the lower TLC and does not by itself establish air trapping';
+      if (sevA) q.push(sevA + ' obstruction by FEV1'); else if (A.measured && !A.invalid && A.wnl) q.push('a preserved FEV1');
+      if (vp.sev) q.push(vp.sev + ' restriction by TLC');
+      if (q.length) t += ' (' + q.join(', ') + ')';
+      if (v.rvtlc.high) t += '; the elevated RV/TLC partly reflects the low TLC rather than air trapping alone';
       out.push(withDlco(t, f) + '.' + bmiNote);
-      if (sp.kind === 'effort') out.push('Submaximal effort or respiratory-muscle weakness is a likely contributor to the reduced spirometric values (no sharp peak flow); the low TLC is independent of the forced maneuver.');
+      if (sp.kind === 'effort') out.push('Submaximal effort or muscle weakness probably contributes to the spirometric values; the low TLC does not depend on the forced maneuver.');
       return out;
     }
     let lead;
-    if (sp.preservedFev1) lead = 'Obstructive ventilatory impairment with a preserved FEV1 (' + zc('FEV1/FVC', R) + ' below the LLN' + (A.z !== null ? '; FEV1 z ' + fz(A.z) : '') + ')';
-    else if (sevA) lead = SEV_CAP[sevA] + ' obstructive ventilatory impairment (' + zc('FEV1/FVC', R) + ' below the LLN' + (A.z !== null ? '; FEV1 z ' + fz(A.z) : '') + ')';
-    else lead = 'Obstructive ventilatory impairment (' + zc('FEV1/FVC', R) + ' below the LLN); the severity is not graded because FEV1 ' + (A.invalid ? 'is not interpretable' : 'was not entered');
-    if (sp.kind === 'dysanapsis') lead += ', with ' + (B.high ? 'an FVC' : 'an FEV1') + ' above the ULN';
+    if (sp.preservedFev1) lead = 'Obstructive ventilatory defect with a preserved FEV1';
+    else if (sevA) lead = SEV_CAP[sevA] + ' obstructive ventilatory defect';
+    else lead = 'Obstructive ventilatory defect, severity not graded because FEV1 ' + (A.invalid ? 'is not interpretable' : 'was not entered');
+    if (sp.kind === 'dysanapsis') lead += ' with ' + (B.high ? 'a large FVC' : 'a large FEV1');
     lead += volClause(f);
     out.push(withDlco(lead, f) + '.');
     if (B.low && !B.invalid) {
-      if (T.measured && !T.invalid && !T.low) out.push('The reduced FVC' + (B.z !== null ? ' (z ' + fz(B.z) + ')' : '') + ' is not explained by restriction (TLC not reduced) and may relate to airway closure or incomplete emptying rather than a restrictive component.');
-      else if (!T.measured || T.invalid) out.push('FVC is reduced' + (B.z !== null ? ' (z ' + fz(B.z) + ')' : '') + '; a coexisting restrictive component is unconfirmed without lung volumes. Consider obtaining lung volumes.');
-    } else if (B.measured && B.wnl && !(T.measured && !T.invalid)) out.push('FVC is within normal limits, arguing against restrictive impairment.');
+      if (T.measured && !T.invalid && !T.low) out.push('The reduced FVC is not from restriction (TLC is normal) and likely reflects air trapping.');
+      else if (!T.measured || T.invalid) out.push('The reduced FVC may reflect air trapping or a coexisting restrictive process; lung volumes would clarify this.');
+    } else if (B.measured && B.wnl && !(T.measured && !T.invalid)) out.push('The normal FVC argues against restriction.');
     return out;
   }
 
   /* ratio preserved */
   if (sp.kind === 'effort' && !vp.restriction) {
-    out.push('Reduced FEV1 and FVC with a preserved FEV1/FVC; submaximal effort (or muscle weakness) is a likely explanation for the reduced spirometric values. Repeat testing if clinically needed.');
+    out.push('Reduced FEV1 and FVC with a preserved FEV1/FVC, most likely from submaximal effort or muscle weakness; repeat testing is suggested if clinically needed.');
     const w = dlcoSentence(f); if (w) out.push(w);
     return out;
   }
   if (vp.restriction) {
-    let lead = (vp.sev ? SEV_CAP[vp.sev] + ' r' : 'R') + 'estrictive ventilatory impairment (' + zc('TLC', T) + ' below the LLN' + (vp.sev ? ', graded by TLC z-score' : '') + ')';
-    if (vp.simple) lead += ', simple pattern (RV/TLC' + (v.frctlc.measured || v.frc.measured ? ' and resting volume' : '') + ' not elevated)';
-    else if (vp.complex) lead += ', complex pattern (RV/TLC above the ULN with a preserved FEV1/FVC; reduced thoracic expansion, respiratory-muscle weakness or airway closure are possible contributors)';
-    if (sevB) lead += ', with a ' + sevB + ' reduction in FVC' + (B.z !== null ? ' (z ' + fz(B.z) + ')' : '');
+    let lead = (vp.sev ? SEV_CAP[vp.sev] + ' r' : 'R') + 'estrictive ventilatory defect';
+    if (vp.simple) lead += ' (simple restriction)';
+    else if (vp.complex) lead += ' (complex restriction: RV/TLC is elevated with a preserved FEV1/FVC, as seen with reduced chest-wall expansion, muscle weakness or airway closure)';
     out.push(withDlco(lead, f) + '.' + bmiNote);
-    if (R.high) out.push('FEV1/FVC is above the ULN, which can accompany restriction.');
-    if (sp.kind === 'effort') out.push('Submaximal effort or respiratory-muscle weakness is a likely contributor to the reduced spirometric values (no sharp peak flow); the low TLC is independent of the forced maneuver' + (vp.complex ? ', and the complex pattern (retained RV) is the volume distribution seen with weakness or chest-wall limitation' : '') + '.');
+    if (R.high) out.push('The elevated FEV1/FVC is in keeping with restriction.');
+    if (sp.kind === 'effort') out.push('Submaximal effort or muscle weakness probably contributes to the spirometric values; the low TLC does not depend on the forced maneuver' + (vp.complex ? ', and the retained RV fits weakness or chest-wall limitation' : '') + '.');
     return out;
   }
   if (sp.nonspecific) {
     const which = A.low && B.low ? 'FEV1 and FVC' : (A.low ? 'FEV1' : 'FVC');
-    let t = 'Nonspecific ventilatory pattern: reduced ' + which + ' with a preserved FEV1/FVC and a TLC within reference limits' + (T.z !== null ? ' (z ' + fz(T.z) + ')' : '') + '; restriction is not demonstrated';
-    t = withDlco(t, f) + '.';
-    out.push(t + ' A bronchodilator response and airway resistance may help clarify the cause (ERS/ATS 2022).');
-    if (vp.airTrapping) out.push('RV/TLC is above the ULN with a TLC within limits, supporting air trapping as a contributor.');
+    let t = 'Nonspecific pattern: reduced ' + which + ' with a normal FEV1/FVC and a normal TLC, so restriction is not demonstrated';
+    out.push(withDlco(t, f) + '.' + (vp.airTrapping ? ' The elevated RV/TLC points to air trapping as the likely cause.' : ' Bronchodilator response and airway resistance may help clarify the cause.'));
     return out;
   }
   if (sp.highTlcReview) {
-    out.push('Reduced ' + (A.low && B.low ? 'FEV1 and FVC' : (A.low ? 'FEV1' : 'FVC')) + ' with a preserved FEV1/FVC and a TLC above the ULN' + (T.z !== null ? ' (z ' + fz(T.z) + ')' : '') + '. This does not fit the nonspecific pattern (which requires a normal TLC) or restriction; review effort, the vital-capacity maneuvers and the lung-volume method.' + (dlcoWord(f) ? ' There is ' + dlcoWord(f) + '.' : ''));
+    out.push('Reduced ' + (A.low && B.low ? 'FEV1 and FVC' : (A.low ? 'FEV1' : 'FVC')) + ' with a normal FEV1/FVC and an elevated TLC, which fits neither a nonspecific pattern nor restriction; review effort, the vital-capacity maneuvers and the lung-volume method.' + (dlcoWord(f) ? ' There is ' + dlcoWord(f) + '.' : ''));
     return out;
   }
   if (sp.lowFvcUnconfirmed) {
     let t;
-    if (A.low && B.low) t = cap(sevA || 'reduced') + ' reduction in FEV1' + (A.z !== null ? ' (z ' + fz(A.z) + ')' : '') + ' and ' + (sevB || 'reduced') + ' reduction in FVC' + (B.z !== null ? ' (z ' + fz(B.z) + ')' : '') + ' with a preserved FEV1/FVC, which is suggestive of restriction, but cannot definitively assess given no lung volumes; consider obtaining lung volumes. This may also reflect mild obstructive impairment with air trapping.';
+    if (A.low && B.low) t = (sevA === sevB ? cap(sevA || 'reduced') + ' reduction in FEV1 and FVC' : cap(sevA || 'reduced') + ' reduction in FEV1 and ' + (sevB || 'reduced') + ' reduction in FVC') + ' with a preserved FEV1/FVC, which is suggestive of restriction, but cannot definitively assess given no lung volumes; consider obtaining lung volumes. This may also reflect mild obstruction with air trapping.';
     else t = cap(sevB || 'reduced') + ' reduction in FVC which is suggestive of restriction, but cannot definitively assess given no lung volumes; consider obtaining lung volumes.';
     out.push(t);
-    if (R.high) out.push('FEV1/FVC is above the ULN, which can accompany restriction.');
+    if (R.high) out.push('The elevated FEV1/FVC would be in keeping with restriction.');
     const w = dlcoSentence(f); if (w) out.push(w);
     return out;
   }
   if (sp.kind === 'isolatedFEV1') {
-    out.push('Isolated ' + (sevA || 'reduced') + ' reduction in FEV1' + (A.z !== null ? ' (z ' + fz(A.z) + ')' : '') + ' with a preserved FEV1/FVC and FVC' + (T.measured && T.low ? '; TLC is below the LLN' : '') + '; this may represent an early ventilatory impairment.');
+    out.push('Isolated ' + (sevA || 'reduced') + ' reduction in FEV1 with a normal FEV1/FVC and FVC' + (T.measured && T.low ? ' and a reduced TLC' : '') + '; this may represent early airway disease.');
     const w = dlcoSentence(f); if (w) out.push(w);
     return out;
   }
   if (sp.normal) {
     const F = f.F, dl = f.dl.dlco, haveDl = f.on.dlco && f.dl.any && dl.measured && !dl.invalid;
-    if (F['integrated.all_normal']) { out.push('Normal spirometry, lung volumes and DLCO.' + (sp.kind === 'borderline' ? ' One or more spirometric values lie near the LLN; significance is uncertain and this may be a normal variant.' : '')); return out; }
+    if (F['integrated.all_normal']) { out.push('Normal spirometry, lung volumes and DLCO.' + (sp.kind === 'borderline' ? ' Some values are close to the lower limit of normal.' : '')); return out; }
     if (F['patterns.isolated_low_dlco']) {
-      out.push('Isolated ' + (dl.sev || 'reduced') + ' reduction in DLCO' + (dl.z !== null ? ' (z ' + fz(dl.z) + ')' : '') + ' with normal spirometry and lung volumes. The gas-transfer deficit points to the alveolar–capillary unit rather than the airways or lung volumes; PFTs alone do not distinguish its causes.');
+      out.push('Isolated ' + (dl.sev || 'reduced') + ' reduction in DLCO with normal spirometry and lung volumes.');
       return out;
     }
     let t = 'Normal spirometry';
-    if (sp.kind === 'borderline') t = 'Spirometric values are within normal limits but near the LLN; significance is uncertain (a very mild ventilatory impairment or a normal variant)';
-    else if (sp.kind === 'concave') t = 'Spirometric indices are within normal limits, but concavity of the flow-volume loop could suggest mild obstructive impairment at low lung volumes or loss of elastic recoil';
+    if (sp.kind === 'borderline') t = 'Spirometry is normal, although some values are close to the lower limit of normal';
+    else if (sp.kind === 'concave') t = 'Spirometry is normal, although the concave expiratory limb raises the question of mild obstruction at low lung volumes';
     if (haveVol && !T.invalid) {
-      if (vp.normal) t += (sp.kind === 'normal' ? ' and lung volumes' : '; lung volumes are within reference limits');
-      else if (vp.airTrapping) t += '; lung volumes show air trapping (RV/TLC above the ULN with a preserved FEV1/FVC), which can be an early sign of small-airway involvement';
-      else if (vp.hyperinflation || vp.hyperTlc) t += '; lung volumes show hyperinflation (elevated RV/TLC and resting volume' + (vp.hyperTlc ? ' with an increased TLC' : '') + ') with a preserved FEV1/FVC';
-      else if (vp.largeLungs) t += '; TLC is above the ULN with preserved RV/TLC and FRC/TLC, which may represent constitutionally large lungs rather than disease-related hyperinflation';
-      else if (vp.lowRV) t += '; RV is below the LLN with a normal TLC (isolated low RV), which in the 1987 series was a clinically significant finding usually associated with pulmonary or chest-wall disease';
-      else if (vp.unclassified) t += '; TLC is above the ULN but the volume fractions are not entered, so large lungs cannot be distinguished from hyperinflation';
-      else if (vp.rvHighFractionNormal) t += '; RV is increased with a preserved RV/TLC, which does not independently establish air trapping';
-      else if (vp.kind === 'borderline') t += '; TLC is within normal limits but near the LLN';
-      else if (vp.kind === 'rvHighNoFraction') t += '; RV is above the ULN but RV/TLC is not entered, so air trapping cannot be classified';
+      if (vp.normal) t += (sp.kind === 'normal' ? ' and lung volumes' : '; lung volumes are normal');
+      else if (vp.airTrapping) t += '; lung volumes show air trapping (elevated RV/TLC), which can be an early sign of small-airway disease';
+      else if (vp.hyperinflation || vp.hyperTlc) t += '; lung volumes show hyperinflation' + (vp.hyperTlc ? ' with an elevated TLC' : '') + ' despite a normal FEV1/FVC';
+      else if (vp.largeLungs) t += '; TLC is elevated with normal RV/TLC and FRC/TLC, most likely large lungs rather than hyperinflation';
+      else if (vp.lowRV) t += '; RV is reduced with a normal TLC (isolated low RV), which can accompany pulmonary or chest-wall disease';
+      else if (vp.unclassified) t += '; TLC is elevated but the volume fractions were not entered, so large lungs cannot be distinguished from hyperinflation';
+      else if (vp.rvHighFractionNormal) t += '; RV is elevated with a normal RV/TLC, which does not by itself establish air trapping';
+      else if (vp.kind === 'borderline') t += '; TLC is normal but close to the LLN';
+      else if (vp.kind === 'rvHighNoFraction') t += '; RV is elevated but RV/TLC was not entered, so air trapping cannot be classified';
     }
     t = withDlco(t, f);
-    if (!haveVol && !f.on.vol && !f.on.dlco) t += '. FVC is within normal limits, arguing against restrictive impairment; lung volumes and DLCO were not performed, so gas transfer is not assessed';
-    else if (!haveVol && !f.on.vol) t += '. FVC is within normal limits, arguing against restrictive impairment (lung volumes not performed)';
-    else if (!haveDl && !f.on.dlco) t += '; DLCO was not performed';
+    if (!haveVol && !f.on.vol && !f.on.dlco) t += '. The normal FVC argues against restriction; lung volumes and DLCO were not obtained';
+    else if (!haveVol && !f.on.vol) t += '. The normal FVC argues against restriction (lung volumes not obtained)';
+    else if (!haveDl && !f.on.dlco) t += '; DLCO was not obtained';
     out.push(t + '.');
     return out;
   }
   // partial: one index missing, or FVC/FEV1 above the ULN with a preserved ratio
-  let t = 'No obstructive impairment demonstrated (FEV1/FVC preserved' + zs(R) + ')';
+  let t = 'No obstruction (FEV1/FVC is normal)';
   if (A.measured && A.wnl && !B.measured) t += '; FVC was not entered, so restriction cannot be assessed from spirometry';
   else if (B.measured && B.wnl && !A.measured) t += '; FEV1 was not entered';
-  else if (B.high || A.high) t += '; ' + (B.high ? 'FVC' : 'FEV1') + ' is above the ULN (large lungs may be a normal variant)';
+  else if (B.high || A.high) t += '; the ' + (B.high ? 'FVC' : 'FEV1') + ' is above the ULN, which can be a normal variant';
   if (haveVol && vp.restriction) { out.push(withDlco(volOnlyLead(f), f) + '.'); return out; }
   out.push(withDlco(t + volClause(f), f) + '.');
   return out;
@@ -3686,54 +3740,50 @@ function ventCore(f) {
 function volOnlyLead(f) {
   const v = f.vol, vp = v.pat, T = v.tlc;
   if (v.qc === 'inv') return 'The lung-volume measurements are not interpretable';
-  if (!T.measured) return vp.kind === 'trapNoTLC' ? 'RV/TLC is above the ULN; TLC was not entered, so restriction and the volume pattern cannot be classified' : 'Lung volumes: TLC was not entered';
+  if (!T.measured) return vp.kind === 'trapNoTLC' ? 'RV/TLC is elevated; TLC was not entered, so restriction and the volume pattern cannot be classified' : 'TLC was not entered';
   if (vp.restriction) {
-    let t = (vp.sev ? SEV_CAP[vp.sev] + ' r' : 'R') + 'estrictive ventilatory impairment on lung volumes (' + zc('TLC', T) + ' below the LLN' + (vp.sev ? ', graded by TLC z-score' : '') + ')';
-    if (vp.mixed) t = 'Mixed obstructive and restrictive ventilatory impairment (FEV1/FVC and ' + zc('TLC', T) + ' below the LLN)';
-    else if (vp.simple) t += ', simple pattern'; else if (vp.complex) t += ', complex pattern (RV/TLC above the ULN)';
+    let t = (vp.sev ? SEV_CAP[vp.sev] + ' r' : 'R') + 'estrictive ventilatory defect on lung volumes';
+    if (vp.mixed) t = 'Mixed obstructive and restrictive ventilatory defect';
+    else if (vp.simple) t += ' (simple restriction)'; else if (vp.complex) t += ' (complex restriction with an elevated RV/TLC)';
     if (!f.sp.ratio.measured) t += '; FEV1/FVC was not entered, so a coexisting obstructive component cannot be excluded';
     return t;
   }
-  if (vp.hyperTlc) return 'Lung volumes show hyperinflation with an increased TLC';
-  if (vp.hyperinflation) return 'Lung volumes show hyperinflation (elevated RV/TLC and resting volume, TLC within limits)';
-  if (vp.airTrapping) return 'Lung volumes show air trapping (RV/TLC above the ULN, TLC not reduced)';
-  if (vp.largeLungs) return 'TLC is above the ULN with preserved volume fractions (large lungs, possibly a normal variant)';
-  if (vp.unclassified) return 'TLC is above the ULN; the volume fractions are needed to distinguish large lungs from hyperinflation';
-  if (vp.normal) return 'Lung volumes are within reference limits; no restriction demonstrated';
-  if (vp.kind === 'borderline') return 'TLC is within normal limits but near the LLN; significance uncertain';
-  return 'Lung volumes: no restriction demonstrated (TLC not reduced)';
+  if (vp.hyperTlc) return 'Lung volumes show hyperinflation with an elevated TLC';
+  if (vp.hyperinflation) return 'Lung volumes show hyperinflation';
+  if (vp.airTrapping) return 'Lung volumes show air trapping with a normal TLC';
+  if (vp.largeLungs) return 'TLC is elevated with normal volume fractions (large lungs, possibly a normal variant)';
+  if (vp.unclassified) return 'TLC is elevated; the volume fractions are needed to distinguish large lungs from hyperinflation';
+  if (vp.normal) return 'Normal lung volumes without restriction';
+  if (vp.kind === 'borderline') return 'TLC is normal but close to the LLN';
+  return 'No restriction on lung volumes (TLC is not reduced)';
 }
 
 /* -------------------------------------------------------- DLCO mechanism */
 function dlcoMechanism(f) {
   const d = f.dl, pat = d.pat, D = d.dlco, out = [];
   if (!(f.on.dlco && d.any) || !D.measured || D.invalid) return out;
-  const co = (has(d.cohb) && d.cohb >= 2) || d.cohbcat === 'hi' ? ' Carboxyhemoglobin lowers the measured DLCO (about 1% per 1% COHb).' : '';
+  const co = (has(d.cohb) && d.cohb >= 2) || d.cohbcat === 'hi' ? ' The elevated carboxyhemoglobin lowers the measured DLCO (about 1% per 1% COHb).' : '';
   if (D.high) {
-    let t = 'The increased DLCO is ' + (pat.hb === 'explained' ? 'accounted for by the hemoglobin adjustment' : (pat.hb === 'unexplained' || pat.hb === 'adjustedHigh' ? 'not explained by hemoglobin' : (pat.hb === 'unknownBasis' ? 'of unstated adjustment basis' : 'of uncertain basis (hemoglobin adjustment not available)'))) + '; an increased DLCO may occur with increased pulmonary blood volume, elevated hemoglobin, asthma or alveolar hemorrhage and is not independently diagnostic of any of these.';
-    out.push(t + co); return out;
+    out.push('The elevated DLCO ' + (pat.hb === 'explained' ? 'is accounted for by the hemoglobin adjustment' : 'can be seen with increased pulmonary blood volume, polycythemia, asthma or alveolar hemorrhage') + '.' + co);
+    return out;
   }
-  if (!D.low) { if (pat.mech === 'incompleteWNL') out.push('DLCO is within reference limits; the low VA with a high KCO suggests incomplete lung expansion during the maneuver.'); if (co) out.push(co.trim()); return out; }
+  if (!D.low) { if (pat.mech === 'incompleteWNL') out.push('The low VA with a high KCO suggests incomplete lung expansion during the maneuver.'); if (co) out.push(co.trim()); return out; }
   const bits = [];
-  if (pat.hb === 'full') bits.push('The reduction is accounted for by the hemoglobin adjustment: the hemoglobin-adjusted DLCO is within reference limits.');
-  else if (pat.hb === 'partial') bits.push('The hemoglobin-adjusted DLCO remains below the LLN, so the gas-transfer deficit is not explained by hemoglobin alone.');
-  else if (pat.hb === 'adjustedLow') bits.push('The value is hemoglobin-adjusted, so the deficit is not explained by hemoglobin.');
-  else if (pat.hb === 'none') bits.push('Hemoglobin is not available; a low hemoglobin can lower the unadjusted DLCO.');
-  else if (pat.hb === 'noadj' && d.anemic === true) bits.push('The value is not hemoglobin-adjusted and anemia is documented, so the deficit may partly reflect reduced hemoglobin rather than only pulmonary pathology.');
-  else if (pat.hb === 'noadj' && d.anemic === false) bits.push('Hemoglobin is normal, so the deficit is not explained by anemia.');
-  else if (pat.hb === 'unknownBasis') bits.push('Whether the reported value is hemoglobin-adjusted is not stated, so it is not described as corrected or uncorrected' + (d.anemic === true ? '; the documented low hemoglobin would lower an unadjusted value, but the value may already be adjusted, so no attribution is made' : (!d.hbKnown ? '; hemoglobin is not available either' : '')) + '.');
+  if (pat.hb === 'full') bits.push('The reduction is accounted for by the low hemoglobin; the hemoglobin-adjusted DLCO is normal.');
+  else if (pat.hb === 'noadj' && d.anemic === true) bits.push('The value is not adjusted for hemoglobin and the patient is anemic, so part of the reduction may reflect the low hemoglobin.');
+  else if (pat.hb === 'unknownBasis' && d.anemic === true) bits.push('Whether the DLCO is hemoglobin-adjusted is not stated; with a hemoglobin of ' + fmt(d.hb, 1) + ' g/dL, part of the reduction could reflect anemia if the value is unadjusted.');
   const mech = {
-    lowVA_highKCO: 'The low VA with an increased KCO may accompany incomplete expansion or a reduced accessible lung volume rather than loss of the gas-transfer surface; it does not establish normal overall gas transfer.',
-    lowVA_normalKCO: 'VA is reduced while KCO is within reference limits; a preserved KCO does not negate the reduced DLCO, and the smaller sampled volume should be read with inspiration, TLC and ventilation distribution in mind.',
-    lowVA_lowKCO: 'Both VA and KCO are reduced, so the low DLCO is not explained only by a smaller sampled volume; the transfer coefficient itself is impaired.',
-    normalVA_lowKCO: 'VA is preserved and KCO is reduced, supporting reduced transfer efficiency per unit of sampled volume; the PFT does not identify its cause.',
-    allNormalExceptDLCO: 'VA and KCO are within reference limits; correlate with hemoglobin and the clinical context.',
-    vaOnly: 'VA is reduced and KCO was not entered; KCO is needed to separate incomplete expansion from loss of transfer efficiency.',
-    discordantK: 'A low DLCO with a high KCO and a normal VA is an unusual combination; check VA, the DLCO and the breath-hold quality.',
-    kOnly: 'KCO was entered without VA, so the mechanism of the reduced DLCO cannot be characterised.'
+    lowVA_highKCO: 'The low VA with an elevated KCO points to loss of lung volume or incomplete expansion rather than a true diffusion defect.',
+    lowVA_normalKCO: 'The reduced VA accounts for part of the low DLCO, but a normal KCO does not negate the reduced DLCO or exclude a diffusion abnormality.',
+    lowVA_lowKCO: 'Both VA and KCO are reduced, so the low DLCO is not explained by the smaller sampled volume alone.',
+    normalVA_lowKCO: 'KCO is reduced with a normal VA, indicating a true gas-transfer defect.',
+    allNormalExceptDLCO: '',
+    vaOnly: '',
+    discordantK: 'A low DLCO with a high KCO and a normal VA is an unusual combination; check the VA, the DLCO and the breath-hold quality.',
+    kOnly: ''
   }[pat.mech];
   if (mech) bits.push(mech);
-  if (d.vatlcLow) bits.push('VA/TLC is below the 0.85 convention, which can indicate incomplete sampling or ventilation maldistribution; poor inspiration and method differences must also be considered.');
+  if (d.vatlcLow && f.style === 'expanded') bits.push('VA/TLC is below 0.85, which can indicate incomplete sampling or ventilation maldistribution.');
   if (bits.length) out.push(bits.join(' ') + co); else if (co) out.push(co.trim());
   return out;
 }
@@ -3744,22 +3794,22 @@ function bdImpression(f) {
   if (!(f.on.bd && b.any)) return out;
   const F = f.F, resp = F['bronchodilator.response'];
   const parts = [];
+  const pp = (x) => has(x) ? fsign(x, 0) + '% of predicted' : '';
   if (resp === 'both' || resp === 'fev1' || resp === 'fvc') {
-    parts.push('Significant bronchodilator response in ' + (resp === 'both' ? 'FEV1 and FVC' : resp.toUpperCase()) + ' (increase of more than 10% of the predicted value)');
-    if (F['patterns.normal_baseline_bd_positive']) parts.push('despite baseline spirometry within reference limits; the measured response is compatible with variable airway physiology but does not by itself establish a clinical diagnosis of asthma');
-    if (resp === 'fvc') parts.push('a predominant FVC response may reflect reduced airway closure or improved emptying, provided the maneuvers are matched in quality');
+    const nums = resp === 'both' ? [pp(b.dF) ? 'FEV1 ' + pp(b.dF) : '', pp(b.dV) ? 'FVC ' + pp(b.dV) : ''].filter(Boolean).join(', ') : (resp === 'fev1' ? pp(b.dF) : pp(b.dV));
+    parts.push('Significant bronchodilator response in ' + (resp === 'both' ? 'FEV1 and FVC' : resp.toUpperCase()) + (nums ? ' (' + nums + ')' : ''));
+    if (F['patterns.normal_baseline_bd_positive']) parts.push('baseline spirometry is normal, so this indicates variable airway physiology rather than a diagnosis of asthma by itself');
+    if (resp === 'fvc') parts.push('a response confined to FVC usually reflects less air trapping after bronchodilator');
   } else if (resp === 'negative') {
-    parts.push('No significant bronchodilator response (neither FEV1 nor FVC increased by more than 10% of the predicted value)');
-    if (f.sp.ratio.low) parts.push('this does not exclude symptomatic benefit from bronchodilator therapy');
-    if (b.subthreshold) parts.push('there is a measured increase below the threshold');
+    parts.push('No significant bronchodilator response' + (b.subthreshold ? ' (a small increase below the 10% threshold)' : ''));
   } else if (resp === 'indeterminate') {
-    parts.push('Bronchodilator response is indeterminate' + (b.rel === 'invalid' ? ' (post-bronchodilator maneuvers not interpretable)' : (!(b.assessedF && b.assessedV) && b.resp !== 'ind' ? ((b.assessedF || b.assessedV) ? ' (only ' + (b.assessedF ? 'FEV1' : 'FVC') + ' could be assessed, so the absence of a response cannot be established)' : ' (no pre- and post-bronchodilator FEV1 or FVC change was entered)') : '')));
+    parts.push('Bronchodilator response is indeterminate' + (b.rel === 'invalid' ? ' (post-bronchodilator maneuvers not interpretable)' : (!(b.assessedF && b.assessedV) && b.resp !== 'ind' ? ((b.assessedF || b.assessedV) ? ' (only ' + (b.assessedF ? 'FEV1' : 'FVC') + ' could be assessed)' : ' (no pre- and post-bronchodilator values were entered)') : '')));
   }
-  if (b.obstructionStatus === 'persistent') parts.push((resp === 'both' || resp === 'fev1' || resp === 'fvc') ? 'obstruction persists after bronchodilator (post-bronchodilator FEV1/FVC below the LLN), which can coexist with a significant response' : 'obstruction persists after bronchodilator (post-bronchodilator FEV1/FVC below the LLN)');
-  else if (b.obstructionStatus === 'normalized') parts.push('post-bronchodilator FEV1/FVC is no longer below the LLN, so obstruction is not demonstrated after bronchodilator' + (resp === 'negative' ? ' (ratio normalisation and a qualifying volume response are independent findings)' : ''));
-  if (b.discordant) parts.push('the current criterion and the legacy 2005 profile disagree for this study');
-  if (b.held === 'n') parts.push('recent bronchodilator use may have blunted the measured response');
-  if (b.drop) parts.push('FEV1 or FVC fell after bronchodilator, which warrants review of effort, technique and timing before a physiologic explanation is assigned');
+  if (b.obstructionStatus === 'persistent') parts.push('obstruction persists after bronchodilator' + ((resp === 'both' || resp === 'fev1' || resp === 'fvc') ? ' despite the response (the two can coexist)' : ''));
+  else if (b.obstructionStatus === 'normalized') parts.push('the FEV1/FVC normalizes after bronchodilator');
+  if (b.discordant) parts.push('the 2005 criterion (12% and 200 mL) gives a different answer for this study');
+  if (b.held === 'n') parts.push('recent bronchodilator use may have blunted the response');
+  if (b.drop) parts.push('FEV1 or FVC fell after bronchodilator; check effort and timing');
   if (parts.length) out.push(sentence(parts[0] + (parts.length > 1 ? '; ' + parts.slice(1).join('; ') : '')));
   return out;
 }
@@ -3809,7 +3859,7 @@ function buildImpression(f, secs) {
   if (by.fvl) by.fvl.impr.forEach(add);
   ['raw', 'osc', 'mip', 'post', 'feno', 'bronch', 'six', 'cpet', 'gas'].forEach(k => { if (by[k]) by[k].impr.forEach(add); });
   // 7. serial comparison
-  if (by.prior) by.prior.impr.forEach(add);
+  priorImpression(f).forEach(add);
   rv.filter(r => r.section === 'serial').forEach(r => add(r.text));
   // 8. follow-up wording the clinician selected
   rv.filter(r => r.section === 'followup').forEach(r => add(r.text));
@@ -4058,18 +4108,19 @@ function buildHeadsUp(f, secs) {
     const usesPct = f.priors.some(p => p.metrics.some(m => m.pp));
     if (usesPct && !f.priors.some(p => p.cmp.ref)) H('PR1', 'note', 'Comparison', 'Compare like with like', '% predicted values from different reference equations (for example a GLI update or race-specific equations) are not interchangeable; if the prior used another set, tick "different reference equations" on the prior and compare measured values.');
     f.priors.forEach(p => {
-      if (p.cmp.ref) H('PR0-' + p.idx, 'caution', 'Comparison', 'Reference equations differ (prior #' + p.idx + ')', 'Part of any percent-predicted change may reflect the equation change; measured values are compared and the percent-predicted change is reported with that caveat. Recomputation on a common reference is the clean solution.');
+      const since = p.dateOk ? 'since ' + monthWords(p.date) : 'since prior study #' + p.idx;
+      if (p.cmp.ref) H('PR0-' + p.idx, 'caution', 'Comparison', 'Reference equations differ (' + (p.dateOk ? monthWords(p.date) : 'prior #' + p.idx) + ')', 'Part of any percent-predicted change may reflect the equation change; measured values are compared and the percent-predicted change is reported with that caveat. Recomputation on a common reference is the clean solution.');
       p.metrics.forEach(m => {
         if (!m.comparable) return;
         if (m.k === 'fev1' || m.k === 'fvc') {
-          if (m.dPct <= -15) H('PR2-' + p.idx + m.k, 'caution', 'Comparison', m.name + ' fell by ' + fmt(Math.abs(m.dPct), 1) + '% since prior study #' + p.idx, 'This is at or beyond the 15% change that ERS/ATS 2022 describes as exceeding expected variability; it is not a universal progression criterion. Review technique, acute illness and adherence.');
+          if (m.dPct <= -15) H('PR2-' + p.idx + m.k, 'caution', 'Comparison', m.name + ' fell by ' + fmt(Math.abs(m.dPct), 0) + '% ' + since, 'This is at or beyond the 15% change that ERS/ATS 2022 describes as exceeding expected variability; it is not a universal progression criterion. Review technique, acute illness and adherence.');
           else if (has(m.pctPerYear) && m.pctPerYear <= -8) H('PR3-' + p.idx + m.k, 'caution', 'Comparison', m.name + ' decline of ' + fmt(Math.abs(m.pctPerYear), 1) + '%/yr', 'Meets the 8%/yr rapid-decline marker.');
           if (m.k === 'fev1' && m.dPct <= -10 && m.dPct > -15) H('PR4-' + p.idx, 'note', 'Comparison', 'FEV1 fell by about ' + fmt(Math.abs(m.dPct), 0) + '% from the prior value', 'A fall of 10% or more from the previous value is commonly used to flag a possible pulmonary exacerbation in cystic fibrosis.');
           if (m.dPct >= 15) H('PR5-' + p.idx + m.k, 'note', 'Comparison', m.name + ' rose by ' + fmt(m.dPct, 1) + '%', 'An improvement beyond 15% exceeds expected variability; consider treatment effect, recovery from an acute process, or technique differences.');
         }
-        if (m.k === 'dlco_pct' && m.dAbs <= -10) H('PR6-' + p.idx, 'caution', 'Comparison', 'DLCO fell by ' + fmt(Math.abs(m.dAbs), 0) + ' points of predicted', 'In a non-IPF fibrotic ILD an absolute fall of 10 points within a year is the DLCO component of the physiologic progression criterion (ATS/ERS/JRS/ALAT 2022); FVC and DLCO form one domain, and PPF needs a second domain.');
-        if (m.k === 'fvc_pct' && m.dAbs <= -5) H('PR7-' + p.idx, 'caution', 'Comparison', 'FVC fell by ' + fmt(Math.abs(m.dAbs), 0) + ' points of predicted', 'In a non-IPF fibrotic ILD an absolute fall of 5 points within a year is the FVC component of the physiologic progression criterion (ATS/ERS/JRS/ALAT 2022); an isolated threshold crossing is not PPF.');
-        if (m.k === 'six' && m.dAbs <= -30 && !f.trend6.multi) H('PR8-' + p.idx, 'note', 'Comparison', '6MWD fell by ' + fmt(Math.abs(m.dAbs), 0) + ' m', 'Exceeds the 30 m minimal important difference.');
+        if (m.k === 'dlco_pct' && m.dAbs <= -10) H('PR6-' + p.idx, 'caution', 'Comparison', 'DLCO fell by ' + fmt(Math.abs(m.dAbs), 0) + ' points of predicted ' + since, 'In a non-IPF fibrotic ILD an absolute fall of 10 points within a year is the DLCO component of the physiologic progression criterion (ATS/ERS/JRS/ALAT 2022); FVC and DLCO form one domain, and PPF needs a second domain.');
+        if (m.k === 'fvc_pct' && m.dAbs <= -5) H('PR7-' + p.idx, 'caution', 'Comparison', 'FVC fell by ' + fmt(Math.abs(m.dAbs), 0) + ' points of predicted ' + since, 'In a non-IPF fibrotic ILD an absolute fall of 5 points within a year is the FVC component of the physiologic progression criterion (ATS/ERS/JRS/ALAT 2022); an isolated threshold crossing is not PPF.');
+        if (m.k === 'six' && m.dAbs <= -30 && !f.trend6.multi) H('PR8-' + p.idx, 'note', 'Comparison', '6MWD fell by ' + fmt(Math.abs(m.dAbs), 0) + ' m ' + since, 'Exceeds the 30 m minimal important difference.');
       });
       if (has(p.ccs) && Math.abs(p.ccs) > 1.96) H('PR9-' + p.idx, 'caution', 'Comparison', 'Conditional change score outside ±1.96', 'FEV1 changed more than expected for a child or young person (score ' + fz(p.ccs) + ').');
       const fm = p.metrics.filter(m => m.k === 'fev1')[0], vm = p.metrics.filter(m => m.k === 'fvc')[0];
@@ -4224,28 +4275,32 @@ function testsPerformed(f) {
 }
 function referenceLine(f) {
   const e = f.ctx.eq, on = f.on, parts = [];
-  if (on.spiro || on.bd || on.fvl) parts.push('spirometry ' + ({ global: 'GLI Global (race-neutral)', gli2012: 'GLI-2012', other: 'per laboratory' })[e.spiro]);
-  if (on.vol) parts.push('lung volumes ' + ({ gli2021: 'GLI-2021', other: 'per laboratory' })[e.vol]);
-  if (on.dlco) parts.push('DLCO ' + ({ gli2017: 'GLI-2017', other: 'per laboratory' })[e.dlco]);
+  const sp = { global: 'GLI Global (race-neutral)', gli2012: 'GLI 2012', other: 'laboratory' }[e.spiro], vo = { gli2021: 'GLI 2021', other: 'laboratory' }[e.vol], dl = { gli2017: 'GLI 2017', other: 'laboratory' }[e.dlco];
+  const anySp = on.spiro || on.bd || on.fvl;
+  // one phrase when everything is GLI: "GLI (race-neutral spirometry, 2021 lung volumes, 2017 DLCO)"
+  if ((!anySp || e.spiro !== 'other') && (!on.vol || e.vol !== 'other') && (!on.dlco || e.dlco !== 'other') && (anySp || on.vol || on.dlco)) {
+    const q = []; if (anySp) q.push(e.spiro === 'global' ? 'race-neutral spirometry' : '2012 spirometry'); if (on.vol) q.push('2021 lung volumes'); if (on.dlco) q.push('2017 DLCO');
+    return 'GLI (' + q.join(', ') + ')';
+  }
+  if (anySp) parts.push('spirometry ' + sp);
+  if (on.vol) parts.push('lung volumes ' + vo);
+  if (on.dlco) parts.push('DLCO ' + dl);
   return parts.length ? parts.join('; ') : 'not applicable';
 }
-const GRADING_LINE = 'Impairment is graded by z-score (ERS/ATS 2022): LLN at z = −1.645; mild from −1.645 down to −2.5; moderate below −2.5 down to −4.0; severe below −4.0. The grade describes the measurement, not disease severity.';
+const GRADING_LINE = 'Impairment is graded by z-score (ERS/ATS 2022): LLN at z = −1.645; mild from −1.645 down to −2.5; moderate below −2.5 down to −4.0; severe below −4.0.';
 function buildText(f, secs, impression, headsup, withHeadsup) {
   const L = [];
   L.push('PULMONARY FUNCTION TEST REPORT');
   const hdr = [];
-  if (f.st.ctx.date) hdr.push('Date: ' + f.st.ctx.date);
+  if (f.st.ctx.date) hdr.push('Date: ' + dateWords(f.st.ctx.date));
   const sh = studyHeader(f); if (sh) hdr.push(sh);
   if (hdr.length) L.push(hdr.join(' | '));
   const ind = f.ctx.indicLabels.slice(); if (f.ctx.indication) ind.push(f.ctx.indication);
   if (ind.length) L.push('Indication: ' + ind.map((x, i) => i === 0 ? cap(x) : x).join('; '));
-  L.push('Tests performed: ' + (testsPerformed(f).join('; ') || 'none selected'));
-  L.push('Reference: ' + referenceLine(f) + '. ' + GRADING_LINE + (f.on.vol && f.vol.pat.restriction && f.vol.pat.sev ? ' Restriction severity is graded by the TLC z-score (Annals ATS 2025 convention).' : ''));
+  L.push('Reference values: ' + referenceLine(f) + (f.style === 'expanded' ? '. ' + GRADING_LINE : ''));
   L.push('');
   secs.forEach(s => { L.push(s.title + ': ' + s.lines.join(' ')); L.push(''); });
-  L.push('INTERPRETATION:');
-  if (impression.length) impression.forEach((s, i) => L.push((i + 1) + '. ' + s));
-  else L.push('No interpretable data entered.');
+  L.push('INTERPRETATION: ' + (impression.length ? impression.join(' ') : 'No interpretable data entered.'));
   const studies = f.studies || [];
   if (studies.length) { L.push(''); L.push('ADDITIONAL STUDIES TO CONSIDER: ' + cap(studies.join('; ')) + '.'); }
   if (withHeadsup && headsup.length) {
@@ -4270,7 +4325,7 @@ function interpret(raw) {
   };
   add('spiro', secSpiro); add('fvl', secFvl); add('bd', secBD); add('vol', secVol); add('dlco', secDlco);
   add('raw', secRaw); add('osc', secOsc); add('mip', secMip); add('post', secPost); add('feno', secFeno);
-  add('bronch', secBronch); add('sixmw', secSix); add('cpet', secCpet); add('gas', secGas); add('prior', secPrior);
+  add('bronch', secBronch); add('sixmw', secSix); add('cpet', secCpet); add('gas', secGas);
   f.dx = differentialGroups(f);
   markSuperseded(f.suggest, f.dx);
   f.studies = differentialText(f.dx).studies;
@@ -4287,7 +4342,7 @@ function interpret(raw) {
 }
 
 const API = {
-  version: '2.2.0',
+  version: '3.0.0',
   catalogVersion: CATALOG.version,
   Z_LLN: Z_LLN, Z_ULN: Z_ULN, STYLES: STYLES,
   TESTS: TESTS, PRESETS: PRESETS, SCHEMA: SCHEMA, LOOPS: LOOPS, INDICATIONS: INDICATIONS, KIND_OPTS: KIND_OPTS, PRIOR_FIELDS: PRIOR_FIELDS, CUR_FIELDS: CUR_FIELDS, MAX_PRIORS: MAX_PRIORS, MAX_TREND: MAX_TREND,
@@ -4999,7 +5054,7 @@ T.limits = { title: 'Limitations and pitfalls', kicker: 'What this can and canno
 
 T.app = { title: 'About this app and the case bank', kicker: 'How the reading works, and what saving does', blocks: [
   { h: 'How the interpretation is built', ol: [
-    'Each test section reports facts only: what was entered, its reliability, and what it is relative to the LLN, in the wording level you choose. Metrics in the same state share one sentence ("FEV1, FVC and FEV1/FVC are all within reference limits"); when one is abnormal, the defining measurement leads and carries the others ("FEV1/FVC is reduced, with FEV1 moderately reduced; FVC is within reference limits").',
+    'Each test section reports facts only, the way a reading physician dictates them: the numbers first, then one sentence that groups the indices by state ("FEV1, FVC and FEV1/FVC are all normal"; "FEV1/FVC is reduced, with a moderately reduced FEV1 and a normal FVC"). A prior study is compared inside the same section with the percent change and whether it is a significant change.',
     'The Interpretation synthesizes: the ventilatory pattern, lung volumes and gas transfer are read together in one statement, then the bronchodilator response, the adjunct tests, the comparison with prior studies, and what would clarify the picture. Interpretive context that needs judgement is offered as suggested additions and included only when tapped.',
     'For each verified finding the Report step also offers its differential considerations and the studies that sort them out (for an isolated low DLCO: pulmonary vascular disease, early interstitial disease before FVC or TLC fall, emphysema with preserved volumes, anemia, recent smoking or carboxyhemoglobin; hemoglobin and COHb, HRCT, echocardiography, exertional oximetry). Tapped differentials join the Interpretation as one sentence per finding; tapped studies are listed once under "Additional studies to consider". None is inserted on its own.',
     'The heads-up box compares tests with each other and with the tracing: alerts and cautions for inconsistency and data-entry problems, look-for tips with example loops, and notes for missing tests that would change the reading.',
@@ -5035,8 +5090,12 @@ const GROUPS = [
   { title: 'Challenge and inflammation', ids: ['feno', 'bronch'] },
   { title: 'Exercise and gases', ids: ['sixmw', 'cpet', 'gas'] },
   { title: 'Over time', ids: ['prior'] },
-  { title: 'This app', ids: ['app', 'phrases'] }
+  { title: 'This app', ids: ['examples', 'app', 'phrases'] }
 ];
+T.examples = { title: 'Worked examples', kicker: 'Load a complete case and read the report', blocks: [
+  { p: 'Each example fills every step with a coherent case. Load one, read the report, then walk back through the steps to see which taps produced each sentence. Loading an example replaces the current case.' },
+  { examples: true }
+] };
 
 root.PFT_EDU = { topics: T, groups: GROUPS };
 if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_EDU;
@@ -5234,7 +5293,7 @@ function decodeCase(s) {
 /* -------------------------------------------------------------------- steps */
 function stepList() {
   const l = [{ id: 'tests', name: 'Tests' }, { id: 'ctx', name: 'Details' }];
-  P.TESTS.forEach(t => { if (S.tests[t.key]) l.push({ id: t.key, name: SHORT[t.key] || t.name }); });
+  P.TESTS.forEach(t => { if (S.tests[t.key] && !t.hidden) l.push({ id: t.key, name: SHORT[t.key] || t.name }); });
   l.push({ id: 'report', name: 'Report' });
   return l;
 }
@@ -5320,8 +5379,8 @@ function paramRow(mod, f) {
   const opts = P.KIND_OPTS[f.kind];
   const zid = uid('z');
   let zopen = S[mod][f.id].z !== '';
-  const btns = opts.map(o => h('button', { type: 'button', class: 'sg', 'data-v': o[0], 'aria-pressed': 'false', text: o[1],
-    onclick: () => { S[mod][f.id] = { c: o[0], z: '' }; zin.value = ''; sync(); } }));
+  const btns = opts.filter(o => o[0] !== 'nm').map(o => h('button', { type: 'button', class: 'sg', 'data-v': o[0], 'aria-pressed': 'false', text: o[1],
+    onclick: () => { const cur = S[mod][f.id]; S[mod][f.id] = (cur.c === o[0] && cur.z === '') ? { c: 'nm', z: '' } : { c: o[0], z: '' }; zin.value = ''; sync(); } }));
   const st = h('span', { class: 'st' });
   const zin = h('input', { type: 'text', class: 'num', id: zid, inputmode: 'decimal', autocomplete: 'off', placeholder: 'z-score', 'aria-label': f.label + ' z-score', value: S[mod][f.id].z,
     oninput: (e) => {
@@ -5333,7 +5392,7 @@ function paramRow(mod, f) {
   const zbtn = h('button', { type: 'button', class: 'zlink', 'aria-label': 'Type a z-score for ' + f.label, text: 'type z', 'aria-expanded': 'false',
     onclick: () => { zopen = !zopen; sync(); if (zopen) zin.focus(); } });
   const row = h('div', { class: 'prm', 'data-field': mod + '.' + f.id }, [
-    h('div', { class: 'prm-top' }, [prmLabel(mod, f), f.hint ? h('span', { class: 'hint', text: f.hint }) : null]),
+    h('div', { class: 'prm-top' }, [prmLabel(mod, f)]),
     h('div', { class: 'prm-row' }, [
       h('div', { class: 'seg', role: 'group', 'aria-label': f.label + ' category' }, btns),
       h('div', { class: 'zwrap' }, [zbtn, zbox])
@@ -5358,8 +5417,7 @@ function numField(mod, f) {
   widgets.push(() => { const v = S[mod][f.id]; inp.classList.toggle('bad', v !== '' && !hasNum(v)); if (document.activeElement !== inp && inp.value !== String(v)) inp.value = v; });
   return h('div', { class: 'fld' }, [
     h('div', { class: 'lab-row' }, [h('label', { for: id, text: f.label }), info(glossKey(mod, f.id))]),
-    h('div', { class: 'inwrap' }, [inp, f.unit ? h('span', { class: 'unit', text: f.unit }) : null]),
-    f.hint ? h('div', { class: 'hint', text: f.hint }) : null
+    h('div', { class: 'inwrap' }, [inp, f.unit ? h('span', { class: 'unit', text: f.unit }) : null])
   ]);
 }
 /* A "sel" field is shown as a row of tap buttons. A leading "Not …" option is not drawn: nothing pressed means not entered,
@@ -5372,7 +5430,7 @@ function choiceRow(mod, f) {
     onclick: () => { const cur = S[mod][f.id]; S[mod][f.id] = (cur === o[0] && blank) ? '' : o[0]; sync(); } }));
   widgets.push(() => btns.forEach(b => b.setAttribute('aria-checked', String(b.getAttribute('data-v') === S[mod][f.id]))));
   return h('div', { class: 'prm ch-row', 'data-field': mod + '.' + f.id }, [
-    h('div', { class: 'prm-top' }, [prmLabel(mod, f), f.hint ? h('span', { class: 'hint', text: f.hint }) : null]),
+    h('div', { class: 'prm-top' }, [prmLabel(mod, f)]),
     h('div', { class: 'seg' + (stack ? ' stack' : ''), role: 'radiogroup', 'aria-label': f.label }, btns)
   ]);
 }
@@ -5407,8 +5465,7 @@ function txtField(mod, f, type) {
   return h('div', { class: 'fld' + (type === 'date' ? '' : ' wide') }, [
     h('label', { for: id, text: f.label }),
     h('input', { type: type === 'date' ? 'date' : 'text', id: id, autocomplete: 'off', placeholder: f.ph || '', value: S[mod][f.id],
-      oninput: (e) => { S[mod][f.id] = e.target.value; sync(); } }),
-    f.hint ? h('div', { class: 'hint', text: f.hint }) : null
+      oninput: (e) => { S[mod][f.id] = e.target.value; sync(); } })
   ]);
 }
 
@@ -5506,6 +5563,10 @@ function groupEl(mod, g) {
       if (isEq) { tag.textContent = n ? n + ' changed from the recommended set' : 'recommended set selected'; tag.classList.toggle('chg', n > 0); }
       else { tag.textContent = n ? n + ' entered' : ''; tag.hidden = !n; }
     });
+  } else if (g.fold) {
+    const tag = h('span', { class: 'tag' });
+    el = h('details', { class: 'optgrp fold', open: g.fields.some(f => isFilled(mod, f)) }, [h('summary', {}, [h('span', { class: 't', text: g.title }), tag]), fields]);
+    widgets.push(() => { const n = g.fields.filter(f => isFilled(mod, f)).length; tag.textContent = n ? n + ' entered' : ''; tag.hidden = !n; });
   } else {
     const head = h('div', { class: 'grp-head' }, [h('h3', { text: g.title })]);
     if (g.quick) {
@@ -5549,8 +5610,8 @@ function navRow() {
     next ? h('button', { type: 'button', class: 'btn primary', onclick: () => goto(next.id), text: (next.id === 'report' ? 'View report' : 'Next: ' + next.name) + ' →' }) : null
   ]);
 }
-function stepHead(title, intro, src, gkey) {
-  return h('div', { class: 'step-head' }, [h('div', { class: 'sh-title' }, [h('h2', { text: title }), gkey ? info(gkey) : null]), intro ? h('p', { class: 'intro', text: intro }) : null, src ? h('p', { class: 'src', text: 'Basis: ' + src }) : null]);
+function stepHead(title, intro, src, gkey, keepIntro) {
+  return h('div', { class: 'step-head' }, [h('div', { class: 'sh-title' }, [h('h2', { text: title }), gkey ? info(gkey) : null]), keepIntro && intro ? h('p', { class: 'intro', text: intro }) : null]);
 }
 
 /* ------------------------------------------------------------- step: tests */
@@ -5566,13 +5627,14 @@ function zKey() {
 }
 function stepTests() {
   const main = $('main');
-  const groups = []; P.TESTS.forEach(t => { if (groups.indexOf(t.group) < 0) groups.push(t.group); });
+  const shown = P.TESTS.filter(t => !t.hidden);
+  const groups = []; shown.forEach(t => { if (groups.indexOf(t.group) < 0) groups.push(t.group); });
   const count = h('span', { class: 'count' });
   const cont = h('button', { type: 'button', class: 'btn primary', text: 'Continue →', onclick: () => goto('ctx') });
   const rows = {};
   const selBlock = groups.map(g => h('div', { class: 'sel-group' }, [
     h('h3', { text: g }),
-    h('div', { class: 'tgrid' }, P.TESTS.filter(t => t.group === g).map(t => {
+    h('div', { class: 'tgrid' }, shown.filter(t => t.group === g).map(t => {
       const id = uid('tt');
       const cb = h('input', { type: 'checkbox', id: id, 'data-test': t.key, checked: !!S.tests[t.key],
         onchange: (e) => { S.tests[t.key] = e.target.checked; sync(); } });
@@ -5583,27 +5645,18 @@ function stepTests() {
   ]));
   widgets.push(() => {
     let n = 0;
-    P.TESTS.forEach(t => { const r = rows[t.key]; r.cb.checked = !!S.tests[t.key]; r.lab.classList.toggle('on', !!S.tests[t.key]); if (S.tests[t.key]) n++; });
+    shown.forEach(t => { const r = rows[t.key]; r.cb.checked = !!S.tests[t.key]; r.lab.classList.toggle('on', !!S.tests[t.key]); if (S.tests[t.key]) n++; });
     count.textContent = n ? plural(n, 'test') + ' selected' : 'Select at least one test';
     cont.disabled = !n;
   });
   const presets = h('div', { class: 'presets' }, P.PRESETS.map(p => h('button', { type: 'button', class: 'chip', text: p.name,
     onclick: () => { Object.keys(S.tests).forEach(k => { S.tests[k] = p.tests.indexOf(k) >= 0; }); sync(); } })));
-  const left = h('div', { class: 'card' }, [
-    stepHead('Which tests were performed?', 'Tick everything done at this visit. Each ticked test becomes one step; the report lists only those tests. For a second visit, start a new case.'),
+  main.appendChild(h('div', { class: 'card' }, [
+    stepHead('Which tests were performed?', 'Tick what was done; each test becomes one step.', null, null, true),
     h('div', { class: 'sel-group' }, [h('h3', { text: 'Quick sets' }), presets]),
     selBlock,
     h('div', { class: 'start-row' }, [cont, count])
-  ]);
-  const ex = h('div', { class: 'card side-card' }, [
-    h('h3', { text: 'Worked examples' }),
-    h('div', { class: 'ex-list' }, X.EXAMPLES.map(e => h('button', { type: 'button', class: 'ex', 'data-example': e.name,
-      onclick: () => { const st = X.buildExample(P, e); if (!st.ctx.date) st.ctx.date = todayISO(); loadState(st, 'report', 'Loaded example: ' + e.name + '. Use the steps above to see the inputs.'); } },
-      [h('b', { text: e.name }), h('span', { text: e.desc })]))),
-    h('h3', {}, ['z-score key', info('z')]), zKey(),
-    methodNote()
-  ]);
-  main.appendChild(h('div', { class: 'grid-2 side' }, [left, ex]));
+  ]));
 }
 function methodNote() {
   const li = (t) => h('li', { text: t });
@@ -5629,9 +5682,9 @@ function stepCtx() {
   const bb = BANDS.map(o => h('button', { type: 'button', class: 'ch', role: 'radio', 'data-v': o[0], 'aria-checked': 'false', text: o[1], onclick: () => { S.settings.band = o[0]; sync(); } }));
   widgets.push(() => bb.forEach(b => b.setAttribute('aria-checked', String(Number(S.settings.band) === Number(b.getAttribute('data-v'))))));
   const card = h('div', { class: 'card' }, [
-    stepHead(m.title, 'The date is today by default. Tap the indications that apply; use the box underneath only for a reason that is not listed. Age, sex and height drive sex- and age-specific thresholds, BMI, annualised change and CPET cut-offs.', m.src),
+    stepHead(m.title, '', m.src),
     m.groups.map(g => groupEl('ctx', g)),
-    h('section', { class: 'grp' }, [h('div', { class: 'grp-head' }, [h('h3', { text: 'Interpretation settings' })]), h('div', { class: 'fields' }, [
+    h('details', { class: 'optgrp fold', 'data-group': 'settings' }, [h('summary', {}, [h('span', { class: 't', text: 'Settings: near-LLN flag and wording level' })]), h('div', { class: 'fields' }, [
       h('div', { class: 'prm ch-row', 'data-field': 'settings.band' }, [
         h('div', { class: 'prm-top' }, [h('span', { class: 'prm-l', text: 'Near-LLN review flag' }), h('span', { class: 'hint', text: 'A value this close above the LLN is marked "near the LLN". It stays within normal limits; this is a local review convention, not a category' })]),
         h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Near-LLN review flag' }, bb)
@@ -5650,8 +5703,71 @@ function stepModule(key) {
   const extra = [];
   if (key === 'fvl') extra.push(h('div', { class: 'learn-link' }, [h('button', { type: 'button', class: 'btn sm quiet', 'data-learn': 'loops', text: 'Learn: how to read a flow–volume loop and what each pattern means →', onclick: () => openLearn('loops') })]));
   if (key === 'sixmw') { extra.push(predCalcBlock()); extra.push(trendBlock()); }
-  $('main').appendChild(h('div', { class: 'card' }, [stepHead(m.title, m.intro, m.src, 'test.' + key), h('p', { class: 'fine tapnote', text: 'Tap a choice to select it; tap it again to clear it. Typed values are optional and sit under the collapsed panels.' }), extra.filter(function (x) { return x.getAttribute('data-trend') !== '1'; }), m.groups.map(g => groupEl(key, g)), extra.filter(function (x) { return x.getAttribute('data-trend') === '1'; }), liveBox(key), navRow()]));
+  const pb = PRIOR_ROWS[key] ? priorBlock(key) : null;
+  $('main').appendChild(h('div', { class: 'card' }, [stepHead(m.title, m.intro, m.src, 'test.' + key), extra.filter(function (x) { return x.getAttribute('data-trend') !== '1'; }), m.groups.map(g => groupEl(key, g)), extra.filter(function (x) { return x.getAttribute('data-trend') === '1'; }), pb, liveBox(key), navRow()]));
 }
+
+/* ------------------------------------------------- prior study, inline on the test step */
+/* Rows per test: [label, unit, current field (module.field), prior field]. The current value also feeds the numbers
+   line of the report; the prior value switches the comparison on by itself. */
+const PRIOR_ROWS = {
+  spiro: { rows: [['FEV1', 'L', 'fev1_abs', 'fev1'], ['FVC', 'L', 'fvc_abs', 'fvc'], ['FEV1', '% pred', 'fev1_pct', 'fev1_pct'], ['FVC', '% pred', 'fvc_pct', 'fvc_pct']], cmp: ['ref_diff', 'bd_diff', 'qual_diff'] },
+  vol: { rows: [['TLC', 'L', 'tlc_abs', 'tlc']], cmp: ['method_diff', 'ref_diff'] },
+  dlco: { rows: [['DLCO', 'mL/min/mmHg', 'dlco_abs', 'dlco'], ['DLCO', '% pred', 'dlco_pct', 'dlco_pct']], cmp: ['hb_diff', 'ref_diff'] },
+  feno: { rows: [['FeNO', 'ppb', 'val', 'feno']], cmp: [] }
+};
+const priorOpen = {};
+function priorHasValues(key) { const def = PRIOR_ROWS[key]; return S.prior.list.some(p => def.rows.some(r => String(p[r[3]] || '').trim() !== '')); }
+function priorBlock(key) {
+  const def = PRIOR_ROWS[key];
+  const INTERVALS = [['3 mo', 3], ['6 mo', 6], ['1 yr', 12], ['2 yr', 24], ['3 yr', 36]];
+  const body = h('div', { class: 'prior-body' });
+  const cbId = uid('pc');
+  const cb = h('input', { type: 'checkbox', id: cbId, onchange: (e) => {
+    priorOpen[key] = e.target.checked;
+    if (!e.target.checked) { S.prior.list.forEach(p => def.rows.forEach(r => { p[r[3]] = ''; })); }
+    paint(); sync();
+  } });
+  function numIn(get, set, ph) {
+    const inp = h('input', { type: 'text', class: 'num', inputmode: 'decimal', autocomplete: 'off', placeholder: ph || '', value: get(), oninput: (e) => { set(e.target.value); sync(); } });
+    widgets.push(() => { const v = get(); inp.classList.toggle('bad', v !== '' && !hasNum(v)); if (document.activeElement !== inp && inp.value !== String(v)) inp.value = v; });
+    return inp;
+  }
+  function paint() {
+    body.textContent = '';
+    const open = priorOpen[key] || priorHasValues(key);
+    cb.checked = open;
+    body.hidden = !open;
+    if (!open) return;
+    const priors = S.prior.list;
+    const head = h('div', { class: 'pr-row pr-head' }, [h('span'), h('span', { text: 'This study' })].concat(priors.map((p, i) => h('span', { class: 'pr-col' }, [h('span', { text: priors.length > 1 ? 'Prior ' + (i + 1) : 'Prior study' }), priors.length > 1 ? h('button', { type: 'button', class: 'lnk', text: 'remove', onclick: () => { priors.splice(i, 1); paint(); sync(); } }) : null]))));
+    body.appendChild(head);
+    const dateRow = h('div', { class: 'pr-row' }, [h('span', { class: 'pr-l', text: 'Date' }), h('span', { class: 'fine', text: S.ctx.date ? dateShort(S.ctx.date) : 'set on Details' })].concat(priors.map(p => {
+      const inp = h('input', { type: 'date', value: p.date, oninput: (e) => { p.date = e.target.value; sync(); } });
+      widgets.push(() => { if (document.activeElement !== inp && inp.value !== p.date) inp.value = p.date; });
+      return h('span', { class: 'pr-cell' }, [inp, h('span', { class: 'qd' }, INTERVALS.map(iv => h('button', { type: 'button', class: 'lnk', 'data-months': String(iv[1]), text: iv[0], title: iv[0] + ' before this study', onclick: () => { p.date = shiftMonths(S.ctx.date, iv[1]); sync(); } })))]);
+    })));
+    body.appendChild(dateRow);
+    def.rows.forEach(r => {
+      body.appendChild(h('div', { class: 'pr-row' }, [h('span', { class: 'pr-l', text: r[0] + ' (' + r[1] + ')' }),
+        h('span', { class: 'pr-cell' }, [numIn(() => S[key][r[2]], (v) => { S[key][r[2]] = v; })])].concat(priors.map(p => h('span', { class: 'pr-cell' }, [numIn(() => p[r[3]], (v) => { p[r[3]] = v; })])))));
+    });
+    const foot = h('div', { class: 'pr-foot' });
+    if (priors.length < P.MAX_PRIORS) foot.appendChild(h('button', { type: 'button', class: 'btn sm quiet', text: '+ Older study', onclick: () => { priors.push(P.blankPrior()); paint(); sync(); } }));
+    if (def.cmp.length) {
+      const flags = def.cmp.map(id => P.PRIOR_FIELDS.filter(f => f.id === id)[0]).filter(Boolean);
+      foot.appendChild(h('details', { class: 'plain pr-cmp', 'data-group': 'cmp' }, [h('summary', { text: 'Not directly comparable? (different equations, bronchodilator state, method…)' }),
+        h('div', {}, priors.map((p, i) => h('div', { class: 'pr-cmpcol' }, [priors.length > 1 ? h('b', { text: 'Prior ' + (i + 1) }) : null].concat(flags.map(f => { const id = uid('pf'); return h('div', { class: 'chkrow' }, [h('input', { type: 'checkbox', id: id, checked: !!p[f.id], onchange: (e) => { p[f.id] = e.target.checked; sync(); } }), h('label', { for: id, text: f.label })]); })))))]));
+    }
+    body.appendChild(foot);
+  }
+  paint();
+  return h('section', { class: 'grp prior-inline', 'data-prior-block': key }, [
+    h('div', { class: 'chkrow big' }, [cb, h('label', { for: cbId, text: 'Compare with a prior study' })]),
+    body
+  ]);
+}
+function dateShort(iso) { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso); return m ? (+m[2]) + '/' + (+m[3]) + '/' + m[1] : iso; }
 
 /* --------------------------------------------------------------- step: prior */
 function curPlaceholder(id) {
@@ -5659,74 +5775,13 @@ function curPlaceholder(id) {
     dlco_pct: (isFinite(f.dl.adjPct) ? f.dl.adjPct : f.dl.pct), six: f.six.dist, feno: f.feno.v })[id];
   return (typeof v === 'number' && isFinite(v)) ? String(Math.round(v * 100) / 100) : '';
 }
-function stepPrior() {
-  const main = $('main');
-  const m = { title: 'Comparison with prior PFT(s)', intro: 'Pick how long ago the prior study was, then enter whatever values it has. The report gives absolute, % and annualised change with the threshold markers. Use % predicted only when both studies used the same reference equations; otherwise compare absolute values.',
-    src: 'ERS/ATS 2022 (change thresholds, FEV1Q, conditional change score for children); ATS/ERS/JRS/ALAT 2022 (progression criteria in fibrosing ILD); annualised decline marker ≥ 8%/yr.' };
-  const warn = h('p', { class: 'warn-line', text: 'The date of this study is not entered (Details step), so changes cannot be annualised.' });
-  widgets.push(() => { warn.hidden = !!S.ctx.date; });
-  const curInputs = P.CUR_FIELDS.map(f => {
-    const id = uid('cur');
-    const inp = h('input', { type: 'text', class: 'num', id: id, inputmode: 'decimal', autocomplete: 'off', value: S.prior.cur[f.id], oninput: (e) => { S.prior.cur[f.id] = e.target.value; sync(); } });
-    widgets.push(() => { const ph = curPlaceholder(f.id); inp.placeholder = ph ? 'from this study: ' + ph : 'not entered'; });
-    return h('div', { class: 'fld' }, [h('label', { for: id, text: f.label }), h('div', { class: 'inwrap' }, [inp, h('span', { class: 'unit', text: f.unit })])]);
-  });
-  const curTag = h('span', { class: 'tag' });
-  widgets.push(() => { const n = P.CUR_FIELDS.filter(f => S.prior.cur[f.id] !== '').length; curTag.textContent = n ? n + ' entered' : ''; curTag.hidden = !n; });
-  const PRIMARY = ['date', 'fev1', 'fvc', 'fev1_pct', 'fvc_pct'];
-  const cards = h('div', { 'data-priors': '1' });
-  function priorInput(p, f) {
-    const id = uid('pr');
-    if (f.type === 'chk') {
-      return h('div', { class: 'chkrow' }, [h('input', { type: 'checkbox', id: id, checked: !!p[f.id], onchange: (e) => { p[f.id] = e.target.checked; sync(); } }), h('label', { for: id, text: f.label })]);
-    }
-    const inp = h('input', { type: f.type === 'date' ? 'date' : 'text', class: f.type === 'date' ? null : 'num', id: id, inputmode: f.type === 'date' ? null : 'decimal', autocomplete: 'off', value: p[f.id],
-      oninput: (e) => { p[f.id] = e.target.value; sync(); } });
-    return h('div', { class: 'fld' }, [h('label', { for: id, text: f.label }), f.type === 'date' ? inp : h('div', { class: 'inwrap' }, [inp, h('span', { class: 'unit', text: f.unit })])]);
-  }
-  function paintCards() {
-    cards.textContent = '';
-    S.prior.list.forEach((p, i) => {
-      const prim = P.PRIOR_FIELDS.filter(f => PRIMARY.indexOf(f.id) >= 0), more = P.PRIOR_FIELDS.filter(f => PRIMARY.indexOf(f.id) < 0 && f.type !== 'chk'), cmp = P.PRIOR_FIELDS.filter(f => f.type === 'chk');
-      const moreOpen = more.some(f => p[f.id] !== '') || ['vol', 'dlco', 'sixmw', 'feno'].some(k => S.tests[k]);
-      const cmpOpen = cmp.some(f => !!p[f.id]);
-      const INTERVALS = [['3 months', 3], ['6 months', 6], ['1 year', 12], ['2 years', 24], ['3 years', 36], ['5 years', 60]];
-      const quick = h('div', { class: 'qdates' }, [h('span', { class: 'hint', text: 'Prior study was about' })].concat(INTERVALS.map(iv =>
-        h('button', { type: 'button', class: 'cp', 'data-months': String(iv[1]), text: iv[0] + ' before',
-          onclick: () => { p.date = shiftMonths(S.ctx.date, iv[1]); paintCards(); sync(); } }))));
-      cards.appendChild(h('div', { class: 'prior-card', 'data-prior': String(i + 1) }, [
-        h('div', { class: 'ph' }, [h('b', { text: 'Prior study #' + (i + 1) }),
-          S.prior.list.length > 1 ? h('button', { type: 'button', class: 'btn sm quiet', text: 'Remove', onclick: () => { S.prior.list.splice(i, 1); paintCards(); sync(); } }) : null]),
-        quick,
-        h('div', { class: 'fields' }, prim.map(f => priorInput(p, f))),
-        h('details', { class: 'optgrp', open: moreOpen }, [h('summary', {}, [h('span', { class: 't', text: 'More measures: FEV1 z-score, TLC, DLCO, 6MWD, FeNO' })]), h('div', { class: 'fields' }, more.map(f => priorInput(p, f)))]),
-        h('details', { class: 'optgrp', open: cmpOpen, 'data-group': 'cmp' }, [h('summary', {}, [h('span', { class: 't', text: 'Comparability: tick anything that differs between the two studies' })]),
-          h('p', { class: 'fine', text: 'A percent-predicted change on different reference equations, a DLCO change on a different hemoglobin basis, or spirometry in a different bronchodilator state is reported with that caveat and is not read as a physiologic change.' }),
-          h('div', { class: 'fields' }, cmp.map(f => priorInput(p, f)))])
-      ]));
-    });
-    addBtn.hidden = S.prior.list.length >= P.MAX_PRIORS;
-  }
-  const addBtn = h('button', { type: 'button', class: 'btn', text: '+ Add another prior study', onclick: () => { S.prior.list.push(P.blankPrior()); paintCards(); sync(); } });
-  paintCards();
-  main.appendChild(h('div', { class: 'card' }, [
-    stepHead(m.title, m.intro, m.src, 'test.prior'),
-    h('section', { class: 'grp' }, [h('div', { class: 'grp-head' }, [h('h3', { text: 'Prior studies, most recent first' })]), warn, cards, h('div', { style: 'margin-top:12px' }, [addBtn])]),
-    h('details', { class: 'optgrp', 'data-group': 'current', open: P.CUR_FIELDS.some(f => S.prior.cur[f.id] !== '') }, [
-      h('summary', {}, [h('span', { class: 't', text: 'Override the current values (optional): blank means taken from this study' }), curTag]),
-      h('div', { class: 'fields' }, curInputs)]),
-    liveBox('prior'),
-    navRow()
-  ]));
-}
-
 /* ------------------------------------------------------------- wording level */
-const STYLE_OPTS = [['concise', 'Concise'], ['standard', 'Standard'], ['expanded', 'Detailed'], ['numeric', 'With numbers']];
+const STYLE_OPTS = [['concise', 'Concise'], ['standard', 'Standard'], ['expanded', 'Detailed']];
 function styleRow() {
   const btns = STYLE_OPTS.map(o => h('button', { type: 'button', class: 'ch', role: 'radio', 'data-v': o[0], 'aria-checked': 'false', text: o[1], onclick: () => { S.settings.style = o[0]; sync(); } }));
   widgets.push(() => btns.forEach(b => b.setAttribute('aria-checked', String(S.settings.style === b.getAttribute('data-v')))));
   return h('div', { class: 'prm ch-row', 'data-field': 'settings.style' }, [
-    h('div', { class: 'prm-top' }, [h('span', { class: 'prm-l', text: 'Wording level' }), h('span', { class: 'hint', text: 'How each finding is phrased in the test sections: concise sentences, standard, detailed with the caveat, or with the measured numbers when they were entered' })]),
+    h('div', { class: 'prm-top' }, [h('span', { class: 'prm-l', text: 'Wording level' }), h('span', { class: 'hint', text: 'Concise: findings only. Standard: numbers, then findings. Detailed: adds the caveats.' })]),
     h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Wording level' }, btns)
   ]);
 }
@@ -5738,12 +5793,13 @@ function suggestCard() {
     onclick: () => { if (S.review[sg.id]) delete S.review[sg.id]; else S.review[sg.id] = true; sync(); } },
     [h('span', { class: 'sug-l', text: sg.label }), h('span', { class: 'sug-t', text: sg.text })]));
   const n = list.filter(x => x.on).length;
-  return h('section', { class: 'card sugs', id: 'suggest', 'aria-labelledby': 'sg-h' }, [
-    h('div', { class: 'hu-head' }, [h('h2', { id: 'sg-h', text: 'Suggested additions (tap to include)' }), h('span', { class: 'chip ' + (n ? 'ok' : 'note'), text: n ? n + ' included' : 'none included' })]),
-    h('p', { class: 'fine', text: 'Interpretive wording that needs your judgement: the numbers make it relevant, but it is never inserted on its own. Tapped sentences join the Interpretation; tap again to remove.' }),
+  return h('details', { class: 'card sugs fold-card', id: 'suggest', open: n > 0 || foldOpen.suggest, ontoggle: (e) => { foldOpen.suggest = e.target.open; } }, [
+    h('summary', { class: 'hu-head' }, [h('h2', { id: 'sg-h', text: 'Optional wording' }), h('span', { class: 'chip ' + (n ? 'ok' : 'note'), text: n ? n + ' included' : plural(list.length, 'suggestion') })]),
+    h('p', { class: 'fine', text: 'Interpretive sentences the numbers make relevant. Tap to add one to the interpretation; tap again to remove.' }),
     h('div', { class: 'sug-list' }, chips)
   ]);
 }
+const foldOpen = { suggest: false, dx: false, hu: false };
 
 /* Differential considerations and additional studies, offered per verified finding and included only when tapped. */
 function dxToggle(id) { if (S.review[id]) delete S.review[id]; else S.review[id] = true; sync(); }
@@ -5766,10 +5822,10 @@ function dxCard() {
   if (!groups.length) return null;
   const nDx = groups.reduce((a, g) => a + g.dx.filter(x => x.on).length, 0);
   const nSt = (R.studies || []).length;
-  const sum = h('span', { class: 'chip ' + (nDx || nSt ? 'ok' : 'note'), text: nDx || nSt ? [nDx ? plural(nDx, 'differential') : '', nSt ? plural(nSt, 'study', 'studies') : ''].filter(Boolean).join(', ') + ' included' : 'none included' });
-  const card = h('section', { class: 'card dxs', id: 'differentials', 'aria-labelledby': 'dx-h' }, [
-    h('div', { class: 'hu-head' }, [h('h2', { id: 'dx-h', text: 'Differentials and additional studies (tap to include)' }), sum]),
-    h('p', { class: 'fine', text: 'For each verified finding: the physiologic causes that produce it and the studies that sort them out. Nothing is inserted on its own. Tapped differentials join the Interpretation as one sentence per finding; tapped studies are listed once under "Additional studies to consider". Tap again to remove.' })
+  const sum = h('span', { class: 'chip ' + (nDx || nSt ? 'ok' : 'note'), text: nDx || nSt ? [nDx ? plural(nDx, 'differential') : '', nSt ? plural(nSt, 'study', 'studies') : ''].filter(Boolean).join(', ') + ' included' : 'for ' + plural(groups.length, 'finding') });
+  const card = h('details', { class: 'card dxs fold-card', id: 'differentials', open: nDx + nSt > 0 || foldOpen.dx, ontoggle: (e) => { foldOpen.dx = e.target.open; } }, [
+    h('summary', { class: 'hu-head' }, [h('h2', { id: 'dx-h', text: 'Differentials and additional studies' }), sum]),
+    h('p', { class: 'fine', text: 'Tap a differential to add it to the interpretation (one sentence per finding) and a study to list it under "Additional studies to consider". Tap again to remove.' })
   ]);
   groups.forEach(g => card.appendChild(h('div', { class: 'dx-group', 'data-dx-group': g.key }, [
     h('h3', { text: 'For ' + g.title }),
@@ -5798,7 +5854,7 @@ function reportDoc() {
   ])));
   const codes = uniq(R.sections.reduce((a, s) => a.concat(s.codes || []), []));
   doc.appendChild(h('div', { class: 'interp' }, [h('h3', { text: 'Interpretation' }),
-    R.impression.length ? h('ol', {}, R.impression.map(t => h('li', { text: t }))) : h('p', { class: 'fine', text: 'No interpretable data entered.' }),
+    R.impression.length ? h('p', { class: 'impr-p' }, R.impression.map(t => h('span', { class: 'impr-s', text: t + ' ' }))) : h('p', { class: 'fine', text: 'No interpretable data entered.' }),
     codes.length ? h('div', { class: 'codes-row', 'data-codes': codes.join(',') }, [h('span', { class: 'fine' }, ['Annals ATS 2025 codes', h('span', { class: 'noprint', text: ' (tap for meaning)' })]), h('span', { class: 'codes' }, codes.map(codeChip))]) : null]));
   const sb = studiesBlock(); if (sb) doc.appendChild(sb);
   return doc;
@@ -5815,9 +5871,9 @@ function huItem(x) {
     h('button', { type: 'button', class: 'rt', 'aria-pressed': String(fbk === 'n'), 'data-rate': 'n', text: 'Not useful', onclick: () => { fbSet(x.id, x.title, fbGet(x.id) === 'n' ? '' : 'n'); repaintRate(); } })
   ]);
   function repaintRate() { rate.querySelectorAll('.rt').forEach(b => b.setAttribute('aria-pressed', String(fbGet(x.id) === b.getAttribute('data-rate')))); }
-  return h('div', { class: 'hu-item', 'data-lvl': x.lvl, 'data-id': x.id }, [
-    h('div', { class: 'lv' }, [h('span', { class: 'chip ' + x.lvl, text: LVL[x.lvl] || x.lvl }), h('span', { class: 'cat', text: x.cat })]),
-    h('div', {}, [h('h4', { text: x.title }), h('p', { text: x.text }), x.look && x.look.length ? lookFigures(x.look) : null, canRate ? rate : null])
+  return h('details', { class: 'hu-item', 'data-lvl': x.lvl, 'data-id': x.id, open: x.lvl === 'alert' }, [
+    h('summary', {}, [h('span', { class: 'chip ' + x.lvl, text: LVL[x.lvl] || x.lvl }), h('span', { class: 'hu-t', text: x.title })]),
+    h('div', { class: 'hu-b' }, [h('span', { class: 'cat', text: x.cat }), h('p', { text: x.text }), x.look && x.look.length ? lookFigures(x.look) : null, canRate ? rate : null])
   ]);
 }
 function headsupCard() {
@@ -5827,8 +5883,8 @@ function headsupCard() {
   const c = R.counts;
   const sum = h('div', { class: 'hu-sum' }, ['alert', 'caution', 'tip', 'note'].filter(k => c[k]).map(k => h('span', { class: 'chip ' + k, text: c[k] + ' ' + (k === 'tip' ? 'look-for' : k) })));
   const card = h('section', { class: 'card hu', id: 'headsup', 'aria-labelledby': 'hu-h' }, [
-    h('div', { class: 'hu-head' }, [h('h2', { id: 'hu-h', text: 'Heads-up: discordance and what to look for' }), sum]),
-    h('p', { class: 'fine', text: 'For the interpreter, not part of the report: internal inconsistencies, data-entry problems, technique and quality issues, the waveform to check on the tracing, missing tests that would change the reading, and changes on prior studies.' })
+    h('div', { class: 'hu-head' }, [h('h2', { id: 'hu-h', text: 'Heads-up' }), sum]),
+    h('p', { class: 'fine', text: 'For you, not the report: discordance, data-entry checks, technique, what to look for on the tracing, and missing tests that would change the reading. Tap an item to open it.' })
   ]);
   if (!all.length) {
     card.appendChild(h('div', { class: 'hu-empty' }, [h('span', { class: 'chip ok', text: R.anyData ? 'Clear' : 'Waiting' }),
@@ -5851,9 +5907,9 @@ function stepReport() {
       h('button', { type: 'button', class: 'btn', id: 'save-bank', text: 'Save to case bank', onclick: () => { const pn = $('bank-save'); if (pn) { pn.hidden = !pn.hidden; if (!pn.hidden) { const i = pn.querySelector('input[type=text]'); if (i) i.focus(); } } } })
     ])]),
     bankSavePanel(),
-    h('div', { id: 'fallback', class: 'fallback' })
+    h('div', { id: 'fallback', class: 'fallback' }),
+    h('div', { class: 'style-inline' }, [styleRow()])
   ]));
-  main.appendChild(h('div', { class: 'card' }, [styleRow()]));
   // the report, the suggested additions and the heads-up repaint whenever the result changes (wording level, a tapped suggestion)
   const live = h('div', { id: 'report-live' });
   let liveKey = null;
@@ -5920,7 +5976,7 @@ function paintPreview() {
   const had = prev.impr || [];
   doc.appendChild(h('div', { class: 'interp' }, [h('h3', { text: 'Interpretation' }),
     R.impression.length
-      ? h('ol', {}, R.impression.map(t => h('li', { class: prev.impr && had.indexOf(t) < 0 ? 'chg' : '', text: t })))
+      ? h('p', { class: 'impr-p' }, R.impression.map(t => h('span', { class: 'impr-s' + (prev.impr && had.indexOf(t) < 0 ? ' chg' : ''), text: t + ' ' })))
       : h('p', { class: 'pv-empty', text: 'The synthesis appears here once values are entered.' }),
     codes.length ? h('div', { class: 'codes-row' }, [h('span', { class: 'fine', text: 'Annals ATS 2025 codes' }), h('span', { class: 'codes' }, codes.map(codeChip))]) : null]));
   const sbp = studiesBlock(); if (sbp) doc.appendChild(sbp);
@@ -5982,7 +6038,6 @@ function render() {
   else if (mode === 'bank') stepBank();
   else if (step === 'tests') stepTests();
   else if (step === 'ctx') stepCtx();
-  else if (step === 'prior') stepPrior();
   else if (step === 'report') stepReport();
   else stepModule(step);
   renderPreview();
@@ -6450,6 +6505,9 @@ function eduBlocks(id, topic) {
   topic.blocks.forEach(b => {
     if (b.terms) { eduTerms(id).forEach(x => out.push(x)); return; }
     if (b.catalog) { catalogBrowser().forEach(x => out.push(x)); return; }
+    if (b.examples) { out.push(h('div', { class: 'ex-list' }, X.EXAMPLES.map(e => h('button', { type: 'button', class: 'ex', 'data-example': e.name,
+      onclick: () => { const st = X.buildExample(P, e); if (!st.ctx.date) st.ctx.date = todayISO(); loadState(st, 'report', 'Loaded example: ' + e.name); } },
+      [h('b', { text: e.name }), h('span', { text: e.desc })])))); return; }
     if (b.src) { out.push(h('h3', { text: 'Sources' })); out.push(h('ul', { class: 'srcs' }, b.src.map(x => h('li', { text: x })))); return; }
     if (b.h) out.push(h('h3', { text: b.h }));
     if (b.p) out.push(h('p', { text: b.p }));

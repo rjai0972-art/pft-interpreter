@@ -4,6 +4,13 @@ const path = require('path');
 const FILE = process.env.PFT_URL || ('file://' + path.join(__dirname, '..', 'dist', 'PFT_Interpreter_standalone.html'));
 const SHOTS = path.join(__dirname, '..', 'shots2');
 let fails = 0, passes = 0;
+async function loadExample(page, i, tap) {
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'examples' }));
+  await page.waitForSelector('.learn-body[data-topic="examples"] .ex');
+  const el = page.locator('.learn-body[data-topic="examples"] .ex').nth(i);
+  if (tap) await el.tap(); else await el.click();
+  await page.waitForSelector('#doc');
+}
 const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m); } };
 (async () => {
   const browser = await chromium.launch();
@@ -54,7 +61,7 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
     const b = await pop.boundingBox(), vp = page.viewportSize();
     ok(b && b.x >= 0 && b.y >= 0 && b.x + b.width <= vp.width + 0.5 && b.y + b.height <= vp.height + 0.5, 'pop-up inside the viewport: ' + label + ' ' + JSON.stringify(b));
   };
-  await page.locator('.side-card h3 .ib').first().click(); await page.waitForTimeout(100); await inView('z-key'); await page.keyboard.press('Escape');
+  await page.locator('.ttw .ib').first().click(); await page.waitForTimeout(100); await inView('test info'); await page.keyboard.press('Escape');
 
   // every (i) on every step maps to a glossary entry
   await page.getByRole('button', { name: 'Full PFT', exact: true }).click();
@@ -82,7 +89,7 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
 
   /* ---------------- Learn ---------------- */
   const topics = await page.evaluate(() => Object.keys(window.PFT_EDU.topics));
-  ok(topics.length === 20, '20 topics: ' + topics.length);
+  ok(topics.length === 21, '21 topics: ' + topics.length);
   for (const id of topics) {
     await page.locator('.ln-btn[data-topic="' + id + '"]').click();
     const t = await page.locator('.learn-body').innerText();
@@ -98,7 +105,6 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
   ok(await page.locator('.steps').isVisible(), 'back to the case: steps visible');
 
   /* ---------------- 6MWD trend ---------------- */
-  await page.locator('.ex').count();
   await page.locator('.steps .pill', { hasText: '6MWT' }).click();
   ok(await page.locator('.tr-block').count() === 1, 'trend block on the 6MWT step');
   ok(await page.locator('.tr-empty').count() === 1, 'empty-state message before two walks');
@@ -148,10 +154,10 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
 
   /* ---------------- tips with pictures ---------------- */
   await page.locator('.vw[data-view="case"]').click();
-  await page.locator('.steps .pill', { hasText: 'Tests' }).click();
-  await page.locator('.ex').nth(2).click(); // low FVC no lung volumes
+  await loadExample(page, 2); // low FVC no lung volumes
   const tip1 = page.locator('.hu-item[data-id="TIP1"]');
   ok(await tip1.count() === 1, 'restriction tip present on the low-FVC example');
+  await tip1.locator('summary').click();
   ok(await tip1.locator('.look-fig svg').count() === 2, 'tip shows two loop pictures');
   ok(/steep expiratory limb/.test(await tip1.innerText()), 'tip caption text');
   ok(await page.locator('.hu-item[data-lvl="tip"] .chip.tip').first().innerText() === 'Look for', 'tip chip label');
@@ -160,33 +166,30 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
   await page.locator('.hu-item[data-lvl="tip"]').first().scrollIntoViewIfNeeded();
   await page.screenshot({ path: SHOTS + '/e_tip.png' });
   // upper airway tip
-  await page.locator('.steps .pill', { hasText: 'Tests' }).click();
-  await page.locator('.ex').nth(5).click();
+  await loadExample(page, 5);
   const ids = await page.locator('.hu-item').evaluateAll(els => els.map(e => e.getAttribute('data-id')));
   ok(ids.indexOf('TIP4') >= 0, 'upper-airway tip on the upper-airway example: ' + ids.join());
   ok(await page.locator('.hu-item[data-id="TIP4"] .look-fig').count() === 3, 'upper-airway tip shows the three loop pictures');
-  await page.locator('.ex').count();
-  await page.locator('.steps .pill', { hasText: 'Tests' }).click();
-  await page.locator('.ex').nth(6).click();
+  await loadExample(page, 6);
 
   // ratings tune notes/tips only
   const item = page.locator('.hu-item[data-lvl="note"]').first();
   const nid = await item.getAttribute('data-id');
+  await item.locator('summary').click();
   await item.locator('.rt[data-rate="n"]').click();
   ok(await item.locator('.rt[data-rate="n"]').getAttribute('aria-pressed') === 'true', 'rating pressed');
   await item.locator('.rt[data-rate="n"]').click();
   ok(await item.locator('.rt[data-rate="n"]').getAttribute('aria-pressed') === 'false', 'rating toggles off');
   await page.evaluate((id) => { localStorage.setItem('pft.feedback.v1', JSON.stringify((() => { const o = {}; o[id] = { title: 't', by: { a: 'n', b: 'n', c: 'n' } }; o['__alert'] = { title: 'x', by: { a: 'n', b: 'n', c: 'n', d: 'n' } }; return o; })())); }, nid);
   await page.reload(); await page.waitForSelector('.tgrid');
-  await page.locator('.ex').nth(6).click();
+  await loadExample(page, 6);
   ok(await page.locator('#headsup > .hu-item[data-id="' + nid + '"]').count() === 0, 'a note rated not useful three times moves out of the main list');
   ok(await page.locator('.hu-quiet .hu-item[data-id="' + nid + '"]').count() === 1, 'it is kept in the quieter list');
   ok(await page.locator('.hu-item[data-lvl="alert"], .hu-item[data-lvl="caution"]').count() >= 1, 'alerts and cautions stay visible');
   await page.evaluate(() => localStorage.removeItem('pft.feedback.v1'));
 
   /* ---------------- code chips ---------------- */
-  await page.locator('.steps .pill', { hasText: 'Tests' }).click();
-  await page.locator('.ex').nth(0).click();
+  await loadExample(page, 0);
   const cc = page.locator('.codes-row .code-btn').first();
   ok(await cc.count() === 1, 'code chips on the interpretation');
   await cc.click(); await page.waitForTimeout(100);
@@ -257,8 +260,7 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
   ok(await page.locator('.bank-case').count() === 4, 'a minimal case imports and is normalised');
   // similar cases
   await page.locator('.vw[data-view="case"]').click();
-  await page.locator('.steps .pill', { hasText: 'Tests' }).click();
-  await page.locator('.ex').nth(0).click();
+  await loadExample(page, 0);
   await page.locator('.steps .pill', { hasText: 'Flow–volume loop' }).click();
   await page.locator('[data-field="fvl.loop"] .lp-tile[data-loop="concave"]').click();   // now differs from the saved COPD case
   await page.locator('.steps .pill', { hasText: 'Report' }).click();
@@ -292,7 +294,7 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
   await mp.locator('.ln-btn, .learn-toggle').first().count();
   await mp.locator('.learn-toggle').tap(); await mp.locator('.ln-btn[data-topic="equations"]').tap(); await mp.waitForSelector('.learn-body[data-topic="equations"]'); await ov('learn equations');
   await mp.locator('.vw[data-view="case"]').tap();
-  await mp.locator('.ex').nth(1).tap();
+  await loadExample(mp, 1, true);
   await mp.locator('.steps .pill', { hasText: '6MWT' }).tap();
   await ov('6MWT step'); await mp.screenshot({ path: SHOTS + '/m_six.png', fullPage: true });
   await mp.locator('.steps .pill', { hasText: 'Report' }).tap(); await ov('report with tips'); await mp.screenshot({ path: SHOTS + '/m_report.png', fullPage: true });

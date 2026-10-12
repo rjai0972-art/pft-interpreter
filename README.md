@@ -81,27 +81,30 @@ and the single-file browser version (`PFT_Interpreter_standalone.html`) always w
 - Code signing is optional and not set up. For Windows add a signing certificate to the build; for Mac add an Apple Developer ID and notarization.
   Until then the first-launch steps above are needed.
 
-## How the reading is built (version 3.4)
+## How the reading is built (version 4.0)
 
-The report is assembled from a reviewed adult PFT phrase catalog (279 findings, 901 wording variants; original
-wording anchored to the ERS/ATS 2022 interpretive standard, ATS/ERS 2019 spirometry, ERS/ATS 2023 lung volumes,
-ERS/ATS 2017 DLCO, ERS 2019 respiratory-muscle and ERS 2017 challenge standards) and a rules layer that computes
-every measurement state before any wording is chosen. Unknown never counts as normal; a component that failed
-quality criteria drives no pattern or severity statement; a low FVC is "restriction unconfirmed" until TLC is known;
-a preserved KCO never cancels a low DLCO; the hemoglobin basis is stated, not assumed. The Interpretation reads the
-ventilatory pattern, lung volumes and gas transfer together, then the bronchodilator response, the adjunct tests and
-the serial change. Interpretive context (disease names, differentials, follow-up) is offered as suggested additions
-and included only when tapped. For each verified finding (isolated low DLCO, restriction with or without preserved
-gas transfer, unconfirmed low FVC, nonspecific pattern, obstruction, mixed pattern, air trapping, upper-airway loop,
-high DLCO, low respiratory pressures, exertional desaturation, positive challenge, high FeNO, a normal study in a
-symptomatic patient) the Report step also offers the differential considerations and the additional studies that
-sort them out, each as a tap: tapped differentials join the Interpretation as one sentence per finding, tapped
-studies are listed once under "Additional studies to consider", and nothing is inserted on its own (version 3.3).
-Each test section states its metrics in one composed sentence rather than one sentence per metric: metrics in the same
-state are grouped ("FEV1, FVC and FEV1/FVC are all within reference limits"; "FEV1/FVC is reduced (z = −2.3), with FEV1
-moderately reduced (z = −3.1); FVC is within reference limits"), the defining measurement leads when abnormal, and a
-metric that failed quality keeps its own sentence (version 3.4). When the laboratory reports no predicted 6MWD, the
-app calculates it with the Enright & Sherrill 1998 equation (the MDCalc 6-minute walk distance calculator) from age,
-sex, height and weight, with the LLN at predicted − 153 m (men) or − 139 m (women); a reported predicted value always
-takes precedence, and the report says which was used.
+The rules layer computes every measurement state before any wording is chosen (ERS/ATS 2022 z-scores and the LLN;
+a reviewed adult phrase catalog anchored to the ERS/ATS 2022, ATS/ERS 2019, ERS/ATS 2023, ERS/ATS 2017, ERS 2019 and
+ERS 2017 standards sits underneath for the optional wording, the detailed level and the Learn section). Unknown never
+counts as normal; a component that failed quality criteria drives no pattern or severity statement; a low FVC is
+"restriction unconfirmed" until TLC is known; a preserved KCO never cancels a low DLCO; the hemoglobin basis is
+stated, not assumed.
+
+The report is written the way a reading physician dictates it. Each test section gives the numbers first (when they
+were entered) and then one plain sentence that groups the indices by state: "FEV1, FVC and FEV1/FVC are all normal";
+"FEV1/FVC is reduced, with a moderately reduced FEV1 and a normal FVC"; "TLC is moderately reduced, with a normal
+RV/TLC". A prior study is compared inside the section it belongs to, with the percent change and whether it is a
+significant change ("Compared with Mar 1, 2024 (1 year earlier): FEV1 1.85 → 1.55 L (−300 mL, −16%), a significant
+decline; FVC 3.30 → 3.20 L (−3%), not a significant change"): 15% for FEV1 and FVC (ERS/ATS 2022), 10% for DLCO,
+30 m for the 6MWD, the ATS 2011 thresholds for FeNO, and the FVC 5-point / DLCO 10-point progression criteria for
+fibrotic ILD (ATS/ERS/JRS/ALAT 2022). The INTERPRETATION is one paragraph: the ventilatory pattern with the lung
+volumes and gas transfer, the bronchodilator response, the adjunct tests, then the serial change. Interpretive
+context (disease names, differentials, additional studies) is offered on the Report step and included only when
+tapped. When the laboratory reports no predicted 6MWD, the app calculates it with the Enright & Sherrill 1998 equation
+(the MDCalc 6-minute walk distance calculator) from age, sex, height and weight; a reported value always takes
+precedence, and the report says which was used.
+
+The interface is deliberately spare: nothing is pre-selected, each index is a row of taps (tap again to clear), quality
+and limitations sit in a collapsed panel, a prior study is a checkbox on the test's own step, and the worked examples
+live under Learn.
 Source code and tests: `web/`; the catalog and its rule specification: `web/catalog/`.

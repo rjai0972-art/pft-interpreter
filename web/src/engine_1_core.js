@@ -42,7 +42,7 @@ function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
 function sentence(s) {
   s = String(s || '').trim();
   if (!s) return '';
-  if (!/^[a-z][A-Z]/.test(s)) s = cap(s);      // keep "pH", "mL" etc. as written
+  if (!/^[a-z][A-Z]/.test(s) && !/^z[- ]/.test(s)) s = cap(s);      // keep "pH", "mL", "z-scores" as written
   return /[.!?]$/.test(s) ? s : s + '.';
 }
 function ageInterp(lo, hi, age, a0, a1) { // linear interpolation helper
@@ -138,7 +138,7 @@ const TESTS = [
   { key: 'sixmw',  group: 'Exercise & gas exchange', name: '6-minute walk test',             desc: 'Distance, desaturation, HR recovery' },
   { key: 'cpet',   group: 'Exercise & gas exchange', name: 'Cardiopulmonary exercise test',  desc: 'Peak VO2, reserves, gas-exchange pattern' },
   { key: 'gas',    group: 'Exercise & gas exchange', name: 'Arterial blood gas',             desc: 'pH, PaCO2, PaO2, A–a gradient' },
-  { key: 'prior',  group: 'Comparison',            name: 'Comparison with prior PFT(s)',     desc: '% change, annualised decline, thresholds' }
+  { key: 'prior',  group: 'Comparison',            name: 'Comparison with prior PFT(s)',     desc: '% change, annualised decline, thresholds', hidden: true }
 ];
 
 const PRESETS = [
@@ -146,7 +146,7 @@ const PRESETS = [
   { name: 'Spirometry only',             tests: ['spiro', 'fvl'] },
   { name: 'Spirometry + BD',             tests: ['spiro', 'fvl', 'bd'] },
   { name: 'Spiro + BD + volumes + FeNO', tests: ['spiro', 'fvl', 'bd', 'vol', 'feno'] },
-  { name: 'ILD work-up',                 tests: ['spiro', 'fvl', 'vol', 'dlco', 'sixmw', 'prior'] },
+  { name: 'ILD work-up',                 tests: ['spiro', 'fvl', 'vol', 'dlco', 'sixmw'] },
   { name: 'Neuromuscular',               tests: ['spiro', 'fvl', 'vol', 'mip', 'post'] },
   { name: 'Asthma: spiro + BD + FeNO',   tests: ['spiro', 'fvl', 'bd', 'feno'] },
   { name: 'Methacholine challenge',      tests: ['spiro', 'fvl', 'bronch'] },
@@ -196,7 +196,7 @@ const LOOPS = [
 ];
 
 const Q_OPTS = [['', 'Not graded'], ['A', 'A'], ['B', 'B'], ['C', 'C'], ['D', 'D'], ['E', 'E'], ['U', 'U'], ['F', 'F']];
-const QC_OPTS = [['', 'Acceptable'], ['limited', 'Technical factors reduce confidence'], ['inv', 'Not interpretable']];
+const QC_OPTS = [['', 'Not noted (acceptable)'], ['limited', 'Technical factors reduce confidence'], ['inv', 'Not interpretable']];
 /* Documented maneuver limitations (ATS/ERS 2019 acceptability criteria). Each one limits a named component; none is inferred from a number. */
 const LIMITS = [
   { title: 'Documented limitations (tap what the lab or the tracing shows)', opts: [
@@ -246,10 +246,10 @@ const SCHEMA = {
         P('fvc', 'FVC', 'gradeH', { hint: 'Low FVC with a low ratio = air trapping or coexisting restriction; needs lung volumes' }),
         P('fef', 'FEF25–75% (informational)', 'both', { hint: 'Not used to define obstruction or severity (ERS/ATS 2022)' })
       ] },
-      { title: 'Quality (graded separately for FEV1 and FVC)', fields: [
+      { title: 'Quality (graded separately for FEV1 and FVC)', fold: true, fields: [
         S('qual_fev1', 'FEV1 grade', Q_OPTS, { hint: 'ATS/ERS 2019: A–B good; C–E usable, reduced confidence; U usable only; F not usable' }),
         S('qual_fvc', 'FVC grade', Q_OPTS, { hint: 'A cough in the first second can spoil FEV1 while FVC stays usable, and early termination spoils FVC while FEV1 stays usable' }),
-        S('effort', 'Effort / cooperation', [['', 'Adequate'], ['poor', 'Submaximal effort'], ['weak', 'Weakness suspected']]),
+        S('effort', 'Effort / cooperation', [['', 'Not noted'], ['poor', 'Submaximal effort'], ['weak', 'Weakness suspected']]),
         M('limits', 'Limitations noted on the report', LIMITS, { hint: 'Only tap what is documented; the interpretation states which component each limitation affects' })
       ] },
       { title: 'Measured values (optional)', opt: true, fields: [
@@ -271,7 +271,7 @@ const SCHEMA = {
         P('post_ratio', 'Post-BD FEV1/FVC', 'ratio', { hint: 'Persistently below the LLN after the bronchodilator = persistent airflow obstruction' }),
         P('post_fev1', 'Post-BD FEV1', 'grade')
       ] },
-      { title: 'Administration', fields: [
+      { title: 'Administration', fold: true, fields: [
         S('agent', 'Bronchodilator given', [['', 'Not recorded'], ['albuterol 400 mcg', 'Albuterol 400 mcg'], ['albuterol plus ipratropium', 'Albuterol + ipratropium'], ['another bronchodilator', 'Other']]),
         S('held', 'Home bronchodilators', HELD_OPTS)
       ] },
@@ -294,7 +294,7 @@ const SCHEMA = {
         { id: 'loop', label: 'Loop shape', type: 'sel', ui: 'loop', opts: [['', 'Not described']].concat(LOOPS.map(l => [l[0], l[1]])) },
         C('loop_repro', 'Flattening or plateau is reproducible on repeat maneuvers')
       ] },
-      { title: 'Flow indices', fields: [
+      { title: 'Flow indices', fold: true, fields: [
         P('pef', 'PEF', 'lo', { hint: 'Below the LLN is expected with central/upper-airway obstruction, weakness or poor effort' }),
         S('fevpef', 'FEV1/PEF (mL/L/min)', [NR, ['hi', 'Above 8'], ['ok', '8 or below']], { hint: 'Above 8 suggests central or upper-airway obstruction' }),
         S('fifratio', 'FIF50/FEF50', [NR, ['lt', 'Below 1'], ['eq', 'About 1'], ['gt', 'Above 1']], { hint: 'ERS/ATS 2022 Table 6: < 1 variable extrathoracic; ≈ 1 fixed; > 1 variable intrathoracic' }),
@@ -344,12 +344,12 @@ const SCHEMA = {
         P('va', 'VA', 'both'),
         P('kco', 'KCO (DLCO/VA)', 'both')
       ] },
-      { title: 'Blood and quality', fields: [
+      { title: 'Blood and quality', fold: true, fields: [
         S('hbcat', 'Hemoglobin', [NR, ['low', 'Low (anemia)'], ['nl', 'Normal'], ['high', 'High']]),
         S('cohbcat', 'Carboxyhemoglobin', [['', 'Not recorded'], ['nl', 'Below 2%'], ['hi', '2% or higher']], { hint: 'Raised COHb lowers DLCO by about 1% per 1%' }),
         S('vatlc', 'VA/TLC', [NR, ['ok', '0.85 or higher'], ['low', 'Below 0.85']], { hint: '0.85 is the Annals ATS 2025 convention, not a universal cut-off' }),
         S('qc', 'Test quality', QC_OPTS, { hint: 'Standard reporting needs two grade-A maneuvers within 2 mL/min/mmHg; a single usable maneuver is a limitation' }),
-        S('single', 'Number of usable maneuvers', [['', 'Two or more'], ['one', 'Only one usable maneuver']])
+        S('single', 'Number of usable maneuvers', [['', 'Not noted'], ['one', 'Only one usable maneuver']])
       ] },
       { title: 'Measured values (optional)', opt: true, fields: [
         N('hb', 'Hemoglobin', 'g/dL', { step: 0.1, min: 3, max: 25 }),
@@ -391,7 +391,7 @@ const SCHEMA = {
         P('mip', 'MIP (maximal inspiratory pressure)', 'lo'), P('mep', 'MEP (maximal expiratory pressure)', 'lo'), P('snip', 'SNIP (sniff nasal pressure)', 'lo'),
         S('p01', 'P0.1 (respiratory drive)', [['', 'Not done'], ['low', 'Low'], ['wnl', 'Normal'], ['high', 'Elevated']]),
         S('cpfcat', 'Cough peak flow', [['', 'Not done'], ['ok', '270 L/min or more'], ['low', '161–269 L/min'], ['vlow', '160 L/min or less']], { hint: 'Below 270 L/min: reduced cough effectiveness; 160 or less: ineffective cough' }),
-        S('effort', 'Effort and technique', [['', 'Adequate'], ['poor', 'Submaximal effort suspected'], ['bulbar', 'Mouth seal / bulbar limitation'], ['inv', 'Not interpretable']])
+        S('effort', 'Effort and technique', [['', 'Not noted'], ['poor', 'Submaximal effort suspected'], ['bulbar', 'Mouth seal / bulbar limitation'], ['inv', 'Not interpretable']])
       ] },
       { title: 'Measured values (optional)', opt: true, fields: [
         N('mip_v', 'MIP (enter as a magnitude)', 'cmH2O', { step: 1, min: 0, hint: 'A negative sign is ignored: −60 is weaker than −100' }),
@@ -449,7 +449,7 @@ const SCHEMA = {
       ] },
       { title: 'Methacholine result', when: { f: 'type', is: ['mch'] }, fields: [
         S('mch_cat', 'Result as categorised by the lab', [NR, ['neg', 'Negative'], ['bl', 'Borderline'], ['mild', 'Mild'], ['mod', 'Moderate'], ['marked', 'Marked']], { hint: 'ERS 2017: PC20 > 16 normal; 4–16 borderline; 1–4 mild; 0.25–1 moderate; < 0.25 marked (mg/mL); PD20 > 400, 100–400, 25–100, 6–25, < 6 µg' }),
-        S('complete', 'Protocol', [['', 'Completion not recorded'], ['y', 'Completed to the planned maximum'], ['n', 'Stopped before the planned maximum']], { hint: 'A study stopped early is incomplete, not negative' }),
+        S('complete', 'Protocol', [['', 'Not recorded'], ['y', 'Completed to the planned maximum'], ['n', 'Stopped before the planned maximum']], { hint: 'A study stopped early is incomplete, not negative' }),
         S('held', 'Relevant medications', [['', 'Not recorded'], ['y', 'Withheld per protocol'], ['n', 'Not withheld']]),
         C('diluent', 'FEV1 fell substantially after diluent, or the baseline was unstable'),
         C('indet', 'Technically indeterminate (unreliable serial FEV1 measurements)')
@@ -462,7 +462,7 @@ const SCHEMA = {
         S('ex_res', 'Result', [NR, ['neg', 'Negative (fall < 10%)'], ['mild', 'Mild (10–24%)'], ['mod', 'Moderate (25–49%)'], ['sev', 'Severe (50% or more)'], ['ind', 'Single time point only']]),
         C('ex_consec', 'Fall of 10% or more at two consecutive time points')
       ] },
-      { title: 'After challenge', fields: [
+      { title: 'After challenge', fold: true, fields: [
         S('rev', 'Reversal with bronchodilator', [['', 'Not recorded'], ['y', 'Reversed'], ['n', 'Did not reverse']])
       ] },
       { title: 'Methacholine values (optional)', opt: true, when: { f: 'type', is: ['mch'] }, fields: [
@@ -495,8 +495,8 @@ const SCHEMA = {
         S('dist_cat', 'Distance walked', [NR, ['wnl', 'Within normal limits'], ['low', 'Below the LLN']]),
         S('desat', 'Desaturation', [NR, ['none', 'None significant'], ['fall', 'Fall of 4 points or more, nadir above 88%'], ['le88', 'Nadir 88% or lower']]),
         S('hrr', 'Heart-rate recovery at 1 minute', [NR, ['nl', 'Normal'], ['abn', 'Abnormal (13–18 bpm or less)']]),
-        S('o2', 'Oxygen', [['', 'Room air'], ['o2', 'Supplemental oxygen']]),
-        S('stop', 'Completion', [['', 'Completed 6 minutes'], ['early', 'Stopped early']])
+        S('o2', 'Oxygen', [['', 'Not noted (room air)'], ['o2', 'Supplemental oxygen']]),
+        S('stop', 'Completion', [['', 'Not noted (completed)'], ['early', 'Stopped early']])
       ] },
       { title: 'Measured values (optional)', opt: true, fields: [
         N('dist', '6MWD', 'm', { step: 1 }), N('pred', 'Predicted', 'm', { step: 1 }), N('lln', 'LLN', 'm', { step: 1 }), N('pct', '% predicted', '%', { step: 1 }),
@@ -560,7 +560,7 @@ const SCHEMA = {
         S('co2_c', 'PaCO2', [NR, ['hypo', 'Low (below 35)'], ['nl', 'Normal'], ['hyper', 'High (above 45)']]),
         S('hco3_c', 'HCO3', [NR, ['lo', 'Low (below 22)'], ['nl', 'Normal'], ['hi', 'High (above 26)']]),
         S('o2_c', 'PaO2', [NR, ['nl', 'Normal'], ['mild', 'Mildly low (60–79)'], ['hyp', 'Hypoxemic (below 60)']]),
-        S('fio2_c', 'Inspired oxygen', [['', 'Room air'], ['o2', 'Supplemental oxygen']]),
+        S('fio2_c', 'Inspired oxygen', [['', 'Not noted (room air)'], ['o2', 'Supplemental oxygen']]),
         S('aa_c', 'A–a gradient (room air)', [['', 'Not assessed'], ['nl', 'Normal for age'], ['wide', 'Widened']])
       ] },
       { title: 'Measured values (optional)', opt: true, fields: [
@@ -622,7 +622,7 @@ function blankTrendRow() { return { date: '', dist: '', nadir: '', o2: '' }; }
 
 function defaultState() {
   const st = { v: 3, tests: {}, settings: { band: CFG.band, headsupInCopy: false, style: 'standard' }, review: {}, prior: { cur: {}, list: [blankPrior()] }, trend6: { list: [blankTrendRow()] } };
-  TESTS.forEach(t => { st.tests[t.key] = (t.key === 'spiro' || t.key === 'fvl'); });
+  TESTS.forEach(t => { st.tests[t.key] = false; });
   Object.keys(SCHEMA).forEach(k => { st[k] = blankModule(k); });
   CUR_FIELDS.forEach(f => { st.prior.cur[f.id] = ''; });
   return st;
