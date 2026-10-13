@@ -7,45 +7,46 @@
 <title>PFT Interpreter</title>
 <link rel="icon" type="image/png" href="icon.png">
 <style>
-/* Layout: one working column. A stepper pins to the top, each test is one form card with a live
-   "reads as" panel beneath it, and the report is a serif document followed by the heads-up list. */
+/* Layout: the entry form on the left, the running report on the right. Two quiet themes (paper, slate): one accent,
+   hairline borders, colour only where it carries meaning (the severity of a selected category). */
 :root {
-  --bg: #EDF1F2;
+  --bg: #F6F6F3;
   --surface: #FFFFFF;
-  --surface-2: #F5F8F9;
-  --ink: #13242B;
-  --ink-2: #3A4E57;
-  --muted: #5E7079;
-  --line: #D2DBDF;
-  --line-strong: #AEBDC4;
-  --accent: #0A6870;
+  --surface-2: #F0F0EC;
+  --ink: #1C1D1B;
+  --ink-2: #4B4D49;
+  --muted: #797B76;
+  --line: #E3E3DE;
+  --line-strong: #C6C7C1;
+  --accent: #2E5F63;
   --accent-ink: #FFFFFF;
-  --accent-soft: #DCEEEF;
-  --chart-1: #0086A0;   /* chart series: validated for chroma, lightness band and 3:1 contrast on the surface */
-  --c-wnl: #1C7448;     --c-wnl-bg: #E0F1E7;
-  --c-bl: #7F6500;      --c-bl-bg: #FAF0C6;
-  --c-mild: #9B5A00;    --c-mild-bg: #FCE8C6;
-  --c-mod: #B0420A;     --c-mod-bg: #FADCCB;
-  --c-sev: #A51F19;     --c-sev-bg: #F6D2CF;
-  --c-high: #34509E;    --c-high-bg: #DCE3F6;
+  --accent-soft: #E4EDED;
+  --chart-1: #2E7D86;   /* chart series: validated for chroma, lightness band and 3:1 contrast on the surface */
+  --c-wnl: #2F6F4E;     --c-wnl-bg: #E3EFE7;
+  --c-bl: #7A6B1F;      --c-bl-bg: #F3EED2;
+  --c-mild: #9A6414;    --c-mild-bg: #F6E9D2;
+  --c-mod: #AB4F1E;     --c-mod-bg: #F5E0D3;
+  --c-sev: #A0312C;     --c-sev-bg: #F3D9D6;
+  --c-high: #41559B;    --c-high-bg: #E0E4F3;
   --font-ui: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-doc: 'Source Serif 4', 'Iowan Old Style', Georgia, 'Times New Roman', serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --cw: 66px;           /* width of one value box in an index row */
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0D171C; --surface: #14222A; --surface-2: #192B34; --ink: #E5EEF1; --ink-2: #C3D1D7; --muted: #8DA0A9;
-    --line: #28383F; --line-strong: #3C505A; --accent: #55C1C9; --accent-ink: #062A2E; --accent-soft: #123A3F; --chart-1: #1AA3B8;
-    --c-wnl: #6FD39B; --c-wnl-bg: #143525; --c-bl: #E3C557; --c-bl-bg: #3A3213; --c-mild: #F0B35A; --c-mild-bg: #3C2B10;
-    --c-mod: #F29A6C; --c-mod-bg: #40230F; --c-sev: #FF8E86; --c-sev-bg: #44191A; --c-high: #8FA9F2; --c-high-bg: #1B2646;
+    --bg: #141618; --surface: #1B1E21; --surface-2: #22262A; --ink: #E6E6E1; --ink-2: #BEBFB8; --muted: #8C8E88;
+    --line: #2C3034; --line-strong: #434850; --accent: #86B8BB; --accent-ink: #0F1B1C; --accent-soft: #1F2E30; --chart-1: #4FA3AD;
+    --c-wnl: #7BC59C; --c-wnl-bg: #1B2F24; --c-bl: #D6BE5A; --c-bl-bg: #332E15; --c-mild: #E2AC5A; --c-mild-bg: #35290F;
+    --c-mod: #E6946A; --c-mod-bg: #3A2213; --c-sev: #F08E87; --c-sev-bg: #3E1B1A; --c-high: #9DB0EE; --c-high-bg: #1E2541;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #0D171C; --surface: #14222A; --surface-2: #192B34; --ink: #E5EEF1; --ink-2: #C3D1D7; --muted: #8DA0A9;
-  --line: #28383F; --line-strong: #3C505A; --accent: #55C1C9; --accent-ink: #062A2E; --accent-soft: #123A3F; --chart-1: #1AA3B8;
-  --c-wnl: #6FD39B; --c-wnl-bg: #143525; --c-bl: #E3C557; --c-bl-bg: #3A3213; --c-mild: #F0B35A; --c-mild-bg: #3C2B10;
-  --c-mod: #F29A6C; --c-mod-bg: #40230F; --c-sev: #FF8E86; --c-sev-bg: #44191A; --c-high: #8FA9F2; --c-high-bg: #1B2646;
+  --bg: #141618; --surface: #1B1E21; --surface-2: #22262A; --ink: #E6E6E1; --ink-2: #BEBFB8; --muted: #8C8E88;
+  --line: #2C3034; --line-strong: #434850; --accent: #86B8BB; --accent-ink: #0F1B1C; --accent-soft: #1F2E30; --chart-1: #4FA3AD;
+  --c-wnl: #7BC59C; --c-wnl-bg: #1B2F24; --c-bl: #D6BE5A; --c-bl-bg: #332E15; --c-mild: #E2AC5A; --c-mild-bg: #35290F;
+  --c-mod: #E6946A; --c-mod-bg: #3A2213; --c-sev: #F08E87; --c-sev-bg: #3E1B1A; --c-high: #9DB0EE; --c-high-bg: #1E2541;
   color-scheme: dark;
 }
 
@@ -58,26 +59,26 @@ button { cursor: pointer; }
 h1, h2, h3, h4 { margin: 0; text-wrap: balance; }
 p { margin: 0; }
 
-.app { max-width: 1080px; margin-inline: auto; padding-inline: 16px; padding-block: 14px 56px; }
+.app { max-width: 1480px; margin-inline: auto; padding-inline: 16px; padding-block: 12px 56px; }
 
 /* ---- header ---- */
 .top { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; padding-block: 4px 10px; }
 .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .brand svg { flex: none; width: 40px; height: 32px; color: var(--accent); }
-.brand h1 { font-size: 20px; font-weight: 650; letter-spacing: -0.01em; line-height: 1.15; }
+.brand h1 { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.15; }
 .brand p { font-size: 12.5px; color: var(--muted); }
 .top-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); font-weight: 500; font-size: 14px; line-height: 1.2; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 13px; border-radius: 6px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); font-weight: 500; font-size: 13.5px; line-height: 1.2; }
 .btn:hover { border-color: var(--accent); }
-.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary { background: var(--ink); border-color: var(--ink); color: var(--bg); }
 .btn.primary:hover { filter: brightness(1.07); }
 .btn.quiet { border-color: transparent; background: transparent; color: var(--ink-2); }
 .btn.quiet:hover { background: var(--surface-2); border-color: var(--line); }
 .btn.danger { border-color: var(--c-sev); color: var(--c-sev); }
 .btn.sm { padding: 5px 10px; font-size: 13px; }
 
-.chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 600; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink-2); white-space: nowrap; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 500; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink-2); white-space: nowrap; }
 .chip.alert { background: var(--c-sev-bg); border-color: var(--c-sev); color: var(--c-sev); }
 .chip.caution { background: var(--c-mild-bg); border-color: var(--c-mild); color: var(--c-mild); }
 .chip.note { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
@@ -85,19 +86,20 @@ p { margin: 0; }
 button.chip { cursor: pointer; font: inherit; font-size: 12.5px; font-weight: 600; }
 
 /* ---- stepper ---- */
-.steps { display: flex; gap: 6px; overflow-x: auto; padding-block: 8px; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); scrollbar-width: thin; }
-.pill { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink-2); font-size: 13px; white-space: nowrap; flex: none; }
-.pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--line-strong); }
+.steps { display: flex; gap: 2px; overflow-x: auto; padding-block: 6px 0; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); scrollbar-width: thin; border-bottom: 1px solid var(--line); }
+.pill { display: inline-flex; align-items: center; gap: 7px; padding: 7px 11px 9px; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; border-radius: 0; background: transparent; color: var(--ink-2); font-size: 13.5px; white-space: nowrap; flex: none; }
+.pill:hover { color: var(--ink); }
+.pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--line-strong); }
 .pill.has .dot { background: var(--c-wnl); }
 .pill.warn .dot { background: var(--c-sev); }
-.pill[aria-current="step"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
-.pill[aria-current="step"] .dot { background: var(--accent-ink); }
+.pill[aria-current="step"] { color: var(--ink); border-bottom-color: var(--ink); font-weight: 600; }
+.pill .ask { font-size: 11px; font-weight: 600; color: var(--accent); border: 1px solid var(--accent); border-radius: 999px; width: 15px; height: 15px; display: inline-grid; place-items: center; line-height: 1; }
 
 /* ---- main ---- */
 .main { display: grid; gap: 16px; padding-top: 6px; outline: none; }
 .main:focus { outline: none; }
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; min-width: 0; }
-.card > h2, .step-head h2 { font-size: 22px; font-weight: 650; letter-spacing: -0.01em; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 18px; min-width: 0; }
+.card > h2, .step-head h2 { font-size: 19px; font-weight: 600; letter-spacing: -0.01em; }
 .step-head { display: grid; gap: 6px; margin-bottom: 8px; }
 .step-head .intro { color: var(--ink-2); max-width: 70ch; }
 .src { font-size: 12.5px; color: var(--muted); max-width: 90ch; }
@@ -113,7 +115,7 @@ button.chip { cursor: pointer; font: inherit; font-size: 12.5px; font-weight: 60
 .tt input { margin-top: 3px; width: 17px; height: 17px; accent-color: var(--accent); flex: none; }
 .tt .nm { font-weight: 600; font-size: 14px; display: block; }
 .tt .ds { font-size: 12.5px; color: var(--muted); display: block; }
-.tt.on { border-color: var(--accent); background: var(--accent-soft); }
+.tt.on { border-color: var(--ink); background: var(--surface-2); }
 .presets { display: flex; flex-wrap: wrap; gap: 6px; }
 .start-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 18px; }
 .start-row .count { color: var(--muted); font-size: 13.5px; }
@@ -169,7 +171,7 @@ input.bad { border-color: var(--c-sev); }
 .prm-l { font-weight: 600; font-size: 14.5px; }
 .prm-row { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
 .seg { display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; }
-.sg { padding: 5px 10px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--surface); color: var(--ink-2); font-size: 13px; line-height: 1.25; }
+.sg { padding: 5px 9px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--surface); color: var(--ink-2); font-size: 13px; line-height: 1.25; white-space: nowrap; }
 .sg:hover { border-color: var(--accent); }
 .sg[aria-pressed="true"] { font-weight: 650; border-color: var(--ink-2); background: var(--surface-2); color: var(--ink); }
 .sg[aria-pressed="true"][data-v="wnl"] { background: var(--c-wnl-bg); border-color: var(--c-wnl); color: var(--c-wnl); }
@@ -187,14 +189,9 @@ input.bad { border-color: var(--c-sev); }
 .zwrap .st b { color: var(--ink-2); font-weight: 600; }
 .note-inline { font-size: 12.5px; color: var(--c-mild); }
 
-/* ---- live read ---- */
-.live { margin-top: 16px; padding: 14px 16px; border: 1px dashed var(--line-strong); border-radius: 8px; background: var(--surface-2); display: grid; gap: 8px; }
-.live h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.live p { font-family: var(--font-doc); font-size: 15px; line-height: 1.55; max-width: 78ch; }
-.live .empty { color: var(--muted); font-family: var(--font-ui); font-size: 13.5px; }
+/* ---- codes, nav ---- */
 .code { display: inline-block; font-family: var(--font-mono); font-size: 11.5px; padding: 1px 6px; border-radius: 4px; background: var(--accent-soft); color: var(--accent); font-weight: 500; }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.live h3 .codes { display: inline-flex; flex-wrap: wrap; gap: 4px; }
 .nav { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; margin-top: 18px; }
 
 /* ---- prior ---- */
@@ -210,9 +207,9 @@ input.bad { border-color: var(--c-sev); }
 .doc .dt { font-family: var(--font-ui); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
 .doc .meta { font-family: var(--font-ui); font-size: 13px; color: var(--ink-2); display: grid; gap: 2px; margin-top: 6px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
 .doc .sec { margin-top: 16px; display: grid; gap: 4px; }
-.doc .sec h3 { font-family: var(--font-ui); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 650; color: var(--accent); display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.doc .sec h3 { font-family: var(--font-ui); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; color: var(--ink-2); display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .doc .sec p { font-size: 16px; line-height: 1.6; max-width: 80ch; }
-.doc .interp { margin-top: 22px; padding-top: 14px; border-top: 2px solid var(--ink); }
+.doc .interp { margin-top: 22px; padding-top: 14px; border-top: 1px solid var(--ink); }
 .doc .interp h3 { font-family: var(--font-ui); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; margin-bottom: 8px; }
 .doc ol { margin: 0; padding-left: 1.4em; display: grid; gap: 8px; max-width: 80ch; }
 .doc ol li { font-size: 16.5px; line-height: 1.55; padding-left: 4px; }
@@ -251,7 +248,10 @@ details.method ul { margin: 0; padding-left: 1.2em; display: grid; gap: 3px; }
 .seg.stack { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); width: 100%; }
 .ch { padding: 6px 12px; border: 1px solid var(--line-strong); border-radius: 7px; background: var(--surface); color: var(--ink-2); font-size: 13.5px; line-height: 1.25; text-align: left; }
 .ch:hover { border-color: var(--accent); }
-.ch[aria-checked="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.ch[aria-checked="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); font-weight: 600; }
+.ch.auto[aria-checked="true"] { background: var(--surface-2); border-color: var(--ink); color: var(--ink); }
+.ch:disabled { cursor: default; opacity: 0.6; }
+.ch.auto[aria-checked="true"]:disabled { opacity: 1; }
 .seg.stack .ch { text-align: left; }
 .prm.ch-row .seg { margin-top: 0; }
 .tapnote { margin-block: 4px 2px; }
@@ -262,7 +262,7 @@ details.method ul { margin: 0; padding-left: 1.2em; display: grid; gap: 3px; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .cp { padding: 5px 12px; border: 1px solid var(--line-strong); border-radius: 999px; background: var(--surface); color: var(--ink-2); font-size: 13.5px; line-height: 1.25; }
 .cp:hover { border-color: var(--accent); }
-.cp[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.cp[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); font-weight: 600; }
 .prm.multi { gap: 10px; }
 .qdates { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; }
 .qdates .cp { padding: 3px 10px; font-size: 12.5px; }
@@ -284,7 +284,7 @@ details.optgrp > .fine { padding-bottom: 0; }
 .lp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 158px), 1fr)); gap: 10px; }
 .lp-tile { display: grid; grid-template-rows: auto auto 1fr; gap: 4px; text-align: left; padding: 8px 10px 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); align-content: start; min-width: 0; }
 .lp-tile:hover { border-color: var(--accent); }
-.lp-tile[aria-checked="true"] { border: 2px solid var(--accent); padding: 7px 9px 9px; background: var(--accent-soft); }
+.lp-tile[aria-checked="true"] { border: 2px solid var(--ink); padding: 7px 9px 9px; background: var(--surface-2); }
 .lp { width: 100%; height: auto; display: block; background: var(--surface-2); border-radius: 6px; }
 .lp-tile[aria-checked="true"] .lp { background: var(--surface); }
 .lp-name { font-size: 13px; font-weight: 650; line-height: 1.25; }
@@ -303,9 +303,9 @@ details.optgrp > .fine { padding-bottom: 0; }
 .vw { padding: 6px 13px; font-size: 13px; font-weight: 500; border: 0; border-right: 1px solid var(--line); background: var(--surface); color: var(--ink-2); line-height: 1.2; display: inline-flex; align-items: center; }
 .vw:last-child { border-right: 0; }
 .vw:hover { background: var(--surface-2); }
-.vw[aria-current="page"] { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.vw[aria-current="page"] { background: var(--ink); color: var(--bg); font-weight: 600; }
 .bn { margin-left: 6px; min-width: 18px; padding: 0 6px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 11.5px; font-weight: 600; text-align: center; }
-.vw[aria-current="page"] .bn { background: var(--accent-ink); color: var(--accent); }
+.vw[aria-current="page"] .bn { background: var(--bg); color: var(--ink); }
 
 /* ---- (i) info buttons and the pop-up ---- */
 .ib { position: relative; display: inline-grid; place-items: center; flex: none; width: 18px; height: 18px; padding: 0; margin-left: 6px; border-radius: 50%; border: 1px solid var(--line-strong); background: var(--surface); color: var(--accent); font: italic 600 12px/1 var(--font-doc); vertical-align: middle; }
@@ -512,43 +512,97 @@ details.optgrp > .fine { padding-bottom: 0; }
   a { color: inherit; text-decoration: none; }
 }
 
-/* ---- live report preview (wide screens): forms on the left, the report as it will read on the right ---- */
+/* ---- running report: forms on the left, the report as it will read on the right (below the form on narrow screens) ---- */
 .work { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
-.pv { display: none; }
-.pv-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
-.pv-head h2 { font-size: 13px; font-weight: 650; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+.pv { display: block; }
+.pv-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.pv-head h2 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
 .pv-btns { display: flex; gap: 6px; }
-.pv-doc { padding: 16px 18px; border-radius: 10px; position: relative; }
+.pv-doc { padding: 16px 18px; border-radius: 8px; position: relative; }
 .pv-doc .dt { font-size: 11px; }
 .pv-doc .meta { font-size: 12px; padding-bottom: 10px; }
-.pv-doc .sec { margin-top: 12px; padding-left: 10px; border-left: 3px solid transparent; gap: 3px; }
-.pv-doc .sec.cur { border-left-color: var(--accent); }
+.pv-doc .sec { margin-top: 12px; padding-left: 10px; border-left: 2px solid transparent; gap: 3px; }
+.pv-doc .sec.cur { border-left-color: var(--ink); }
 .pv-doc .sec h3 { font-size: 11px; }
 .pv-doc .sec p, .pv-doc .interp .pv-empty { font-size: 14.5px; line-height: 1.55; }
 .pv-doc .pv-empty { color: var(--muted); font-family: var(--font-ui); font-size: 13px; font-style: normal; }
 .pv-doc .interp { margin-top: 16px; padding-top: 10px; }
 .pv-doc .interp h3 { font-size: 11px; margin-bottom: 6px; }
-.pv-doc ol { gap: 6px; }
-.pv-doc ol li { font-size: 14.5px; line-height: 1.5; }
 .pv-doc .codes-row { margin-top: 10px; }
 @keyframes pvflash { from { background: var(--accent-soft); } to { background: transparent; } }
-.pv-doc .sec.chg p, .pv-doc li.chg { animation: pvflash 1.4s ease-out; border-radius: 4px; }
-@media (prefers-reduced-motion: reduce) { .pv-doc .sec.chg p, .pv-doc li.chg { animation: none; } }
-@media (min-width: 1120px) {
-  .app { max-width: 1360px; }
-  .work:not(.has-pv) > .main { max-width: 1048px; }
-  .work.has-pv { grid-template-columns: minmax(0, 1fr) minmax(360px, 420px); align-items: start; }
-  .work.has-pv .pv { display: flex; flex-direction: column; position: sticky; top: calc(var(--steps-h, 52px) + 8px + env(safe-area-inset-top, 0px));
-    height: calc(100vh - 150px); max-height: 900px; padding-top: 6px; }
+.pv-doc .sec.chg p, .pv-doc .impr-s.chg { animation: pvflash 1.4s ease-out; border-radius: 4px; }
+@media (prefers-reduced-motion: reduce) { .pv-doc .sec.chg p, .pv-doc .impr-s.chg { animation: none; } }
+@media (min-width: 900px) {
+  .work.has-pv { grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.55fr); align-items: start; }
+  .work.has-pv .pv { display: flex; flex-direction: column; position: sticky; top: calc(var(--steps-h, 44px) + 8px + env(safe-area-inset-top, 0px));
+    height: calc(100vh - 150px); max-height: 960px; padding-top: 6px; }
   .work.has-pv .pv-doc { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
-  .work.has-pv .live { display: none; }
 }
+@media (min-width: 1240px) { .work.has-pv { grid-template-columns: minmax(0, 1fr) minmax(360px, 460px); } }
+
+/* ---- index rows: label | category buttons | value boxes (z, value, % predicted, prior, post-BD), boxes aligned ---- */
+.ixg { gap: 0; }
+.ixg .grp-head { padding-bottom: 2px; }
+.ix { display: grid; grid-template-columns: minmax(84px, 118px) minmax(0, 1fr) auto; gap: 6px 10px; align-items: center; padding-block: 7px; border-top: 1px solid var(--line); }
+.ix:first-of-type, .ix-head + .ix { border-top: 0; }
+.ix-head { padding-block: 2px 4px; border-top: 0; }
+.ix-head .ix-c { height: auto; }
+.ix-l { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-width: 0; }
+.ix-l .prm-l { font-weight: 600; font-size: 14px; }
+.ix-seg { display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; }
+.ix-vals { display: flex; flex-wrap: wrap; gap: 5px; justify-content: flex-end; align-items: center; }
+.ix-c { display: inline-flex; align-items: center; gap: 4px; width: var(--cw); flex: none; min-width: 0; }
+.ix-c input.num { width: 100%; min-width: 0; padding: 5px 7px; font-size: 13px; }
+.ix-c.zc { width: 58px; }
+.ix-c.zc input.num { padding-inline: 6px; }
+.ix-c .u { font-size: 11px; color: var(--muted); white-space: nowrap; flex: none; max-width: 46px; overflow: hidden; }
+.ix-c:has(.u), .ix-c:has(.ubtn) { width: calc(var(--cw) + 28px); }
+.ix-c.ph { visibility: hidden; }
+.ix-c.hd { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); justify-content: flex-start; }
+.ix-c.txt { font-family: var(--font-mono); font-size: 12px; color: var(--ink-2); white-space: nowrap; justify-content: flex-start; width: 80px; }
+.ix-c.txt.sig { color: var(--c-wnl); font-weight: 600; }
+.ix-c.txt.note { width: auto; font-family: var(--font-ui); }
+.ixg.rows .ix-vals { justify-content: flex-start; }
+.ixg.rows .ix { grid-template-columns: minmax(84px, 118px) auto minmax(0, 1fr); }
+.ix-c.pri input.num, .ix-c.post input.num { background: var(--surface-2); }
+.ix-c.pri .u, .ix-c.post .u { color: var(--muted); }
+.ubtn { border: 0; background: transparent; color: var(--accent); font-size: 11px; padding: 2px 2px; text-decoration: underline dotted; text-underline-offset: 2px; white-space: nowrap; flex: none; cursor: pointer; max-width: 46px; overflow: hidden; }
+.ubtn:hover { color: var(--ink); }
+.ix-more { padding-block: 6px 2px; border-top: 1px solid var(--line); }
+.more-btn { font-size: 12.5px; }
+.auto-tag { font-size: 11px; color: var(--muted); font-style: italic; }
+.flash { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+/* many boxes (prior study, post-bronchodilator): the boxes take a line of their own under the buttons, still in columns */
+.ixg.stack .ix { grid-template-columns: minmax(84px, 118px) minmax(0, 1fr); }
+.ixg.stack .ix-vals { grid-column: 2; justify-content: flex-start; }
+.ixg.stack .ix-head .ix-l { display: none; }
+.ixg.stack .ix-head .ix-seg { display: none; }
+.ixg.stack .ix-head .ix-vals { grid-column: 2; }
+@media (max-width: 760px) {
+  .ix, .ixg.stack .ix { grid-template-columns: minmax(0, 1fr); gap: 5px; }
+  .ix-vals, .ixg.stack .ix-vals { justify-content: flex-start; flex-wrap: wrap; grid-column: auto; }
+  .ix-head { display: none; }
+}
+.prompts { display: grid; gap: 6px; margin: 4px 0 12px; }
+.prompt { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; padding: 8px 12px; border: 1px solid var(--accent); border-radius: 6px; background: var(--accent-soft); font-size: 13.5px; color: var(--ink); }
+.prompt-t { flex: 1 1 260px; min-width: 0; }
+.prompts-card .prompts { margin: 8px 0 0; }
+.bd-block { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+.bd-block .ixg { margin-top: 6px; }
+.pr-dates { display: grid; gap: 6px; margin-top: 8px; }
+.pr-date { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.pr-date input[type=date] { max-width: 170px; }
+.qs-edit { display: grid; gap: 8px; width: 100%; }
+.qs-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.qs-row input[type=text] { max-width: 260px; }
+.qs-acts { display: inline-flex; gap: 6px; }
+.fld-extra { white-space: nowrap; }
 
 /* ---- suggested additions (review-only catalog wording) ---- */
 .sugs .sug-list { display: flex; flex-direction: column; gap: 8px; }
 .sug { display: flex; flex-direction: column; gap: 3px; align-items: flex-start; text-align: left; width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; font: inherit; }
 .sug:hover { border-color: var(--accent); }
-.sug.on { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
+.sug.on { border-color: var(--ink); background: var(--surface-2); box-shadow: inset 3px 0 0 var(--ink); }
 .sug .sug-l { font-weight: 650; font-size: 14px; }
 .sug .sug-l::before { content: '+ '; color: var(--muted); font-weight: 500; }
 .sug.on .sug-l::before { content: '✓ '; color: var(--accent); }
@@ -569,10 +623,10 @@ details.optgrp > .fine { padding-bottom: 0; }
 .dx { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; line-height: 1.3; text-align: left; cursor: pointer; }
 .dx::before { content: '+'; color: var(--muted); font-weight: 600; }
 .dx:hover { border-color: var(--accent); }
-.dx.on { border-color: var(--accent); background: var(--accent-soft); }
+.dx.on { border-color: var(--ink); background: var(--surface-2); }
 .dx.on::before { content: '✓'; color: var(--accent); }
 .doc .studies { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); }
-.doc .studies h3 { font-family: var(--font-ui); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 650; color: var(--accent); margin: 0 0 4px; }
+.doc .studies h3 { font-family: var(--font-ui); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; color: var(--ink-2); margin: 0 0 4px; }
 .doc .studies p { margin: 0; font-size: 16px; line-height: 1.6; max-width: 80ch; }
 .cat-sec > summary { cursor: pointer; }
 .cat-sec > summary .tf { margin-left: 8px; color: var(--muted); font-weight: 400; }
@@ -633,6 +687,7 @@ details.optgrp > .fine { padding-bottom: 0; }
         <button type="button" class="vw" data-view="learn">Learn</button>
         <button type="button" class="vw" data-view="bank">Case bank<span class="bn" id="bank-n" hidden></span></button>
       </nav>
+      <button type="button" class="btn sm quiet" id="theme" aria-pressed="false" title="Switch between the light and dark interface">Dark theme</button>
       <button type="button" class="btn sm" id="new-case">New case</button>
     </div>
   </header>
@@ -769,10 +824,27 @@ const KIND_OPTS = {
   lo:     [['nm', 'Not measured'], ['wnl', 'WNL'], ['low', 'Below LLN ↓']]
 };
 
-/* Test catalogue (first screen) */
+/* Units a value can be typed in. Each quantity has a base unit (the engine and the report work in it) and the factors
+   that convert the alternatives into it. The choice is kept per quantity in state.units, so one selection applies to
+   every box that holds that quantity (this study, prior studies, the 6MWD trend). */
+const UNITS = {
+  len:  { label: 'Height',   base: 'cm', opts: [['cm', 'cm'], ['in', 'in']], f: { cm: 1, in: 2.54 } },
+  wt:   { label: 'Weight',   base: 'kg', opts: [['kg', 'kg'], ['lb', 'lb']], f: { kg: 1, lb: 0.45359237 } },
+  walk: { label: 'Distance', base: 'm',  opts: [['m', 'm'], ['ft', 'ft']],   f: { m: 1, ft: 0.3048 } },
+  dlco: { label: 'DLCO',     base: 'mL/min/mmHg', opts: [['ml', 'mL/min/mmHg'], ['si', 'mmol/min/kPa']], f: { ml: 1, si: 2.987 } }
+};
+function unitOf(st, q) { const u = UNITS[q]; const sel = st && st.units && st.units[q]; return (u && u.f[sel] !== undefined) ? sel : (u ? u.opts[0][0] : ''); }
+function unitLabel(st, q) { const u = UNITS[q], sel = unitOf(st, q); const o = u ? u.opts.filter(x => x[0] === sel)[0] : null; return o ? o[1] : ''; }
+/* a typed value in the selected unit -> the base unit */
+function toBase(st, q, raw) { const v = num(raw); if (!has(v)) return NaN; const u = UNITS[q]; return u ? v * u.f[unitOf(st, q)] : v; }
+/* a base-unit value -> the selected unit (for display next to the base value) */
+function fromBase(st, q, v) { const u = UNITS[q]; return (u && has(v)) ? v / u.f[unitOf(st, q)] : v; }
+
+/* Test catalogue (first screen). The bronchodilator response lives inside the spirometry step (hidden here: it is
+   switched on with a checkbox there or by any post-bronchodilator entry). */
 const TESTS = [
-  { key: 'spiro',  group: 'Spirometry',            name: 'Spirometry',                       desc: 'FEV1, FVC, FEV1/FVC, quality grade' },
-  { key: 'bd',     group: 'Spirometry',            name: 'Bronchodilator response',          desc: 'Pre/post FEV1 and FVC' },
+  { key: 'spiro',  group: 'Spirometry',            name: 'Spirometry',                       desc: 'FEV1, FVC, FEV1/FVC; bronchodilator response' },
+  { key: 'bd',     group: 'Spirometry',            name: 'Bronchodilator response',          desc: 'Pre/post FEV1 and FVC', hidden: true },
   { key: 'fvl',    group: 'Spirometry',            name: 'Flow–volume loop',                 desc: 'Loop shape, PEF, FEV1/PEF, FIF50/FEF50' },
   { key: 'vol',    group: 'Volumes & gas transfer', name: 'Lung volumes',                    desc: 'TLC, RV, RV/TLC, FRC, SVC' },
   { key: 'dlco',   group: 'Volumes & gas transfer', name: 'DLCO / KCO / VA',                 desc: 'Single-breath diffusing capacity, Hb adjustment' },
@@ -788,16 +860,18 @@ const TESTS = [
   { key: 'prior',  group: 'Comparison',            name: 'Comparison with prior PFT(s)',     desc: '% change, annualised decline, thresholds', hidden: true }
 ];
 
+/* Quick sets (the interface lets the user edit these and add their own). None selects the flow–volume loop: that is a
+   deliberate choice on the first screen. */
 const PRESETS = [
-  { name: 'Full PFT',                    tests: ['spiro', 'fvl', 'vol', 'dlco'] },
-  { name: 'Spirometry only',             tests: ['spiro', 'fvl'] },
-  { name: 'Spirometry + BD',             tests: ['spiro', 'fvl', 'bd'] },
-  { name: 'Spiro + BD + volumes + FeNO', tests: ['spiro', 'fvl', 'bd', 'vol', 'feno'] },
-  { name: 'ILD work-up',                 tests: ['spiro', 'fvl', 'vol', 'dlco', 'sixmw'] },
-  { name: 'Neuromuscular',               tests: ['spiro', 'fvl', 'vol', 'mip', 'post'] },
-  { name: 'Asthma: spiro + BD + FeNO',   tests: ['spiro', 'fvl', 'bd', 'feno'] },
-  { name: 'Methacholine challenge',      tests: ['spiro', 'fvl', 'bronch'] },
-  { name: 'Pre-op: spiro + DLCO',        tests: ['spiro', 'fvl', 'dlco'] },
+  { name: 'Full PFT',                    tests: ['spiro', 'vol', 'dlco'] },
+  { name: 'Spirometry only',             tests: ['spiro'] },
+  { name: 'Spirometry + BD',             tests: ['spiro', 'bd'] },
+  { name: 'Spiro + BD + volumes + FeNO', tests: ['spiro', 'bd', 'vol', 'feno'] },
+  { name: 'ILD work-up',                 tests: ['spiro', 'vol', 'dlco', 'sixmw'] },
+  { name: 'Neuromuscular',               tests: ['spiro', 'vol', 'mip', 'post'] },
+  { name: 'Asthma: spiro + BD + FeNO',   tests: ['spiro', 'bd', 'feno'] },
+  { name: 'Methacholine challenge',      tests: ['spiro', 'bronch'] },
+  { name: 'Pre-op: spiro + DLCO',        tests: ['spiro', 'dlco'] },
   { name: 'Exercise: 6MWT + CPET',       tests: ['sixmw', 'cpet'] }
 ];
 
@@ -851,28 +925,35 @@ const LIMITS = [
     ['cough', 'Cough in the first second (FEV1 affected)'], ['insp', 'Incomplete inspiration (volumes underestimated)'], ['slow', 'Slow or hesitant start'],
     ['leak', 'Mouth leak'], ['glottic', 'Glottic closure'], ['varef', 'Variable effort between maneuvers'], ['fatigue', 'Testing limited by fatigue'], ['symptom', 'Testing limited by symptoms']] }
 ];
-const HB_BASIS = [['', 'Not stated on the report'], ['un', 'Not adjusted for hemoglobin'], ['adj', 'Hemoglobin-adjusted']];
+const HB_BASIS = [['', 'Not stated on the report'], ['un', 'Not corrected for Hb'], ['adj', 'Corrected for Hb']];
 const HELD_OPTS = [['', 'Not recorded'], ['y', 'Withheld as required'], ['n', 'Not withheld']];
 const ICS_OPTS = [['', 'Not recorded'], ['y', 'On corticosteroids'], ['n', 'Not on corticosteroids']];
 
+/* Field extras used by the interface:
+     cols: { val: '<num id>', pct: '<num id>', v1/v2: ... }  value boxes drawn on the same row as the category buttons
+     more: true          hidden under "+ More" until wanted (not an essential index)
+     auto: '<name>'      the category is set from the typed values (the interface shows which one the numbers imply)
+     units: '<quantity>' the box can be typed in any unit of that quantity (UNITS)
+   Group extras: inline (its fields are drawn inside other rows), fold (collapsed), opt (optional typing), legacy (kept
+   for old case codes, never drawn). */
 const SCHEMA = {
   ctx: {
     title: 'Study details', src: 'ATS 2023 and ERS/ATS 2022 reference-set recommendations. No patient identifiers are collected.',
     groups: [
+      { title: 'Patient', rows: true, fields: [
+        N('age', 'Age', 'years', { min: 0, max: 120, step: 1 }),
+        S('sex', 'Sex (as used for reference values)', [['', 'Not entered'], ['M', 'Male'], ['F', 'Female']]),
+        S('smoke', 'Smoking status', [['', 'Not entered'], ['never', 'Never'], ['former', 'Former'], ['current', 'Current']]),
+        N('ht', 'Height', 'cm', { min: 10, max: 250, step: 0.5, units: 'len' }),
+        N('wt', 'Weight', 'kg', { min: 5, max: 900, step: 0.5, units: 'wt' })
+      ] },
       { title: 'Study', fields: [
         { id: 'date', label: 'Date of study', type: 'date' },
         M('indic', 'Indication(s): tap all that apply', INDICATIONS),
         T('indication', 'Other indication (type only if not listed above)', { ph: 'e.g. recurrent pneumonia, pre-bariatric surgery' })
       ] },
-      { title: 'Patient', fields: [
-        N('age', 'Age', 'years', { min: 0, max: 120, step: 1 }),
-        S('sex', 'Sex (as used for reference values)', [['', 'Not entered'], ['M', 'Male'], ['F', 'Female']]),
-        S('smoke', 'Smoking status', [['', 'Not entered'], ['never', 'Never'], ['former', 'Former'], ['current', 'Current']])
-      ] },
-      { title: 'Height and weight (optional, for BMI)', opt: true, fields: [
-        S('units', 'Units', [['', 'cm / kg'], ['us', 'in / lb']]),
-        N('ht', 'Height', 'cm', { min: 20, max: 230, step: 0.5 }),
-        N('wt', 'Weight', 'kg', { min: 5, max: 900, step: 0.5 })
+      { title: 'Units (legacy)', legacy: true, fields: [
+        S('units', 'Units', [['', 'cm / kg'], ['us', 'in / lb']])
       ] },
       { title: 'Reference equations (the recommended option is already selected)', opt: true, fields: [
         S('ref_spiro', 'Spirometry reference set', [['global', 'GLI Global, race-neutral (recommended, ATS 2023)'], ['gli2012', 'GLI-2012 (race-specific)'], ['other', 'Other / lab-specific']], { stack: true, hint: 'ATS 2023: race-neutral GLI Global replaces race-specific sets; the lab report decides which set produced the z-scores you enter' }),
@@ -886,50 +967,55 @@ const SCHEMA = {
 
   spiro: {
     title: 'Spirometry', src: 'ERS/ATS 2022 Fig 8 & Table 5; Annals ATS 2025 Table 1 (S-codes); ATS/ERS 2019 quality grades.',
-    intro: 'Tap a category for each index (or type a z-score in the small box). Order of reasoning: FEV1/FVC against the LLN, then the FEV1 z-score for severity, then the FVC for other pathology.',
+    intro: 'Tap a category for each index, or type the z-score. Order of reasoning: FEV1/FVC against the LLN, then the FEV1 z-score for severity, then the FVC for other pathology.',
+    columns: [['z', 'z-score'], ['val', 'Value'], ['pct', '% pred']],
     groups: [
-      { title: 'Indices vs. reference (pre-bronchodilator)', quick: ['ratio', 'fev1', 'fvc'], fields: [
-        P('ratio', 'FEV1/FVC', 'ratio', { hint: 'Below the LLN (z < −1.645) = airflow obstruction' }),
-        P('fev1', 'FEV1', 'grade', { hint: 'z-score sets the severity of the impairment' }),
-        P('fvc', 'FVC', 'gradeH', { hint: 'Low FVC with a low ratio = air trapping or coexisting restriction; needs lung volumes' }),
-        P('fef', 'FEF25–75% (informational)', 'both', { hint: 'Not used to define obstruction or severity (ERS/ATS 2022)' })
+      { title: 'Pre-bronchodilator', quick: ['ratio', 'fev1', 'fvc'], fields: [
+        P('ratio', 'FEV1/FVC', 'ratio', { hint: 'Below the LLN (z < −1.645) = airflow obstruction', cols: { val: 'ratio_abs' } }),
+        P('fev1', 'FEV1', 'grade', { hint: 'z-score sets the severity of the impairment', cols: { val: 'fev1_abs', pct: 'fev1_pct' } }),
+        P('fvc', 'FVC', 'gradeH', { hint: 'Low FVC with a low ratio = air trapping or coexisting restriction; needs lung volumes', cols: { val: 'fvc_abs', pct: 'fvc_pct' } }),
+        P('fef', 'FEF25–75%', 'both', { hint: 'Not used to define obstruction or severity (ERS/ATS 2022)', more: true })
       ] },
-      { title: 'Quality (graded separately for FEV1 and FVC)', fold: true, fields: [
-        S('qual_fev1', 'FEV1 grade', Q_OPTS, { hint: 'ATS/ERS 2019: A–B good; C–E usable, reduced confidence; U usable only; F not usable' }),
-        S('qual_fvc', 'FVC grade', Q_OPTS, { hint: 'A cough in the first second can spoil FEV1 while FVC stays usable, and early termination spoils FVC while FEV1 stays usable' }),
-        S('effort', 'Effort / cooperation', [['', 'Not noted'], ['poor', 'Submaximal effort'], ['weak', 'Weakness suspected']]),
-        M('limits', 'Limitations noted on the report', LIMITS, { hint: 'Only tap what is documented; the interpretation states which component each limitation affects' })
-      ] },
-      { title: 'Measured values (optional)', opt: true, fields: [
+      { title: 'Values', inline: true, fields: [
+        N('ratio_abs', 'FEV1/FVC', '', { min: 0, max: 100, step: 0.01, ph: '0.72' }),
         N('fev1_abs', 'FEV1', 'L', { min: 0, max: 8, step: 0.01 }),
         N('fvc_abs', 'FVC', 'L', { min: 0, max: 10, step: 0.01 }),
         N('fev1_pct', 'FEV1', '% pred', { min: 0, max: 200, step: 1 }),
         N('fvc_pct', 'FVC', '% pred', { min: 0, max: 200, step: 1 })
+      ] },
+      { title: 'Test quality', fold: true, fields: [
+        S('qual_fev1', 'FEV1 grade', Q_OPTS, { hint: 'ATS/ERS 2019: A–B good; C–E usable, reduced confidence; U usable only; F not usable' }),
+        S('qual_fvc', 'FVC grade', Q_OPTS, { hint: 'A cough in the first second can spoil FEV1 while FVC stays usable, and early termination spoils FVC while FEV1 stays usable' }),
+        S('effort', 'Effort / cooperation', [['', 'Not noted'], ['poor', 'Submaximal effort'], ['weak', 'Weakness suspected']]),
+        M('limits', 'Limitations noted on the report', LIMITS, { hint: 'Only tap what is documented; the interpretation states which component each limitation affects' })
       ] }
     ]
   },
 
+  /* Drawn inside the spirometry step: post-bronchodilator boxes beside the pre-bronchodilator values; the change is
+     calculated from them (the predicted value comes from the pre value and its % predicted, or is typed). */
   bd: {
     title: 'Bronchodilator response', src: 'ERS/ATS 2022 Box 1 (response = change > 10% of the predicted value in FEV1 and/or FVC); Annals ATS 2025 S61/S62.',
-    intro: 'Tap what the lab report states. Typed pre/post values (under “optional”) are only needed if you want the change calculated.',
+    intro: 'Type the post-bronchodilator values beside the pre-bronchodilator ones; the change is calculated. The lab’s own verdict can be tapped instead.',
     groups: [
+      { title: 'Post-bronchodilator values', inline: true, fields: [
+        N('fev1_post', 'FEV1 post', 'L', { step: 0.01 }), N('fvc_post', 'FVC post', 'L', { step: 0.01 }), N('post_ratio_abs', 'FEV1/FVC post', '', { step: 0.01, ph: '0.72' })
+      ] },
       { title: 'Response', fields: [
-        S('resp', 'Significant response (> 10% of predicted)?', [['', 'Not entered'], ['none', 'No response in FEV1 or FVC'], ['fev1', 'FEV1 responded'], ['fvc', 'FVC responded'], ['both', 'FEV1 and FVC responded'], ['ind', 'Could not be assessed']], { hint: '"No response" means both FEV1 and FVC were assessed and neither rose by more than 10% of predicted' }),
-        S('qc', 'Post-bronchodilator maneuver quality', QC_OPTS),
-        P('post_ratio', 'Post-BD FEV1/FVC', 'ratio', { hint: 'Persistently below the LLN after the bronchodilator = persistent airflow obstruction' }),
-        P('post_fev1', 'Post-BD FEV1', 'grade')
+        P('post_ratio', 'Post-BD FEV1/FVC', 'ratio', { hint: 'Persistently below the LLN after the bronchodilator = persistent airflow obstruction', more: true }),
+        P('post_fev1', 'Post-BD FEV1', 'grade', { more: true }),
+        S('resp', 'Response per the lab (if no post values are typed)', [['', 'Not entered'], ['none', 'No response'], ['fev1', 'FEV1 responded'], ['fvc', 'FVC responded'], ['both', 'FEV1 and FVC responded'], ['ind', 'Could not be assessed']], { hint: '"No response" means both FEV1 and FVC were assessed and neither rose by more than 10% of predicted', more: true })
       ] },
-      { title: 'Administration', fold: true, fields: [
+      { title: 'Bronchodilator details', fold: true, fields: [
         S('agent', 'Bronchodilator given', [['', 'Not recorded'], ['albuterol 400 mcg', 'Albuterol 400 mcg'], ['albuterol plus ipratropium', 'Albuterol + ipratropium'], ['another bronchodilator', 'Other']]),
-        S('held', 'Home bronchodilators', HELD_OPTS)
+        S('held', 'Home bronchodilators', HELD_OPTS),
+        S('qc', 'Post-bronchodilator maneuver quality', QC_OPTS),
+        N('fev1_pred', 'FEV1 predicted', 'L', { step: 0.01, hint: 'Only if the pre value has no % predicted' }), N('fvc_pred', 'FVC predicted', 'L', { step: 0.01 }),
+        N('dfev1_pp', 'Δ FEV1 as reported', '% of predicted', { step: 0.1, hint: 'positive = increase' }),
+        N('dfvc_pp', 'Δ FVC as reported', '% of predicted', { step: 0.1 })
       ] },
-      { title: 'Volumes in litres (optional, calculates the change)', opt: true, fields: [
-        N('fev1_pre', 'FEV1 pre', 'L', { step: 0.01 }), N('fev1_post', 'FEV1 post', 'L', { step: 0.01 }), N('fev1_pred', 'FEV1 predicted', 'L', { step: 0.01 }),
-        N('fvc_pre', 'FVC pre', 'L', { step: 0.01 }), N('fvc_post', 'FVC post', 'L', { step: 0.01 }), N('fvc_pred', 'FVC predicted', 'L', { step: 0.01 })
-      ] },
-      { title: 'Or the change as reported (optional)', opt: true, fields: [
-        N('dfev1_pp', 'Δ FEV1', '% of predicted', { step: 0.1, hint: 'positive = increase' }),
-        N('dfvc_pp', 'Δ FVC', '% of predicted', { step: 0.1 })
+      { title: 'Pre values (legacy)', legacy: true, fields: [
+        N('fev1_pre', 'FEV1 pre', 'L', { step: 0.01 }), N('fvc_pre', 'FVC pre', 'L', { step: 0.01 })
       ] }
     ]
   },
@@ -959,52 +1045,56 @@ const SCHEMA = {
   vol: {
     title: 'Lung volumes', src: 'ERS/ATS 2022 Fig 10 & Table 8; Annals ATS 2025 Table 2 (V-codes); Owens 1987 (isolated low RV).',
     intro: 'TLC defines restriction; a high RV/TLC defines air trapping. With a low ratio on spirometry, a low TLC means a mixed pattern.',
+    columns: [['z', 'z-score'], ['val', 'Value'], ['pct', '% pred']],
     groups: [
-      { title: 'Method', fields: [
+      { title: 'Indices', quick: ['tlc', 'rv', 'rvtlc'], fields: [
+        P('tlc', 'TLC', 'gradeH', { hint: 'Low = restriction; high = hyperinflation or large lungs', cols: { val: 'tlc_abs', pct: 'tlc_pct' } }),
+        P('rv', 'RV', 'both', { hint: 'Isolated low RV with otherwise normal tests is a clinically significant finding (Owens 1987)', cols: { val: 'rv_abs', pct: 'rv_pct' } }),
+        P('rvtlc', 'RV/TLC', 'both', { hint: 'High = air trapping; with a low ratio on spirometry, hyperinflation with air trapping', cols: { val: 'rvtlc_pct' } }),
+        P('frc', 'FRC', 'both', { more: true, cols: { val: 'frc_abs' } }),
+        P('frctlc', 'FRC/TLC', 'both', { more: true }),
+        P('svc', 'SVC (slow vital capacity)', 'gradeH', { hint: 'Volumes are referenced to SVC, not FVC', more: true, cols: { val: 'svc_abs' } }),
+        P('erv', 'ERV', 'both', { hint: 'Low ERV is typical of obesity', more: true }),
+        P('ic', 'IC', 'both', { more: true })
+      ] },
+      { title: 'Values', inline: true, fields: [
+        N('tlc_abs', 'TLC', 'L', { step: 0.01 }), N('tlc_pct', 'TLC', '% pred', { step: 1 }),
+        N('rv_abs', 'RV', 'L', { step: 0.01 }), N('rv_pct', 'RV', '% pred', { step: 1 }),
+        N('rvtlc_pct', 'RV/TLC', '%', { step: 1, ph: '%' }),
+        N('frc_abs', 'FRC', 'L', { step: 0.01 }), N('svc_abs', 'SVC', 'L', { step: 0.01 })
+      ] },
+      { title: 'Method and test quality', fold: true, fields: [
         S('method', 'Technique', [['', 'Not recorded'], ['pleth', 'Plethysmography'], ['n2', 'N2 washout'], ['he', 'Helium dilution'], ['sb', 'Single-breath']]),
         S('qc', 'Test quality', QC_OPTS)
-      ] },
-      { title: 'Indices vs. reference', quick: ['tlc', 'rvtlc'], fields: [
-        P('tlc', 'TLC', 'gradeH', { hint: 'Low = restriction; high = hyperinflation or large lungs' }),
-        P('rvtlc', 'RV/TLC', 'both', { hint: 'High = air trapping; with a low ratio on spirometry, hyperinflation with air trapping' }),
-        P('rv', 'RV', 'both', { hint: 'Isolated low RV with otherwise normal tests is a clinically significant finding (Owens 1987)' }),
-        P('frc', 'FRC', 'both'),
-        P('frctlc', 'FRC/TLC', 'both'),
-        P('svc', 'SVC (slow vital capacity)', 'gradeH', { hint: 'Volumes are referenced to SVC, not FVC' }),
-        P('erv', 'ERV', 'both', { hint: 'Low ERV is typical of obesity' }),
-        P('ic', 'IC', 'both')
-      ] },
-      { title: 'Measured values (optional)', opt: true, fields: [
-        N('tlc_abs', 'TLC', 'L', { step: 0.01 }), N('rv_abs', 'RV', 'L', { step: 0.01 }),
-        N('frc_abs', 'FRC', 'L', { step: 0.01 }), N('svc_abs', 'SVC', 'L', { step: 0.01 })
       ] }
     ]
   },
 
   dlco: {
     title: 'DLCO / KCO / VA', src: 'ERS/ATS 2022 Fig 11; Annals ATS 2025 Table 3 (D-codes); ERS/ATS 2017 DLCO standard (Hb reference 14.6 g/dL men, 13.4 women and children).',
-    intro: 'Stratify DLCO by z-score. Read KCO only together with VA: a normal KCO does not exclude parenchymal or vascular loss when VA is low.',
+    intro: 'Stratify DLCO by z-score and say whether the reported value is corrected for hemoglobin. Read KCO only together with VA.',
+    columns: [['z', 'z-score'], ['val', 'Value'], ['pct', '% pred']],
     groups: [
-      { title: 'Indices vs. reference', quick: ['dlco', 'va', 'kco'], fields: [
-        P('dlco', 'DLCO as reported', 'gradeH'),
-        S('basis', 'Is that DLCO hemoglobin-adjusted?', HB_BASIS, { hint: 'The adjustment basis changes what a low value means; when the report does not say, the interpretation says so rather than assuming' }),
-        P('dlco_adj', 'Hb-adjusted DLCO (if the report shows both values)', 'gradeH', { hint: 'Leave blank unless the lab prints an adjusted value next to the unadjusted one' }),
-        P('va', 'VA', 'both'),
-        P('kco', 'KCO (DLCO/VA)', 'both')
+      { title: 'Indices', quick: ['dlco', 'va', 'kco'], fields: [
+        P('dlco', 'DLCO', 'gradeH', { cols: { val: 'dlco_abs', pct: 'dlco_pct' } }),
+        S('basis', 'Reported as', HB_BASIS, { hint: 'What a low value means depends on whether it is corrected for hemoglobin; when the report does not say, the interpretation says so rather than assuming' }),
+        S('hbcat', 'Hemoglobin', [NR, ['low', 'Low (anemia)'], ['nl', 'Normal'], ['high', 'High']], { cols: { val: 'hb' }, auto: 'hb', hint: 'With an uncorrected DLCO % predicted, the corrected value is calculated (ERS/ATS 2017)' }),
+        P('va', 'VA', 'both', { cols: { val: 'va_abs' } }),
+        P('kco', 'KCO (DLCO/VA)', 'both'),
+        P('dlco_adj', 'Hb-corrected DLCO (if the report prints both values)', 'gradeH', { hint: 'Only when the lab prints a corrected value next to the uncorrected one', more: true }),
+        S('cohbcat', 'Carboxyhemoglobin', [['', 'Not recorded'], ['nl', 'Below 2%'], ['hi', '2% or higher']], { hint: 'Raised COHb lowers DLCO by about 1% per 1%', more: true, cols: { val: 'cohb' }, auto: 'cohb' }),
+        S('vatlc', 'VA/TLC', [NR, ['ok', '0.85 or higher'], ['low', 'Below 0.85']], { hint: '0.85 is the Annals ATS 2025 convention, not a universal cut-off', more: true })
       ] },
-      { title: 'Blood and quality', fold: true, fields: [
-        S('hbcat', 'Hemoglobin', [NR, ['low', 'Low (anemia)'], ['nl', 'Normal'], ['high', 'High']]),
-        S('cohbcat', 'Carboxyhemoglobin', [['', 'Not recorded'], ['nl', 'Below 2%'], ['hi', '2% or higher']], { hint: 'Raised COHb lowers DLCO by about 1% per 1%' }),
-        S('vatlc', 'VA/TLC', [NR, ['ok', '0.85 or higher'], ['low', 'Below 0.85']], { hint: '0.85 is the Annals ATS 2025 convention, not a universal cut-off' }),
-        S('qc', 'Test quality', QC_OPTS, { hint: 'Standard reporting needs two grade-A maneuvers within 2 mL/min/mmHg; a single usable maneuver is a limitation' }),
-        S('single', 'Number of usable maneuvers', [['', 'Not noted'], ['one', 'Only one usable maneuver']])
-      ] },
-      { title: 'Measured values (optional)', opt: true, fields: [
+      { title: 'Values', inline: true, fields: [
+        N('dlco_abs', 'DLCO', 'mL/min/mmHg', { step: 0.1, units: 'dlco' }),
+        N('dlco_pct', 'DLCO', '% pred', { step: 1 }),
         N('hb', 'Hemoglobin', 'g/dL', { step: 0.1, min: 3, max: 25 }),
         N('cohb', 'Carboxyhemoglobin', '%', { step: 0.1, min: 0, max: 40 }),
-        N('dlco_abs', 'DLCO measured', 'mL/min/mmHg', { step: 0.1 }),
-        N('dlco_pct', 'DLCO (not adjusted)', '% pred', { step: 1, hint: 'Enables an Hb-adjusted % predicted estimate' }),
         N('va_abs', 'VA', 'L', { step: 0.01, hint: 'With TLC on the Lung volumes step this gives VA/TLC' })
+      ] },
+      { title: 'Test quality', fold: true, fields: [
+        S('qc', 'Test quality', QC_OPTS, { hint: 'Standard reporting needs two grade-A maneuvers within 2 mL/min/mmHg; a single usable maneuver is a limitation' }),
+        S('single', 'Number of usable maneuvers', [['', 'Not noted'], ['one', 'Only one usable maneuver']])
       ] }
     ]
   },
@@ -1078,11 +1168,11 @@ const SCHEMA = {
     intro: 'Cut-points: adults < 25 / 25–50 / > 50 ppb; children (< 12 y) < 20 / 20–35 / > 35 ppb.',
     groups: [
       { title: 'Result', fields: [
-        S('band', 'FeNO level', [NR, ['low', 'Low'], ['int', 'Intermediate'], ['high', 'High']], { hint: 'Adult: low < 25, intermediate 25–50, high > 50 ppb' }),
+        S('band', 'FeNO level', [NR, ['low', 'Low'], ['int', 'Intermediate'], ['high', 'High']], { hint: 'Adult: low < 25, intermediate 25–50, high > 50 ppb', cols: { val: 'val' }, auto: 'feno' }),
         S('ics', 'Corticosteroid therapy', ICS_OPTS),
         C('confound', 'Possible confounder (recent exercise, spirometry, nitrate-rich food, viral infection)')
       ] },
-      { title: 'Measured value (optional)', opt: true, fields: [N('val', 'FeNO', 'ppb', { step: 1, min: 0 })] }
+      { title: 'Values', inline: true, fields: [N('val', 'FeNO', 'ppb', { step: 1, min: 0, ph: 'ppb' })] }
     ]
   },
 
@@ -1140,21 +1230,21 @@ const SCHEMA = {
     intro: 'Room-air values unless oxygen was used.',
     groups: [
       { title: 'Findings', fields: [
-        S('dist_cat', 'Distance walked', [NR, ['wnl', 'Within normal limits'], ['low', 'Below the LLN']]),
-        S('desat', 'Desaturation', [NR, ['none', 'None significant'], ['fall', 'Fall of 4 points or more, nadir above 88%'], ['le88', 'Nadir 88% or lower']]),
-        S('hrr', 'Heart-rate recovery at 1 minute', [NR, ['nl', 'Normal'], ['abn', 'Abnormal (13–18 bpm or less)']]),
-        S('o2', 'Oxygen', [['', 'Not noted (room air)'], ['o2', 'Supplemental oxygen']]),
-        S('stop', 'Completion', [['', 'Not noted (completed)'], ['early', 'Stopped early']])
+        S('dist_cat', 'Distance walked', [NR, ['wnl', 'Within normal limits'], ['low', 'Below the LLN']], { cols: { val: 'dist' }, auto: 'sixDist', hint: 'Typed distance is compared with the LLN (reported, or calculated below from age, sex, height and weight)' }),
+        S('desat', 'Desaturation', [NR, ['none', 'None significant'], ['fall', 'Fall of 4 points or more, nadir above 88%'], ['le88', 'Nadir 88% or lower']], { cols: { v1: 'spo2_base', v2: 'spo2_nadir' }, auto: 'sixDesat' }),
+        S('hrr', 'Heart-rate recovery at 1 minute', [NR, ['nl', 'Normal'], ['abn', 'Abnormal (13–18 bpm or less)']], { cols: { v1: 'hr_peak', v2: 'hr_1min' }, auto: 'sixHrr' }),
+        S('o2', 'Oxygen', [['', 'Not noted (room air)'], ['o2', 'Supplemental oxygen']], { cols: { v1: 'o2_flow' } }),
+        S('stop', 'Completion', [['', 'Not noted (completed)'], ['early', 'Stopped early']], { cols: { v1: 'time_min' }, more: true })
       ] },
-      { title: 'Measured values (optional)', opt: true, fields: [
-        N('dist', '6MWD', 'm', { step: 1 }), N('pred', 'Predicted', 'm', { step: 1 }), N('lln', 'LLN', 'm', { step: 1 }), N('pct', '% predicted', '%', { step: 1 }),
+      { title: 'Values', inline: true, fields: [
+        N('dist', '6MWD', 'm', { step: 1, units: 'walk', ph: 'distance' }), N('pred', 'Predicted', 'm', { step: 1, units: 'walk' }), N('lln', 'LLN', 'm', { step: 1, units: 'walk' }), N('pct', '% predicted', '%', { step: 1 }),
         S('eq', 'Reference equation', [['', 'Not stated'], ['Enright & Sherrill 1998', 'Enright & Sherrill 1998'], ['Casanova 2011', 'Casanova 2011'], ['Troosters 1999', 'Troosters 1999'], ['another equation', 'Other']], { stack: true }),
-        N('spo2_base', 'SpO2 baseline', '%', { step: 1 }), N('spo2_nadir', 'SpO2 nadir', '%', { step: 1 }), N('spo2_end', 'SpO2 end', '%', { step: 1 }),
-        N('hr_base', 'HR baseline', 'bpm', { step: 1 }), N('hr_peak', 'HR peak', 'bpm', { step: 1 }), N('hr_1min', 'HR at 1 min recovery', 'bpm', { step: 1 }),
+        N('spo2_base', 'SpO2 at rest', '%', { step: 1, ph: 'rest' }), N('spo2_nadir', 'SpO2 nadir', '%', { step: 1, ph: 'nadir' }), N('spo2_end', 'SpO2 end', '%', { step: 1 }),
+        N('hr_base', 'HR baseline', 'bpm', { step: 1 }), N('hr_peak', 'HR peak', 'bpm', { step: 1, ph: 'peak' }), N('hr_1min', 'HR at 1 min recovery', 'bpm', { step: 1, ph: '1 min' }),
         N('borg_base', 'Borg dyspnea baseline', '0–10', { step: 0.5 }), N('borg_end', 'Borg dyspnea end', '0–10', { step: 0.5 }),
-        N('o2_flow', 'Oxygen flow', 'L/min', { step: 0.5 }),
+        N('o2_flow', 'Oxygen flow', 'L/min', { step: 0.5, ph: 'flow' }),
         T('o2_desc', 'Oxygen device and setting (e.g. nasal cannula 2 L/min continuous, pulse-dose setting 3)'),
-        N('time_min', 'Minutes walked (if stopped early)', 'min', { step: 0.5, min: 0, max: 6 }),
+        N('time_min', 'Minutes walked (if stopped early)', 'min', { step: 0.5, min: 0, max: 6, ph: 'min' }),
         T('stop_why', 'Reason (if stopped early)')
       ] }
     ]
@@ -1268,8 +1358,9 @@ function blankModule(key) {
 function blankPrior() { const o = {}; PRIOR_FIELDS.forEach(f => { o[f.id] = f.type === 'chk' ? false : ''; }); return o; }
 function blankTrendRow() { return { date: '', dist: '', nadir: '', o2: '' }; }
 
+function defaultUnits() { const u = {}; Object.keys(UNITS).forEach(q => { u[q] = UNITS[q].opts[0][0]; }); return u; }
 function defaultState() {
-  const st = { v: 3, tests: {}, settings: { band: CFG.band, headsupInCopy: false, style: 'standard', serial: 'ers' }, review: {}, prior: { cur: {}, list: [blankPrior()] }, trend6: { list: [blankTrendRow()] } };
+  const st = { v: 5, tests: {}, settings: { band: CFG.band, headsupInCopy: false, style: 'standard', serial: 'ers', copy: 'lean' }, units: defaultUnits(), review: {}, prior: { cur: {}, list: [blankPrior()] }, trend6: { list: [blankTrendRow()] } };
   TESTS.forEach(t => { st.tests[t.key] = false; });
   Object.keys(SCHEMA).forEach(k => { st[k] = blankModule(k); });
   CUR_FIELDS.forEach(f => { st.prior.cur[f.id] = ''; });
@@ -1287,6 +1378,17 @@ function normalizeState(raw) {
     if (STYLES.indexOf(raw.settings.style) >= 0) st.settings.style = raw.settings.style;
     if (st.settings.style === 'numeric') st.settings.style = 'standard';
     if (raw.settings.serial === 'local') st.settings.serial = 'local';
+    if (raw.settings.copy === 'full') st.settings.copy = 'full';
+  }
+  if (raw.units && typeof raw.units === 'object') Object.keys(UNITS).forEach(q => { const v = raw.units[q]; if (v !== undefined && UNITS[q].f[v] !== undefined) st.units[q] = v; });
+  // v4 states carried one "in / lb" switch on the Details step; it wins over the default unit choices
+  if (raw.ctx && typeof raw.ctx === 'object' && raw.ctx.units === 'us') { if (st.units.len === 'cm') st.units.len = 'in'; if (st.units.wt === 'kg') st.units.wt = 'lb'; }
+  // v4 bronchodilator states typed the pre values on their own step; the spirometry values now serve as the pre values
+  if (raw.bd && typeof raw.bd === 'object' && raw.spiro && typeof raw.spiro === 'object') {
+    const sp = Object.assign({}, raw.spiro);
+    if (String(sp.fev1_abs || '') === '' && String(raw.bd.fev1_pre || '') !== '') sp.fev1_abs = raw.bd.fev1_pre;
+    if (String(sp.fvc_abs || '') === '' && String(raw.bd.fvc_pre || '') !== '') sp.fvc_abs = raw.bd.fvc_pre;
+    raw = Object.assign({}, raw, { spiro: sp });
   }
   if (raw.review && typeof raw.review === 'object') Object.keys(raw.review).forEach(k => { if (raw.review[k] && /^[a-z0-9_.]+$/.test(k)) st.review[k] = true; });
   // v2 states had one spirometry grade (the lower of the two); v3 grades FEV1 and FVC separately
@@ -1450,42 +1552,40 @@ const STUDIES = {
   'study.repeat_pft': 'repeat pulmonary function testing in 6 to 12 months to assess for change'
 };
 
+/* the DLCO entered is corrected for hemoglobin (reported as corrected, or a corrected value was entered beside it) */
+function hbCorrected(f) { const d = f.dl; return !!(d && (d.reportedAdjusted || (d.adj && d.adj.measured))); }
 /* Each group: key, when(f) -> boolean, title (used in "Differential considerations for <title>"), dx: [[id, text]], studies: [study id] */
 const DX_GROUPS = [
   { key: 'dlco_isolated', title: 'the isolated reduction in DLCO',
     when: (f) => f.F['patterns.isolated_low_dlco'] === true,
-    dx: [['pvd', 'pulmonary vascular disease (pulmonary arterial hypertension, chronic thromboembolic disease)'],
+    dx: (f) => [['pvd', 'pulmonary vascular disease (pulmonary arterial hypertension, chronic thromboembolic disease)'],
          ['ild_early', 'early interstitial lung disease (gas transfer can fall before FVC or TLC)'],
-         ['emph_preserved', 'emphysema with preserved spirometry and lung volumes'],
-         ['anemia', 'anemia (when the value is not hemoglobin-adjusted)'],
+         ['emph_preserved', 'emphysema with preserved spirometry and lung volumes']].concat(hbCorrected(f) ? [] : [['anemia', 'anemia (the value is not corrected for hemoglobin)']]).concat([
          ['cohb', 'recent smoking or elevated carboxyhemoglobin before the test'],
-         ['hps', 'intrapulmonary shunting (hepatopulmonary syndrome) in liver disease']],
-    studies: ['study.hb', 'study.hrct', 'study.echo', 'study.sixmwt', 'study.cpet', 'study.dlco_repeat'] },
+         ['hps', 'intrapulmonary shunting (hepatopulmonary syndrome) in liver disease']]),
+    studies: (f) => (hbCorrected(f) ? [] : ['study.hb']).concat(['study.hrct', 'study.echo', 'study.sixmwt', 'study.cpet', 'study.dlco_repeat']) },
   { key: 'dlco_low_obstruction', title: 'the reduced DLCO with airflow obstruction',
     when: (f) => f.F['patterns.obstruction'] === true && !f.F['patterns.mixed'] && f.on.dlco && f.dl.dlco.low,
-    dx: [['emph', 'emphysema (parenchymal destruction) rather than airway-predominant disease'],
+    dx: (f) => [['emph', 'emphysema (parenchymal destruction) rather than airway-predominant disease'],
          ['cpfe', 'combined pulmonary fibrosis and emphysema when lung volumes are relatively preserved'],
-         ['pvd', 'pulmonary vascular disease out of proportion to the airflow limitation'],
-         ['anemia', 'anemia (when the value is not hemoglobin-adjusted)'],
-         ['cohb', 'recent smoking or elevated carboxyhemoglobin before the test']],
-    studies: ['study.hrct', 'study.hb', 'study.a1at', 'study.echo', 'study.sixmwt'] },
+         ['pvd', 'pulmonary vascular disease out of proportion to the airflow limitation']].concat(hbCorrected(f) ? [] : [['anemia', 'anemia (the value is not corrected for hemoglobin)']]).concat([
+         ['cohb', 'recent smoking or elevated carboxyhemoglobin before the test']]),
+    studies: (f) => ['study.hrct'].concat(hbCorrected(f) ? [] : ['study.hb']).concat(['study.a1at', 'study.echo', 'study.sixmwt']) },
   { key: 'dlco_low_restriction', title: 'the reduced DLCO with restriction',
     when: (f) => f.on.vol && f.vol.pat.restriction && !f.F['patterns.obstruction'] && f.on.dlco && f.dl.dlco.low,
-    dx: [['ild', 'interstitial lung disease (idiopathic, connective-tissue disease–associated, hypersensitivity pneumonitis, sarcoidosis, pneumoconiosis)'],
+    dx: (f) => [['ild', 'interstitial lung disease (idiopathic, connective-tissue disease–associated, hypersensitivity pneumonitis, sarcoidosis, pneumoconiosis)'],
          ['drug', 'drug- or radiation-induced lung injury'],
          ['chf', 'chronic heart failure with pulmonary venous congestion'],
-         ['resection', 'prior lung resection'],
-         ['anemia', 'anemia contributing to the gas-transfer reduction (when the value is not hemoglobin-adjusted)']],
-    studies: ['study.hrct', 'study.ctd', 'study.echo', 'study.sixmwt', 'study.hb'] },
+         ['resection', 'prior lung resection']].concat(hbCorrected(f) ? [] : [['anemia', 'anemia contributing to the gas-transfer reduction (the value is not corrected for hemoglobin)']]),
+    studies: (f) => ['study.hrct', 'study.ctd', 'study.echo', 'study.sixmwt'].concat(hbCorrected(f) ? [] : ['study.hb']) },
   { key: 'dlco_low_other', title: 'the reduced DLCO',
     when: (f) => f.on.dlco && f.dl.dlco.low && f.F['patterns.isolated_low_dlco'] !== true && !(f.F['patterns.obstruction'] === true && !f.F['patterns.mixed']) && !(f.on.vol && f.vol.pat.restriction && !f.F['patterns.obstruction']),
-    dx: [['ild_early', 'interstitial lung disease, including early disease (gas transfer can fall before FVC or TLC)'],
+    dx: (f) => [['ild_early', 'interstitial lung disease, including early disease (gas transfer can fall before FVC or TLC)'],
          ['pvd', 'pulmonary vascular disease (pulmonary arterial hypertension, chronic thromboembolic disease)'],
-         ['emph', 'emphysema'],
-         ['anemia', 'anemia (when the value is not hemoglobin-adjusted)'],
+         ['emph', 'emphysema']].concat(hbCorrected(f) ? [] : [['anemia', 'anemia (the value is not corrected for hemoglobin)']]).concat([
          ['cohb', 'recent smoking or elevated carboxyhemoglobin before the test'],
-         ['chf', 'heart failure with pulmonary venous congestion']],
-    studies: ['study.hb', 'study.hrct', 'study.echo', 'study.sixmwt', 'study.dlco_repeat'] },
+         ['chf', 'heart failure with pulmonary venous congestion']]),
+    studies: (f) => (hbCorrected(f) ? [] : ['study.hb']).concat(['study.hrct', 'study.echo', 'study.sixmwt', 'study.dlco_repeat']) },
   { key: 'restriction_preserved_dlco', title: 'the restriction with preserved gas transfer',
     when: (f) => f.on.vol && f.vol.pat.restriction && !f.F['patterns.obstruction'] && f.on.dlco && f.dl.dlco.measured && !f.dl.dlco.invalid && (f.dl.dlco.wnl || f.dl.dlco.high || f.dl.kco.high),
     dx: [['nmd', 'respiratory-muscle weakness (neuromuscular disease, diaphragm dysfunction)'],
@@ -1672,6 +1772,13 @@ function markSuperseded(suggest, groups) {
 
 /* ------------------------------------------------------------------ facts */
 function blankIf(on, st, key) { return on[key] ? st[key] : blankModule(key); }
+/* any post-bronchodilator entry (a typed post value, a tapped post category, the lab's verdict, a change as reported) */
+function bdEntered(bd) {
+  if (!bd || typeof bd !== 'object') return false;
+  const pr = (p) => p && typeof p === 'object' && ((p.c && p.c !== 'nm') || String(p.z === undefined || p.z === null ? '' : p.z) !== '');
+  return ['fev1_post', 'fvc_post', 'post_ratio_abs', 'dfev1_pp', 'dfvc_pp', 'fev1_pre', 'fvc_pre'].some(k => String(bd[k] === undefined || bd[k] === null ? '' : bd[k]).trim() !== '') ||
+    pr(bd.post_ratio) || pr(bd.post_fev1) || (bd.resp || '') !== '';
+}
 
 function parseDate(s) {
   if (!s) return null;
@@ -1716,7 +1823,7 @@ function trendFacts(st, f) {
   const rows = (st.trend6 && Array.isArray(st.trend6.list)) ? st.trend6.list : [];
   const pts = [];
   rows.forEach((r, i) => {
-    const dist = num(r.dist), ds = (r.date || '').trim(), nadir = num(r.nadir);
+    const dist = toBase(st, 'walk', r.dist), ds = (r.date || '').trim(), nadir = num(r.nadir);
     if (!has(dist) && !ds && !has(nadir)) return;                       // blank row
     const d = parseDate(ds);
     if (!has(dist) || dist <= 0 || !d) { t.skipped++; return; }
@@ -1769,12 +1876,14 @@ function trendFacts(st, f) {
 function buildFacts(st) {
   const band = num(st.settings && st.settings.band);
   CFG.band = has(band) ? Math.max(0, Math.min(1, band)) : 0.25;
-  const on = st.tests;
+  const on = Object.assign({}, st.tests);
   const c = st.ctx;
-  const age = num(c.age); let ht = num(c.ht), wt = num(c.wt);
-  if (c.units === 'us') { if (has(ht)) ht = ht * 2.54; if (has(wt)) wt = wt * 0.45359237; }
+  const age = num(c.age);
+  const ht = toBase(st, 'len', c.ht), wt = toBase(st, 'wt', c.wt);
   const bmi = (has(ht) && has(wt) && ht > 0) ? wt / Math.pow(ht / 100, 2) : NaN;
-  const f = { on: Object.assign({}, on), st: st, review: st.review || {}, style: (st.settings && st.settings.style) || 'standard' };
+  // the bronchodilator response is part of the spirometry step: it counts as performed when ticked there or when any post-bronchodilator entry exists
+  on.bd = !!on.bd || bdEntered(st.bd);
+  const f = { on: on, st: st, units: st.units || {}, review: st.review || {}, style: (st.settings && st.settings.style) || 'standard' };
   const indic = Array.isArray(c.indic) ? c.indic : [];
   const indicLabels = INDICATIONS.reduce((a, g) => a.concat(g.opts), []).filter(o => indic.indexOf(o[0]) >= 0).map(o => o[1]);
   f.ctx = { age: age, sex: c.sex || '', ht: ht, wt: wt, bmi: bmi, obese: has(bmi) && bmi >= 30, smoke: c.smoke || '',
@@ -1804,27 +1913,39 @@ function buildFacts(st) {
     effort: sp.effort || (loop === 'weak' ? 'weak' : (loop === 'effort' ? 'poor' : '')), loop: loop, repro: !!fv.loop_repro
   };
   f.sp.ratioCalc = (has(f.sp.fev1L) && has(f.sp.fvcL) && f.sp.fvcL > 0) ? f.sp.fev1L / f.sp.fvcL : NaN;
-  f.sp.any = f.sp.ratio.measured || f.sp.fev1.measured || f.sp.fvc.measured || has(f.sp.fev1L) || has(f.sp.fvcL);
+  // a typed FEV1/FVC (0.72 or 72) takes precedence over the one calculated from the litres
+  const ratioTyped = num(sp.ratio_abs);
+  f.sp.ratioV = has(ratioTyped) ? (ratioTyped > 1.5 ? ratioTyped / 100 : ratioTyped) : f.sp.ratioCalc;
+  f.sp.any = f.sp.ratio.measured || f.sp.fev1.measured || f.sp.fvc.measured || has(f.sp.fev1L) || has(f.sp.fvcL) || has(f.sp.ratioV);
   f.sp.anyQ = !!(q1 || q2 || lim.length || sp.effort);
+  // predicted values implied by a value and its % predicted (used for the bronchodilator change)
+  f.sp.fev1Pred = (has(f.sp.fev1L) && has(f.sp.fev1pct) && f.sp.fev1pct > 0) ? f.sp.fev1L / (f.sp.fev1pct / 100) : NaN;
+  f.sp.fvcPred = (has(f.sp.fvcL) && has(f.sp.fvcpct) && f.sp.fvcpct > 0) ? f.sp.fvcL / (f.sp.fvcpct / 100) : NaN;
 
-  /* ---------------- bronchodilator ---------------- */
+  /* ---------------- bronchodilator (inside the spirometry step) ---------------- */
   const bd = blankIf(on, st, 'bd');
   const relB = bd.qc === 'inv' ? 'invalid' : (bd.qc === 'limited' ? 'limited' : 'ok');
+  const pick = (a, b_) => has(a) ? a : b_;
   f.bd = {
     agent: (bd.agent || '').trim(), held: bd.held || '', qc: bd.qc || '', rel: relB,
-    f1pre: num(bd.fev1_pre), f1post: num(bd.fev1_post), f1pred: num(bd.fev1_pred),
-    vpre: num(bd.fvc_pre), vpost: num(bd.fvc_post), vpred: num(bd.fvc_pred),
+    f1pre: pick(num(bd.fev1_pre), f.sp.fev1L), f1post: num(bd.fev1_post), f1pred: pick(num(bd.fev1_pred), f.sp.fev1Pred),
+    vpre: pick(num(bd.fvc_pre), f.sp.fvcL), vpost: num(bd.fvc_post), vpred: pick(num(bd.fvc_pred), f.sp.fvcPred),
     dF1pp: num(bd.dfev1_pp), dVpp: num(bd.dfvc_pp),
     postRatio: res(bd.post_ratio, 'ratio', relB), postFev1: res(bd.post_fev1, 'grade', relB), resp: bd.resp || ''
   };
   const b = f.bd;
+  const postRatioTyped = num(bd.post_ratio_abs);
+  b.postRatioV = has(postRatioTyped) ? (postRatioTyped > 1.5 ? postRatioTyped / 100 : postRatioTyped) : ((has(b.f1post) && has(b.vpost) && b.vpost > 0) ? b.f1post / b.vpost : NaN);
+  b.postPctF = (has(b.f1post) && has(b.f1pred) && b.f1pred > 0) ? b.f1post / b.f1pred * 100 : NaN;   // post-bronchodilator % predicted
+  b.postPctV = (has(b.vpost) && has(b.vpred) && b.vpred > 0) ? b.vpost / b.vpred * 100 : NaN;
+  b.needPred = (has(b.f1post) && has(b.f1pre) && !has(b.f1pred)) || (has(b.vpost) && has(b.vpre) && !has(b.vpred));
   b.dF = has(b.dF1pp) ? b.dF1pp : ((has(b.f1pre) && has(b.f1post) && has(b.f1pred) && b.f1pred > 0) ? (b.f1post - b.f1pre) / b.f1pred * 100 : NaN);
   b.dV = has(b.dVpp) ? b.dVpp : ((has(b.vpre) && has(b.vpost) && has(b.vpred) && b.vpred > 0) ? (b.vpost - b.vpre) / b.vpred * 100 : NaN);
   b.dFmL = (has(b.f1pre) && has(b.f1post)) ? (b.f1post - b.f1pre) * 1000 : NaN;
   b.dVmL = (has(b.vpre) && has(b.vpost)) ? (b.vpost - b.vpre) * 1000 : NaN;
   b.dFbase = (has(b.f1pre) && has(b.f1post) && b.f1pre > 0) ? (b.f1post - b.f1pre) / b.f1pre * 100 : NaN;
   b.dVbase = (has(b.vpre) && has(b.vpost) && b.vpre > 0) ? (b.vpost - b.vpre) / b.vpre * 100 : NaN;
-  b.any = has(b.dF) || has(b.dV) || b.postRatio.measured || b.postFev1.measured || has(b.f1pre) || has(b.f1post) || has(b.vpre) || has(b.vpost) || b.resp !== '' || has(b.dFmL) || has(b.dVmL);
+  b.any = has(b.dF) || has(b.dV) || b.postRatio.measured || b.postFev1.measured || has(b.f1post) || has(b.vpost) || b.resp !== '' || has(b.dFmL) || has(b.dVmL) || has(b.postRatioV);
   // a metric is "assessed" when its change is known from numbers, or the lab's verdict covered it
   b.assessedF = has(b.dF) || (b.resp !== '' && b.resp !== 'ind');
   b.assessedV = has(b.dV) || (b.resp !== '' && b.resp !== 'ind');
@@ -1872,11 +1993,13 @@ function buildFacts(st) {
     method: vo.method || '', qc: vo.qc || '', rel: relVol,
     tlc: res(vo.tlc, 'gradeH', relVol), rvtlc: res(vo.rvtlc, 'both', relVol), rv: res(vo.rv, 'both', relVol), frc: res(vo.frc, 'both', relVol), frctlc: res(vo.frctlc, 'both', relVol),
     svc: res(vo.svc, 'gradeH', relVol), erv: res(vo.erv, 'both', relVol), ic: res(vo.ic, 'both', relVol),
-    tlcL: num(vo.tlc_abs), rvL: num(vo.rv_abs), frcL: num(vo.frc_abs), svcL: num(vo.svc_abs)
+    tlcL: num(vo.tlc_abs), rvL: num(vo.rv_abs), frcL: num(vo.frc_abs), svcL: num(vo.svc_abs), tlcPct: num(vo.tlc_pct), rvPct: num(vo.rv_pct)
   };
   const v = f.vol;
   v.rvtlcCalc = (has(v.rvL) && has(v.tlcL) && v.tlcL > 0) ? v.rvL / v.tlcL * 100 : NaN;
-  v.any = v.tlc.measured || v.rvtlc.measured || v.rv.measured || v.frc.measured || v.frctlc.measured || v.svc.measured || v.erv.measured || v.ic.measured || has(v.tlcL) || has(v.rvL);
+  const rvtlcTyped = num(vo.rvtlc_pct);
+  v.rvtlcV = has(rvtlcTyped) ? (rvtlcTyped <= 1 ? rvtlcTyped * 100 : rvtlcTyped) : v.rvtlcCalc;
+  v.any = v.tlc.measured || v.rvtlc.measured || v.rv.measured || v.frc.measured || v.frctlc.measured || v.svc.measured || v.erv.measured || v.ic.measured || has(v.tlcL) || has(v.rvL) || has(v.rvtlcV);
   v.dilution = (v.method === 'n2' || v.method === 'he' || v.method === 'sb');
 
   /* ---------------- DLCO ---------------- */
@@ -1885,7 +2008,7 @@ function buildFacts(st) {
   f.dl = {
     dlco: res(dl.dlco, 'gradeH', relD), adj: res(dl.dlco_adj, 'gradeH', relD), va: res(dl.va, 'both', relD), kco: res(dl.kco, 'both', relD),
     basis: dl.basis || '', single: dl.single === 'one',
-    hb: num(dl.hb), cohb: num(dl.cohb), abs: num(dl.dlco_abs), pct: num(dl.dlco_pct), vaL: num(dl.va_abs),
+    hb: num(dl.hb), cohb: num(dl.cohb), abs: toBase(st, 'dlco', dl.dlco_abs), pct: num(dl.dlco_pct), vaL: num(dl.va_abs),
     vatlcSel: dl.vatlc || '', qc: dl.qc || '', rel: relD, hbcat: dl.hbcat || '', cohbcat: dl.cohbcat || ''
   };
   const d = f.dl;
@@ -1904,6 +2027,10 @@ function buildFacts(st) {
   d.adjPct = (has(d.pct) && has(d.hb) && d.hb > 0 && !d.reportedAdjusted) ? d.pct * (0.7 * d.hbRef + d.hb) / (1.7 * d.hb) : NaN;
   d.hbKnown = has(d.hb) || d.hbcat !== '';
   d.anemic = has(d.hb) ? (f.ctx.sex === 'M' ? d.hb < 13.0 : d.hb < 12.0) : (d.hbcat === 'low' ? true : (d.hbcat !== '' ? false : null));
+  d.hbHigh = has(d.hb) ? (f.ctx.sex === 'M' ? d.hb > 16.5 : d.hb > 16.0) : d.hbcat === 'high';
+  d.hbCatUse = has(d.hb) ? (d.anemic ? 'low' : (d.hbHigh ? 'high' : 'nl')) : d.hbcat;   // the category the typed hemoglobin implies (WHO thresholds)
+  // what the corrected value would do, when the reported value is uncorrected and the hemoglobin is known
+  d.corrDir = (d.basis === 'un' && d.hbKnown) ? (d.anemic === true ? 'up' : (d.hbHigh ? 'down' : 'none')) : '';
   d.cohbKnown = has(d.cohb) || d.cohbcat !== '';
   d.cohbHigh = has(d.cohb) ? d.cohb >= 2 : d.cohbcat === 'hi';
   d.any = d.dlco.measured || d.adj.measured || d.va.measured || d.kco.measured || d.hbKnown || has(d.pct) || has(d.abs) || d.cohbKnown;
@@ -1986,7 +2113,7 @@ function buildFacts(st) {
   /* ---------------- 6MWT ---------------- */
   const sx = blankIf(on, st, 'sixmw');
   f.six = {
-    dist: num(sx.dist), pred: num(sx.pred), lln: num(sx.lln), pct: num(sx.pct), eq: (sx.eq || '').trim(),
+    dist: toBase(st, 'walk', sx.dist), pred: toBase(st, 'walk', sx.pred), lln: toBase(st, 'walk', sx.lln), pct: num(sx.pct), eq: (sx.eq || '').trim(), unit: unitOf(st, 'walk'),
     s0: num(sx.spo2_base), sn: num(sx.spo2_nadir), se: num(sx.spo2_end), h0: num(sx.hr_base), hp: num(sx.hr_peak), h1: num(sx.hr_1min),
     b0: num(sx.borg_base), b1: num(sx.borg_end), o2: sx.o2 || '', o2flow: num(sx.o2_flow), o2desc: (sx.o2_desc || '').trim(), stop: sx.stop || '', stopWhy: (sx.stop_why || '').trim(), timeMin: num(sx.time_min),
     distCat: sx.dist_cat || '', desatSel: sx.desat || '', hrrSel: sx.hrr || ''
@@ -2066,7 +2193,35 @@ function buildFacts(st) {
   f.dl.pat = dlcoPattern(f);
   f.F = deriveFacts(f);
   f.suggest = suggestions(f);
+  f.prompts = prompts(f);
   return f;
+}
+
+/* ------------------------------------------------- pattern-triggered prompts
+   When a pattern makes one more value useful, the interface asks for it on the step where it is entered (or offers the
+   test on the first screen). Each prompt names the step (mod), the field or test, and why. Nothing is assumed from an
+   unanswered prompt. */
+function prompts(f) {
+  const out = [];
+  const add = (id, mod, field, text, test) => out.push({ id: id, mod: mod, field: field || '', test: test || '', text: text });
+  const s = f.sp, sp = s.pat, v = f.vol, vp = v.pat, d = f.dl, D = d.dlco, x = f.six, b = f.bd;
+  const spOn = f.on.spiro && s.any, volOn = f.on.vol && v.any, dlOn = f.on.dlco && d.any && D.measured && !D.invalid;
+  const restriction = volOn && vp.restriction && !sp.obstruction;
+  const obstruction = spOn && sp.obstruction;
+  if (restriction && (!f.on.dlco || (dlOn && !D.low)) && !v.erv.measured)
+    add('erv_restriction', 'vol', 'erv', 'Restrictive pattern' + (dlOn ? ' with a normal DLCO' : '') + ': enter the ERV if reported. A low ERV points to body habitus (obesity) rather than parenchymal disease.');
+  if (restriction && !f.on.dlco) add('dlco_restriction', 'tests', '', 'Restriction: add the DLCO if it was measured; a normal DLCO favors an extrapulmonary cause.', 'dlco');
+  if (restriction && dlOn && !D.low && !f.on.mip && !f.ctx.obese) add('mip_restriction', 'tests', '', 'Restriction with a normal DLCO: respiratory muscle pressures (MIP/MEP) separate a neuromuscular cause from chest-wall or obesity-related restriction.', 'mip');
+  if (spOn && (sp.lowFvcUnconfirmed || sp.obstLowFvcUnconfirmed) && !f.on.vol) add('vol_low_fvc', 'tests', '', 'Reduced FVC: add lung volumes (TLC) if measured to confirm or exclude restriction.', 'vol');
+  if (obstruction && !f.on.bd) add('bd_obstruction', 'spiro', 'bd', 'Airflow obstruction: enter the post-bronchodilator values if a bronchodilator was given.');
+  if (obstruction && volOn && !v.rvtlc.measured) add('rvtlc_obstruction', 'vol', 'rvtlc', 'Obstruction: enter RV/TLC to assess air trapping.');
+  if (f.on.bd && b.needPred) add('pred_bd', 'spiro', 'fev1', 'Enter the pre-bronchodilator % predicted (or the predicted value under bronchodilator details) so the change can be graded as % of predicted.');
+  if (dlOn && (D.low || D.high) && !d.basisKnown) add('basis_dlco', 'dlco', 'basis', 'Say whether the reported DLCO is corrected for hemoglobin; the interpretation differs.');
+  if (dlOn && D.low && !d.hbKnown && !d.hasAdj) add('hb_dlco', 'dlco', 'hbcat', 'Reduced DLCO: enter the hemoglobin. A low hemoglobin lowers the uncorrected DLCO, and the corrected % predicted is calculated from it.');
+  if (dlOn && D.low && !(d.va.measured && d.kco.measured)) add('va_kco_dlco', 'dlco', d.va.measured ? 'kco' : 'va', 'Reduced DLCO: enter VA and KCO to separate loss of alveolar volume from a true gas-transfer defect.');
+  if (f.on.sixmw && has(x.dist) && !has(x.sn) && !x.desatSel) add('spo2_walk', 'sixmw', 'desat', 'Enter the SpO2 nadir to assess exertional desaturation.');
+  if (f.on.sixmw && has(x.dist) && !has(x.llnUse) && !x.es.ok) add('demo_walk', 'ctx', 'age', 'Enter age, sex, height and weight on the Details step to calculate the predicted 6MWD and its LLN (Enright & Sherrill 1998).');
+  return out;
 }
 
 /* ---------------------------------------------------------- spirometry pattern
@@ -2311,8 +2466,8 @@ function deriveFacts(f) {
     put('spirometry.fev1_state', A.state); put('spirometry.fvc_state', B.state); put('spirometry.ratio_state', R.state);
     put('spirometry.fev1_severity', A.sevState); put('spirometry.fvc_severity', B.sevState);
     if (R.measured && !R.invalid) put('spirometry.ratio_near_lln', !!R.bl);
-    if (has(s.ratioCalc) && R.measured && !R.invalid) {
-      const fixed = s.ratioCalc < 0.70;
+    if (has(s.ratioV) && R.measured && !R.invalid) {
+      const fixed = s.ratioV < 0.70;
       put('spirometry.fixed_ratio_discordance', fixed && !R.low ? 'fixed_only' : (!fixed && R.low ? 'lln_only' : 'none'));
     }
     if (s.fef.measured && !s.fef.invalid) {
@@ -2626,11 +2781,11 @@ function placeholderValues(f) {
   const setZ = (k, r) => { if (r && r.z !== null) V[k] = fz(r.z); };
   set('fev1_L', s.fev1L, 2); set('fvc_L', s.fvcL, 2); set('fev1_pct_pred', s.fev1pct, 0); set('fvc_pct_pred', s.fvcpct, 0);
   setZ('fev1_z', s.fev1); setZ('fvc_z', s.fvc); setZ('ratio_z', s.ratio);
-  if (has(s.ratioCalc)) V.ratio_percent = fmt(s.ratioCalc * 100, 0);
+  if (has(s.ratioV)) V.ratio_percent = fmt(s.ratioV * 100, 0);
   set('svc_L', v.svcL, 2); setZ('svc_z', v.svc);
   set('tlc_L', v.tlcL, 2); setZ('tlc_z', v.tlc); set('rv_L', v.rvL, 2); setZ('rv_z', v.rv); set('frc_L', v.frcL, 2); setZ('frc_z', v.frc);
   setZ('erv_z', v.erv); setZ('ic_z', v.ic); setZ('rv_tlc_z', v.rvtlc); setZ('frc_tlc_z', v.frctlc);
-  if (has(v.rvtlcCalc)) V.rv_tlc_percent = fmt(v.rvtlcCalc, 0);
+  if (has(v.rvtlcV)) V.rv_tlc_percent = fmt(v.rvtlcV, 0);
   set('dlco_value', d.abs, 1); if (has(d.abs)) V.dlco_units = 'mL/min/mmHg'; set('dlco_pct_pred', d.pct, 0); setZ('dlco_z', d.dlco);
   set('va_value', d.vaL, 2); if (has(d.vaL)) V.va_units = 'L'; setZ('va_z', d.va); setZ('kco_z', d.kco);
   if (has(d.vatlc)) V.va_tlc_percent = fmt(d.vatlc * 100, 0);
@@ -2780,9 +2935,9 @@ function priorFacts(st, f) {
   const cv = {
     fev1: curVal('fev1', f.sp.fev1L), fvc: curVal('fvc', f.sp.fvcL),
     fev1_pct: curVal('fev1_pct', f.sp.fev1pct), fvc_pct: curVal('fvc_pct', f.sp.fvcpct),
-    tlc: curVal('tlc', f.vol.tlcL), dlco: curVal('dlco', f.dl.abs),
+    tlc: curVal('tlc', f.vol.tlcL), dlco: has(toBase(st, 'dlco', cur.dlco)) ? toBase(st, 'dlco', cur.dlco) : f.dl.abs,
     dlco_pct: curVal('dlco_pct', has(f.dl.adjPct) ? f.dl.adjPct : f.dl.pct),
-    six: curVal('six', f.six.dist), feno: curVal('feno', f.feno.v),
+    six: has(toBase(st, 'walk', cur.six)) ? toBase(st, 'walk', cur.six) : f.six.dist, feno: curVal('feno', f.feno.v),
     fev1_z: f.sp.fev1.z
   };
   const curDate = f.ctx.date;
@@ -2805,7 +2960,7 @@ function priorFacts(st, f) {
       { k: 'dlco_pct', name: 'DLCO', unit: '% predicted', d: 0, pp: true }
     ];
     defs.forEach(df => {
-      const a = num(p[df.k]), bb = cv[df.k];
+      const a = df.k === 'six' ? toBase(st, 'walk', p[df.k]) : (df.k === 'dlco' ? toBase(st, 'dlco', p[df.k]) : num(p[df.k])), bb = cv[df.k];
       if (!has(a) || !has(bb)) return;
       const m = { k: df.k, name: df.name, unit: df.unit, d: df.d, prior: a, cur: bb, dAbs: bb - a, pp: !!df.pp };
       m.dPct = (!df.pp && a !== 0) ? (bb - a) / a * 100 : NaN;          // relative change from the prior measured value
@@ -2861,7 +3016,7 @@ function spiroItems(f) {
   return [
     metricItem('FEV1', s.fev1, 'metric.fev1', nv(s.fev1L, s.fev1pct)),
     metricItem('FVC', s.fvc, 'metric.fvc', nv(s.fvcL, s.fvcpct)),
-    metricItem('FEV1/FVC', s.ratio, 'metric.ratio', () => has(s.ratioCalc) ? fmt(s.ratioCalc, 2) : '', true)
+    metricItem('FEV1/FVC', s.ratio, 'metric.ratio', () => has(s.ratioV) ? fmt(s.ratioV, 2) : '', true)
   ];
 }
 const SEV_CAPW = { mild: 'Mild', moderate: 'Moderate', severe: 'Severe' };
@@ -2882,7 +3037,7 @@ function spiroStatement(f) {
   if (sp.kind === 'noratio') { out.push('FEV1/FVC was not entered, so obstruction cannot be assessed' + ((A.low || B.low) ? '; the reduced ' + (A.low && B.low ? 'FEV1 and FVC' : (A.low ? 'FEV1' : 'FVC')) + ' cannot be classified without it' : '')); return out; }
   if (R.low) {
     if (sp.kind === 'effort' && !T.low) { out.push('Reduced FEV1/FVC and FVC most likely reflect submaximal effort or muscle weakness'); return out; }
-    if (sp.mixed) { out.push('Mixed obstructive and restrictive pattern (FEV1/FVC and TLC below the LLN' + (A.sev ? '; FEV1 ' + zTag(A) : '') + ')'); return out; }
+    if (sp.mixed) { out.push('Mixed obstructive and restrictive pattern (FEV1/FVC and TLC below the LLN' + (A.sev ? '; FEV1 ' + (A.z !== null && !zpOff ? zTag(A) : SEV_ADV[A.sev] + ' reduced') : '') + ')'); return out; }
     let t;
     if (sp.preservedFev1) t = 'Obstructive impairment present with a preserved FEV1 (FEV1/FVC below the LLN' + (R.z !== null ? ', ' + zTag(R) : '') + ')';
     else if (A.sev) t = SEV_CAPW[A.sev] + ' obstructive impairment present (FEV1/FVC' + (R.z !== null && !zpOff ? ' ' + zTag(R) + ',' : '') + ' below the LLN' + (zpOff ? '' : '; FEV1 ' + (A.z !== null ? zTag(A) : SEV_ADV[A.sev] + ' reduced')) + ')';
@@ -2922,7 +3077,10 @@ function spiroStatement(f) {
 }
 function secSpiro(f) {
   const sec = newSec('spiro', 'SPIROMETRY'), s = f.sp, pat = s.pat;
-  if (!s.any) { sec.empty = true; sec.lines.push('No spirometry values entered.'); return sec; }
+  if (!s.any) {
+    if (f.on.bd && f.bd.any) { const bo = bdLines(f); bo.lines.forEach(l => put(sec, l)); bo.codes.forEach(c => sec.codes.push(c)); return sec; }
+    sec.empty = true; sec.lines.push('No spirometry values entered.'); return sec;
+  }
   const nl = numbersLine(f, spiroItems(f)); if (nl) put(sec, nl);
   zpOff = !!nl;
   spiroStatement(f).forEach(l => put(sec, l));
@@ -2934,46 +3092,66 @@ function secSpiro(f) {
   if (f.style === 'expanded') caveatLines(f, spiroItems(f)).forEach(l => put(sec, l));
   if (pat.code) sec.codes.push(pat.code);
   pat.codes.forEach(c => sec.codes.push(c));
+  // the bronchodilator response is reported inside the spirometry section
+  const bdl = bdLines(f);
+  bdl.lines.forEach(l => put(sec, l));
+  bdl.codes.forEach(c => sec.codes.push(c));
   sec.codes = uniq(sec.codes);
   return sec;
 }
 
-/* -------------------------------------------------------------------- BD */
-function secBD(f) {
-  const sec = newSec('bd', 'BRONCHODILATOR RESPONSE'), b = f.bd, V = f.vals;
-  if (!f.on.bd) { sec.lines.push('A bronchodilator trial was not performed.'); return sec; }
-  if (!b.any) { sec.empty = true; sec.lines.push('No bronchodilator data entered.'); return sec; }
+/* -------------------------------------------------------------------- BD
+   Reported within SPIROMETRY: the post-bronchodilator values beside the pre values, the change as % of predicted, and
+   the verdict (ERS/ATS 2022: more than 10% of the predicted value in FEV1 and/or FVC). */
+function bdLines(f) {
+  const out = { lines: [], codes: [] }, b = f.bd, L = (t) => { if (t) out.lines.push(t); };
+  if (!f.on.bd) { if (f.sp.any && f.style === 'expanded') L('Post-bronchodilator testing was not performed'); return out; }
+  if (!b.any) return out;
   const pre = [];
-  if (b.agent) pre.push(cap(b.agent));
-  if (b.held === 'y') pre.push('home bronchodilators withheld');
-  else if (b.held === 'n') pre.push('bronchodilators taken before testing');
-  if (pre.length) put(sec, pre.join('; '));
-  if (b.qc === 'limited') put(sec, 'Technical factors reduce confidence in the post-bronchodilator maneuvers');
-  if (b.qc === 'inv') put(sec, 'The post-bronchodilator maneuvers are not interpretable');
-  const line = (name, p0, p1, dpp) => {
+  if (b.agent) pre.push(cap(b.agent) + ' was administered');
+  if (b.held === 'y') pre.push('home bronchodilators were withheld');
+  else if (b.held === 'n') pre.push('bronchodilators were taken before testing');
+  if (pre.length) L(pre.join('; '));
+  if (b.qc === 'limited') L('Technical factors reduce confidence in the post-bronchodilator maneuvers');
+  if (b.qc === 'inv') L('The post-bronchodilator maneuvers are not interpretable');
+  const line = (name, p0, p1, dpp, postPct) => {
     if (has(p0) && has(p1)) {
       const dm = (p1 - p0) * 1000;
-      return name + ' ' + fmt(p0, 2) + ' → ' + fmt(p1, 2) + ' L (' + fsign(dm, 0) + ' mL' + (has(dpp) ? ', ' + fsign(dpp, 1) + '% of predicted' : (p0 > 0 ? ', ' + fsign((p1 - p0) / p0 * 100, 0) + '%' : '')) + ')';
+      return name + ' ' + fmt(p0, 2) + ' → ' + fmt(p1, 2) + ' L' + (has(postPct) ? ' (' + Math.round(postPct) + '% predicted)' : '') + ', a change of ' + fsign(dm, 0) + ' mL' + (has(dpp) ? ' (' + fsign(dpp, 1) + '% of predicted)' : (p0 > 0 ? ' (' + fsign((p1 - p0) / p0 * 100, 0) + '% of baseline)' : ''));
     }
-    if (has(dpp)) return name + ' ' + fsign(dpp, 1) + '% of predicted';
+    if (has(p1)) return name + ' ' + fmt(p1, 2) + ' L after bronchodilator' + (has(postPct) ? ' (' + Math.round(postPct) + '% predicted)' : '');
+    if (has(dpp)) return name + ' changed by ' + fsign(dpp, 1) + '% of predicted';
     return '';
   };
-  if (f.style !== 'concise') { const nums = [line('FEV1', b.f1pre, b.f1post, b.dF), line('FVC', b.vpre, b.vpost, b.dV)].filter(Boolean); if (nums.length) put(sec, nums.join('; ')); }
+  if (f.style !== 'concise') {
+    const nums = [line('FEV1', b.f1pre, b.f1post, b.dF, b.postPctF), line('FVC', b.vpre, b.vpost, b.dV, b.postPctV)].filter(Boolean);
+    if (has(b.postRatioV)) nums.push('FEV1/FVC ' + (has(f.sp.ratioV) ? fmt(f.sp.ratioV, 2) + ' → ' : '') + fmt(b.postRatioV, 2) + ' after bronchodilator');
+    if (nums.length) L('After bronchodilator: ' + nums.join('; '));
+  }
   const resp = f.F['bronchodilator.response'];
-  if (resp === 'both' || resp === 'fev1' || resp === 'fvc') { sec.codes.push('S62'); put(sec, 'Spirometry significantly improved after bronchodilator administration (' + (resp === 'both' ? 'FEV1 and FVC' : resp.toUpperCase()) + ')'); }
-  else if (resp === 'negative') { sec.codes.push('S61'); put(sec, 'Spirometry did not significantly improve after bronchodilator administration'); }
+  if (resp === 'both' || resp === 'fev1' || resp === 'fvc') { out.codes.push('S62'); L('Spirometry significantly improved after bronchodilator administration (' + (resp === 'both' ? 'FEV1 and FVC' : resp.toUpperCase()) + ')'); }
+  else if (resp === 'negative') { out.codes.push('S61'); L('Spirometry did not significantly improve after bronchodilator administration'); }
   else if (resp === 'indeterminate') {
     let why = '';
     if (b.rel === 'invalid') why = 'post-bronchodilator maneuvers not interpretable';
     else if (b.resp === 'ind') why = 'reported as not assessable';
+    else if (b.needPred) why = 'the predicted value is needed to express the change as % of predicted';
     else if (!(b.assessedF && b.assessedV)) why = 'only ' + (b.assessedF ? 'FEV1' : (b.assessedV ? 'FVC' : 'incomplete data')) + ' could be assessed';
-    put(sec, 'The bronchodilator response cannot be assessed' + (why ? ' (' + why + ')' : ''));
+    L('The bronchodilator response cannot be assessed' + (why ? ' (' + why + ')' : ''));
   }
-  if (resp && resp !== 'not_performed' && f.style !== 'concise') put(sec, 'Per ERS/ATS 2022 criteria, FEV1 or FVC must increase by more than 10% of the predicted value to be considered significant');
-  if (b.legacyAvail && b.discordant) put(sec, 'By the 2005 ATS criteria (12% and 200 mL from baseline) the response would ' + (b.legacyF || b.legacyV ? '' : 'not ') + 'be considered significant');
-  if (b.drop) put(sec, 'FEV1 or FVC fell by more than 10% of predicted after bronchodilator');
-  if (b.postRatio.measured) put(sec, metricLine(f, 'metric.ratio', b.postRatio, 'Post-bronchodilator FEV1/FVC').replace(/ is reduced/, ' remains reduced'));
-  if (b.postFev1.measured) put(sec, metricLine(f, 'metric.fev1', b.postFev1, 'Post-bronchodilator FEV1'));
+  if (resp && resp !== 'not_performed' && f.style === 'expanded') L('Per ERS/ATS 2022 criteria, FEV1 or FVC must increase by more than 10% of the predicted value to be considered significant');
+  if (b.legacyAvail && b.discordant) L('By the 2005 ATS criteria (12% and 200 mL from baseline) the response would ' + (b.legacyF || b.legacyV ? '' : 'not ') + 'be considered significant');
+  if (b.drop) L('FEV1 or FVC fell by more than 10% of predicted after bronchodilator');
+  if (b.postRatio.measured) L(metricLine(f, 'metric.ratio', b.postRatio, 'Post-bronchodilator FEV1/FVC').replace(/ is reduced/, ' remains reduced'));
+  if (b.postFev1.measured) L(metricLine(f, 'metric.fev1', b.postFev1, 'Post-bronchodilator FEV1'));
+  return out;
+}
+/* kept for callers that still want the response as a section of its own */
+function secBD(f) {
+  const sec = newSec('bd', 'BRONCHODILATOR RESPONSE'), r = bdLines(f);
+  if (!f.on.bd) { sec.lines.push('A bronchodilator trial was not performed.'); return sec; }
+  if (!f.bd.any) { sec.empty = true; sec.lines.push('No bronchodilator data entered.'); return sec; }
+  r.lines.forEach(l => put(sec, l)); r.codes.forEach(c => sec.codes.push(c));
   return sec;
 }
 
@@ -3037,11 +3215,11 @@ function loopLines(f) {
 /* ------------------------------------------------------------- lung volumes */
 const VOL_METHOD = { pleth: 'plethysmography', n2: 'nitrogen washout', he: 'helium dilution', sb: 'single-breath dilution' };
 function volItems(f) {
-  const v = f.vol, L_ = (x) => () => has(x) ? fmt(x, 2) + ' L' : '';
+  const v = f.vol, L_ = (x, pct) => () => [has(x) ? fmt(x, 2) + ' L' : '', has(pct) ? Math.round(pct) + '% predicted' : ''].filter(Boolean).join(', ');
   return [
-    metricItem('TLC', v.tlc, 'volume.tlc', L_(v.tlcL), true),
-    metricItem('RV', v.rv, 'volume.rv', L_(v.rvL)),
-    metricItem('RV/TLC', v.rvtlc, 'volume.rv_tlc', () => has(v.rvtlcCalc) ? fmt(v.rvtlcCalc, 0) + '%' : ''),
+    metricItem('TLC', v.tlc, 'volume.tlc', L_(v.tlcL, v.tlcPct), true),
+    metricItem('RV', v.rv, 'volume.rv', L_(v.rvL, v.rvPct)),
+    metricItem('RV/TLC', v.rvtlc, 'volume.rv_tlc', () => has(v.rvtlcV) ? fmt(v.rvtlcV, 0) + '%' : ''),
     metricItem('FRC', v.frc, 'volume.frc', L_(v.frcL)),
     metricItem('FRC/TLC', v.frctlc, 'volume.frc_tlc'),
     metricItem('SVC', v.svc, 'metric.svc', L_(v.svcL)),
@@ -3084,7 +3262,7 @@ function secVol(f) {
 }
 
 /* -------------------------------------------------------------------- DLCO */
-function dlcoLabel(f) { const d = f.dl; return d.reportedAdjusted ? 'Hemoglobin-adjusted DLCO' : 'DLCO'; }
+function dlcoLabel(f) { return 'DLCO'; }   // the correction basis is stated in its own clause
 function dlcoItems(f) {
   const d = f.dl;
   const items = [metricItem(dlcoLabel(f), d.dlco, 'dlco', () => [has(d.abs) ? fmt(d.abs, 1) + ' mL/min/mmHg' : '', has(d.pct) ? Math.round(d.pct) + '% predicted' : ''].filter(Boolean).join(', '), true)];
@@ -3104,24 +3282,28 @@ function secDlco(f) {
   zpOff = !!nl;
   const paired = D.measured && d.adj.measured && !d.reportedAdjusted && !D.invalid && !d.adj.invalid;
   const word = (r) => r.low ? (r.sev ? SEV_ADV[r.sev] + ' reduced' : 'reduced') : (r.high ? 'increased' : 'normal');
+  const hbTxt = has(d.hb) ? 'Hgb ' + fmt(d.hb, 1) + ' g/dL' + (d.anemic ? ', low' : (d.hbHigh ? ', high' : '')) : (d.hbcat ? 'hemoglobin ' + ({ low: 'low', nl: 'normal', high: 'high' })[d.hbcat] + ' per the report' : '');
+  const basisClause = d.reportedAdjusted ? '; the value is corrected for hemoglobin' + (hbTxt ? ' (' + hbTxt + ')' : '')
+    : (d.basis === 'un' ? '; the value is not corrected for hemoglobin' + (hbTxt ? ' (' + hbTxt + ')' : '') : '');
   if (D.measured && D.invalid) put(sec, 'DLCO is not interpretable (did not meet quality criteria)');
   else if (paired) {
     const k1 = word(D), k2 = word(d.adj);
     const zz = zpOff ? '' : [zTag(D), zTag(d.adj) ? zTag(d.adj) + ' after correction' : ''].filter(Boolean).join('; ');
-    put(sec, (k1 === k2 ? cap(k1) + ', both uncorrected and after correction for hemoglobin' : cap(k1) + ' before correction for hemoglobin and ' + k2 + ' after correction') + (zz ? ' (' + zz + ')' : ''));
-  } else if (D.measured) put(sec, cap(word(D)) + zp(D) + (d.reportedAdjusted ? ' (hemoglobin-adjusted value)' : '') + (D.bl ? ', close to the LLN' : ''));
+    put(sec, (k1 === k2 ? cap(k1) + ', both uncorrected and after correction for hemoglobin' : cap(k1) + ' before correction for hemoglobin and ' + k2 + ' after correction') + (zz ? ' (' + zz + ')' : '') + (hbTxt ? ' (' + hbTxt + ')' : ''));
+  } else if (D.measured) put(sec, cap(word(D)) + zp(D) + (D.bl ? ', close to the LLN' : '') + basisClause);
   // VA and KCO in one sentence
   const va = d.va, kco = d.kco;
   if (va.measured && !va.invalid && kco.measured && !kco.invalid) put(sec, 'VA is ' + word(va) + zp(va) + ' and KCO is ' + word(kco) + zp(kco));
   else if (va.measured && !va.invalid) put(sec, 'VA is ' + word(va) + zp(va));
   else if (kco.measured && !kco.invalid) put(sec, 'KCO is ' + word(kco) + zp(kco));
   zpOff = false;
-  // hemoglobin
+  // hemoglobin: what the correction does to an uncorrected value, or that the basis is unknown; never assumed
   if (pat.hb === 'full') put(sec, 'The absolute diffusing capacity is reduced but corrects to the normal range when adjusted for this patient\'s anemia');
-  else if (has(d.adjPct) && !d.hasAdj && D.low && !d.reportedAdjusted) put(sec, 'The diffusing capacity corrects to ' + Math.round(d.adjPct) + '% predicted when corrected for ' + (d.anemic ? 'anemia' : 'hemoglobin') + ' (Hgb ' + fmt(d.hb, 1) + ')' + (f.style === 'expanded' ? ' (ERS/ATS 2017 equation, reference Hb ' + d.hbRef + ' g/dL)' : ''));
-  else if (D.low && !d.reportedAdjusted && !d.adj.measured && d.basis === 'un') put(sec, 'The value reported is not corrected for the patient\'s hemoglobin concentration' + (d.hbcat ? ' (hemoglobin ' + ({ low: 'low', nl: 'normal', high: 'high' })[d.hbcat] + ' per the report)' : ''));
-  else if (D.low && !d.reportedAdjusted && !d.adj.measured && f.F['observations.dlco.hb_unknown']) put(sec, 'Whether the value is corrected for hemoglobin is not stated');
-  if (has(d.hb) && !(has(d.adjPct) && !d.hasAdj && D.low && !d.reportedAdjusted)) put(sec, 'Hemoglobin ' + fmt(d.hb, 1) + ' g/dL' + (d.anemic ? ' (low)' : ''));
+  else if (has(d.adjPct) && !d.hasAdj && !d.reportedAdjusted && d.basis === 'un' && (D.low || d.anemic === true || d.hbHigh)) put(sec, 'Corrected for ' + (d.anemic ? 'the anemia' : 'hemoglobin') + ' the DLCO is ' + Math.round(d.adjPct) + '% predicted' + (f.style === 'expanded' ? ' (ERS/ATS 2017 equation, reference Hb ' + d.hbRef + ' g/dL)' : ''));
+  else if (D.measured && !D.invalid && d.basis === 'un' && d.corrDir === 'up' && !has(d.adjPct)) put(sec, 'Correction for the low hemoglobin would raise the value' + (D.low ? '; enter the uncorrected % predicted to calculate it' : ''));
+  else if (D.measured && !D.invalid && d.basis === 'un' && d.corrDir === 'down' && !has(d.adjPct)) put(sec, 'Correction for the high hemoglobin would lower the value');
+  else if (D.measured && !D.invalid && (D.low || D.high) && !d.basisKnown) put(sec, 'Whether the value is corrected for hemoglobin is not stated' + (hbTxt ? ' (' + hbTxt + ')' : ''));
+  else if (D.measured && !D.invalid && !d.basisKnown && hbTxt) put(sec, cap(hbTxt));
   if (has(d.cohb)) put(sec, 'Carboxyhemoglobin ' + fmt(d.cohb, 1) + '%');
   else if (d.cohbcat === 'hi') put(sec, 'Carboxyhemoglobin 2% or higher');
   if (has(d.vatlc)) put(sec, 'VA/TLC ' + fmt(d.vatlc, 2) + (d.vatlc < 0.85 ? ' (below 0.85)' : ''));
@@ -3329,6 +3511,12 @@ function secBronch(f) {
 }
 
 /* ------------------------------------------------------------------- 6MWT */
+/* "412 m" or, when the distance was typed in feet, "412 m (1,352 ft)" */
+function distTxt(f, v, inner) {
+  if (!has(v)) return '';
+  const u = f.six && f.six.unit;
+  return fmt(v, 0) + ' m' + (u === 'ft' ? (inner ? ' / ' + fmt(v / 0.3048, 0) + ' ft' : ' (' + fmt(v / 0.3048, 0) + ' ft)') : '');
+}
 function secSix(f) {
   const sec = newSec('six', '6 MINUTE WALK TEST (6MWT)'), x = f.six, tr = f.trend6;
   if (!x.any && !tr.multi) { sec.empty = true; sec.lines.push('No 6-minute walk values entered.'); return sec; }
@@ -3347,11 +3535,11 @@ function secSix(f) {
   }
   // distance
   if (has(x.dist)) {
-    if (early) put(sec, 'Test stopped' + (has(x.timeMin) ? ' at ' + fmt(x.timeMin, 1) + ' minutes' : ' early') + ' after ' + fmt(x.dist, 0) + ' m' + (x.stopWhy ? ' because of ' + x.stopWhy : ''));
+    if (early) put(sec, 'Test stopped' + (has(x.timeMin) ? ' at ' + fmt(x.timeMin, 1) + ' minutes' : ' early') + ' after ' + distTxt(f, x.dist) + (x.stopWhy ? ' because of ' + x.stopWhy : ''));
     else {
-      let t = 'Walked ' + fmt(x.dist, 0) + ' m';
-      if (has(x.pctCalc)) t += ' (' + Math.round(x.pctCalc) + '% predicted' + (has(x.llnUse) ? '; LLN ' + fmt(x.llnUse, 0) + ' m' : '') + ')';
-      else if (has(x.llnUse)) t += ' (LLN ' + fmt(x.llnUse, 0) + ' m)';
+      let t = 'Walked ' + distTxt(f, x.dist);
+      if (has(x.pctCalc)) t += ' (' + Math.round(x.pctCalc) + '% predicted' + (has(x.llnUse) ? '; LLN ' + distTxt(f, x.llnUse, true) : '') + ')';
+      else if (has(x.llnUse)) t += ' (LLN ' + distTxt(f, x.llnUse, true) + ')';
       put(sec, t);
       if (has(x.llnUse)) {
         if (x.dist >= x.llnUse) put(sec, 'Total distance within predicted normal range given sex, age' + (x.predSrc === 'calc' || x.eqUse === 'Enright & Sherrill 1998' ? ', height and weight' : '') + (x.predSrc === 'calc' && f.style === 'expanded' ? ' (Enright & Sherrill 1998)' : ''));
@@ -3370,9 +3558,9 @@ function secSix(f) {
   // conclusion sentences
   const q = [];
   if (has(x.dist) && !early) {
-    if (x.lowDist) q.push('Reduced walking distance (' + fmt(x.dist, 0) + ' m' + (has(x.pctCalc) ? ', ' + Math.round(x.pctCalc) + '% predicted' : '') + ')');
-    else if (x.wnlDist) q.push('Walking distance within the predicted normal range (' + fmt(x.dist, 0) + ' m' + (has(x.pctCalc) ? ', ' + Math.round(x.pctCalc) + '% predicted' : '') + ')');
-  } else if (early && has(x.dist)) q.push('The walk was stopped early after ' + fmt(x.dist, 0) + ' m');
+    if (x.lowDist) q.push('Reduced walking distance (' + distTxt(f, x.dist) + (has(x.pctCalc) ? ', ' + Math.round(x.pctCalc) + '% predicted' : '') + ')');
+    else if (x.wnlDist) q.push('Walking distance within the predicted normal range (' + distTxt(f, x.dist) + (has(x.pctCalc) ? ', ' + Math.round(x.pctCalc) + '% predicted' : '') + ')');
+  } else if (early && has(x.dist)) q.push('The walk was stopped early after ' + distTxt(f, x.dist));
   else if (x.distCat) q.push(x.lowDist ? 'Reduced walking distance' : 'Walking distance within the predicted normal range');
   const o2note = x.onO2 ? ' on ' + x.o2text : '';
   const d = [];
@@ -3893,7 +4081,9 @@ function dlcoMechanism(f) {
   const lab = D.sev ? SEV_ADV[D.sev] + ' impaired' : 'impaired';
   if (pat.hb === 'full') out.push('The absolute diffusing capacity is reduced but corrects to the normal range when adjusted for this patient\'s anemia.' + co);
   else if (f.F['patterns.isolated_low_dlco'] || (!haveSp && !(f.on.vol && f.vol.any))) {
-    out.push('The diffusion capacity is ' + lab + ' which can be seen in restrictive lung disease before FVC falls, pulmonary arterial disease (i.e. PE, PH), anemia, smoking before testing. Clinical correlation recommended.');
+    // anemia is only a candidate when the value is not corrected for hemoglobin
+    const corrected = d.reportedAdjusted || (d.adj.measured && !d.adj.invalid);
+    out.push('The diffusion capacity is ' + lab + ' which can be seen in restrictive lung disease before FVC falls, pulmonary arterial disease (i.e. PE, PH), ' + (corrected ? '' : 'anemia, ') + 'smoking before testing' + (corrected ? ' (the value is corrected for hemoglobin)' : '') + '. Clinical correlation recommended.');
   } else if (haveSp && R.low && !sp.mixed) {
     out.push('In the presence of an obstructive ventilatory defect the decreased diffusing capacity suggests pulmonary emphysema' + (D.sev ? ' (' + D.sev + ' impairment of gas transfer)' : '') + '.');
   } else if ((f.on.vol && vp.restriction) || sp.lowFvcUnconfirmed || sp.mixed) {
@@ -4019,8 +4209,8 @@ function buildHeadsUp(f, secs) {
     H('DE3', 'caution', 'Missing data', 'FEV1/FVC not entered', 'Without the ratio, the pattern (obstruction vs. restriction vs. nonspecific) cannot be classified.');
   if (spOn && R.wnl && has(R.z) && has(A.z) && has(B.z) && (B.z - A.z) >= 1.5)
     H('DE4', 'caution', 'Data entry', 'FEV1 z-score is much lower than FVC z-score, yet the ratio is normal', 'FEV1 z ' + fz(A.z) + ' vs FVC z ' + fz(B.z) + ' would usually give a low FEV1/FVC (z ' + fz(R.z) + ' entered); double-check the ratio.');
-  if (spOn && has(sp.ratioCalc) && R.measured && ((sp.ratioCalc < 0.70 && F['spirometry.fixed_ratio_discordance'] === 'fixed_only') || F['spirometry.fixed_ratio_discordance'] === 'lln_only'))
-    H('DE21', 'note', 'Physiology', 'Fixed ratio (0.70) and LLN classifications differ', 'Measured FEV1/FVC ' + fmt(sp.ratioCalc, 2) + ' is ' + (F['spirometry.fixed_ratio_discordance'] === 'fixed_only' ? 'below 0.70 but not below the age-adjusted LLN; the LLN governs here and this does not by itself diagnose COPD.' : 'at or above 0.70 but below the age-adjusted LLN; the LLN comparison supports obstruction even though the fixed-ratio threshold is not crossed.'));
+  if (spOn && has(sp.ratioV) && R.measured && ((sp.ratioV < 0.70 && F['spirometry.fixed_ratio_discordance'] === 'fixed_only') || F['spirometry.fixed_ratio_discordance'] === 'lln_only'))
+    H('DE21', 'note', 'Physiology', 'Fixed ratio (0.70) and LLN classifications differ', 'Measured FEV1/FVC ' + fmt(sp.ratioV, 2) + ' is ' + (F['spirometry.fixed_ratio_discordance'] === 'fixed_only' ? 'below 0.70 but not below the age-adjusted LLN; the LLN governs here and this does not by itself diagnose COPD.' : 'at or above 0.70 but below the age-adjusted LLN; the LLN comparison supports obstruction even though the fixed-ratio threshold is not crossed.'));
   const extremes = [['FEV1/FVC', R], ['FEV1', A], ['FVC', B], ['TLC', T], ['RV', v.rv], ['RV/TLC', v.rvtlc], ['KCO', d.kco], ['VA', d.va]];
   extremes.forEach(e => { if (e[1].z !== null && Math.abs(e[1].z) > 7) H('DE5-' + e[0], 'caution', 'Data entry', e[0] + ' z-score is unusually extreme', 'z = ' + fz(e[1].z) + '; check for a typing or unit error.'); });
   if (dlOn) [['DLCO', d.dlco], ['Hb-adjusted DLCO', d.adj]].forEach(e => { if (e[1].z !== null && Math.abs(e[1].z) > 10) H('DE5-D' + e[0], 'caution', 'Data entry', e[0] + ' z-score is unusually extreme', 'z = ' + fz(e[1].z) + '; check for a typing or unit error.'); });
@@ -4415,9 +4605,34 @@ function referenceLine(f) {
   return parts.length ? parts.join('; ') : 'not applicable';
 }
 const GRADING_LINE = 'Impairment is graded by z-score (ERS/ATS 2022): LLN at z = −1.645; mild from −1.645 down to −2.5; moderate below −2.5 down to −4.0; severe below −4.0.';
-function buildText(f, secs, impression, headsup, withHeadsup) {
+/* The report as copied. The lean form (default) is the sections and the INTERPRETATION only; the full form adds the
+   header (date, demographics, reason, BMI, reference set) and the INTERPRETABILITY section. */
+function buildText(f, secs, impression, headsup, withHeadsup, full) {
   const L = [];
-  L.push('PULMONARY FUNCTION TEST REPORT');
+  if (full) {
+    L.push('PULMONARY FUNCTION TEST REPORT');
+    const hdr = [];
+    if (f.st.ctx.date) hdr.push('Date: ' + dateWords(f.st.ctx.date));
+    const sh = studyHeader(f); if (sh) hdr.push(sh);
+    if (hdr.length) L.push(hdr.join(' | '));
+    const ind = f.ctx.indicLabels.slice(); if (f.ctx.indication) ind.push(f.ctx.indication);
+    if (ind.length) L.push('Reason for PFT: ' + ind.map((x, i) => i === 0 ? cap(x) : x).join('; '));
+    if (has(f.ctx.bmi)) L.push('BMI ' + fmt(f.ctx.bmi, 1) + ' kg/m^2');
+    L.push('Reference values: ' + referenceLine(f) + (f.style === 'expanded' ? '. ' + GRADING_LINE : ''));
+    L.push('');
+  }
+  secs.forEach(s => { if (!full && s.key === 'qual') return; L.push(s.title + ': ' + s.lines.join(' ')); L.push(''); });
+  L.push('INTERPRETATION: ' + (impression.length ? impression.join(' ') : 'No interpretable data entered.'));
+  if (withHeadsup && headsup.length) {
+    L.push('');
+    L.push('HEADS-UP FOR THE INTERPRETER (not part of the final report):');
+    headsup.forEach(h => L.push('- [' + h.lvl.toUpperCase() + '] ' + h.title + ': ' + h.text));
+  }
+  return L.join('\n');
+}
+/* the header lines of the full form, for the screen */
+function headerLines(f) {
+  const L = [];
   const hdr = [];
   if (f.st.ctx.date) hdr.push('Date: ' + dateWords(f.st.ctx.date));
   const sh = studyHeader(f); if (sh) hdr.push(sh);
@@ -4425,16 +4640,8 @@ function buildText(f, secs, impression, headsup, withHeadsup) {
   const ind = f.ctx.indicLabels.slice(); if (f.ctx.indication) ind.push(f.ctx.indication);
   if (ind.length) L.push('Reason for PFT: ' + ind.map((x, i) => i === 0 ? cap(x) : x).join('; '));
   if (has(f.ctx.bmi)) L.push('BMI ' + fmt(f.ctx.bmi, 1) + ' kg/m^2');
-  L.push('Reference values: ' + referenceLine(f) + (f.style === 'expanded' ? '. ' + GRADING_LINE : ''));
-  L.push('');
-  secs.forEach(s => { L.push(s.title + ': ' + s.lines.join(' ')); L.push(''); });
-  L.push('CONCLUSION: ' + (impression.length ? impression.join(' ') : 'No interpretable data entered.'));
-  if (withHeadsup && headsup.length) {
-    L.push('');
-    L.push('HEADS-UP FOR THE INTERPRETER (not part of the final report):');
-    headsup.forEach(h => L.push('- [' + h.lvl.toUpperCase() + '] ' + h.title + ': ' + h.text));
-  }
-  return L.join('\n');
+  L.push('Reference values: ' + referenceLine(f));
+  return L;
 }
 
 /* ------------------------------------------------------------- public API */
@@ -4452,37 +4659,43 @@ function interpret(raw) {
   f.dx = differentialGroups(f);
   markSuperseded(f.suggest, f.dx);
   f.studies = differentialText(f.dx).studies;
-  const pft = f.on.spiro && f.sp.any;   // a spirometry report carries the template's "not performed" lines for BD, volumes and DLCO
-  add('spiro', secQual); add('fvl', secFvl); add('spiro', secSpiro);
-  if (f.on.bd || pft) secs.push(secBD(f));
+  const pft = f.on.spiro && f.sp.any;   // a spirometry report carries the template's "not performed" lines for volumes and DLCO
+  add('spiro', secQual); add('fvl', secFvl);
+  if (f.on.spiro || f.on.bd) secs.push(secSpiro(f));            // the bronchodilator response is reported inside SPIROMETRY
   if (f.on.vol || pft) secs.push(secVol(f));
   add('raw', secRaw); add('osc', secOsc); add('mip', secMip);
   if (f.on.dlco || pft) secs.push(secDlco(f));
   add('post', secPost); add('feno', secFeno); add('bronch', secBronch);
   if (f.on.prior && f.prior.any) secs.push(secPrior(f));
   add('sixmw', secSix); add('cpet', secCpet); add('gas', secGas);
+  secs.forEach(s => { if (!s.lines.length) s.lines.push('The values entered are incomplete, so no statement can be made.'); });
   const impression = buildImpression(f, secs);
   const headsup = buildHeadsUp(f, secs);
   const counts = { alert: 0, caution: 0, note: 0, tip: 0 };
   headsup.forEach(h => { counts[h.lvl]++; });
   const anyData = secs.some(s => !s.empty);
+  const full = !!(st.settings && st.settings.copy === 'full');
   return {
-    state: st, facts: f, F: f.F, suggestions: f.suggest, differentials: f.dx, studies: f.studies, style: f.style, sections: secs, impression: impression, headsup: headsup, counts: counts, anyData: anyData,
-    text: buildText(f, secs, impression, headsup, false),
-    textWithHeadsup: buildText(f, secs, impression, headsup, true)
+    state: st, facts: f, F: f.F, suggestions: f.suggest, differentials: f.dx, studies: f.studies, prompts: f.prompts, style: f.style, sections: secs, impression: impression, headsup: headsup, counts: counts, anyData: anyData,
+    header: headerLines(f),
+    text: buildText(f, secs, impression, headsup, false, full),
+    textWithHeadsup: buildText(f, secs, impression, headsup, true, full),
+    textLean: buildText(f, secs, impression, headsup, false, false),
+    textFull: buildText(f, secs, impression, headsup, false, true)
   };
 }
 
 const API = {
-  version: '3.1.0',
+  version: '5.0.0',
   catalogVersion: CATALOG.version,
   Z_LLN: Z_LLN, Z_ULN: Z_ULN, STYLES: STYLES,
   TESTS: TESTS, PRESETS: PRESETS, SCHEMA: SCHEMA, LOOPS: LOOPS, INDICATIONS: INDICATIONS, KIND_OPTS: KIND_OPTS, PRIOR_FIELDS: PRIOR_FIELDS, CUR_FIELDS: CUR_FIELDS, MAX_PRIORS: MAX_PRIORS, MAX_TREND: MAX_TREND,
+  UNITS: UNITS, unitOf: unitOf, unitLabel: unitLabel, toBase: toBase, fromBase: fromBase, bdEntered: bdEntered,
   CATALOG: CATALOG, REVIEW_PHRASES: REVIEW_PHRASES.map(r => r.id), STUDIES: STUDIES, DX_GROUPS: DX_GROUPS.map(g => ({ key: g.key, title: g.title })),
   defaultState: defaultState, normalizeState: normalizeState, blankPrior: blankPrior, blankTrendRow: blankTrendRow,
   interpret: interpret, res: res, num: num, catFromZ: catFromZ, fz: fz,
   phrase: phrase, eligiblePhrases: eligiblePhrases, factMatches: factMatches, catPhrase: catPhrase,
-  _internal: { spiroPattern: spiroPattern, volPattern: volPattern, dlcoPattern: dlcoPattern, buildFacts: buildFacts, deriveFacts: deriveFacts, cpetEval: cpetEval, abgEval: abgEval, mchCategory: mchCategory, methacholineFacts: methacholineFacts, mchAutoCategory: mchAutoCategory, fenoBand: fenoBand, exerciseState: exerciseState, placeholderValues: placeholderValues, differentialGroups: differentialGroups, differentialText: differentialText, CFG: CFG }
+  _internal: { spiroPattern: spiroPattern, volPattern: volPattern, dlcoPattern: dlcoPattern, buildFacts: buildFacts, deriveFacts: deriveFacts, cpetEval: cpetEval, abgEval: abgEval, mchCategory: mchCategory, methacholineFacts: methacholineFacts, mchAutoCategory: mchAutoCategory, fenoBand: fenoBand, exerciseState: exerciseState, placeholderValues: placeholderValues, differentialGroups: differentialGroups, differentialText: differentialText, prompts: prompts, bdLines: bdLines, CFG: CFG }
 };
 
 if (typeof module !== 'undefined' && module.exports) module.exports = API;
@@ -4653,7 +4866,7 @@ const G = {
   gli:      { n: 'GLI equations', f: 'Global Lung Function Initiative reference equations', w: 'Multi-ethnic reference sets for spirometry (2012), race-neutral spirometry (Global, 2022), static lung volumes (2021) and DLCO (2017).', r: 'The z-score is read directly against them. ERS/ATS 2022 recommends GLI; ATS 2023 recommends GLI Global instead of race-specific sets.', l: 'GLI-2021 volumes cover ages 5–80 and are European-ancestry only. GLI spirometry covers 3–95 years. Race-neutral equations are still under study.', t: 'equations' },
 
   /* ----------------------------------------------------------------------- tests */
-  'test.spiro': { n: 'Spirometry', f: 'Forced spirometry', w: 'The core test: FEV1, FVC and FEV1/FVC. The loop has its own step.', r: 'Start with the ratio against the LLN, then FEV1 for severity, then FVC.', l: 'Effort-dependent; quality grade first.', t: 'spiro' },
+  'test.spiro': { n: 'Spirometry', f: 'Forced spirometry', w: 'The core test: FEV1, FVC and FEV1/FVC, with the bronchodilator response entered beside them. The loop has its own step.', r: 'Start with the ratio against the LLN, then FEV1 for severity, then FVC.', l: 'Effort-dependent; quality grade first.', t: 'spiro' },
   'test.bd': { n: 'Bronchodilator response', f: 'Post-bronchodilator spirometry', w: 'Tests reversibility.', r: 'Significant if FEV1 or FVC rises by more than 10% of predicted.', l: 'See Learn.', t: 'bd' },
   'test.fvl': { n: 'Flow–volume loop', f: 'Flow–volume loop and flow indices', w: 'Shape of the loop plus PEF, FEV1/PEF and FIF50/FEF50.', r: 'Look at both limbs and ask whether the shape fits the numbers.', l: 'Shape alone is not diagnostic.', t: 'loops' },
   'test.vol': { n: 'Lung volumes', f: 'Static lung volumes', w: 'TLC, RV, FRC and their ratios.', r: 'TLC defines restriction; RV/TLC defines air trapping.', l: 'Method matters.', t: 'vol' },
@@ -4739,10 +4952,10 @@ const FIELD = {
 
 /* Sub-inputs share the entry of their parent measure. */
 Object.assign(FIELD, {
-  'spiro.fev1_abs': 'fev1', 'spiro.fev1_pct': 'fev1', 'spiro.fvc_abs': 'fvc', 'spiro.fvc_pct': 'fvc',
-  'bd.fev1_pre': 'bd', 'bd.fev1_post': 'bd', 'bd.fev1_pred': 'bd', 'bd.fvc_pre': 'bd', 'bd.fvc_post': 'bd', 'bd.fvc_pred': 'bd', 'bd.dfev1_pp': 'bd', 'bd.dfvc_pp': 'bd',
+  'spiro.fev1_abs': 'fev1', 'spiro.fev1_pct': 'fev1', 'spiro.fvc_abs': 'fvc', 'spiro.fvc_pct': 'fvc', 'spiro.ratio_abs': 'ratio',
+  'bd.fev1_pre': 'bd', 'bd.fev1_post': 'bd', 'bd.fev1_pred': 'bd', 'bd.fvc_pre': 'bd', 'bd.fvc_post': 'bd', 'bd.fvc_pred': 'bd', 'bd.dfev1_pp': 'bd', 'bd.dfvc_pp': 'bd', 'bd.post_ratio_abs': 'bd',
   'fvl.loop_repro': 'loop', 'fvl.pef_lmin': 'pef', 'fvl.fef50': 'fif50', 'fvl.fif50': 'fif50',
-  'vol.tlc_abs': 'tlc', 'vol.rv_abs': 'rv', 'vol.frc_abs': 'frc', 'vol.svc_abs': 'svc',
+  'vol.tlc_abs': 'tlc', 'vol.rv_abs': 'rv', 'vol.frc_abs': 'frc', 'vol.svc_abs': 'svc', 'vol.tlc_pct': 'tlc', 'vol.rv_pct': 'rv', 'vol.rvtlc_pct': 'rvtlc',
   'dlco.dlco_abs': 'dlco', 'dlco.dlco_pct': 'dlco', 'dlco.va_abs': 'va',
   'post.orthop': 'orthodeox', 'post.platyp': 'orthodeox', 'post.spo2_sup': 'orthodeox', 'post.spo2_up': 'orthodeox', 'post.pao2_sup': 'orthodeox', 'post.pao2_up': 'orthodeox',
   'bronch.mch_fall': 'pc20', 'bronch.mch_neg': 'pc20', 'bronch.man_fall': 'mannitol', 'bronch.man_dose': 'mannitol', 'bronch.man_incr': 'mannitol', 'bronch.ex_fall': 'exch', 'bronch.ex_consec': 'exch',
@@ -5186,11 +5399,14 @@ T.limits = { title: 'Limitations and pitfalls', kicker: 'What this can and canno
 
 T.app = { title: 'About this app and the case bank', kicker: 'How the reading works, and what saving does', blocks: [
   { h: 'How the interpretation is built', ol: [
-    'The report follows the reading room\'s standard language and format: INTERPRETABILITY, FLOW-VOLUME CURVE, SPIROMETRY, BRONCHODILATOR RESPONSE, LUNG VOLUMES, RESPIRATORY FORCES, DIFFUSING CAPACITY, PAST TESTING COMPARISON, 6MWT and CONCLUSION, with the template\'s own sentences ("Moderate obstructive impairment present", "Reduced Total Lung Capacity (TLC) is consistent with moderate restrictive impairment", "This change is likely to be significant given testing margin of error of ~15%"). Grades come from z-scores rather than the template\'s percent cut-offs.',
-    'The CONCLUSION reads the pattern with the lung volumes ("There is a moderate obstructive ventilatory defect with hyperinflation. Pattern is consistent with moderate COPD."), then the bronchodilator response, the diffusing capacity ("In the presence of an obstructive ventilatory defect the decreased diffusing capacity suggests pulmonary emphysema."), the adjunct tests and the comparison with prior studies. Optional wording, differentials and "Suggest …" lines are included only when tapped.',
+    'The report follows the reading room\'s standard language and format: FLOW-VOLUME CURVE, SPIROMETRY (with the bronchodilator response inside it), LUNG VOLUMES, RESPIRATORY FORCES, DIFFUSING CAPACITY, PAST TESTING COMPARISON, 6MWT and INTERPRETATION, with the template\'s own sentences ("Moderate obstructive impairment present", "Reduced Total Lung Capacity (TLC) is consistent with moderate restrictive impairment", "This change is likely to be significant given testing margin of error of ~15%"). Grades come from z-scores rather than the template\'s percent cut-offs.',
+    'The INTERPRETATION reads the pattern with the lung volumes ("There is a moderate obstructive ventilatory defect with hyperinflation. Pattern is consistent with moderate COPD."), then the bronchodilator response, the diffusing capacity ("In the presence of an obstructive ventilatory defect the decreased diffusing capacity suggests pulmonary emphysema."), the adjunct tests and the comparison with prior studies. Optional wording, differentials and "Suggest …" lines are included only when tapped.',
     'For each verified finding the Report step also offers its differential considerations and the studies that sort them out (for an isolated low DLCO: pulmonary vascular disease, early interstitial disease before FVC or TLC fall, emphysema with preserved volumes, anemia, recent smoking or carboxyhemoglobin; hemoglobin and COHb, HRCT, echocardiography, exertional oximetry). Tapped differentials join the Interpretation as one sentence per finding; tapped studies are listed once under "Additional studies to consider". None is inserted on its own.',
     'The heads-up box compares tests with each other and with the tracing: alerts and cautions for inconsistency and data-entry problems, look-for tips with example loops, and notes for missing tests that would change the reading.',
-    'Annals ATS 2025 S, V and D codes appear with the interpretation; tap one for its meaning.'] },
+    'Annals ATS 2025 S, V and D codes appear with the interpretation; tap one for its meaning.',
+    'The copied report is the sections and the INTERPRETATION. The header (date, demographics, BMI, reference set) and the INTERPRETABILITY section are added only when "With header" is chosen in the settings.',
+    'When a pattern makes one more value useful (a restrictive pattern with a normal DLCO and no ERV; a reduced DLCO without the hemoglobin or its correction basis; obstruction without post-bronchodilator values), the step asks for it. Nothing is assumed from an unanswered prompt.',
+    'Every value box can be typed in the unit on the report: tap the unit beside the box (cm/in, kg/lb, m/ft, mL/min/mmHg or mmol/min/kPa); one choice applies to that quantity everywhere, including prior studies, and is remembered for the next case.'] },
   { h: 'The case bank', ul: [
     'Saving a case stores its entries in this browser only. Nothing is sent anywhere. Do not type patient names, MRNs or dates of birth; the free-text fields can be left out when saving.',
     'The bank shows the most similar saved cases when you read a new one, with how you judged them.',
@@ -5325,20 +5541,26 @@ root.PFT_EXAMPLES = API;
 
 </script>
 <script>
-/* PFT Interpreter — interface. Everything on screen is generated from PFT.SCHEMA; the engine does the reasoning. */
+/* PFT Interpreter — interface. Everything on screen is generated from PFT.SCHEMA; the engine does the reasoning.
+   Layout: the entry form on the left, the report as it will read on the right, building in real time. */
 (function () {
 'use strict';
 const P = window.PFT, X = window.PFT_EXAMPLES;
 const pad2 = (n) => (n < 10 ? '0' : '') + n;
 const toISO = (d) => d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
 const todayISO = () => toISO(new Date());
-function freshState() { const st = P.defaultState(); st.ctx.date = todayISO(); return st; }
+function freshState() { const st = P.defaultState(); st.ctx.date = todayISO(); st.units = Object.assign(st.units, unitPrefs()); return st; }
 function shiftMonths(iso, m) {
   const d = /^\d{4}-\d{2}-\d{2}$/.test(iso || '') ? new Date(iso + 'T00:00:00') : new Date();
   if (isNaN(d.getTime())) return '';
   const day = d.getDate(); d.setMonth(d.getMonth() - m); if (d.getDate() !== day) d.setDate(0);
   return toISO(d);
 }
+/* per-browser conveniences (never the case itself): theme, unit choices, quick sets, open folds */
+function prefGet(k) { try { const v = window.localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch (e) { return null; } }
+function prefSet(k, v) { try { window.localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* storage may be unavailable */ } }
+function unitPrefs() { const u = prefGet('pft.units.v1'); const out = {}; if (u && typeof u === 'object') Object.keys(P.UNITS).forEach(q => { if (P.UNITS[q].f[u[q]] !== undefined) out[q] = u[q]; }); return out; }
+
 let S = freshState();
 let R = P.interpret(S);
 let step = 'tests';
@@ -5380,6 +5602,7 @@ let uidN = 0; const uid = (p) => (p || 'f') + (++uidN);
 const hasNum = (v) => { const n = P.num(v); return typeof n === 'number' && isFinite(n); };
 const plural = (n, w, ws) => n + ' ' + (n === 1 ? w : (ws || w + 's'));
 const cap = (t) => t ? t.charAt(0).toUpperCase() + t.slice(1) : t;
+const isNum = (v) => typeof v === 'number' && isFinite(v);
 
 /* ------------------------------------------------------------------- toast */
 function toast(msg) {
@@ -5450,12 +5673,13 @@ function renderSteps() {
   const nav = $('steps'); const prevScroll = nav.scrollLeft; nav.textContent = '';
   nav.hidden = mode !== 'case';
   if (mode !== 'case') return;
+  const promptSteps = {}; (R.prompts || []).forEach(p => { promptSteps[p.mod] = (promptSteps[p.mod] || 0) + 1; });
   stepList().forEach(s => {
     const cls = ['pill'];
     if (stepHasData(s.id)) cls.push('has');
     if (s.id === 'report' && R.counts.alert > 0) cls.push('warn');
     const b = h('button', { type: 'button', class: cls.join(' '), 'data-step': s.id, 'aria-current': s.id === step ? 'step' : null, onclick: () => goto(s.id) },
-      [h('span', { class: 'dot', 'aria-hidden': 'true' }), s.name]);
+      [h('span', { class: 'dot', 'aria-hidden': 'true' }), s.name, promptSteps[s.id] ? h('span', { class: 'ask', title: plural(promptSteps[s.id], 'value') + ' would help on this step', text: '?' }) : null]);
     nav.appendChild(b);
   });
   nav.scrollLeft = prevScroll;
@@ -5500,60 +5724,192 @@ function loadState(st, to, msg) {
   if (msg) toast(msg);
 }
 
+/* --------------------------------------------------------- field lookups */
+function fieldDef(mod, id) {
+  const m = P.SCHEMA[mod]; let out = null;
+  m.groups.forEach(g => g.fields.forEach(f => { if (f.id === id) out = f; }));
+  return out;
+}
+function isFilled(mod, f) {
+  const v = S[mod][f.id];
+  if (f.type === 'param') return v.c !== 'nm' || v.z !== '';
+  if (f.type === 'chk') return !!v;
+  if (f.type === 'multi') return v.length > 0;
+  if (f.type === 'sel') return v !== f.opts[0][0];
+  return String(v) !== '';
+}
+/* ids of the value boxes drawn inside other rows of a module */
+function inlineIds(mod) {
+  const ids = {};
+  P.SCHEMA[mod].groups.forEach(g => g.fields.forEach(f => { if (f.cols) Object.keys(f.cols).forEach(k => { ids[f.cols[k]] = 1; }); }));
+  return ids;
+}
+
 /* ------------------------------------------------------------ field widgets */
 function optLabel(kind, cat) {
   const o = (P.KIND_OPTS[kind] || []).filter(x => x[0] === cat)[0];
   if (o) return o[1];
   return cat === 'high' ? 'Above ULN ↑' : (cat === 'wnl' ? 'WNL' : cat);
 }
-function prmLabel(mod, f) { return h('span', { class: 'prm-lw' }, [h('span', { class: 'prm-l', text: f.label }), info(glossKey(mod, f.id))]); }
-function paramRow(mod, f) {
-  const opts = P.KIND_OPTS[f.kind];
+/* short button labels for the category buttons (the full names stay in the accessible name) */
+const SHORT_OPT = { 'WNL': 'WNL', 'Near LLN': 'Near LLN', 'Mild ↓': 'Mild', 'Moderate ↓': 'Moderate', 'Severe ↓': 'Severe', 'Above ULN ↑': 'High', 'Below LLN ↓': 'Low' };
+const U_SHORT = { 'mL/min/mmHg': 'mL', 'mmol/min/kPa': 'SI', '% pred': '%', '% of predicted': '%', 'cmH2O': 'cmH2O' };
+function prmLabel(mod, f, text) { return h('span', { class: 'prm-lw' }, [h('span', { class: 'prm-l', text: text || f.label }), info(glossKey(mod, f.id))]); }
+/* a unit button beside a value box: tap to switch the unit for that quantity everywhere */
+function unitBtn(q) {
+  const u = P.UNITS[q];
+  const b = h('button', { type: 'button', class: 'ubtn', 'data-unit': q, title: 'Switch unit (' + u.opts.map(o => o[1]).join(' / ') + ')', 'aria-label': u.label + ' unit: ' + P.unitLabel(S, q) + '. Tap to switch.',
+    onclick: () => { const cur = P.unitOf(S, q); const i = u.opts.findIndex(o => o[0] === cur); S.units[q] = u.opts[(i + 1) % u.opts.length][0]; prefSet('pft.units.v1', S.units); sync(); } });
+  widgets.push(() => { const l = P.unitLabel(S, q); b.textContent = U_SHORT[l] || l; b.title = 'Unit: ' + l + ' (tap to switch: ' + u.opts.map(o => o[1]).join(' / ') + ')'; b.setAttribute('aria-label', u.label + ' unit: ' + l + '. Tap to switch.'); });
+  return b;
+}
+/* one value box (a num field) as a cell: input + unit; `get/set` default to the module field */
+function numCell(mod, f, opts) {
+  opts = opts || {};
+  const get = opts.get || (() => S[mod][f.id]), set = opts.set || ((v) => { S[mod][f.id] = v; });
+  const id = uid('n');
+  const inp = h('input', { type: 'text', class: 'num', id: id, inputmode: 'decimal', autocomplete: 'off', placeholder: opts.ph !== undefined ? opts.ph : (f.ph || ''), 'aria-label': opts.aria || (f.label + (f.unit ? ' (' + f.unit + ')' : '')), value: get(),
+    oninput: (e) => { set(e.target.value); sync(); } });
+  const ut = opts.unit || f.unit;
+  const unitEl = f.units ? unitBtn(f.units) : ((ut || opts.grid) ? h('span', { class: 'u', title: ut || null, text: ut ? (U_SHORT[ut] || ut) : '' }) : null);
+  widgets.push(() => { const v = get(); inp.classList.toggle('bad', v !== '' && !hasNum(v)); if (document.activeElement !== inp && inp.value !== String(v)) inp.value = v; });
+  return h('span', { class: 'ix-c' + (opts.cls ? ' ' + opts.cls : ''), 'data-cell': mod + '.' + f.id }, [inp, unitEl]);
+}
+function blankCell() { return h('span', { class: 'ix-c ph', 'aria-hidden': 'true' }, [h('span', { class: 'u' })]); }
+function textCell(cls) { return h('span', { class: 'ix-c txt' + (cls ? ' ' + cls : '') }); }
+
+/* the z-score box of a param row */
+function zCell(mod, f) {
   const zid = uid('z');
-  let zopen = S[mod][f.id].z !== '';
-  const btns = opts.filter(o => o[0] !== 'nm').map(o => h('button', { type: 'button', class: 'sg', 'data-v': o[0], 'aria-pressed': 'false', text: o[1],
-    onclick: () => { const cur = S[mod][f.id]; S[mod][f.id] = (cur.c === o[0] && cur.z === '') ? { c: 'nm', z: '' } : { c: o[0], z: '' }; zin.value = ''; sync(); } }));
-  const st = h('span', { class: 'st' });
-  const zin = h('input', { type: 'text', class: 'num', id: zid, inputmode: 'decimal', autocomplete: 'off', placeholder: 'z-score', 'aria-label': f.label + ' z-score', value: S[mod][f.id].z,
+  const zin = h('input', { type: 'text', class: 'num z', id: zid, inputmode: 'decimal', autocomplete: 'off', placeholder: 'z', 'aria-label': f.label + ' z-score', value: S[mod][f.id].z,
     oninput: (e) => {
       const v = e.target.value; S[mod][f.id].z = v;
       if (hasNum(v)) S[mod][f.id].c = P.res({ c: S[mod][f.id].c, z: v }, f.kind).cat;
       sync();
     } });
-  const zbox = h('span', { class: 'zbox' }, [zin, st]);
-  const zbtn = h('button', { type: 'button', class: 'zlink', 'aria-label': 'Type a z-score for ' + f.label, text: 'type z', 'aria-expanded': 'false',
-    onclick: () => { zopen = !zopen; sync(); if (zopen) zin.focus(); } });
-  const row = h('div', { class: 'prm', 'data-field': mod + '.' + f.id }, [
-    h('div', { class: 'prm-top' }, [prmLabel(mod, f)]),
-    h('div', { class: 'prm-row' }, [
-      h('div', { class: 'seg', role: 'group', 'aria-label': f.label + ' category' }, btns),
-      h('div', { class: 'zwrap' }, [zbtn, zbox])
-    ])
+  widgets.push(() => { const p = S[mod][f.id]; zin.classList.toggle('bad', p.z !== '' && !hasNum(p.z)); if (document.activeElement !== zin && zin.value !== String(p.z)) zin.value = p.z; });
+  return h('span', { class: 'ix-c zc', 'data-cell': mod + '.' + f.id + '.z' }, [zin]);
+}
+
+/* What the typed values imply for a category row (sel fields with `auto`): the chips show it and are locked while it applies. */
+const AUTO = {
+  sixDist: (f) => { const x = f.six; return (isNum(x.dist) && isNum(x.llnUse)) ? (x.dist < x.llnUse ? 'low' : 'wnl') : ''; },
+  sixDesat: (f) => { const x = f.six; if (!isNum(x.sn)) return ''; if (x.sn <= 88) return 'le88'; if (isNum(x.drop)) return x.drop >= 4 ? 'fall' : 'none'; return 'none'; },
+  sixHrr: (f) => { const x = f.six; return isNum(x.hrr1) ? (x.hrr1 <= 18 ? 'abn' : 'nl') : ''; },
+  hb: (f) => { const d = f.dl; return isNum(d.hb) ? d.hbCatUse : ''; },
+  cohb: (f) => { const d = f.dl; return isNum(d.cohb) ? (d.cohb >= 2 ? 'hi' : 'nl') : ''; },
+  feno: (f) => { const v = f.feno.v; if (!isNum(v)) return ''; const lo = f.feno.child ? 20 : 25, hi = f.feno.child ? 35 : 50; return v < lo ? 'low' : (v > hi ? 'high' : 'int'); }
+};
+function autoCat(f) { const fn = f.auto && AUTO[f.auto]; if (!fn) return ''; try { return fn(R.facts) || ''; } catch (e) { return ''; } }
+
+/* One row of a step: label, category buttons, then the value boxes (z, value, % predicted, prior study, post-bronchodilator).
+   `ctx.columns` lists the shared columns of the step (grid steps keep every row the same width so the boxes line up);
+   `ctx.priors` / `ctx.bd` add the comparison and post-bronchodilator cells. */
+function indexRow(mod, f, ctx) {
+  ctx = ctx || {};
+  if (f.type === 'num') {   // a value on a row of its own (Details step): label | box
+    const extra = textCell('note');
+    if (mod === 'ctx' && f.id === 'wt') widgets.push(() => { const b = R.facts.ctx.bmi; extra.textContent = isNum(b) ? 'BMI ' + b.toFixed(1) : ''; });
+    return h('div', { class: 'ix', 'data-field': mod + '.' + f.id }, [h('div', { class: 'ix-l' }, [prmLabel(mod, f)]), h('div', { class: 'ix-seg' }), h('div', { class: 'ix-vals' }, [numCell(mod, f, { aria: f.label }), extra])]);
+  }
+  const isParam = f.type === 'param';
+  const opts = isParam ? P.KIND_OPTS[f.kind].filter(o => o[0] !== 'nm') : (f.opts[0][0] === '' && /^Not /.test(f.opts[0][1]) ? f.opts.slice(1) : f.opts);
+  const blank = !isParam && f.opts[0][0] === '' && /^Not /.test(f.opts[0][1]);
+  const btns = opts.map(o => h('button', { type: 'button', class: isParam ? 'sg' : 'ch', 'data-v': o[0], role: isParam ? null : 'radio', 'aria-pressed': isParam ? 'false' : null, 'aria-checked': isParam ? null : 'false', text: isParam ? (SHORT_OPT[o[1]] || o[1]) : o[1], 'aria-label': isParam && SHORT_OPT[o[1]] && SHORT_OPT[o[1]] !== o[1] ? o[1] : null,
+    onclick: () => {
+      if (isParam) { const cur = S[mod][f.id]; S[mod][f.id] = (cur.c === o[0] && cur.z === '') ? { c: 'nm', z: '' } : { c: o[0], z: '' }; }
+      else { const cur = S[mod][f.id]; S[mod][f.id] = (cur === o[0] && blank) ? '' : o[0]; }
+      sync();
+    } }));
+  const cells = [];
+  const cols = ctx.columns || (f.cols ? Object.keys(f.cols) : []);
+  if (isParam && (!ctx.columns || ctx.columns.indexOf('z') >= 0)) cells.push(zCell(mod, f));
+  else if (ctx.columns && ctx.columns.indexOf('z') >= 0) cells.push(blankCell());
+  cols.filter(k => k !== 'z').forEach(k => {
+    const nid = f.cols && f.cols[k];
+    const nf = nid ? fieldDef(mod, nid) : null;
+    if (nf && nf.type === 'num') cells.push(numCell(mod, nf, { grid: !!ctx.columns, ph: nf.ph || (ctx.columns ? '' : nf.label.replace(/^.*?\b(rest|nadir|peak|1 min|flow|min)\b.*$/, '$1')) }));
+    else if (ctx.columns) cells.push(blankCell());
+  });
+  // prior studies: the same quantities for each earlier study
+  if (ctx.priors && ctx.priors.length) {
+    const pr = PRIOR_MAP[mod], defs = (pr && pr.fields[f.id]) || [];
+    ctx.priors.forEach(p => {
+      defs.forEach(d => { const pf = P.PRIOR_FIELDS.filter(x => x.id === d[0])[0]; cells.push(numCell('prior', { id: d[0], label: 'Prior ' + (pf ? pf.label : d[0]), unit: d[1] === 'walk' || d[1] === 'dlco' ? '' : d[1], units: d[1] === 'walk' || d[1] === 'dlco' ? d[1] : null }, { get: () => p[d[0]], set: (v) => { p[d[0]] = v; }, cls: 'pri', grid: true })); });
+      for (let i = defs.length; i < pr.n; i++) cells.push(blankCell());
+    });
+  }
+  // post-bronchodilator: the post value and the change as % of predicted
+  if (ctx.bd) {
+    const bdf = { ratio: 'post_ratio_abs', fev1: 'fev1_post', fvc: 'fvc_post' }[f.id];
+    if (bdf) {
+      const nf = fieldDef('bd', bdf);
+      cells.push(numCell('bd', nf, { cls: 'post', grid: true, ph: f.id === 'ratio' ? '0.72' : '', aria: 'Post-bronchodilator ' + f.label + (nf.unit ? ' (' + nf.unit + ')' : '') }));
+      const d = textCell('delta');
+      widgets.push(() => {
+        const b = R.facts.bd; let t = '';
+        if (f.id === 'fev1' || f.id === 'fvc') {
+          const dpp = f.id === 'fev1' ? b.dF : b.dV, dml = f.id === 'fev1' ? b.dFmL : b.dVmL;
+          if (isNum(dpp)) t = (dpp > 0 ? '+' : '') + dpp.toFixed(1) + '% pred';
+          else if (isNum(dml)) t = (dml > 0 ? '+' : '') + Math.round(dml) + ' mL';
+        } else if (isNum(b.postRatioV) && isNum(R.facts.sp.ratioV)) { const dd = (b.postRatioV - R.facts.sp.ratioV) * 100; t = (dd > 0 ? '+' : '') + dd.toFixed(0) + ' pts'; }
+        d.textContent = t; d.classList.toggle('sig', /% pred/.test(t) && parseFloat(t) > 10);
+      });
+      cells.push(d);
+    } else { cells.push(blankCell()); cells.push(blankCell()); }
+  }
+  const autoTag = h('span', { class: 'auto-tag', hidden: true, text: 'from the values' });
+  const row = h('div', { class: 'ix' + (f.more ? ' more' : ''), 'data-field': mod + '.' + f.id }, [
+    h('div', { class: 'ix-l' }, [prmLabel(mod, f, ctx.label), autoTag]),
+    h('div', { class: 'ix-seg', role: isParam ? 'group' : 'radiogroup', 'aria-label': f.label + ' category' }, btns),
+    cells.length ? h('div', { class: 'ix-vals' }, cells) : null
   ]);
   widgets.push(() => {
-    const p = S[mod][f.id], r = P.res(p, f.kind);
-    btns.forEach(b => b.setAttribute('aria-pressed', String(b.getAttribute('data-v') === r.cat)));
-    const show = zopen || p.z !== '';
-    zbox.hidden = !show; zbtn.hidden = show; zbtn.setAttribute('aria-expanded', String(show));
-    zin.classList.toggle('bad', p.z !== '' && !hasNum(p.z));
-    st.textContent = '';
-    if (p.z !== '' && !hasNum(p.z)) st.textContent = 'not a number';
-    else if (r.z !== null) st.appendChild(h('span', {}, ['→ ', h('b', { text: optLabel(f.kind, r.cat) })]));
+    if (isParam) {
+      const r = P.res(S[mod][f.id], f.kind);
+      btns.forEach(b => b.setAttribute('aria-pressed', String(b.getAttribute('data-v') === r.cat)));
+    } else {
+      const a = autoCat(f), v = a || S[mod][f.id];
+      btns.forEach(b => { b.setAttribute('aria-checked', String(b.getAttribute('data-v') === v)); b.classList.toggle('auto', !!a); b.disabled = !!a; });
+      autoTag.hidden = !a;
+    }
+    if (f.more) row.hidden = !(moreOpen[mod] || isFilled(mod, f) || (f.cols && Object.keys(f.cols).some(k => String(S[mod][f.cols[k]]) !== '')));
   });
   return row;
 }
+const moreOpen = {};
+/* "+ More" toggle for the rows marked `more` */
+function moreToggle(mod, rows, label) {
+  if (!rows.length) return null;
+  const b = h('button', { type: 'button', class: 'lnk more-btn', 'data-more': mod, 'aria-expanded': 'false', onclick: () => { moreOpen[mod] = !moreOpen[mod]; sync(); } });
+  widgets.push(() => { const open = !!moreOpen[mod]; b.setAttribute('aria-expanded', String(open)); b.textContent = open ? '− Fewer' : '+ ' + (label || 'More') + ' (' + rows.map(f => f.label.replace(/ \(.*$/, '')).join(', ') + ')'; });
+  return h('div', { class: 'ix-more' }, [b]);
+}
+/* header row of a grid step: the column titles above the value boxes */
+function gridHead(mod, ctx) {
+  const cells = [];
+  const hd = (text, cls, unit) => h('span', { class: 'ix-c hd' + (cls ? ' ' + cls : ''), text: text }, unit ? [h('span', { class: 'u' })] : null);   // the empty unit span keeps the header cell as wide as the boxes below it
+  (ctx.columns || []).forEach(k => cells.push(k === 'z' ? h('span', { class: 'ix-c hd zc', text: 'z-score' }) : hd(ctx.colLabels[k] || k, '', true)));
+  if (ctx.priors) ctx.priors.forEach((p, i) => { const pr = PRIOR_MAP[mod]; for (let j = 0; j < pr.n; j++) cells.push(hd(j === 0 ? 'Prior' + (ctx.priors.length > 1 ? ' ' + (i + 1) : '') : '', 'pri', true)); });
+  if (ctx.bd) { cells.push(hd('Post-BD', 'post', true)); cells.push(h('span', { class: 'ix-c hd txt', text: 'Δ' })); }
+  return h('div', { class: 'ix ix-head', 'aria-hidden': 'true' }, [h('div', { class: 'ix-l' }), h('div', { class: 'ix-seg' }), h('div', { class: 'ix-vals' }, cells)]);
+}
+/* how many value boxes a grid row carries; past four the boxes go on a line of their own under the buttons */
+function gridCells(mod, ctx) { return (ctx.columns ? ctx.columns.length : 0) + (ctx.priors ? ctx.priors.length * PRIOR_MAP[mod].n : 0) + (ctx.bd ? 2 : 0); }
+
 function numField(mod, f) {
   const id = uid('n');
   const inp = h('input', { type: 'text', class: 'num', id: id, inputmode: 'decimal', autocomplete: 'off', placeholder: f.ph || '', value: S[mod][f.id],
     oninput: (e) => { S[mod][f.id] = e.target.value; sync(); } });
-  const unitEl = f.unit ? h('span', { class: 'unit', text: f.unit }) : null;
+  const unitEl = f.units ? unitBtn(f.units) : (f.unit ? h('span', { class: 'unit', text: f.unit }) : null);
+  const extra = h('span', { class: 'fine fld-extra' });
   widgets.push(() => {
     const v = S[mod][f.id]; inp.classList.toggle('bad', v !== '' && !hasNum(v)); if (document.activeElement !== inp && inp.value !== String(v)) inp.value = v;
-    if (unitEl && mod === 'ctx' && (f.id === 'ht' || f.id === 'wt')) unitEl.textContent = S.ctx.units === 'us' ? (f.id === 'ht' ? 'in' : 'lb') : (f.id === 'ht' ? 'cm' : 'kg');
+    if (mod === 'ctx' && f.id === 'wt') { const b = R.facts.ctx.bmi; extra.textContent = isNum(b) ? 'BMI ' + b.toFixed(1) : ''; }
   });
-  return h('div', { class: 'fld' }, [
+  return h('div', { class: 'fld', 'data-field': mod + '.' + f.id }, [
     h('div', { class: 'lab-row' }, [h('label', { for: id, text: f.label }), info(glossKey(mod, f.id))]),
-    h('div', { class: 'inwrap' }, [inp, unitEl])
+    h('div', { class: 'inwrap' }, [inp, unitEl, extra])
   ]);
 }
 /* A "sel" field is shown as a row of tap buttons. A leading "Not …" option is not drawn: nothing pressed means not entered,
@@ -5591,14 +5947,14 @@ function multiField(mod, f) {
 }
 function chkField(mod, f) {
   const id = uid('c');
-  return h('div', { class: 'chkrow' }, [
+  return h('div', { class: 'chkrow', 'data-field': mod + '.' + f.id }, [
     h('input', { type: 'checkbox', id: id, checked: !!S[mod][f.id], onchange: (e) => { S[mod][f.id] = e.target.checked; sync(); } }),
     h('label', { for: id, text: f.label })
   ]);
 }
 function txtField(mod, f, type) {
   const id = uid('t');
-  return h('div', { class: 'fld' + (type === 'date' ? '' : ' wide') }, [
+  return h('div', { class: 'fld' + (type === 'date' ? '' : ' wide'), 'data-field': mod + '.' + f.id }, [
     h('label', { for: id, text: f.label }),
     h('input', { type: type === 'date' ? 'date' : 'text', id: id, autocomplete: 'off', placeholder: f.ph || '', value: S[mod][f.id],
       oninput: (e) => { S[mod][f.id] = e.target.value; sync(); } })
@@ -5667,23 +6023,33 @@ function loopGallery(mod, f) {
 }
 
 function fieldEl(mod, f) {
-  if (f.type === 'param') return paramRow(mod, f);
+  if (f.type === 'param') return indexRow(mod, f);
   if (f.type === 'num') return numField(mod, f);
-  if (f.type === 'sel') return f.ui === 'loop' ? loopGallery(mod, f) : choiceRow(mod, f);
+  if (f.type === 'sel') return f.ui === 'loop' ? loopGallery(mod, f) : (f.cols ? indexRow(mod, f) : choiceRow(mod, f));
   if (f.type === 'multi') return multiField(mod, f);
   if (f.type === 'chk') return chkField(mod, f);
   if (f.type === 'date') return txtField(mod, f, 'date');
   return txtField(mod, f, 'txt');
 }
-function isFilled(mod, f) {
-  const v = S[mod][f.id];
-  if (f.type === 'param') return v.c !== 'nm' || v.z !== '';
-  if (f.type === 'chk') return !!v;
-  if (f.type === 'multi') return v.length > 0;
-  if (f.type === 'sel') return v !== f.opts[0][0];
-  return String(v) !== '';
-}
-function groupEl(mod, g) {
+/* a group of a step: the index rows (grid), a fold, an optional typing block, or plain fields */
+function groupEl(mod, g, ctx) {
+  if (g.legacy) return null;
+  ctx = ctx || {};
+  if (g.inline) {
+    // value boxes not drawn inside any row are offered under "+ More values"
+    const used = inlineIds(mod);
+    const rest = g.fields.filter(f => !used[f.id]);
+    if (!rest.length) return null;
+    const fields = h('div', { class: 'fields' }, rest.map(f => fieldEl(mod, f)));
+    const tag = h('span', { class: 'tag' });
+    const el = h('details', { class: 'optgrp fold', 'data-group': 'values', open: rest.some(f => isFilled(mod, f)) }, [h('summary', {}, [h('span', { class: 't', text: 'More values' }), tag]), fields]);
+    widgets.push(() => { const n = rest.filter(f => isFilled(mod, f)).length; tag.textContent = n ? n + ' entered' : ''; tag.hidden = !n; });
+    return el;
+  }
+  if (g.rows) {
+    const rows = g.fields.map(f => (f.type === 'num' || f.type === 'param' || (f.type === 'sel' && !f.ui)) ? indexRow(mod, f, { columns: null }) : fieldEl(mod, f));
+    return h('section', { class: 'grp ixg rows' }, [h('div', { class: 'grp-head' }, [h('h3', { text: g.title })]), rows]);
+  }
   const fields = h('div', { class: 'fields' }, g.fields.map(f => fieldEl(mod, f)));
   let el;
   if (g.opt) {
@@ -5701,43 +6067,19 @@ function groupEl(mod, g) {
     });
   } else if (g.fold) {
     const tag = h('span', { class: 'tag' });
-    el = h('details', { class: 'optgrp fold', open: g.fields.some(f => isFilled(mod, f)) }, [h('summary', {}, [h('span', { class: 't', text: g.title }), tag]), fields]);
+    el = h('details', { class: 'optgrp fold', 'data-group': g.title.toLowerCase().replace(/[^a-z]+/g, '-'), open: g.fields.some(f => isFilled(mod, f)) }, [h('summary', {}, [h('span', { class: 't', text: g.title }), tag]), fields]);
     widgets.push(() => { const n = g.fields.filter(f => isFilled(mod, f)).length; tag.textContent = n ? n + ' entered' : ''; tag.hidden = !n; });
   } else {
     const head = h('div', { class: 'grp-head' }, [h('h3', { text: g.title })]);
     if (g.quick) {
       const names = g.quick.map(id => g.fields.filter(f => f.id === id)[0].label).join(', ');
-      head.appendChild(h('button', { type: 'button', class: 'btn sm quiet quick', text: 'Set unselected to normal', title: 'Marks ' + names + ' as within normal limits wherever nothing is selected yet',
+      head.appendChild(h('button', { type: 'button', class: 'btn sm quiet quick', text: 'Unselected = normal', title: 'Marks ' + names + ' as within normal limits wherever nothing is selected yet',
         onclick: () => { g.quick.forEach(id => { const p = S[mod][id]; if (p.c === 'nm' && p.z === '') p.c = 'wnl'; }); sync(); } }));
     }
     el = h('section', { class: 'grp' }, [head, fields]);
   }
   if (g.when) widgets.push(() => { el.hidden = g.when.is.indexOf(S[mod][g.when.f]) < 0; });
   return el;
-}
-function liveBox(mod) {
-  const body = h('div', { class: 'live-body' });
-  const box = h('div', { class: 'live', 'aria-live': 'polite' }, [h('h3', {}, ['Findings as entered']), body]);
-  widgets.push(() => {
-    body.textContent = '';
-    if (mod === 'ctx') {
-      const c = R.facts.ctx, bits = [];
-      if (c.age !== undefined && isFinite(c.age)) bits.push(Math.round(c.age) + '-year-old');
-      if (c.sex) bits.push(c.sex === 'M' ? 'male' : 'female');
-      if (isFinite(c.ht)) bits.push('height ' + Math.round(c.ht) + ' cm');
-      if (isFinite(c.bmi)) bits.push('BMI ' + c.bmi.toFixed(1));
-      if (c.smoke) bits.push(c.smoke + ' smoker');
-      const ind = c.indicLabels.slice(); if (c.indication) ind.push(c.indication);
-      if (bits.length) body.appendChild(h('p', { text: bits.join(', ') + '.' }));
-      if (ind.length) body.appendChild(h('p', { text: 'Indication: ' + ind.join('; ') + '.' }));
-      if (!bits.length && !ind.length) body.appendChild(h('p', { class: 'empty', text: 'Nothing entered yet.' }));
-      return;
-    }
-    const s = secFor(mod);
-    if (!s || s.empty) { body.appendChild(h('p', { class: 'empty', text: 'Nothing entered yet. The statement for this test appears here as you go.' })); return; }
-    body.appendChild(h('p', { text: s.lines.join(' ') }));
-  });
-  return box;
 }
 function navRow() {
   const prev = neighbour(-1), next = neighbour(1);
@@ -5748,6 +6090,31 @@ function navRow() {
 }
 function stepHead(title, intro, src, gkey, keepIntro) {
   return h('div', { class: 'step-head' }, [h('div', { class: 'sh-title' }, [h('h2', { text: title }), gkey ? info(gkey) : null]), keepIntro && intro ? h('p', { class: 'intro', text: intro }) : null]);
+}
+/* Pattern-triggered prompts for this step: one line each, with a button that reveals or focuses the field (or adds the test). */
+function promptStrip(mod) {
+  const box = h('div', { class: 'prompts', 'data-prompts': mod });
+  widgets.push(() => {
+    const list = (R.prompts || []).filter(p => p.mod === mod);
+    box.textContent = ''; box.hidden = !list.length;
+    list.forEach(p => box.appendChild(h('div', { class: 'prompt', 'data-prompt': p.id }, [
+      h('span', { class: 'prompt-t', text: p.text }),
+      p.test ? h('button', { type: 'button', class: 'btn sm', text: 'Add ' + (SHORT[p.test] || p.test), onclick: () => { S.tests[p.test] = true; sync(); toast((SHORT[p.test] || p.test) + ' added as a step'); } }) :
+      (p.field ? h('button', { type: 'button', class: 'btn sm', text: p.field === 'bd' ? 'Bronchodilator' : 'Show', onclick: () => revealField(mod, p.field) }) : null)
+    ])));
+  });
+  return box;
+}
+function revealField(mod, id) {
+  if (id === 'bd') { S.tests.bd = true; render(); const el = document.querySelector('[data-cell="bd.fev1_post"] input'); if (el) el.focus(); return; }
+  const f = fieldDef(mod, id);
+  if (f && f.more) { moreOpen[mod] = true; sync(); }
+  const el = document.querySelector('[data-field="' + mod + '.' + id + '"]');
+  if (el) {
+    const det = el.closest('details'); if (det) det.open = true;
+    el.scrollIntoView({ block: 'center' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1600);
+    const inp = el.querySelector('input, button'); if (inp) inp.focus({ preventScroll: true });
+  }
 }
 
 /* ------------------------------------------------------------- step: tests */
@@ -5761,6 +6128,15 @@ function zKey() {
   return h('div', { class: 'zkey' }, [bar, h('div', { class: 'zticks' }, [tick(-4, '−4', 'a'), tick(-2.5, '−2.5', 'a'), tick(-1.645, 'LLN −1.645', 'b'), tick(1.645, 'ULN +1.645', 'b')]),
     h('p', { class: 'fine' }, ['Bands follow ERS/ATS 2022.', info('severity'), ' Typing a z-score always overrides the category buttons.'])]);
 }
+/* quick sets: the built-in ones until the user edits them; then the user's own list (kept in this browser) */
+const QS_KEY = 'pft.quicksets.v1';
+function quickSets() {
+  const v = prefGet(QS_KEY);
+  if (Array.isArray(v)) return v.filter(q => q && typeof q.name === 'string' && Array.isArray(q.tests)).map(q => ({ name: q.name.slice(0, 48), tests: q.tests.filter(t => P.TESTS.some(x => x.key === t)) }));
+  return P.PRESETS.map(p => ({ name: p.name, tests: p.tests.slice() }));
+}
+function saveQuickSets(list) { prefSet(QS_KEY, list); }
+let qsEdit = false;
 function stepTests() {
   const main = $('main');
   const shown = P.TESTS.filter(t => !t.hidden);
@@ -5785,11 +6161,46 @@ function stepTests() {
     count.textContent = n ? plural(n, 'test') + ' selected' : 'Select at least one test';
     cont.disabled = !n;
   });
-  const presets = h('div', { class: 'presets' }, P.PRESETS.map(p => h('button', { type: 'button', class: 'chip', text: p.name,
-    onclick: () => { Object.keys(S.tests).forEach(k => { S.tests[k] = p.tests.indexOf(k) >= 0; }); sync(); } })));
+  // quick sets, editable
+  const qsBox = h('div', { class: 'presets', 'data-quicksets': '1' });
+  const editBtn = h('button', { type: 'button', class: 'lnk', 'data-qs-edit': '1', text: 'Edit', onclick: () => { qsEdit = !qsEdit; paintQs(); } });
+  const selectedTests = () => Object.keys(S.tests).filter(k => S.tests[k]);
+  function paintQs() {
+    const list = quickSets();
+    qsBox.textContent = '';
+    editBtn.textContent = qsEdit ? 'Done' : 'Edit';
+    if (!qsEdit) {
+      list.forEach(q => qsBox.appendChild(h('button', { type: 'button', class: 'chip qs', 'data-qs': q.name, title: q.tests.map(k => SHORT[k] || k).join(', '), text: q.name,
+        onclick: () => { Object.keys(S.tests).forEach(k => { S.tests[k] = q.tests.indexOf(k) >= 0; }); sync(); } })));
+      return;
+    }
+    const ed = h('div', { class: 'qs-edit' });
+    list.forEach((q, i) => {
+      const nameIn = h('input', { type: 'text', value: q.name, 'aria-label': 'Quick set name', maxlength: '48', oninput: (e) => { const l = quickSets(); l[i].name = e.target.value; saveQuickSets(l); } });
+      ed.appendChild(h('div', { class: 'qs-row', 'data-qs-row': q.name }, [
+        nameIn,
+        h('span', { class: 'fine qs-tests', text: q.tests.map(k => SHORT[k] || k).join(', ') || 'no tests' }),
+        h('span', { class: 'qs-acts' }, [
+          h('button', { type: 'button', class: 'btn sm quiet', text: 'Set to current selection', title: 'Replace this quick set\'s tests with the tests ticked below', onclick: () => { const l = quickSets(); l[i].tests = selectedTests(); saveQuickSets(l); paintQs(); toast('Quick set updated'); } }),
+          h('button', { type: 'button', class: 'btn sm quiet danger', text: 'Delete', onclick: () => { const l = quickSets(); l.splice(i, 1); saveQuickSets(l); paintQs(); } })
+        ])
+      ]));
+    });
+    const newName = h('input', { type: 'text', placeholder: 'Name for the current selection', 'aria-label': 'New quick set name', maxlength: '48' });
+    ed.appendChild(h('div', { class: 'qs-row qs-new' }, [newName, h('button', { type: 'button', class: 'btn sm', 'data-qs-add': '1', text: '+ Save current selection', onclick: () => {
+      const nm = newName.value.trim(); const ts = selectedTests();
+      if (!nm) { toast('Give the quick set a name'); newName.focus(); return; }
+      if (!ts.length) { toast('Tick the tests first'); return; }
+      const l = quickSets(); l.push({ name: nm, tests: ts }); saveQuickSets(l); newName.value = ''; paintQs(); toast('Quick set saved');
+    } })]));
+    ed.appendChild(h('div', { class: 'qs-row' }, [h('button', { type: 'button', class: 'lnk', 'data-qs-reset': '1', text: 'Restore the built-in quick sets', onclick: () => { saveQuickSets(P.PRESETS.map(p => ({ name: p.name, tests: p.tests.slice() }))); paintQs(); } })]));
+    qsBox.appendChild(ed);
+  }
+  paintQs();
   main.appendChild(h('div', { class: 'card' }, [
-    stepHead('Which tests were performed?', 'Tick what was done; each test becomes one step.', null, null, true),
-    h('div', { class: 'sel-group' }, [h('h3', { text: 'Quick sets' }), presets]),
+    stepHead('Which tests were performed?', 'Tick what was done; each test becomes one step. The bronchodilator response is entered inside Spirometry.', null, null, true),
+    promptStrip('tests'),
+    h('div', { class: 'sel-group' }, [h('div', { class: 'grp-head' }, [h('h3', { text: 'Quick sets' }), editBtn]), qsBox]),
     selBlock,
     h('div', { class: 'start-row' }, [cont, count])
   ]));
@@ -5819,16 +6230,17 @@ function stepCtx() {
   widgets.push(() => bb.forEach(b => b.setAttribute('aria-checked', String(Number(S.settings.band) === Number(b.getAttribute('data-v'))))));
   const card = h('div', { class: 'card' }, [
     stepHead(m.title, '', m.src),
+    promptStrip('ctx'),
     m.groups.map(g => groupEl('ctx', g)),
-    h('details', { class: 'optgrp fold', 'data-group': 'settings' }, [h('summary', {}, [h('span', { class: 't', text: 'Settings: near-LLN flag and wording level' })]), h('div', { class: 'fields' }, [
+    h('details', { class: 'optgrp fold', 'data-group': 'settings' }, [h('summary', {}, [h('span', { class: 't', text: 'Settings: thresholds, wording level, what the copy includes' })]), h('div', { class: 'fields' }, [
       serialRow(),
       h('div', { class: 'prm ch-row', 'data-field': 'settings.band' }, [
         h('div', { class: 'prm-top' }, [h('span', { class: 'prm-l', text: 'Near-LLN review flag' }), h('span', { class: 'hint', text: 'A value this close above the LLN is marked "near the LLN". It stays within normal limits; this is a local review convention, not a category' })]),
         h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Near-LLN review flag' }, bb)
       ]),
-      styleRow()
+      styleRow(),
+      copyRow()
     ])]),
-    liveBox('ctx'),
     navRow()
   ]);
   main.appendChild(card);
@@ -5840,79 +6252,119 @@ function stepModule(key) {
   const extra = [];
   if (key === 'fvl') extra.push(h('div', { class: 'learn-link' }, [h('button', { type: 'button', class: 'btn sm quiet', 'data-learn': 'loops', text: 'Learn: how to read a flow–volume loop and what each pattern means →', onclick: () => openLearn('loops') })]));
   if (key === 'sixmw') { extra.push(predCalcBlock()); extra.push(trendBlock()); }
-  const pb = PRIOR_ROWS[key] ? priorBlock(key) : null;
-  $('main').appendChild(h('div', { class: 'card' }, [stepHead(m.title, m.intro, m.src, 'test.' + key), extra.filter(function (x) { return x.getAttribute('data-trend') !== '1'; }), m.groups.map(g => groupEl(key, g)), extra.filter(function (x) { return x.getAttribute('data-trend') === '1'; }), pb, liveBox(key), navRow()]));
+  const ctx = { columns: m.columns ? m.columns.map(c => c[0]) : null, colLabels: {} };
+  (m.columns || []).forEach(c => { ctx.colLabels[c[0]] = c[1]; });
+  const pr = PRIOR_MAP[key] ? priorBlock(key, ctx) : null;
+  if (key === 'spiro' && (S.tests.bd || P.bdEntered(S.bd))) ctx.bd = true;
+  const body = [];
+  m.groups.forEach((g, gi) => {
+    if (g.legacy) return;
+    const isGrid = !!(m.columns && gi === 0 && !g.inline && !g.fold && !g.opt);
+    const isRows = !isGrid && !g.inline && !g.fold && !g.opt && !g.when && g.fields.some(f => f.type === 'param' || (f.type === 'sel' && !f.ui));
+    if (isGrid || isRows) {
+      const head = h('div', { class: 'grp-head' }, [h('h3', { text: g.title })]);
+      if (g.quick) {
+        const names = g.quick.map(id => g.fields.filter(f => f.id === id)[0].label).join(', ');
+        head.appendChild(h('button', { type: 'button', class: 'btn sm quiet quick', text: 'Unselected = normal', title: 'Marks ' + names + ' as within normal limits wherever nothing is selected yet',
+          onclick: () => { g.quick.forEach(id => { const p = S[key][id]; if (p.c === 'nm' && p.z === '') p.c = 'wnl'; }); sync(); } }));
+      }
+      const rows = g.fields.map(f => (f.type === 'param' || (f.type === 'sel' && !f.ui)) ? indexRow(key, f, isGrid ? ctx : { priors: ctx.priors }) : fieldEl(key, f));
+      const moreRows = g.fields.filter(f => f.more);
+      body.push(h('section', { class: 'grp ixg' + (isGrid ? ' grid' : '') + (isGrid && gridCells(key, ctx) > 4 ? ' stack' : ''), 'data-grid': key }, [head, isGrid ? gridHead(key, ctx) : null, rows, moreToggle(key, moreRows)]));
+    } else {
+      const el = groupEl(key, g, ctx); if (el) body.push(el);
+    }
+  });
+  const bd = key === 'spiro' ? bdBlock(ctx) : null;
+  // order: prompts, prior toggle (top), grid, bronchodilator, more values, folds (quality lower), extras
+  const folds = body.filter(x => x.tagName === 'DETAILS'), mains = body.filter(x => x.tagName !== 'DETAILS');
+  $('main').appendChild(h('div', { class: 'card' }, [
+    stepHead(m.title, m.intro, m.src, 'test.' + key),
+    promptStrip(key),
+    pr ? pr.top : null,
+    extra.filter(x => x.getAttribute('data-trend') !== '1' && x.getAttribute('data-es') !== '1'),
+    mains, bd, pr ? pr.foot : null, folds,
+    extra.filter(x => x.getAttribute('data-es') === '1'),
+    extra.filter(x => x.getAttribute('data-trend') === '1'),
+    navRow()
+  ]));
+}
+
+/* ------------------------------------------------- bronchodilator, inside the spirometry step */
+function bdBlock(ctx) {
+  const id = uid('bd');
+  const on = !!(S.tests.bd || P.bdEntered(S.bd));
+  const cb = h('input', { type: 'checkbox', id: id, checked: on, 'data-bd-toggle': '1', onchange: (e) => {
+    if (e.target.checked) { S.tests.bd = true; }
+    else { S.tests.bd = false; S.bd = P.normalizeState({}).bd; }
+    render();
+  } });
+  const m = P.SCHEMA.bd;
+  const kids = [];
+  if (on) {
+    m.groups.forEach(g => {
+      if (g.legacy || g.inline) return;
+      if (g.fold) { kids.push(groupEl('bd', g)); return; }
+      const rows = g.fields.map(f => (f.type === 'param' || (f.type === 'sel' && !f.ui)) ? indexRow('bd', f, { columns: null }) : fieldEl('bd', f));
+      kids.push(h('section', { class: 'grp ixg', 'data-grid': 'bd' }, [rows, moreToggle('bd', g.fields.filter(f => f.more), 'More')]));
+    });
+  }
+  return h('section', { class: 'grp bd-block', 'data-bd': String(on) }, [
+    h('div', { class: 'chkrow big' }, [cb, h('label', { for: id, text: 'Bronchodilator given' }), on ? h('span', { class: 'fine', text: 'Type the post values beside the pre values; the change is calculated.' }) : null]),
+    kids
+  ]);
 }
 
 /* ------------------------------------------------- prior study, inline on the test step */
-/* Rows per test: [label, unit, current field (module.field), prior field]. The current value also feeds the numbers
-   line of the report; the prior value switches the comparison on by itself. */
-const PRIOR_ROWS = {
-  spiro: { rows: [['FEV1', 'L', 'fev1_abs', 'fev1'], ['FVC', 'L', 'fvc_abs', 'fvc'], ['FEV1', '% pred', 'fev1_pct', 'fev1_pct'], ['FVC', '% pred', 'fvc_pct', 'fvc_pct']], cmp: ['ref_diff', 'bd_diff', 'qual_diff'] },
-  vol: { rows: [['TLC', 'L', 'tlc_abs', 'tlc']], cmp: ['method_diff', 'ref_diff'] },
-  dlco: { rows: [['DLCO', 'mL/min/mmHg', 'dlco_abs', 'dlco'], ['DLCO', '% pred', 'dlco_pct', 'dlco_pct']], cmp: ['hb_diff', 'ref_diff'] },
-  feno: { rows: [['FeNO', 'ppb', 'val', 'feno']], cmp: [] }
+/* Per step: which rows get prior cells (prior field id, unit) and the comparability flags. The prior value switches the
+   comparison on by itself. */
+const PRIOR_MAP = {
+  spiro: { fields: { fev1: [['fev1', 'L'], ['fev1_pct', '%']], fvc: [['fvc', 'L'], ['fvc_pct', '%']] }, n: 2, cmp: ['ref_diff', 'bd_diff', 'qual_diff'] },
+  vol: { fields: { tlc: [['tlc', 'L']] }, n: 1, cmp: ['method_diff', 'ref_diff'] },
+  dlco: { fields: { dlco: [['dlco', 'dlco'], ['dlco_pct', '%']] }, n: 2, cmp: ['hb_diff', 'ref_diff'] },
+  feno: { fields: { band: [['feno', 'ppb']] }, n: 1, cmp: [] }
 };
 const priorOpen = {};
-function priorHasValues(key) { const def = PRIOR_ROWS[key]; return S.prior.list.some(p => def.rows.some(r => String(p[r[3]] || '').trim() !== '')); }
-function priorBlock(key) {
-  const def = PRIOR_ROWS[key];
+function priorHasValues(key) { const def = PRIOR_MAP[key]; const ids = []; Object.keys(def.fields).forEach(k => def.fields[k].forEach(d => ids.push(d[0]))); return S.prior.list.some(p => ids.some(id => String(p[id] || '').trim() !== '')); }
+function priorBlock(key, ctx) {
+  const def = PRIOR_MAP[key];
   const INTERVALS = [['3 mo', 3], ['6 mo', 6], ['1 yr', 12], ['2 yr', 24], ['3 yr', 36]];
-  const body = h('div', { class: 'prior-body' });
+  const open = priorOpen[key] || priorHasValues(key);
+  if (open) ctx.priors = S.prior.list;
   const cbId = uid('pc');
-  const cb = h('input', { type: 'checkbox', id: cbId, onchange: (e) => {
+  const cb = h('input', { type: 'checkbox', id: cbId, checked: open, 'data-prior-toggle': key, onchange: (e) => {
     priorOpen[key] = e.target.checked;
-    if (!e.target.checked) { S.prior.list.forEach(p => def.rows.forEach(r => { p[r[3]] = ''; })); }
-    paint(); sync();
+    if (!e.target.checked) { const ids = []; Object.keys(def.fields).forEach(k => def.fields[k].forEach(d => ids.push(d[0]))); S.prior.list.forEach(p => ids.forEach(id => { p[id] = ''; })); }
+    render();
   } });
-  function numIn(get, set, ph) {
-    const inp = h('input', { type: 'text', class: 'num', inputmode: 'decimal', autocomplete: 'off', placeholder: ph || '', value: get(), oninput: (e) => { set(e.target.value); sync(); } });
-    widgets.push(() => { const v = get(); inp.classList.toggle('bad', v !== '' && !hasNum(v)); if (document.activeElement !== inp && inp.value !== String(v)) inp.value = v; });
-    return inp;
-  }
-  function paint() {
-    body.textContent = '';
-    const open = priorOpen[key] || priorHasValues(key);
-    cb.checked = open;
-    body.hidden = !open;
-    if (!open) return;
-    const priors = S.prior.list;
-    const head = h('div', { class: 'pr-row pr-head' }, [h('span'), h('span', { text: 'This study' })].concat(priors.map((p, i) => h('span', { class: 'pr-col' }, [h('span', { text: priors.length > 1 ? 'Prior ' + (i + 1) : 'Prior study' }), priors.length > 1 ? h('button', { type: 'button', class: 'lnk', text: 'remove', onclick: () => { priors.splice(i, 1); paint(); sync(); } }) : null]))));
-    body.appendChild(head);
-    const dateRow = h('div', { class: 'pr-row' }, [h('span', { class: 'pr-l', text: 'Date' }), h('span', { class: 'fine', text: S.ctx.date ? dateShort(S.ctx.date) : 'set on Details' })].concat(priors.map(p => {
-      const inp = h('input', { type: 'date', value: p.date, oninput: (e) => { p.date = e.target.value; sync(); } });
+  const dates = h('div', { class: 'pr-dates' });
+  if (open) {
+    S.prior.list.forEach((p, i) => {
+      const inp = h('input', { type: 'date', value: p.date, 'aria-label': 'Date of prior study ' + (i + 1), oninput: (e) => { p.date = e.target.value; sync(); } });
       widgets.push(() => { if (document.activeElement !== inp && inp.value !== p.date) inp.value = p.date; });
-      return h('span', { class: 'pr-cell' }, [inp, h('span', { class: 'qd' }, INTERVALS.map(iv => h('button', { type: 'button', class: 'lnk', 'data-months': String(iv[1]), text: iv[0], title: iv[0] + ' before this study', onclick: () => { p.date = shiftMonths(S.ctx.date, iv[1]); sync(); } })))]);
-    })));
-    body.appendChild(dateRow);
-    def.rows.forEach(r => {
-      body.appendChild(h('div', { class: 'pr-row' }, [h('span', { class: 'pr-l', text: r[0] + ' (' + r[1] + ')' }),
-        h('span', { class: 'pr-cell' }, [numIn(() => S[key][r[2]], (v) => { S[key][r[2]] = v; })])].concat(priors.map(p => h('span', { class: 'pr-cell' }, [numIn(() => p[r[3]], (v) => { p[r[3]] = v; })])))));
+      dates.appendChild(h('div', { class: 'pr-date' }, [
+        h('span', { class: 'pr-l', text: S.prior.list.length > 1 ? 'Prior ' + (i + 1) : 'Prior study' }), inp,
+        h('span', { class: 'qd' }, INTERVALS.map(iv => h('button', { type: 'button', class: 'lnk', 'data-months': String(iv[1]), text: iv[0], title: iv[0] + ' before this study', onclick: () => { p.date = shiftMonths(S.ctx.date, iv[1]); sync(); } }))),
+        S.prior.list.length > 1 ? h('button', { type: 'button', class: 'lnk', text: 'remove', onclick: () => { S.prior.list.splice(i, 1); render(); } }) : null
+      ]));
     });
-    const foot = h('div', { class: 'pr-foot' });
-    if (priors.length < P.MAX_PRIORS) foot.appendChild(h('button', { type: 'button', class: 'btn sm quiet', text: '+ Older study', onclick: () => { priors.push(P.blankPrior()); paint(); sync(); } }));
-    if (def.cmp.length) {
-      const flags = def.cmp.map(id => P.PRIOR_FIELDS.filter(f => f.id === id)[0]).filter(Boolean);
-      foot.appendChild(h('details', { class: 'plain pr-cmp', 'data-group': 'cmp' }, [h('summary', { text: 'Not directly comparable? (different equations, bronchodilator state, method…)' }),
-        h('div', {}, priors.map((p, i) => h('div', { class: 'pr-cmpcol' }, [priors.length > 1 ? h('b', { text: 'Prior ' + (i + 1) }) : null].concat(flags.map(f => { const id = uid('pf'); return h('div', { class: 'chkrow' }, [h('input', { type: 'checkbox', id: id, checked: !!p[f.id], onchange: (e) => { p[f.id] = e.target.checked; sync(); } }), h('label', { for: id, text: f.label })]); })))))]));
-    }
-    body.appendChild(foot);
+    if (S.prior.list.length < P.MAX_PRIORS) dates.appendChild(h('button', { type: 'button', class: 'lnk', 'data-prior-add': '1', text: '+ older study', onclick: () => { S.prior.list.push(P.blankPrior()); render(); } }));
   }
-  paint();
-  return h('section', { class: 'grp prior-inline', 'data-prior-block': key }, [
-    h('div', { class: 'chkrow big' }, [cb, h('label', { for: cbId, text: 'Compare with a prior study' })]),
-    body
+  const top = h('section', { class: 'grp prior-inline', 'data-prior-block': key }, [
+    h('div', { class: 'chkrow big' }, [cb, h('label', { for: cbId, text: 'Compare with a prior study' }), open ? h('span', { class: 'fine', text: 'Prior values go in the columns beside this study\'s values.' }) : null]),
+    open ? dates : null
   ]);
+  let foot = null;
+  if (open && def.cmp.length) {
+    const flags = def.cmp.map(id => P.PRIOR_FIELDS.filter(f => f.id === id)[0]).filter(Boolean);
+    foot = h('details', { class: 'plain pr-cmp', 'data-group': 'cmp' }, [h('summary', { text: 'Prior study not directly comparable? (different equations, bronchodilator state, method…)' }),
+      h('div', {}, S.prior.list.map((p, i) => h('div', { class: 'pr-cmpcol' }, [S.prior.list.length > 1 ? h('b', { text: 'Prior ' + (i + 1) }) : null].concat(flags.map(f => { const id = uid('pf'); return h('div', { class: 'chkrow' }, [h('input', { type: 'checkbox', id: id, checked: !!p[f.id], onchange: (e) => { p[f.id] = e.target.checked; sync(); } }), h('label', { for: id, text: f.label })]); })))))]);
+  }
+  return { top: top, foot: foot };
 }
 function dateShort(iso) { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso); return m ? (+m[2]) + '/' + (+m[3]) + '/' + m[1] : iso; }
 
-/* --------------------------------------------------------------- step: prior */
-function curPlaceholder(id) {
-  const f = R.facts, v = ({ fev1: f.sp.fev1L, fvc: f.sp.fvcL, fev1_pct: f.sp.fev1pct, fvc_pct: f.sp.fvcpct, tlc: f.vol.tlcL, dlco: f.dl.abs,
-    dlco_pct: (isFinite(f.dl.adjPct) ? f.dl.adjPct : f.dl.pct), six: f.six.dist, feno: f.feno.v })[id];
-  return (typeof v === 'number' && isFinite(v)) ? String(Math.round(v * 100) / 100) : '';
-}
-/* ------------------------------------------------------------- serial-change thresholds */
+/* ------------------------------------------------------------- settings rows */
 const SERIAL_OPTS = [['ers', 'ERS/ATS: FEV1 and FVC 15%, DLCO 10%'], ['local', 'Reading-room template: FEV1 and FVC 10%, DLCO 20%']];
 function serialRow() {
   const btns = SERIAL_OPTS.map(o => h('button', { type: 'button', class: 'ch', role: 'radio', 'data-v': o[0], 'aria-checked': 'false', text: o[1], onclick: () => { S.settings.serial = o[0]; sync(); } }));
@@ -5922,8 +6374,6 @@ function serialRow() {
     h('div', { class: 'seg stack', role: 'radiogroup', 'aria-label': 'Significant change thresholds' }, btns)
   ]);
 }
-
-/* ------------------------------------------------------------- wording level */
 const STYLE_OPTS = [['concise', 'Concise'], ['standard', 'Standard'], ['expanded', 'Detailed']];
 function styleRow() {
   const btns = STYLE_OPTS.map(o => h('button', { type: 'button', class: 'ch', role: 'radio', 'data-v': o[0], 'aria-checked': 'false', text: o[1], onclick: () => { S.settings.style = o[0]; sync(); } }));
@@ -5931,6 +6381,15 @@ function styleRow() {
   return h('div', { class: 'prm ch-row', 'data-field': 'settings.style' }, [
     h('div', { class: 'prm-top' }, [h('span', { class: 'prm-l', text: 'Wording level' }), h('span', { class: 'hint', text: 'Concise: findings only. Standard: numbers, then findings. Detailed: adds the caveats.' })]),
     h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Wording level' }, btns)
+  ]);
+}
+const COPY_OPTS = [['lean', 'Sections and interpretation only'], ['full', 'With header: date, demographics, BMI, reference set, interpretability']];
+function copyRow() {
+  const btns = COPY_OPTS.map(o => h('button', { type: 'button', class: 'ch', role: 'radio', 'data-v': o[0], 'aria-checked': 'false', text: o[1], onclick: () => { S.settings.copy = o[0]; sync(); } }));
+  widgets.push(() => btns.forEach(b => b.setAttribute('aria-checked', String((S.settings.copy || 'lean') === b.getAttribute('data-v')))));
+  return h('div', { class: 'prm ch-row', 'data-field': 'settings.copy' }, [
+    h('div', { class: 'prm-top' }, [h('span', { class: 'prm-l', text: 'What the copied report includes' })]),
+    h('div', { class: 'seg stack', role: 'radiogroup', 'aria-label': 'Copied report contents' }, btns)
   ]);
 }
 /* Review-only catalog wording: offered when the findings make it relevant, included only when tapped. */
@@ -5989,19 +6448,19 @@ function studiesBlock(cls) {
 }
 
 /* ------------------------------------------------------------- step: report */
+function reportText() { return (S.settings.copy === 'full') ? R.textFull : R.textLean; }
 function reportDoc() {
-  const lines = R.text.split('\n'); const meta = [];
-  for (let i = 1; i < lines.length && lines[i] !== ''; i++) meta.push(lines[i]);
+  const full = S.settings.copy === 'full';
   const doc = h('article', { class: 'doc', id: 'doc' }, [
     h('div', { class: 'dt', text: 'Pulmonary function test report' }),
-    h('div', { class: 'meta' }, meta.map(t => h('span', { text: t })))
+    full ? h('div', { class: 'meta' }, (R.header || []).map(t => h('span', { text: t }))) : null
   ]);
-  R.sections.forEach(s => doc.appendChild(h('div', { class: 'sec', 'data-sec': s.key }, [
-    h('h3', { text: s.title }),
+  R.sections.forEach(s => { if (!full && s.key === 'qual') return; doc.appendChild(h('div', { class: 'sec', 'data-sec': s.key }, [
+    h('h3', { text: s.title + ':' }),
     h('p', { text: s.lines.join(' ') })
-  ])));
+  ])); });
   const codes = uniq(R.sections.reduce((a, s) => a.concat(s.codes || []), []));
-  doc.appendChild(h('div', { class: 'interp' }, [h('h3', { text: 'Conclusion' }),
+  doc.appendChild(h('div', { class: 'interp' }, [h('h3', { text: 'INTERPRETATION:' }),
     R.impression.length ? h('p', { class: 'impr-p' }, R.impression.map(t => h('span', { class: 'impr-s', text: t + ' ' }))) : h('p', { class: 'fine', text: 'No interpretable data entered.' }),
     codes.length ? h('div', { class: 'codes-row', 'data-codes': codes.join(',') }, [h('span', { class: 'fine' }, ['Annals ATS 2025 codes', h('span', { class: 'noprint', text: ' (tap for meaning)' })]), h('span', { class: 'codes' }, codes.map(codeChip))]) : null]));
   return doc;
@@ -6044,38 +6503,49 @@ function headsupCard() {
   }
   return card;
 }
+/* prompts from every step, listed on the report so nothing useful is left unasked */
+function promptsCard() {
+  const list = R.prompts || [];
+  if (!list.length) return null;
+  return h('section', { class: 'card prompts-card', id: 'prompts' }, [
+    h('div', { class: 'hu-head' }, [h('h2', { text: 'Values that would help' }), h('span', { class: 'chip note', text: String(list.length) })]),
+    h('div', { class: 'prompts' }, list.map(p => h('div', { class: 'prompt', 'data-prompt': p.id }, [h('span', { class: 'prompt-t', text: p.text }),
+      h('button', { type: 'button', class: 'btn sm', text: p.test ? 'Add ' + (SHORT[p.test] || p.test) : 'Go to ' + (p.mod === 'ctx' ? 'Details' : (SHORT[p.mod] || p.mod)), onclick: () => { if (p.test) { S.tests[p.test] = true; goto(p.test); } else { goto(p.mod); setTimeout(() => revealField(p.mod, p.field), 30); } } })])))
+  ]);
+}
 function stepReport() {
   const main = $('main');
   const caseBox = h('textarea', { class: 'case', id: 'case-box', rows: '3', placeholder: 'Paste a case code here to load it', 'aria-label': 'Case code' });
   main.appendChild(h('div', { class: 'card' }, [
-    h('div', { class: 'bar' }, [h('h2', { text: 'Report', style: 'font-size:22px;font-weight:650' }), h('div', { class: 'btns' }, [
-      h('button', { type: 'button', class: 'btn primary', id: 'copy-report', text: 'Copy report', onclick: () => copyText(R.text, 'Report copied') }),
+    h('div', { class: 'bar' }, [h('h2', { text: 'Report', class: 'h2s' }), h('div', { class: 'btns' }, [
+      h('button', { type: 'button', class: 'btn primary', id: 'copy-report', text: 'Copy report', onclick: () => copyText(reportText(), 'Report copied') }),
       h('button', { type: 'button', class: 'btn', id: 'copy-all', text: 'Copy with heads-up', onclick: () => copyText(R.textWithHeadsup, 'Report and heads-up copied') }),
       h('button', { type: 'button', class: 'btn', id: 'save-bank', text: 'Save to case bank', onclick: () => { const pn = $('bank-save'); if (pn) { pn.hidden = !pn.hidden; if (!pn.hidden) { const i = pn.querySelector('input[type=text]'); if (i) i.focus(); } } } })
     ])]),
     bankSavePanel(),
     h('div', { id: 'fallback', class: 'fallback' }),
-    h('div', { class: 'style-inline' }, [styleRow()])
+    h('div', { class: 'style-inline' }, [copyRow(), styleRow()])
   ]));
   // the report, the suggested additions and the heads-up repaint whenever the result changes (wording level, a tapped suggestion)
   const live = h('div', { id: 'report-live' });
   let liveKey = null;
   widgets.push(() => {
     const dxKey = (R.differentials || []).map(g => g.key + ':' + g.dx.concat(g.studies).map(x => x.on ? '1' : '0').join('')).join(',');
-    const key = R.text + '|' + (R.suggestions || []).map(x => x.id + (x.on ? '1' : '0') + (x.superseded ? 's' : '')).join(',') + '|' + dxKey + '|' + R.headsup.map(x => x.id).join(',');
+    const key = R.textFull + '|' + (R.suggestions || []).map(x => x.id + (x.on ? '1' : '0') + (x.superseded ? 's' : '')).join(',') + '|' + dxKey + '|' + R.headsup.map(x => x.id).join(',') + '|' + S.settings.copy + '|' + (R.prompts || []).map(p => p.id).join(',');
     if (key === liveKey) return;
     liveKey = key;
     live.textContent = '';
     live.appendChild(reportDoc());
     const sc = suggestCard(); if (sc) live.appendChild(sc);
     const dc = dxCard(); if (dc) live.appendChild(dc);
+    const pc = promptsCard(); if (pc) live.appendChild(pc);
     live.appendChild(headsupCard());
-    const pl = $('plain'); if (pl) pl.textContent = R.text;
+    const pl = $('plain'); if (pl) pl.textContent = reportText();
   });
   main.appendChild(live);
   const sim = similarCard(); if (sim) main.appendChild(sim);
   main.appendChild(h('div', { class: 'card' }, [
-    h('details', { class: 'plain' }, [h('summary', { text: 'Plain-text version' }), h('pre', { class: 'plain', id: 'plain', text: R.text })]),
+    h('details', { class: 'plain' }, [h('summary', { text: 'Plain-text version' }), h('pre', { class: 'plain', id: 'plain', text: reportText() })]),
     h('details', { class: 'plain' }, [h('summary', { text: 'Save or load a case' }), h('div', { class: 'fallback' }, [
       h('p', { class: 'fine', text: 'A case code holds every entry on this page so the case can be reopened later. It contains no patient identifiers unless you typed some into a free-text field.' }),
       caseBox,
@@ -6091,55 +6561,51 @@ function stepReport() {
   ]));
 }
 
-/* ------------------------------------------------- live report preview (right-hand panel) */
-/* While the forms are being clicked through, the report as it will read builds on the right. It is the same text as the
-   Report step (facts per test, then the synthesized Interpretation); the section for the current step is marked and
-   anything that just changed flashes once. Narrow screens keep the per-step "Findings as entered" box instead. */
+/* ------------------------------------------------- running report (right-hand column) */
+/* While the forms are being clicked through, the report as it will read builds on the right in real time. It is the same
+   text as the Report step; the section for the current step is marked and anything that just changed flashes once. */
 let pvPrev = null, pvScrollTo = true;
 function pvShown() { return mode === 'case' && step !== 'report'; }
-function reportMeta() {
-  const lines = R.text.split('\n'), meta = [];
-  for (let i = 1; i < lines.length && lines[i] !== ''; i++) meta.push(lines[i]);
-  return meta;
-}
 function paintPreview() {
   const pv = $('pv'); if (!pv) return;
   const cur = SECKEY[step] || step, prev = pvPrev || {}, next = { sec: {}, impr: [] };
+  const full = S.settings.copy === 'full';
   const doc = h('div', { class: 'doc pv-doc' }, [
-    h('div', { class: 'dt', text: 'Pulmonary function test report' }),
-    h('div', { class: 'meta' }, reportMeta().map(t => h('span', { text: t })))
+    h('div', { class: 'dt', text: 'Report' }),
+    full ? h('div', { class: 'meta' }, (R.header || []).map(t => h('span', { text: t }))) : null
   ]);
   R.sections.forEach(s => {
+    if (!full && s.key === 'qual') return;
     const txt = s.empty ? '' : s.lines.join(' ');
     next.sec[s.key] = txt;
     const changed = !!txt && prev.sec && prev.sec[s.key] !== undefined && prev.sec[s.key] !== txt;
     doc.appendChild(h('div', { class: 'sec' + (s.key === cur ? ' cur' : '') + (changed ? ' chg' : ''), 'data-sec': s.key }, [
-      h('h3', { text: s.title }),
+      h('h3', { text: s.title + ':' }),
       txt ? h('p', { text: txt }) : h('p', { class: 'pv-empty', text: s.key === cur ? 'Waiting for values on this step.' : 'Not entered yet.' })
     ]));
   });
   next.impr = R.impression.slice();
   const codes = uniq(R.sections.reduce((a, s) => a.concat(s.codes || []), []));
   const had = prev.impr || [];
-  doc.appendChild(h('div', { class: 'interp' }, [h('h3', { text: 'Conclusion' }),
+  doc.appendChild(h('div', { class: 'interp' }, [h('h3', { text: 'INTERPRETATION:' }),
     R.impression.length
       ? h('p', { class: 'impr-p' }, R.impression.map(t => h('span', { class: 'impr-s' + (prev.impr && had.indexOf(t) < 0 ? ' chg' : ''), text: t + ' ' })))
-      : h('p', { class: 'pv-empty', text: 'The synthesis appears here once values are entered.' }),
+      : h('p', { class: 'pv-empty', text: 'The interpretation appears here as values are entered.' }),
     codes.length ? h('div', { class: 'codes-row' }, [h('span', { class: 'fine', text: 'Annals ATS 2025 codes' }), h('span', { class: 'codes' }, codes.map(codeChip))]) : null]));
   const oldDoc = pv.querySelector('.pv-doc'), keepTop = oldDoc ? oldDoc.scrollTop : 0;
   pv.textContent = '';
   pv.appendChild(h('div', { class: 'pv-head' }, [
-    h('h2', { text: 'Report preview' }),
+    h('h2', { text: 'Running report' }),
     h('div', { class: 'pv-btns' }, [
-      h('button', { type: 'button', class: 'btn sm', id: 'pv-copy', text: 'Copy', onclick: () => copyText(R.text, 'Report copied') }),
+      h('button', { type: 'button', class: 'btn sm', id: 'pv-copy', text: 'Copy', onclick: () => copyText(reportText(), 'Report copied') }),
       h('button', { type: 'button', class: 'btn sm', id: 'pv-open', text: 'Full report', onclick: () => goto('report') })
     ])
   ]));
   const nSug = (R.suggestions || []).filter(x => !x.superseded).length, nOn = (R.suggestions || []).filter(x => x.on && !x.superseded).length;
   const nGrp = (R.differentials || []).length;
   const notes = [];
-  if (nSug) notes.push((nOn ? nOn + ' of ' : '') + plural(nSug, 'suggested addition'));
-  if (nGrp) notes.push('differentials and additional studies for ' + plural(nGrp, 'finding'));
+  if (nSug) notes.push((nOn ? nOn + ' of ' : '') + plural(nSug, 'optional sentence'));
+  if (nGrp) notes.push('differentials and studies for ' + plural(nGrp, 'finding'));
   if (notes.length) doc.appendChild(h('p', { class: 'fine pv-sug', text: cap(notes.join('; ')) + ' on the Report step (tap to include).' }));
   pv.appendChild(doc);
   pvPrev = next;
@@ -6162,8 +6628,7 @@ let fitQueued = false;
 function fitPreview() {
   fitQueued = false;
   const pv = $('pv'); if (!pv || pv.hidden || !pv.offsetParent) return;
-  // the panel is sticky inside #work: its top is the sticky offset once the page has scrolled past the top of #work,
-  // and it can never extend below the end of #work (where the browser would otherwise push it upward)
+  if (!$('work').classList.contains('has-pv') || window.innerWidth < 900) { pv.style.height = ''; return; }
   const work = $('work').getBoundingClientRect();
   const stick = parseFloat(getComputedStyle(pv).top) || 0;
   const top = Math.max(stick, work.top);
@@ -6173,6 +6638,25 @@ function fitPreview() {
 function queueFit() { if (!fitQueued) { fitQueued = true; requestAnimationFrame(fitPreview); } }
 function wirePreview() { window.addEventListener('scroll', queueFit, { passive: true }); window.addEventListener('resize', queueFit); }
 function measureSteps() { const n = $('steps'); if (n && n.offsetHeight) document.documentElement.style.setProperty('--steps-h', n.offsetHeight + 'px'); }
+
+/* ---------------------------------------------------------------- theme */
+const THEME_KEY = 'pft.theme.v1';
+function applyTheme(t) {
+  const root = document.documentElement;
+  if (t === 'dark' || t === 'light') root.setAttribute('data-theme', t); else root.removeAttribute('data-theme');
+  const b = $('theme'); if (b) { const dark = (t === 'dark') || (t !== 'light' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches); b.textContent = dark ? 'Light theme' : 'Dark theme'; b.setAttribute('aria-pressed', String(dark)); }
+}
+function wireTheme() {
+  const saved = prefGet(THEME_KEY);
+  applyTheme(saved === 'dark' || saved === 'light' ? saved : '');
+  const b = $('theme'); if (!b) return;
+  b.addEventListener('click', () => {
+    const cur = document.documentElement.getAttribute('data-theme');
+    const dark = cur === 'dark' || (cur !== 'light' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    const next = dark ? 'light' : 'dark';
+    prefSet(THEME_KEY, next); applyTheme(next);
+  });
+}
 
 /* ---------------------------------------------------------------- dispatcher */
 function render() {
@@ -6209,6 +6693,7 @@ function wireHeader() {
     if (m === 'case') { mode = 'case'; render(); window.scrollTo(0, 0); const mm = $('main'); if (mm) mm.focus({ preventScroll: true }); }
     else setMode(m, m === 'learn' ? { topic: learnTopic } : {});
   }));
+  wireTheme();
 }
 
 
@@ -6330,14 +6815,16 @@ function trendRowEl(r, i, repaintRows) {
   const INTERVALS = [['3 mo', 3], ['6 mo', 6], ['1 yr', 12], ['2 yr', 24], ['3 yr', 36]];
   const quick = h('div', { class: 'qdates' }, [h('span', { class: 'hint', text: 'Date: this study minus' })].concat(INTERVALS.map(iv =>
     h('button', { type: 'button', class: 'cp', 'data-months': String(iv[1]), text: iv[0], onclick: () => { r.date = shiftMonths(S.ctx.date, iv[1]); date.value = r.date; sync(); } }))));
+  const un = h('span', { class: 'unit', text: 'm' });
   widgets.push(() => {
     dist.classList.toggle('bad', r.dist !== '' && !hasNum(r.dist));
     nad.classList.toggle('bad', r.nadir !== '' && !hasNum(r.nadir));
+    un.textContent = P.unitLabel(S, 'walk');
   });
   return h('div', { class: 'tr-row', 'data-trow': String(i + 1) }, [
     h('div', { class: 'tr-cells' }, [
       h('div', { class: 'fld' }, [h('label', { for: idd, text: 'Date of walk ' + (i + 1) }), date]),
-      h('div', { class: 'fld' }, [h('label', { for: idm, text: '6MWD' }), h('div', { class: 'inwrap' }, [dist, h('span', { class: 'unit', text: 'm' })])]),
+      h('div', { class: 'fld' }, [h('label', { for: idm, text: '6MWD' }), h('div', { class: 'inwrap' }, [dist, un])]),
       h('div', { class: 'fld' }, [h('label', { for: idn, text: 'Nadir SpO2' }), h('div', { class: 'inwrap' }, [nad, h('span', { class: 'unit', text: '%' })])]),
       h('div', { class: 'fld tr-o2' }, [h('span', { class: 'lab', text: 'Oxygen' }), o2]),
       h('div', { class: 'fld tr-del' }, [h('button', { type: 'button', class: 'btn sm quiet', 'aria-label': 'Remove walk ' + (i + 1), text: 'Remove', onclick: () => {
@@ -6353,7 +6840,9 @@ function trendTodayRow() {
   const nad = h('input', { type: 'text', class: 'num', id: idn, inputmode: 'decimal', autocomplete: 'off', placeholder: 'optional', value: S.sixmw.spo2_nadir, oninput: (e) => { S.sixmw.spo2_nadir = e.target.value; sync(); } });
   const o2 = h('button', { type: 'button', class: 'cp', 'aria-pressed': String(S.sixmw.o2 === 'o2'), text: 'On oxygen', onclick: () => { S.sixmw.o2 = S.sixmw.o2 === 'o2' ? '' : 'o2'; sync(); } });
   const dt = h('span', { class: 'tr-date' });
+  const un = h('span', { class: 'unit', text: 'm' });
   widgets.push(() => {
+    un.textContent = P.unitLabel(S, 'walk');
     dt.textContent = S.ctx.date ? fmtDay(S.ctx.date) : 'date not set (Details step)';
     dt.classList.toggle('missing', !S.ctx.date);
     if (document.activeElement !== dist && dist.value !== String(S.sixmw.dist)) dist.value = S.sixmw.dist;
@@ -6365,7 +6854,7 @@ function trendTodayRow() {
   return h('div', { class: 'tr-row today', 'data-trow': 'today' }, [
     h('div', { class: 'tr-cells' }, [
       h('div', { class: 'fld' }, [h('span', { class: 'lab', text: 'This study' }), dt]),
-      h('div', { class: 'fld' }, [h('label', { for: idm, text: '6MWD today' }), h('div', { class: 'inwrap' }, [dist, h('span', { class: 'unit', text: 'm' })])]),
+      h('div', { class: 'fld' }, [h('label', { for: idm, text: '6MWD today' }), h('div', { class: 'inwrap' }, [dist, un])]),
       h('div', { class: 'fld' }, [h('label', { for: idn, text: 'Nadir SpO2' }), h('div', { class: 'inwrap' }, [nad, h('span', { class: 'unit', text: '%' })])]),
       h('div', { class: 'fld tr-o2' }, [h('span', { class: 'lab', text: 'Oxygen' }), o2])
     ])
@@ -6521,8 +7010,9 @@ function predCalcBlock() {
       return;
     }
     const pct = has(x.dist) && x.stop !== 'early' ? x.dist / es.pred * 100 : NaN;
-    vals.appendChild(t6('Predicted 6MWD', Math.round(es.pred) + ' m', (es.sex === 'M' ? 'Men' : 'Women') + ', age ' + fmt(c.age, 0) + ', ' + fmt(c.ht, 0) + ' cm, ' + fmt(c.wt, 0) + ' kg'));
-    vals.appendChild(t6('LLN', Math.round(es.lln) + ' m', 'predicted − ' + es.sub + ' m'));
+    const ft = x.unit === 'ft', dm = (v) => Math.round(v) + ' m' + (ft ? ' (' + Math.round(v / 0.3048) + ' ft)' : '');
+    vals.appendChild(t6('Predicted 6MWD', dm(es.pred), (es.sex === 'M' ? 'Men' : 'Women') + ', age ' + fmt(c.age, 0) + ', ' + fmt(c.ht, 0) + ' cm, ' + fmt(c.wt, 0) + ' kg'));
+    vals.appendChild(t6('LLN', dm(es.lln), 'predicted − ' + es.sub + ' m'));
     vals.appendChild(t6('% predicted', has(pct) ? Math.round(pct) + '%' : '—', has(x.dist) ? (x.stop === 'early' ? 'not applied: walk stopped early' : (x.dist < es.lln ? 'below the LLN' : 'at or above the LLN')) : 'enter the distance walked'));
     const eqTxt = es.sex === 'M' ? '7.57 × height (cm) − 5.02 × age − 1.76 × weight (kg) − 309 m; LLN = predicted − 153 m' : '2.11 × height (cm) − 2.29 × weight (kg) − 5.78 × age + 667 m; LLN = predicted − 139 m';
     let note = 'Equation (' + (es.sex === 'M' ? 'men' : 'women') + '): ' + eqTxt + '. Derived in healthy adults aged 40–80 (Am J Respir Crit Care Med 1998;158:1384–7); it explains about 40% of the variance in distance, so a locally derived or laboratory reference is preferred when one exists. ';

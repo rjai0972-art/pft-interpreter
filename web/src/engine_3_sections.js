@@ -21,11 +21,11 @@ function placeholderValues(f) {
   const setZ = (k, r) => { if (r && r.z !== null) V[k] = fz(r.z); };
   set('fev1_L', s.fev1L, 2); set('fvc_L', s.fvcL, 2); set('fev1_pct_pred', s.fev1pct, 0); set('fvc_pct_pred', s.fvcpct, 0);
   setZ('fev1_z', s.fev1); setZ('fvc_z', s.fvc); setZ('ratio_z', s.ratio);
-  if (has(s.ratioCalc)) V.ratio_percent = fmt(s.ratioCalc * 100, 0);
+  if (has(s.ratioV)) V.ratio_percent = fmt(s.ratioV * 100, 0);
   set('svc_L', v.svcL, 2); setZ('svc_z', v.svc);
   set('tlc_L', v.tlcL, 2); setZ('tlc_z', v.tlc); set('rv_L', v.rvL, 2); setZ('rv_z', v.rv); set('frc_L', v.frcL, 2); setZ('frc_z', v.frc);
   setZ('erv_z', v.erv); setZ('ic_z', v.ic); setZ('rv_tlc_z', v.rvtlc); setZ('frc_tlc_z', v.frctlc);
-  if (has(v.rvtlcCalc)) V.rv_tlc_percent = fmt(v.rvtlcCalc, 0);
+  if (has(v.rvtlcV)) V.rv_tlc_percent = fmt(v.rvtlcV, 0);
   set('dlco_value', d.abs, 1); if (has(d.abs)) V.dlco_units = 'mL/min/mmHg'; set('dlco_pct_pred', d.pct, 0); setZ('dlco_z', d.dlco);
   set('va_value', d.vaL, 2); if (has(d.vaL)) V.va_units = 'L'; setZ('va_z', d.va); setZ('kco_z', d.kco);
   if (has(d.vatlc)) V.va_tlc_percent = fmt(d.vatlc * 100, 0);
@@ -175,9 +175,9 @@ function priorFacts(st, f) {
   const cv = {
     fev1: curVal('fev1', f.sp.fev1L), fvc: curVal('fvc', f.sp.fvcL),
     fev1_pct: curVal('fev1_pct', f.sp.fev1pct), fvc_pct: curVal('fvc_pct', f.sp.fvcpct),
-    tlc: curVal('tlc', f.vol.tlcL), dlco: curVal('dlco', f.dl.abs),
+    tlc: curVal('tlc', f.vol.tlcL), dlco: has(toBase(st, 'dlco', cur.dlco)) ? toBase(st, 'dlco', cur.dlco) : f.dl.abs,
     dlco_pct: curVal('dlco_pct', has(f.dl.adjPct) ? f.dl.adjPct : f.dl.pct),
-    six: curVal('six', f.six.dist), feno: curVal('feno', f.feno.v),
+    six: has(toBase(st, 'walk', cur.six)) ? toBase(st, 'walk', cur.six) : f.six.dist, feno: curVal('feno', f.feno.v),
     fev1_z: f.sp.fev1.z
   };
   const curDate = f.ctx.date;
@@ -200,7 +200,7 @@ function priorFacts(st, f) {
       { k: 'dlco_pct', name: 'DLCO', unit: '% predicted', d: 0, pp: true }
     ];
     defs.forEach(df => {
-      const a = num(p[df.k]), bb = cv[df.k];
+      const a = df.k === 'six' ? toBase(st, 'walk', p[df.k]) : (df.k === 'dlco' ? toBase(st, 'dlco', p[df.k]) : num(p[df.k])), bb = cv[df.k];
       if (!has(a) || !has(bb)) return;
       const m = { k: df.k, name: df.name, unit: df.unit, d: df.d, prior: a, cur: bb, dAbs: bb - a, pp: !!df.pp };
       m.dPct = (!df.pp && a !== 0) ? (bb - a) / a * 100 : NaN;          // relative change from the prior measured value
@@ -256,7 +256,7 @@ function spiroItems(f) {
   return [
     metricItem('FEV1', s.fev1, 'metric.fev1', nv(s.fev1L, s.fev1pct)),
     metricItem('FVC', s.fvc, 'metric.fvc', nv(s.fvcL, s.fvcpct)),
-    metricItem('FEV1/FVC', s.ratio, 'metric.ratio', () => has(s.ratioCalc) ? fmt(s.ratioCalc, 2) : '', true)
+    metricItem('FEV1/FVC', s.ratio, 'metric.ratio', () => has(s.ratioV) ? fmt(s.ratioV, 2) : '', true)
   ];
 }
 const SEV_CAPW = { mild: 'Mild', moderate: 'Moderate', severe: 'Severe' };
@@ -277,7 +277,7 @@ function spiroStatement(f) {
   if (sp.kind === 'noratio') { out.push('FEV1/FVC was not entered, so obstruction cannot be assessed' + ((A.low || B.low) ? '; the reduced ' + (A.low && B.low ? 'FEV1 and FVC' : (A.low ? 'FEV1' : 'FVC')) + ' cannot be classified without it' : '')); return out; }
   if (R.low) {
     if (sp.kind === 'effort' && !T.low) { out.push('Reduced FEV1/FVC and FVC most likely reflect submaximal effort or muscle weakness'); return out; }
-    if (sp.mixed) { out.push('Mixed obstructive and restrictive pattern (FEV1/FVC and TLC below the LLN' + (A.sev ? '; FEV1 ' + zTag(A) : '') + ')'); return out; }
+    if (sp.mixed) { out.push('Mixed obstructive and restrictive pattern (FEV1/FVC and TLC below the LLN' + (A.sev ? '; FEV1 ' + (A.z !== null && !zpOff ? zTag(A) : SEV_ADV[A.sev] + ' reduced') : '') + ')'); return out; }
     let t;
     if (sp.preservedFev1) t = 'Obstructive impairment present with a preserved FEV1 (FEV1/FVC below the LLN' + (R.z !== null ? ', ' + zTag(R) : '') + ')';
     else if (A.sev) t = SEV_CAPW[A.sev] + ' obstructive impairment present (FEV1/FVC' + (R.z !== null && !zpOff ? ' ' + zTag(R) + ',' : '') + ' below the LLN' + (zpOff ? '' : '; FEV1 ' + (A.z !== null ? zTag(A) : SEV_ADV[A.sev] + ' reduced')) + ')';
@@ -317,7 +317,10 @@ function spiroStatement(f) {
 }
 function secSpiro(f) {
   const sec = newSec('spiro', 'SPIROMETRY'), s = f.sp, pat = s.pat;
-  if (!s.any) { sec.empty = true; sec.lines.push('No spirometry values entered.'); return sec; }
+  if (!s.any) {
+    if (f.on.bd && f.bd.any) { const bo = bdLines(f); bo.lines.forEach(l => put(sec, l)); bo.codes.forEach(c => sec.codes.push(c)); return sec; }
+    sec.empty = true; sec.lines.push('No spirometry values entered.'); return sec;
+  }
   const nl = numbersLine(f, spiroItems(f)); if (nl) put(sec, nl);
   zpOff = !!nl;
   spiroStatement(f).forEach(l => put(sec, l));
@@ -329,46 +332,66 @@ function secSpiro(f) {
   if (f.style === 'expanded') caveatLines(f, spiroItems(f)).forEach(l => put(sec, l));
   if (pat.code) sec.codes.push(pat.code);
   pat.codes.forEach(c => sec.codes.push(c));
+  // the bronchodilator response is reported inside the spirometry section
+  const bdl = bdLines(f);
+  bdl.lines.forEach(l => put(sec, l));
+  bdl.codes.forEach(c => sec.codes.push(c));
   sec.codes = uniq(sec.codes);
   return sec;
 }
 
-/* -------------------------------------------------------------------- BD */
-function secBD(f) {
-  const sec = newSec('bd', 'BRONCHODILATOR RESPONSE'), b = f.bd, V = f.vals;
-  if (!f.on.bd) { sec.lines.push('A bronchodilator trial was not performed.'); return sec; }
-  if (!b.any) { sec.empty = true; sec.lines.push('No bronchodilator data entered.'); return sec; }
+/* -------------------------------------------------------------------- BD
+   Reported within SPIROMETRY: the post-bronchodilator values beside the pre values, the change as % of predicted, and
+   the verdict (ERS/ATS 2022: more than 10% of the predicted value in FEV1 and/or FVC). */
+function bdLines(f) {
+  const out = { lines: [], codes: [] }, b = f.bd, L = (t) => { if (t) out.lines.push(t); };
+  if (!f.on.bd) { if (f.sp.any && f.style === 'expanded') L('Post-bronchodilator testing was not performed'); return out; }
+  if (!b.any) return out;
   const pre = [];
-  if (b.agent) pre.push(cap(b.agent));
-  if (b.held === 'y') pre.push('home bronchodilators withheld');
-  else if (b.held === 'n') pre.push('bronchodilators taken before testing');
-  if (pre.length) put(sec, pre.join('; '));
-  if (b.qc === 'limited') put(sec, 'Technical factors reduce confidence in the post-bronchodilator maneuvers');
-  if (b.qc === 'inv') put(sec, 'The post-bronchodilator maneuvers are not interpretable');
-  const line = (name, p0, p1, dpp) => {
+  if (b.agent) pre.push(cap(b.agent) + ' was administered');
+  if (b.held === 'y') pre.push('home bronchodilators were withheld');
+  else if (b.held === 'n') pre.push('bronchodilators were taken before testing');
+  if (pre.length) L(pre.join('; '));
+  if (b.qc === 'limited') L('Technical factors reduce confidence in the post-bronchodilator maneuvers');
+  if (b.qc === 'inv') L('The post-bronchodilator maneuvers are not interpretable');
+  const line = (name, p0, p1, dpp, postPct) => {
     if (has(p0) && has(p1)) {
       const dm = (p1 - p0) * 1000;
-      return name + ' ' + fmt(p0, 2) + ' → ' + fmt(p1, 2) + ' L (' + fsign(dm, 0) + ' mL' + (has(dpp) ? ', ' + fsign(dpp, 1) + '% of predicted' : (p0 > 0 ? ', ' + fsign((p1 - p0) / p0 * 100, 0) + '%' : '')) + ')';
+      return name + ' ' + fmt(p0, 2) + ' → ' + fmt(p1, 2) + ' L' + (has(postPct) ? ' (' + Math.round(postPct) + '% predicted)' : '') + ', a change of ' + fsign(dm, 0) + ' mL' + (has(dpp) ? ' (' + fsign(dpp, 1) + '% of predicted)' : (p0 > 0 ? ' (' + fsign((p1 - p0) / p0 * 100, 0) + '% of baseline)' : ''));
     }
-    if (has(dpp)) return name + ' ' + fsign(dpp, 1) + '% of predicted';
+    if (has(p1)) return name + ' ' + fmt(p1, 2) + ' L after bronchodilator' + (has(postPct) ? ' (' + Math.round(postPct) + '% predicted)' : '');
+    if (has(dpp)) return name + ' changed by ' + fsign(dpp, 1) + '% of predicted';
     return '';
   };
-  if (f.style !== 'concise') { const nums = [line('FEV1', b.f1pre, b.f1post, b.dF), line('FVC', b.vpre, b.vpost, b.dV)].filter(Boolean); if (nums.length) put(sec, nums.join('; ')); }
+  if (f.style !== 'concise') {
+    const nums = [line('FEV1', b.f1pre, b.f1post, b.dF, b.postPctF), line('FVC', b.vpre, b.vpost, b.dV, b.postPctV)].filter(Boolean);
+    if (has(b.postRatioV)) nums.push('FEV1/FVC ' + (has(f.sp.ratioV) ? fmt(f.sp.ratioV, 2) + ' → ' : '') + fmt(b.postRatioV, 2) + ' after bronchodilator');
+    if (nums.length) L('After bronchodilator: ' + nums.join('; '));
+  }
   const resp = f.F['bronchodilator.response'];
-  if (resp === 'both' || resp === 'fev1' || resp === 'fvc') { sec.codes.push('S62'); put(sec, 'Spirometry significantly improved after bronchodilator administration (' + (resp === 'both' ? 'FEV1 and FVC' : resp.toUpperCase()) + ')'); }
-  else if (resp === 'negative') { sec.codes.push('S61'); put(sec, 'Spirometry did not significantly improve after bronchodilator administration'); }
+  if (resp === 'both' || resp === 'fev1' || resp === 'fvc') { out.codes.push('S62'); L('Spirometry significantly improved after bronchodilator administration (' + (resp === 'both' ? 'FEV1 and FVC' : resp.toUpperCase()) + ')'); }
+  else if (resp === 'negative') { out.codes.push('S61'); L('Spirometry did not significantly improve after bronchodilator administration'); }
   else if (resp === 'indeterminate') {
     let why = '';
     if (b.rel === 'invalid') why = 'post-bronchodilator maneuvers not interpretable';
     else if (b.resp === 'ind') why = 'reported as not assessable';
+    else if (b.needPred) why = 'the predicted value is needed to express the change as % of predicted';
     else if (!(b.assessedF && b.assessedV)) why = 'only ' + (b.assessedF ? 'FEV1' : (b.assessedV ? 'FVC' : 'incomplete data')) + ' could be assessed';
-    put(sec, 'The bronchodilator response cannot be assessed' + (why ? ' (' + why + ')' : ''));
+    L('The bronchodilator response cannot be assessed' + (why ? ' (' + why + ')' : ''));
   }
-  if (resp && resp !== 'not_performed' && f.style !== 'concise') put(sec, 'Per ERS/ATS 2022 criteria, FEV1 or FVC must increase by more than 10% of the predicted value to be considered significant');
-  if (b.legacyAvail && b.discordant) put(sec, 'By the 2005 ATS criteria (12% and 200 mL from baseline) the response would ' + (b.legacyF || b.legacyV ? '' : 'not ') + 'be considered significant');
-  if (b.drop) put(sec, 'FEV1 or FVC fell by more than 10% of predicted after bronchodilator');
-  if (b.postRatio.measured) put(sec, metricLine(f, 'metric.ratio', b.postRatio, 'Post-bronchodilator FEV1/FVC').replace(/ is reduced/, ' remains reduced'));
-  if (b.postFev1.measured) put(sec, metricLine(f, 'metric.fev1', b.postFev1, 'Post-bronchodilator FEV1'));
+  if (resp && resp !== 'not_performed' && f.style === 'expanded') L('Per ERS/ATS 2022 criteria, FEV1 or FVC must increase by more than 10% of the predicted value to be considered significant');
+  if (b.legacyAvail && b.discordant) L('By the 2005 ATS criteria (12% and 200 mL from baseline) the response would ' + (b.legacyF || b.legacyV ? '' : 'not ') + 'be considered significant');
+  if (b.drop) L('FEV1 or FVC fell by more than 10% of predicted after bronchodilator');
+  if (b.postRatio.measured) L(metricLine(f, 'metric.ratio', b.postRatio, 'Post-bronchodilator FEV1/FVC').replace(/ is reduced/, ' remains reduced'));
+  if (b.postFev1.measured) L(metricLine(f, 'metric.fev1', b.postFev1, 'Post-bronchodilator FEV1'));
+  return out;
+}
+/* kept for callers that still want the response as a section of its own */
+function secBD(f) {
+  const sec = newSec('bd', 'BRONCHODILATOR RESPONSE'), r = bdLines(f);
+  if (!f.on.bd) { sec.lines.push('A bronchodilator trial was not performed.'); return sec; }
+  if (!f.bd.any) { sec.empty = true; sec.lines.push('No bronchodilator data entered.'); return sec; }
+  r.lines.forEach(l => put(sec, l)); r.codes.forEach(c => sec.codes.push(c));
   return sec;
 }
 
@@ -432,11 +455,11 @@ function loopLines(f) {
 /* ------------------------------------------------------------- lung volumes */
 const VOL_METHOD = { pleth: 'plethysmography', n2: 'nitrogen washout', he: 'helium dilution', sb: 'single-breath dilution' };
 function volItems(f) {
-  const v = f.vol, L_ = (x) => () => has(x) ? fmt(x, 2) + ' L' : '';
+  const v = f.vol, L_ = (x, pct) => () => [has(x) ? fmt(x, 2) + ' L' : '', has(pct) ? Math.round(pct) + '% predicted' : ''].filter(Boolean).join(', ');
   return [
-    metricItem('TLC', v.tlc, 'volume.tlc', L_(v.tlcL), true),
-    metricItem('RV', v.rv, 'volume.rv', L_(v.rvL)),
-    metricItem('RV/TLC', v.rvtlc, 'volume.rv_tlc', () => has(v.rvtlcCalc) ? fmt(v.rvtlcCalc, 0) + '%' : ''),
+    metricItem('TLC', v.tlc, 'volume.tlc', L_(v.tlcL, v.tlcPct), true),
+    metricItem('RV', v.rv, 'volume.rv', L_(v.rvL, v.rvPct)),
+    metricItem('RV/TLC', v.rvtlc, 'volume.rv_tlc', () => has(v.rvtlcV) ? fmt(v.rvtlcV, 0) + '%' : ''),
     metricItem('FRC', v.frc, 'volume.frc', L_(v.frcL)),
     metricItem('FRC/TLC', v.frctlc, 'volume.frc_tlc'),
     metricItem('SVC', v.svc, 'metric.svc', L_(v.svcL)),
@@ -479,7 +502,7 @@ function secVol(f) {
 }
 
 /* -------------------------------------------------------------------- DLCO */
-function dlcoLabel(f) { const d = f.dl; return d.reportedAdjusted ? 'Hemoglobin-adjusted DLCO' : 'DLCO'; }
+function dlcoLabel(f) { return 'DLCO'; }   // the correction basis is stated in its own clause
 function dlcoItems(f) {
   const d = f.dl;
   const items = [metricItem(dlcoLabel(f), d.dlco, 'dlco', () => [has(d.abs) ? fmt(d.abs, 1) + ' mL/min/mmHg' : '', has(d.pct) ? Math.round(d.pct) + '% predicted' : ''].filter(Boolean).join(', '), true)];
@@ -499,24 +522,28 @@ function secDlco(f) {
   zpOff = !!nl;
   const paired = D.measured && d.adj.measured && !d.reportedAdjusted && !D.invalid && !d.adj.invalid;
   const word = (r) => r.low ? (r.sev ? SEV_ADV[r.sev] + ' reduced' : 'reduced') : (r.high ? 'increased' : 'normal');
+  const hbTxt = has(d.hb) ? 'Hgb ' + fmt(d.hb, 1) + ' g/dL' + (d.anemic ? ', low' : (d.hbHigh ? ', high' : '')) : (d.hbcat ? 'hemoglobin ' + ({ low: 'low', nl: 'normal', high: 'high' })[d.hbcat] + ' per the report' : '');
+  const basisClause = d.reportedAdjusted ? '; the value is corrected for hemoglobin' + (hbTxt ? ' (' + hbTxt + ')' : '')
+    : (d.basis === 'un' ? '; the value is not corrected for hemoglobin' + (hbTxt ? ' (' + hbTxt + ')' : '') : '');
   if (D.measured && D.invalid) put(sec, 'DLCO is not interpretable (did not meet quality criteria)');
   else if (paired) {
     const k1 = word(D), k2 = word(d.adj);
     const zz = zpOff ? '' : [zTag(D), zTag(d.adj) ? zTag(d.adj) + ' after correction' : ''].filter(Boolean).join('; ');
-    put(sec, (k1 === k2 ? cap(k1) + ', both uncorrected and after correction for hemoglobin' : cap(k1) + ' before correction for hemoglobin and ' + k2 + ' after correction') + (zz ? ' (' + zz + ')' : ''));
-  } else if (D.measured) put(sec, cap(word(D)) + zp(D) + (d.reportedAdjusted ? ' (hemoglobin-adjusted value)' : '') + (D.bl ? ', close to the LLN' : ''));
+    put(sec, (k1 === k2 ? cap(k1) + ', both uncorrected and after correction for hemoglobin' : cap(k1) + ' before correction for hemoglobin and ' + k2 + ' after correction') + (zz ? ' (' + zz + ')' : '') + (hbTxt ? ' (' + hbTxt + ')' : ''));
+  } else if (D.measured) put(sec, cap(word(D)) + zp(D) + (D.bl ? ', close to the LLN' : '') + basisClause);
   // VA and KCO in one sentence
   const va = d.va, kco = d.kco;
   if (va.measured && !va.invalid && kco.measured && !kco.invalid) put(sec, 'VA is ' + word(va) + zp(va) + ' and KCO is ' + word(kco) + zp(kco));
   else if (va.measured && !va.invalid) put(sec, 'VA is ' + word(va) + zp(va));
   else if (kco.measured && !kco.invalid) put(sec, 'KCO is ' + word(kco) + zp(kco));
   zpOff = false;
-  // hemoglobin
+  // hemoglobin: what the correction does to an uncorrected value, or that the basis is unknown; never assumed
   if (pat.hb === 'full') put(sec, 'The absolute diffusing capacity is reduced but corrects to the normal range when adjusted for this patient\'s anemia');
-  else if (has(d.adjPct) && !d.hasAdj && D.low && !d.reportedAdjusted) put(sec, 'The diffusing capacity corrects to ' + Math.round(d.adjPct) + '% predicted when corrected for ' + (d.anemic ? 'anemia' : 'hemoglobin') + ' (Hgb ' + fmt(d.hb, 1) + ')' + (f.style === 'expanded' ? ' (ERS/ATS 2017 equation, reference Hb ' + d.hbRef + ' g/dL)' : ''));
-  else if (D.low && !d.reportedAdjusted && !d.adj.measured && d.basis === 'un') put(sec, 'The value reported is not corrected for the patient\'s hemoglobin concentration' + (d.hbcat ? ' (hemoglobin ' + ({ low: 'low', nl: 'normal', high: 'high' })[d.hbcat] + ' per the report)' : ''));
-  else if (D.low && !d.reportedAdjusted && !d.adj.measured && f.F['observations.dlco.hb_unknown']) put(sec, 'Whether the value is corrected for hemoglobin is not stated');
-  if (has(d.hb) && !(has(d.adjPct) && !d.hasAdj && D.low && !d.reportedAdjusted)) put(sec, 'Hemoglobin ' + fmt(d.hb, 1) + ' g/dL' + (d.anemic ? ' (low)' : ''));
+  else if (has(d.adjPct) && !d.hasAdj && !d.reportedAdjusted && d.basis === 'un' && (D.low || d.anemic === true || d.hbHigh)) put(sec, 'Corrected for ' + (d.anemic ? 'the anemia' : 'hemoglobin') + ' the DLCO is ' + Math.round(d.adjPct) + '% predicted' + (f.style === 'expanded' ? ' (ERS/ATS 2017 equation, reference Hb ' + d.hbRef + ' g/dL)' : ''));
+  else if (D.measured && !D.invalid && d.basis === 'un' && d.corrDir === 'up' && !has(d.adjPct)) put(sec, 'Correction for the low hemoglobin would raise the value' + (D.low ? '; enter the uncorrected % predicted to calculate it' : ''));
+  else if (D.measured && !D.invalid && d.basis === 'un' && d.corrDir === 'down' && !has(d.adjPct)) put(sec, 'Correction for the high hemoglobin would lower the value');
+  else if (D.measured && !D.invalid && (D.low || D.high) && !d.basisKnown) put(sec, 'Whether the value is corrected for hemoglobin is not stated' + (hbTxt ? ' (' + hbTxt + ')' : ''));
+  else if (D.measured && !D.invalid && !d.basisKnown && hbTxt) put(sec, cap(hbTxt));
   if (has(d.cohb)) put(sec, 'Carboxyhemoglobin ' + fmt(d.cohb, 1) + '%');
   else if (d.cohbcat === 'hi') put(sec, 'Carboxyhemoglobin 2% or higher');
   if (has(d.vatlc)) put(sec, 'VA/TLC ' + fmt(d.vatlc, 2) + (d.vatlc < 0.85 ? ' (below 0.85)' : ''));
@@ -724,6 +751,12 @@ function secBronch(f) {
 }
 
 /* ------------------------------------------------------------------- 6MWT */
+/* "412 m" or, when the distance was typed in feet, "412 m (1,352 ft)" */
+function distTxt(f, v, inner) {
+  if (!has(v)) return '';
+  const u = f.six && f.six.unit;
+  return fmt(v, 0) + ' m' + (u === 'ft' ? (inner ? ' / ' + fmt(v / 0.3048, 0) + ' ft' : ' (' + fmt(v / 0.3048, 0) + ' ft)') : '');
+}
 function secSix(f) {
   const sec = newSec('six', '6 MINUTE WALK TEST (6MWT)'), x = f.six, tr = f.trend6;
   if (!x.any && !tr.multi) { sec.empty = true; sec.lines.push('No 6-minute walk values entered.'); return sec; }
@@ -742,11 +775,11 @@ function secSix(f) {
   }
   // distance
   if (has(x.dist)) {
-    if (early) put(sec, 'Test stopped' + (has(x.timeMin) ? ' at ' + fmt(x.timeMin, 1) + ' minutes' : ' early') + ' after ' + fmt(x.dist, 0) + ' m' + (x.stopWhy ? ' because of ' + x.stopWhy : ''));
+    if (early) put(sec, 'Test stopped' + (has(x.timeMin) ? ' at ' + fmt(x.timeMin, 1) + ' minutes' : ' early') + ' after ' + distTxt(f, x.dist) + (x.stopWhy ? ' because of ' + x.stopWhy : ''));
     else {
-      let t = 'Walked ' + fmt(x.dist, 0) + ' m';
-      if (has(x.pctCalc)) t += ' (' + Math.round(x.pctCalc) + '% predicted' + (has(x.llnUse) ? '; LLN ' + fmt(x.llnUse, 0) + ' m' : '') + ')';
-      else if (has(x.llnUse)) t += ' (LLN ' + fmt(x.llnUse, 0) + ' m)';
+      let t = 'Walked ' + distTxt(f, x.dist);
+      if (has(x.pctCalc)) t += ' (' + Math.round(x.pctCalc) + '% predicted' + (has(x.llnUse) ? '; LLN ' + distTxt(f, x.llnUse, true) : '') + ')';
+      else if (has(x.llnUse)) t += ' (LLN ' + distTxt(f, x.llnUse, true) + ')';
       put(sec, t);
       if (has(x.llnUse)) {
         if (x.dist >= x.llnUse) put(sec, 'Total distance within predicted normal range given sex, age' + (x.predSrc === 'calc' || x.eqUse === 'Enright & Sherrill 1998' ? ', height and weight' : '') + (x.predSrc === 'calc' && f.style === 'expanded' ? ' (Enright & Sherrill 1998)' : ''));
@@ -765,9 +798,9 @@ function secSix(f) {
   // conclusion sentences
   const q = [];
   if (has(x.dist) && !early) {
-    if (x.lowDist) q.push('Reduced walking distance (' + fmt(x.dist, 0) + ' m' + (has(x.pctCalc) ? ', ' + Math.round(x.pctCalc) + '% predicted' : '') + ')');
-    else if (x.wnlDist) q.push('Walking distance within the predicted normal range (' + fmt(x.dist, 0) + ' m' + (has(x.pctCalc) ? ', ' + Math.round(x.pctCalc) + '% predicted' : '') + ')');
-  } else if (early && has(x.dist)) q.push('The walk was stopped early after ' + fmt(x.dist, 0) + ' m');
+    if (x.lowDist) q.push('Reduced walking distance (' + distTxt(f, x.dist) + (has(x.pctCalc) ? ', ' + Math.round(x.pctCalc) + '% predicted' : '') + ')');
+    else if (x.wnlDist) q.push('Walking distance within the predicted normal range (' + distTxt(f, x.dist) + (has(x.pctCalc) ? ', ' + Math.round(x.pctCalc) + '% predicted' : '') + ')');
+  } else if (early && has(x.dist)) q.push('The walk was stopped early after ' + distTxt(f, x.dist));
   else if (x.distCat) q.push(x.lowDist ? 'Reduced walking distance' : 'Walking distance within the predicted normal range');
   const o2note = x.onO2 ? ' on ' + x.o2text : '';
   const d = [];

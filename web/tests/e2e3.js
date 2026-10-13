@@ -26,7 +26,7 @@ const readDoc = (sel) => `(() => { const d = document.querySelector(${JSON.strin
 
   // ---- first screen: panel present, empty-state wording
   ok(await page.locator('#pv').isVisible(), 'preview visible on the first screen at 1360 px');
-  ok(/once values are entered/.test(await page.locator('#pv').innerText()), 'empty state explains itself');
+  ok(/as values are entered/.test(await page.locator('#pv').innerText()), 'empty state explains itself');
   ok(!(await page.locator('.live').first().isVisible().catch(() => false)), 'per-step findings box hidden while the preview is shown');
 
   // ---- every example, every step: preview == Report step
@@ -78,7 +78,7 @@ const readDoc = (sel) => `(() => { const d = document.querySelector(${JSON.strin
   await page.waitForSelector('#pv .sec[data-sec="spiro"]');
   const before = await page.locator('#pv .sec[data-sec="spiro"]').innerText();
   ok(/Not entered yet|Waiting/.test(before), 'spirometry section waits before any value: ' + before.replace(/\n/g, ' | '));
-  const optBtn = page.locator('#main .seg button').filter({ hasText: /Below LLN/ }).first();
+  const optBtn = page.locator('#main [data-field="spiro.ratio"] .sg[data-v="low"]').first();
   const nBtns = await optBtn.count();
   ok(nBtns > 0, 'found a severity choice button on the spirometry form');
   if (nBtns) {
@@ -124,21 +124,23 @@ const readDoc = (sel) => `(() => { const d = document.querySelector(${JSON.strin
   ok(await page.evaluate(() => getComputedStyle(document.getElementById('pv')).display) === 'none', 'panel not printed');
   await page.emulateMedia({ media: 'screen' });
 
-  // ---- breakpoint and narrow screens
-  for (const [w, shown] of [[1119, false], [1120, true], [900, false]]) {
+  // ---- breakpoint: two columns from 900 px, the running report below the form on narrower screens
+  for (const [w, side] of [[1119, true], [1120, true], [900, true], [899, false]]) {
     await page.setViewportSize({ width: w, height: 860 }); await page.waitForTimeout(100);
     const vis = await page.locator('#pv').isVisible();
-    ok(vis === shown, 'panel ' + (shown ? 'shown' : 'hidden') + ' at ' + w + ' px (was ' + vis + ')');
-    const live = await page.locator('.live').first().isVisible().catch(() => false);
-    ok(live === !shown, 'findings box ' + (shown ? 'hidden' : 'visible') + ' at ' + w + ' px');
+    ok(vis, 'running report present at ' + w + ' px');
+    const pvB = await page.locator('#pv').boundingBox(), mainB = await page.locator('#main').boundingBox();
+    const beside = pvB.x >= mainB.x + mainB.width - 2;
+    ok(beside === side, 'running report ' + (side ? 'beside' : 'below') + ' the form at ' + w + ' px');
+    ok(await page.locator('.live').count() === 0, 'no findings box at ' + w + ' px');
   }
   await ctx.close();
 
   const m = await browser.newContext({ viewport: { width: 400, height: 800 }, colorScheme: 'dark', hasTouch: true, isMobile: true });
   const mp = await m.newPage(); await mp.goto(FILE); await mp.waitForSelector('.tgrid');
   await loadExample(mp, 0); await mp.evaluate(() => window.__pft.goto('vol'));
-  ok(await mp.locator('#pv').isHidden(), 'phone: panel hidden');
-  ok(await mp.locator('.live').first().isVisible(), 'phone: findings box still shown');
+  ok(await mp.locator('#pv').isVisible() && (await mp.locator('#pv').boundingBox()).y > (await mp.locator('#main').boundingBox()).y + 100, 'phone: running report below the form');
+  ok(await mp.locator('.live').count() === 0, 'phone: no findings box');
   ok(await mp.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1), 'phone: no horizontal scroll');
   await m.close();
 

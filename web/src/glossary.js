@@ -160,7 +160,7 @@ const G = {
   gli:      { n: 'GLI equations', f: 'Global Lung Function Initiative reference equations', w: 'Multi-ethnic reference sets for spirometry (2012), race-neutral spirometry (Global, 2022), static lung volumes (2021) and DLCO (2017).', r: 'The z-score is read directly against them. ERS/ATS 2022 recommends GLI; ATS 2023 recommends GLI Global instead of race-specific sets.', l: 'GLI-2021 volumes cover ages 5–80 and are European-ancestry only. GLI spirometry covers 3–95 years. Race-neutral equations are still under study.', t: 'equations' },
 
   /* ----------------------------------------------------------------------- tests */
-  'test.spiro': { n: 'Spirometry', f: 'Forced spirometry', w: 'The core test: FEV1, FVC and FEV1/FVC. The loop has its own step.', r: 'Start with the ratio against the LLN, then FEV1 for severity, then FVC.', l: 'Effort-dependent; quality grade first.', t: 'spiro' },
+  'test.spiro': { n: 'Spirometry', f: 'Forced spirometry', w: 'The core test: FEV1, FVC and FEV1/FVC, with the bronchodilator response entered beside them. The loop has its own step.', r: 'Start with the ratio against the LLN, then FEV1 for severity, then FVC.', l: 'Effort-dependent; quality grade first.', t: 'spiro' },
   'test.bd': { n: 'Bronchodilator response', f: 'Post-bronchodilator spirometry', w: 'Tests reversibility.', r: 'Significant if FEV1 or FVC rises by more than 10% of predicted.', l: 'See Learn.', t: 'bd' },
   'test.fvl': { n: 'Flow–volume loop', f: 'Flow–volume loop and flow indices', w: 'Shape of the loop plus PEF, FEV1/PEF and FIF50/FEF50.', r: 'Look at both limbs and ask whether the shape fits the numbers.', l: 'Shape alone is not diagnostic.', t: 'loops' },
   'test.vol': { n: 'Lung volumes', f: 'Static lung volumes', w: 'TLC, RV, FRC and their ratios.', r: 'TLC defines restriction; RV/TLC defines air trapping.', l: 'Method matters.', t: 'vol' },
@@ -246,10 +246,10 @@ const FIELD = {
 
 /* Sub-inputs share the entry of their parent measure. */
 Object.assign(FIELD, {
-  'spiro.fev1_abs': 'fev1', 'spiro.fev1_pct': 'fev1', 'spiro.fvc_abs': 'fvc', 'spiro.fvc_pct': 'fvc',
-  'bd.fev1_pre': 'bd', 'bd.fev1_post': 'bd', 'bd.fev1_pred': 'bd', 'bd.fvc_pre': 'bd', 'bd.fvc_post': 'bd', 'bd.fvc_pred': 'bd', 'bd.dfev1_pp': 'bd', 'bd.dfvc_pp': 'bd',
+  'spiro.fev1_abs': 'fev1', 'spiro.fev1_pct': 'fev1', 'spiro.fvc_abs': 'fvc', 'spiro.fvc_pct': 'fvc', 'spiro.ratio_abs': 'ratio',
+  'bd.fev1_pre': 'bd', 'bd.fev1_post': 'bd', 'bd.fev1_pred': 'bd', 'bd.fvc_pre': 'bd', 'bd.fvc_post': 'bd', 'bd.fvc_pred': 'bd', 'bd.dfev1_pp': 'bd', 'bd.dfvc_pp': 'bd', 'bd.post_ratio_abs': 'bd',
   'fvl.loop_repro': 'loop', 'fvl.pef_lmin': 'pef', 'fvl.fef50': 'fif50', 'fvl.fif50': 'fif50',
-  'vol.tlc_abs': 'tlc', 'vol.rv_abs': 'rv', 'vol.frc_abs': 'frc', 'vol.svc_abs': 'svc',
+  'vol.tlc_abs': 'tlc', 'vol.rv_abs': 'rv', 'vol.frc_abs': 'frc', 'vol.svc_abs': 'svc', 'vol.tlc_pct': 'tlc', 'vol.rv_pct': 'rv', 'vol.rvtlc_pct': 'rvtlc',
   'dlco.dlco_abs': 'dlco', 'dlco.dlco_pct': 'dlco', 'dlco.va_abs': 'va',
   'post.orthop': 'orthodeox', 'post.platyp': 'orthodeox', 'post.spo2_sup': 'orthodeox', 'post.spo2_up': 'orthodeox', 'post.pao2_sup': 'orthodeox', 'post.pao2_up': 'orthodeox',
   'bronch.mch_fall': 'pc20', 'bronch.mch_neg': 'pc20', 'bronch.man_fall': 'mannitol', 'bronch.man_dose': 'mannitol', 'bronch.man_incr': 'mannitol', 'bronch.ex_fall': 'exch', 'bronch.ex_consec': 'exch',

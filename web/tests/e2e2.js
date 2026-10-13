@@ -138,8 +138,15 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
   ok(await page.locator('.tr-tbl tbody tr').count() === 3, 'table view has 3 rows');
   // inputs in the trend card share state with the 6MWT fields
   ok((await page.evaluate(() => window.__pft.state.sixmw.dist)) === '360' && (await page.evaluate(() => window.__pft.state.sixmw.spo2_nadir)) === '86', 'today row writes the 6MWT fields');
-  await page.locator('details.optgrp', { hasText: 'Measured values' }).locator('summary').click();
-  ok(await page.getByLabel('6MWD', { exact: true }).first().inputValue() === '360', 'the typed 6MWD field shows the same value');
+  ok(await page.locator('[data-cell="sixmw.dist"] input').inputValue() === '360', 'the distance box on the findings row shows the same value');
+  ok(await page.locator('[data-field="sixmw.dist_cat"] .ch[aria-checked="true"]').count() === 0, 'no LLN yet: the distance category stays open');
+  await page.locator('[data-field="sixmw.desat"] .ch[aria-checked="true"]').count();
+  ok(await page.locator('[data-field="sixmw.desat"] .ch[aria-checked="true"]').innerText() === 'Nadir 88% or lower' && await page.locator('[data-field="sixmw.desat"] .ch.auto').count() === 3, 'desaturation category set from the typed nadir');
+  await page.locator('[data-more="sixmw"]').count();
+  await page.locator('details[data-group="values"] summary').click();
+  await page.getByLabel('LLN', { exact: true }).fill('400');
+  ok(await page.locator('[data-field="sixmw.dist_cat"] .ch[aria-checked="true"]').innerText() === 'Below the LLN' && await page.locator('[data-field="sixmw.dist_cat"] .ch.auto').count() === 2, 'distance category set from the typed value against the LLN');
+  await page.getByLabel('LLN', { exact: true }).fill('');
   // quick date chip
   await page.locator('#tr-add').click();
   await rows().nth(2).locator('.qdates .cp', { hasText: '2 yr' }).click();

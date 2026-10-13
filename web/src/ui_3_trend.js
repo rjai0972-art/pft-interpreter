@@ -18,14 +18,16 @@ function trendRowEl(r, i, repaintRows) {
   const INTERVALS = [['3 mo', 3], ['6 mo', 6], ['1 yr', 12], ['2 yr', 24], ['3 yr', 36]];
   const quick = h('div', { class: 'qdates' }, [h('span', { class: 'hint', text: 'Date: this study minus' })].concat(INTERVALS.map(iv =>
     h('button', { type: 'button', class: 'cp', 'data-months': String(iv[1]), text: iv[0], onclick: () => { r.date = shiftMonths(S.ctx.date, iv[1]); date.value = r.date; sync(); } }))));
+  const un = h('span', { class: 'unit', text: 'm' });
   widgets.push(() => {
     dist.classList.toggle('bad', r.dist !== '' && !hasNum(r.dist));
     nad.classList.toggle('bad', r.nadir !== '' && !hasNum(r.nadir));
+    un.textContent = P.unitLabel(S, 'walk');
   });
   return h('div', { class: 'tr-row', 'data-trow': String(i + 1) }, [
     h('div', { class: 'tr-cells' }, [
       h('div', { class: 'fld' }, [h('label', { for: idd, text: 'Date of walk ' + (i + 1) }), date]),
-      h('div', { class: 'fld' }, [h('label', { for: idm, text: '6MWD' }), h('div', { class: 'inwrap' }, [dist, h('span', { class: 'unit', text: 'm' })])]),
+      h('div', { class: 'fld' }, [h('label', { for: idm, text: '6MWD' }), h('div', { class: 'inwrap' }, [dist, un])]),
       h('div', { class: 'fld' }, [h('label', { for: idn, text: 'Nadir SpO2' }), h('div', { class: 'inwrap' }, [nad, h('span', { class: 'unit', text: '%' })])]),
       h('div', { class: 'fld tr-o2' }, [h('span', { class: 'lab', text: 'Oxygen' }), o2]),
       h('div', { class: 'fld tr-del' }, [h('button', { type: 'button', class: 'btn sm quiet', 'aria-label': 'Remove walk ' + (i + 1), text: 'Remove', onclick: () => {
@@ -41,7 +43,9 @@ function trendTodayRow() {
   const nad = h('input', { type: 'text', class: 'num', id: idn, inputmode: 'decimal', autocomplete: 'off', placeholder: 'optional', value: S.sixmw.spo2_nadir, oninput: (e) => { S.sixmw.spo2_nadir = e.target.value; sync(); } });
   const o2 = h('button', { type: 'button', class: 'cp', 'aria-pressed': String(S.sixmw.o2 === 'o2'), text: 'On oxygen', onclick: () => { S.sixmw.o2 = S.sixmw.o2 === 'o2' ? '' : 'o2'; sync(); } });
   const dt = h('span', { class: 'tr-date' });
+  const un = h('span', { class: 'unit', text: 'm' });
   widgets.push(() => {
+    un.textContent = P.unitLabel(S, 'walk');
     dt.textContent = S.ctx.date ? fmtDay(S.ctx.date) : 'date not set (Details step)';
     dt.classList.toggle('missing', !S.ctx.date);
     if (document.activeElement !== dist && dist.value !== String(S.sixmw.dist)) dist.value = S.sixmw.dist;
@@ -53,7 +57,7 @@ function trendTodayRow() {
   return h('div', { class: 'tr-row today', 'data-trow': 'today' }, [
     h('div', { class: 'tr-cells' }, [
       h('div', { class: 'fld' }, [h('span', { class: 'lab', text: 'This study' }), dt]),
-      h('div', { class: 'fld' }, [h('label', { for: idm, text: '6MWD today' }), h('div', { class: 'inwrap' }, [dist, h('span', { class: 'unit', text: 'm' })])]),
+      h('div', { class: 'fld' }, [h('label', { for: idm, text: '6MWD today' }), h('div', { class: 'inwrap' }, [dist, un])]),
       h('div', { class: 'fld' }, [h('label', { for: idn, text: 'Nadir SpO2' }), h('div', { class: 'inwrap' }, [nad, h('span', { class: 'unit', text: '%' })])]),
       h('div', { class: 'fld tr-o2' }, [h('span', { class: 'lab', text: 'Oxygen' }), o2])
     ])
@@ -209,8 +213,9 @@ function predCalcBlock() {
       return;
     }
     const pct = has(x.dist) && x.stop !== 'early' ? x.dist / es.pred * 100 : NaN;
-    vals.appendChild(t6('Predicted 6MWD', Math.round(es.pred) + ' m', (es.sex === 'M' ? 'Men' : 'Women') + ', age ' + fmt(c.age, 0) + ', ' + fmt(c.ht, 0) + ' cm, ' + fmt(c.wt, 0) + ' kg'));
-    vals.appendChild(t6('LLN', Math.round(es.lln) + ' m', 'predicted − ' + es.sub + ' m'));
+    const ft = x.unit === 'ft', dm = (v) => Math.round(v) + ' m' + (ft ? ' (' + Math.round(v / 0.3048) + ' ft)' : '');
+    vals.appendChild(t6('Predicted 6MWD', dm(es.pred), (es.sex === 'M' ? 'Men' : 'Women') + ', age ' + fmt(c.age, 0) + ', ' + fmt(c.ht, 0) + ' cm, ' + fmt(c.wt, 0) + ' kg'));
+    vals.appendChild(t6('LLN', dm(es.lln), 'predicted − ' + es.sub + ' m'));
     vals.appendChild(t6('% predicted', has(pct) ? Math.round(pct) + '%' : '—', has(x.dist) ? (x.stop === 'early' ? 'not applied: walk stopped early' : (x.dist < es.lln ? 'below the LLN' : 'at or above the LLN')) : 'enter the distance walked'));
     const eqTxt = es.sex === 'M' ? '7.57 × height (cm) − 5.02 × age − 1.76 × weight (kg) − 309 m; LLN = predicted − 153 m' : '2.11 × height (cm) − 2.29 × weight (kg) − 5.78 × age + 667 m; LLN = predicted − 139 m';
     let note = 'Equation (' + (es.sex === 'M' ? 'men' : 'women') + '): ' + eqTxt + '. Derived in healthy adults aged 40–80 (Am J Respir Crit Care Med 1998;158:1384–7); it explains about 40% of the variance in distance, so a locally derived or laboratory reference is preferred when one exists. ';

@@ -215,7 +215,9 @@ function dlcoMechanism(f) {
   const lab = D.sev ? SEV_ADV[D.sev] + ' impaired' : 'impaired';
   if (pat.hb === 'full') out.push('The absolute diffusing capacity is reduced but corrects to the normal range when adjusted for this patient\'s anemia.' + co);
   else if (f.F['patterns.isolated_low_dlco'] || (!haveSp && !(f.on.vol && f.vol.any))) {
-    out.push('The diffusion capacity is ' + lab + ' which can be seen in restrictive lung disease before FVC falls, pulmonary arterial disease (i.e. PE, PH), anemia, smoking before testing. Clinical correlation recommended.');
+    // anemia is only a candidate when the value is not corrected for hemoglobin
+    const corrected = d.reportedAdjusted || (d.adj.measured && !d.adj.invalid);
+    out.push('The diffusion capacity is ' + lab + ' which can be seen in restrictive lung disease before FVC falls, pulmonary arterial disease (i.e. PE, PH), ' + (corrected ? '' : 'anemia, ') + 'smoking before testing' + (corrected ? ' (the value is corrected for hemoglobin)' : '') + '. Clinical correlation recommended.');
   } else if (haveSp && R.low && !sp.mixed) {
     out.push('In the presence of an obstructive ventilatory defect the decreased diffusing capacity suggests pulmonary emphysema' + (D.sev ? ' (' + D.sev + ' impairment of gas transfer)' : '') + '.');
   } else if ((f.on.vol && vp.restriction) || sp.lowFvcUnconfirmed || sp.mixed) {
@@ -341,8 +343,8 @@ function buildHeadsUp(f, secs) {
     H('DE3', 'caution', 'Missing data', 'FEV1/FVC not entered', 'Without the ratio, the pattern (obstruction vs. restriction vs. nonspecific) cannot be classified.');
   if (spOn && R.wnl && has(R.z) && has(A.z) && has(B.z) && (B.z - A.z) >= 1.5)
     H('DE4', 'caution', 'Data entry', 'FEV1 z-score is much lower than FVC z-score, yet the ratio is normal', 'FEV1 z ' + fz(A.z) + ' vs FVC z ' + fz(B.z) + ' would usually give a low FEV1/FVC (z ' + fz(R.z) + ' entered); double-check the ratio.');
-  if (spOn && has(sp.ratioCalc) && R.measured && ((sp.ratioCalc < 0.70 && F['spirometry.fixed_ratio_discordance'] === 'fixed_only') || F['spirometry.fixed_ratio_discordance'] === 'lln_only'))
-    H('DE21', 'note', 'Physiology', 'Fixed ratio (0.70) and LLN classifications differ', 'Measured FEV1/FVC ' + fmt(sp.ratioCalc, 2) + ' is ' + (F['spirometry.fixed_ratio_discordance'] === 'fixed_only' ? 'below 0.70 but not below the age-adjusted LLN; the LLN governs here and this does not by itself diagnose COPD.' : 'at or above 0.70 but below the age-adjusted LLN; the LLN comparison supports obstruction even though the fixed-ratio threshold is not crossed.'));
+  if (spOn && has(sp.ratioV) && R.measured && ((sp.ratioV < 0.70 && F['spirometry.fixed_ratio_discordance'] === 'fixed_only') || F['spirometry.fixed_ratio_discordance'] === 'lln_only'))
+    H('DE21', 'note', 'Physiology', 'Fixed ratio (0.70) and LLN classifications differ', 'Measured FEV1/FVC ' + fmt(sp.ratioV, 2) + ' is ' + (F['spirometry.fixed_ratio_discordance'] === 'fixed_only' ? 'below 0.70 but not below the age-adjusted LLN; the LLN governs here and this does not by itself diagnose COPD.' : 'at or above 0.70 but below the age-adjusted LLN; the LLN comparison supports obstruction even though the fixed-ratio threshold is not crossed.'));
   const extremes = [['FEV1/FVC', R], ['FEV1', A], ['FVC', B], ['TLC', T], ['RV', v.rv], ['RV/TLC', v.rvtlc], ['KCO', d.kco], ['VA', d.va]];
   extremes.forEach(e => { if (e[1].z !== null && Math.abs(e[1].z) > 7) H('DE5-' + e[0], 'caution', 'Data entry', e[0] + ' z-score is unusually extreme', 'z = ' + fz(e[1].z) + '; check for a typing or unit error.'); });
   if (dlOn) [['DLCO', d.dlco], ['Hb-adjusted DLCO', d.adj]].forEach(e => { if (e[1].z !== null && Math.abs(e[1].z) > 10) H('DE5-D' + e[0], 'caution', 'Data entry', e[0] + ' z-score is unusually extreme', 'z = ' + fz(e[1].z) + '; check for a typing or unit error.'); });
@@ -737,9 +739,34 @@ function referenceLine(f) {
   return parts.length ? parts.join('; ') : 'not applicable';
 }
 const GRADING_LINE = 'Impairment is graded by z-score (ERS/ATS 2022): LLN at z = −1.645; mild from −1.645 down to −2.5; moderate below −2.5 down to −4.0; severe below −4.0.';
-function buildText(f, secs, impression, headsup, withHeadsup) {
+/* The report as copied. The lean form (default) is the sections and the INTERPRETATION only; the full form adds the
+   header (date, demographics, reason, BMI, reference set) and the INTERPRETABILITY section. */
+function buildText(f, secs, impression, headsup, withHeadsup, full) {
   const L = [];
-  L.push('PULMONARY FUNCTION TEST REPORT');
+  if (full) {
+    L.push('PULMONARY FUNCTION TEST REPORT');
+    const hdr = [];
+    if (f.st.ctx.date) hdr.push('Date: ' + dateWords(f.st.ctx.date));
+    const sh = studyHeader(f); if (sh) hdr.push(sh);
+    if (hdr.length) L.push(hdr.join(' | '));
+    const ind = f.ctx.indicLabels.slice(); if (f.ctx.indication) ind.push(f.ctx.indication);
+    if (ind.length) L.push('Reason for PFT: ' + ind.map((x, i) => i === 0 ? cap(x) : x).join('; '));
+    if (has(f.ctx.bmi)) L.push('BMI ' + fmt(f.ctx.bmi, 1) + ' kg/m^2');
+    L.push('Reference values: ' + referenceLine(f) + (f.style === 'expanded' ? '. ' + GRADING_LINE : ''));
+    L.push('');
+  }
+  secs.forEach(s => { if (!full && s.key === 'qual') return; L.push(s.title + ': ' + s.lines.join(' ')); L.push(''); });
+  L.push('INTERPRETATION: ' + (impression.length ? impression.join(' ') : 'No interpretable data entered.'));
+  if (withHeadsup && headsup.length) {
+    L.push('');
+    L.push('HEADS-UP FOR THE INTERPRETER (not part of the final report):');
+    headsup.forEach(h => L.push('- [' + h.lvl.toUpperCase() + '] ' + h.title + ': ' + h.text));
+  }
+  return L.join('\n');
+}
+/* the header lines of the full form, for the screen */
+function headerLines(f) {
+  const L = [];
   const hdr = [];
   if (f.st.ctx.date) hdr.push('Date: ' + dateWords(f.st.ctx.date));
   const sh = studyHeader(f); if (sh) hdr.push(sh);
@@ -747,16 +774,8 @@ function buildText(f, secs, impression, headsup, withHeadsup) {
   const ind = f.ctx.indicLabels.slice(); if (f.ctx.indication) ind.push(f.ctx.indication);
   if (ind.length) L.push('Reason for PFT: ' + ind.map((x, i) => i === 0 ? cap(x) : x).join('; '));
   if (has(f.ctx.bmi)) L.push('BMI ' + fmt(f.ctx.bmi, 1) + ' kg/m^2');
-  L.push('Reference values: ' + referenceLine(f) + (f.style === 'expanded' ? '. ' + GRADING_LINE : ''));
-  L.push('');
-  secs.forEach(s => { L.push(s.title + ': ' + s.lines.join(' ')); L.push(''); });
-  L.push('CONCLUSION: ' + (impression.length ? impression.join(' ') : 'No interpretable data entered.'));
-  if (withHeadsup && headsup.length) {
-    L.push('');
-    L.push('HEADS-UP FOR THE INTERPRETER (not part of the final report):');
-    headsup.forEach(h => L.push('- [' + h.lvl.toUpperCase() + '] ' + h.title + ': ' + h.text));
-  }
-  return L.join('\n');
+  L.push('Reference values: ' + referenceLine(f));
+  return L;
 }
 
 /* ------------------------------------------------------------- public API */
@@ -774,37 +793,43 @@ function interpret(raw) {
   f.dx = differentialGroups(f);
   markSuperseded(f.suggest, f.dx);
   f.studies = differentialText(f.dx).studies;
-  const pft = f.on.spiro && f.sp.any;   // a spirometry report carries the template's "not performed" lines for BD, volumes and DLCO
-  add('spiro', secQual); add('fvl', secFvl); add('spiro', secSpiro);
-  if (f.on.bd || pft) secs.push(secBD(f));
+  const pft = f.on.spiro && f.sp.any;   // a spirometry report carries the template's "not performed" lines for volumes and DLCO
+  add('spiro', secQual); add('fvl', secFvl);
+  if (f.on.spiro || f.on.bd) secs.push(secSpiro(f));            // the bronchodilator response is reported inside SPIROMETRY
   if (f.on.vol || pft) secs.push(secVol(f));
   add('raw', secRaw); add('osc', secOsc); add('mip', secMip);
   if (f.on.dlco || pft) secs.push(secDlco(f));
   add('post', secPost); add('feno', secFeno); add('bronch', secBronch);
   if (f.on.prior && f.prior.any) secs.push(secPrior(f));
   add('sixmw', secSix); add('cpet', secCpet); add('gas', secGas);
+  secs.forEach(s => { if (!s.lines.length) s.lines.push('The values entered are incomplete, so no statement can be made.'); });
   const impression = buildImpression(f, secs);
   const headsup = buildHeadsUp(f, secs);
   const counts = { alert: 0, caution: 0, note: 0, tip: 0 };
   headsup.forEach(h => { counts[h.lvl]++; });
   const anyData = secs.some(s => !s.empty);
+  const full = !!(st.settings && st.settings.copy === 'full');
   return {
-    state: st, facts: f, F: f.F, suggestions: f.suggest, differentials: f.dx, studies: f.studies, style: f.style, sections: secs, impression: impression, headsup: headsup, counts: counts, anyData: anyData,
-    text: buildText(f, secs, impression, headsup, false),
-    textWithHeadsup: buildText(f, secs, impression, headsup, true)
+    state: st, facts: f, F: f.F, suggestions: f.suggest, differentials: f.dx, studies: f.studies, prompts: f.prompts, style: f.style, sections: secs, impression: impression, headsup: headsup, counts: counts, anyData: anyData,
+    header: headerLines(f),
+    text: buildText(f, secs, impression, headsup, false, full),
+    textWithHeadsup: buildText(f, secs, impression, headsup, true, full),
+    textLean: buildText(f, secs, impression, headsup, false, false),
+    textFull: buildText(f, secs, impression, headsup, false, true)
   };
 }
 
 const API = {
-  version: '3.1.0',
+  version: '5.0.0',
   catalogVersion: CATALOG.version,
   Z_LLN: Z_LLN, Z_ULN: Z_ULN, STYLES: STYLES,
   TESTS: TESTS, PRESETS: PRESETS, SCHEMA: SCHEMA, LOOPS: LOOPS, INDICATIONS: INDICATIONS, KIND_OPTS: KIND_OPTS, PRIOR_FIELDS: PRIOR_FIELDS, CUR_FIELDS: CUR_FIELDS, MAX_PRIORS: MAX_PRIORS, MAX_TREND: MAX_TREND,
+  UNITS: UNITS, unitOf: unitOf, unitLabel: unitLabel, toBase: toBase, fromBase: fromBase, bdEntered: bdEntered,
   CATALOG: CATALOG, REVIEW_PHRASES: REVIEW_PHRASES.map(r => r.id), STUDIES: STUDIES, DX_GROUPS: DX_GROUPS.map(g => ({ key: g.key, title: g.title })),
   defaultState: defaultState, normalizeState: normalizeState, blankPrior: blankPrior, blankTrendRow: blankTrendRow,
   interpret: interpret, res: res, num: num, catFromZ: catFromZ, fz: fz,
   phrase: phrase, eligiblePhrases: eligiblePhrases, factMatches: factMatches, catPhrase: catPhrase,
-  _internal: { spiroPattern: spiroPattern, volPattern: volPattern, dlcoPattern: dlcoPattern, buildFacts: buildFacts, deriveFacts: deriveFacts, cpetEval: cpetEval, abgEval: abgEval, mchCategory: mchCategory, methacholineFacts: methacholineFacts, mchAutoCategory: mchAutoCategory, fenoBand: fenoBand, exerciseState: exerciseState, placeholderValues: placeholderValues, differentialGroups: differentialGroups, differentialText: differentialText, CFG: CFG }
+  _internal: { spiroPattern: spiroPattern, volPattern: volPattern, dlcoPattern: dlcoPattern, buildFacts: buildFacts, deriveFacts: deriveFacts, cpetEval: cpetEval, abgEval: abgEval, mchCategory: mchCategory, methacholineFacts: methacholineFacts, mchAutoCategory: mchAutoCategory, fenoBand: fenoBand, exerciseState: exerciseState, placeholderValues: placeholderValues, differentialGroups: differentialGroups, differentialText: differentialText, prompts: prompts, bdLines: bdLines, CFG: CFG }
 };
 
 if (typeof module !== 'undefined' && module.exports) module.exports = API;

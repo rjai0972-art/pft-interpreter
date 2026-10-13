@@ -11,6 +11,13 @@
 
 /* ------------------------------------------------------------------ facts */
 function blankIf(on, st, key) { return on[key] ? st[key] : blankModule(key); }
+/* any post-bronchodilator entry (a typed post value, a tapped post category, the lab's verdict, a change as reported) */
+function bdEntered(bd) {
+  if (!bd || typeof bd !== 'object') return false;
+  const pr = (p) => p && typeof p === 'object' && ((p.c && p.c !== 'nm') || String(p.z === undefined || p.z === null ? '' : p.z) !== '');
+  return ['fev1_post', 'fvc_post', 'post_ratio_abs', 'dfev1_pp', 'dfvc_pp', 'fev1_pre', 'fvc_pre'].some(k => String(bd[k] === undefined || bd[k] === null ? '' : bd[k]).trim() !== '') ||
+    pr(bd.post_ratio) || pr(bd.post_fev1) || (bd.resp || '') !== '';
+}
 
 function parseDate(s) {
   if (!s) return null;
@@ -55,7 +62,7 @@ function trendFacts(st, f) {
   const rows = (st.trend6 && Array.isArray(st.trend6.list)) ? st.trend6.list : [];
   const pts = [];
   rows.forEach((r, i) => {
-    const dist = num(r.dist), ds = (r.date || '').trim(), nadir = num(r.nadir);
+    const dist = toBase(st, 'walk', r.dist), ds = (r.date || '').trim(), nadir = num(r.nadir);
     if (!has(dist) && !ds && !has(nadir)) return;                       // blank row
     const d = parseDate(ds);
     if (!has(dist) || dist <= 0 || !d) { t.skipped++; return; }
@@ -108,12 +115,14 @@ function trendFacts(st, f) {
 function buildFacts(st) {
   const band = num(st.settings && st.settings.band);
   CFG.band = has(band) ? Math.max(0, Math.min(1, band)) : 0.25;
-  const on = st.tests;
+  const on = Object.assign({}, st.tests);
   const c = st.ctx;
-  const age = num(c.age); let ht = num(c.ht), wt = num(c.wt);
-  if (c.units === 'us') { if (has(ht)) ht = ht * 2.54; if (has(wt)) wt = wt * 0.45359237; }
+  const age = num(c.age);
+  const ht = toBase(st, 'len', c.ht), wt = toBase(st, 'wt', c.wt);
   const bmi = (has(ht) && has(wt) && ht > 0) ? wt / Math.pow(ht / 100, 2) : NaN;
-  const f = { on: Object.assign({}, on), st: st, review: st.review || {}, style: (st.settings && st.settings.style) || 'standard' };
+  // the bronchodilator response is part of the spirometry step: it counts as performed when ticked there or when any post-bronchodilator entry exists
+  on.bd = !!on.bd || bdEntered(st.bd);
+  const f = { on: on, st: st, units: st.units || {}, review: st.review || {}, style: (st.settings && st.settings.style) || 'standard' };
   const indic = Array.isArray(c.indic) ? c.indic : [];
   const indicLabels = INDICATIONS.reduce((a, g) => a.concat(g.opts), []).filter(o => indic.indexOf(o[0]) >= 0).map(o => o[1]);
   f.ctx = { age: age, sex: c.sex || '', ht: ht, wt: wt, bmi: bmi, obese: has(bmi) && bmi >= 30, smoke: c.smoke || '',
@@ -143,27 +152,39 @@ function buildFacts(st) {
     effort: sp.effort || (loop === 'weak' ? 'weak' : (loop === 'effort' ? 'poor' : '')), loop: loop, repro: !!fv.loop_repro
   };
   f.sp.ratioCalc = (has(f.sp.fev1L) && has(f.sp.fvcL) && f.sp.fvcL > 0) ? f.sp.fev1L / f.sp.fvcL : NaN;
-  f.sp.any = f.sp.ratio.measured || f.sp.fev1.measured || f.sp.fvc.measured || has(f.sp.fev1L) || has(f.sp.fvcL);
+  // a typed FEV1/FVC (0.72 or 72) takes precedence over the one calculated from the litres
+  const ratioTyped = num(sp.ratio_abs);
+  f.sp.ratioV = has(ratioTyped) ? (ratioTyped > 1.5 ? ratioTyped / 100 : ratioTyped) : f.sp.ratioCalc;
+  f.sp.any = f.sp.ratio.measured || f.sp.fev1.measured || f.sp.fvc.measured || has(f.sp.fev1L) || has(f.sp.fvcL) || has(f.sp.ratioV);
   f.sp.anyQ = !!(q1 || q2 || lim.length || sp.effort);
+  // predicted values implied by a value and its % predicted (used for the bronchodilator change)
+  f.sp.fev1Pred = (has(f.sp.fev1L) && has(f.sp.fev1pct) && f.sp.fev1pct > 0) ? f.sp.fev1L / (f.sp.fev1pct / 100) : NaN;
+  f.sp.fvcPred = (has(f.sp.fvcL) && has(f.sp.fvcpct) && f.sp.fvcpct > 0) ? f.sp.fvcL / (f.sp.fvcpct / 100) : NaN;
 
-  /* ---------------- bronchodilator ---------------- */
+  /* ---------------- bronchodilator (inside the spirometry step) ---------------- */
   const bd = blankIf(on, st, 'bd');
   const relB = bd.qc === 'inv' ? 'invalid' : (bd.qc === 'limited' ? 'limited' : 'ok');
+  const pick = (a, b_) => has(a) ? a : b_;
   f.bd = {
     agent: (bd.agent || '').trim(), held: bd.held || '', qc: bd.qc || '', rel: relB,
-    f1pre: num(bd.fev1_pre), f1post: num(bd.fev1_post), f1pred: num(bd.fev1_pred),
-    vpre: num(bd.fvc_pre), vpost: num(bd.fvc_post), vpred: num(bd.fvc_pred),
+    f1pre: pick(num(bd.fev1_pre), f.sp.fev1L), f1post: num(bd.fev1_post), f1pred: pick(num(bd.fev1_pred), f.sp.fev1Pred),
+    vpre: pick(num(bd.fvc_pre), f.sp.fvcL), vpost: num(bd.fvc_post), vpred: pick(num(bd.fvc_pred), f.sp.fvcPred),
     dF1pp: num(bd.dfev1_pp), dVpp: num(bd.dfvc_pp),
     postRatio: res(bd.post_ratio, 'ratio', relB), postFev1: res(bd.post_fev1, 'grade', relB), resp: bd.resp || ''
   };
   const b = f.bd;
+  const postRatioTyped = num(bd.post_ratio_abs);
+  b.postRatioV = has(postRatioTyped) ? (postRatioTyped > 1.5 ? postRatioTyped / 100 : postRatioTyped) : ((has(b.f1post) && has(b.vpost) && b.vpost > 0) ? b.f1post / b.vpost : NaN);
+  b.postPctF = (has(b.f1post) && has(b.f1pred) && b.f1pred > 0) ? b.f1post / b.f1pred * 100 : NaN;   // post-bronchodilator % predicted
+  b.postPctV = (has(b.vpost) && has(b.vpred) && b.vpred > 0) ? b.vpost / b.vpred * 100 : NaN;
+  b.needPred = (has(b.f1post) && has(b.f1pre) && !has(b.f1pred)) || (has(b.vpost) && has(b.vpre) && !has(b.vpred));
   b.dF = has(b.dF1pp) ? b.dF1pp : ((has(b.f1pre) && has(b.f1post) && has(b.f1pred) && b.f1pred > 0) ? (b.f1post - b.f1pre) / b.f1pred * 100 : NaN);
   b.dV = has(b.dVpp) ? b.dVpp : ((has(b.vpre) && has(b.vpost) && has(b.vpred) && b.vpred > 0) ? (b.vpost - b.vpre) / b.vpred * 100 : NaN);
   b.dFmL = (has(b.f1pre) && has(b.f1post)) ? (b.f1post - b.f1pre) * 1000 : NaN;
   b.dVmL = (has(b.vpre) && has(b.vpost)) ? (b.vpost - b.vpre) * 1000 : NaN;
   b.dFbase = (has(b.f1pre) && has(b.f1post) && b.f1pre > 0) ? (b.f1post - b.f1pre) / b.f1pre * 100 : NaN;
   b.dVbase = (has(b.vpre) && has(b.vpost) && b.vpre > 0) ? (b.vpost - b.vpre) / b.vpre * 100 : NaN;
-  b.any = has(b.dF) || has(b.dV) || b.postRatio.measured || b.postFev1.measured || has(b.f1pre) || has(b.f1post) || has(b.vpre) || has(b.vpost) || b.resp !== '' || has(b.dFmL) || has(b.dVmL);
+  b.any = has(b.dF) || has(b.dV) || b.postRatio.measured || b.postFev1.measured || has(b.f1post) || has(b.vpost) || b.resp !== '' || has(b.dFmL) || has(b.dVmL) || has(b.postRatioV);
   // a metric is "assessed" when its change is known from numbers, or the lab's verdict covered it
   b.assessedF = has(b.dF) || (b.resp !== '' && b.resp !== 'ind');
   b.assessedV = has(b.dV) || (b.resp !== '' && b.resp !== 'ind');
@@ -211,11 +232,13 @@ function buildFacts(st) {
     method: vo.method || '', qc: vo.qc || '', rel: relVol,
     tlc: res(vo.tlc, 'gradeH', relVol), rvtlc: res(vo.rvtlc, 'both', relVol), rv: res(vo.rv, 'both', relVol), frc: res(vo.frc, 'both', relVol), frctlc: res(vo.frctlc, 'both', relVol),
     svc: res(vo.svc, 'gradeH', relVol), erv: res(vo.erv, 'both', relVol), ic: res(vo.ic, 'both', relVol),
-    tlcL: num(vo.tlc_abs), rvL: num(vo.rv_abs), frcL: num(vo.frc_abs), svcL: num(vo.svc_abs)
+    tlcL: num(vo.tlc_abs), rvL: num(vo.rv_abs), frcL: num(vo.frc_abs), svcL: num(vo.svc_abs), tlcPct: num(vo.tlc_pct), rvPct: num(vo.rv_pct)
   };
   const v = f.vol;
   v.rvtlcCalc = (has(v.rvL) && has(v.tlcL) && v.tlcL > 0) ? v.rvL / v.tlcL * 100 : NaN;
-  v.any = v.tlc.measured || v.rvtlc.measured || v.rv.measured || v.frc.measured || v.frctlc.measured || v.svc.measured || v.erv.measured || v.ic.measured || has(v.tlcL) || has(v.rvL);
+  const rvtlcTyped = num(vo.rvtlc_pct);
+  v.rvtlcV = has(rvtlcTyped) ? (rvtlcTyped <= 1 ? rvtlcTyped * 100 : rvtlcTyped) : v.rvtlcCalc;
+  v.any = v.tlc.measured || v.rvtlc.measured || v.rv.measured || v.frc.measured || v.frctlc.measured || v.svc.measured || v.erv.measured || v.ic.measured || has(v.tlcL) || has(v.rvL) || has(v.rvtlcV);
   v.dilution = (v.method === 'n2' || v.method === 'he' || v.method === 'sb');
 
   /* ---------------- DLCO ---------------- */
@@ -224,7 +247,7 @@ function buildFacts(st) {
   f.dl = {
     dlco: res(dl.dlco, 'gradeH', relD), adj: res(dl.dlco_adj, 'gradeH', relD), va: res(dl.va, 'both', relD), kco: res(dl.kco, 'both', relD),
     basis: dl.basis || '', single: dl.single === 'one',
-    hb: num(dl.hb), cohb: num(dl.cohb), abs: num(dl.dlco_abs), pct: num(dl.dlco_pct), vaL: num(dl.va_abs),
+    hb: num(dl.hb), cohb: num(dl.cohb), abs: toBase(st, 'dlco', dl.dlco_abs), pct: num(dl.dlco_pct), vaL: num(dl.va_abs),
     vatlcSel: dl.vatlc || '', qc: dl.qc || '', rel: relD, hbcat: dl.hbcat || '', cohbcat: dl.cohbcat || ''
   };
   const d = f.dl;
@@ -243,6 +266,10 @@ function buildFacts(st) {
   d.adjPct = (has(d.pct) && has(d.hb) && d.hb > 0 && !d.reportedAdjusted) ? d.pct * (0.7 * d.hbRef + d.hb) / (1.7 * d.hb) : NaN;
   d.hbKnown = has(d.hb) || d.hbcat !== '';
   d.anemic = has(d.hb) ? (f.ctx.sex === 'M' ? d.hb < 13.0 : d.hb < 12.0) : (d.hbcat === 'low' ? true : (d.hbcat !== '' ? false : null));
+  d.hbHigh = has(d.hb) ? (f.ctx.sex === 'M' ? d.hb > 16.5 : d.hb > 16.0) : d.hbcat === 'high';
+  d.hbCatUse = has(d.hb) ? (d.anemic ? 'low' : (d.hbHigh ? 'high' : 'nl')) : d.hbcat;   // the category the typed hemoglobin implies (WHO thresholds)
+  // what the corrected value would do, when the reported value is uncorrected and the hemoglobin is known
+  d.corrDir = (d.basis === 'un' && d.hbKnown) ? (d.anemic === true ? 'up' : (d.hbHigh ? 'down' : 'none')) : '';
   d.cohbKnown = has(d.cohb) || d.cohbcat !== '';
   d.cohbHigh = has(d.cohb) ? d.cohb >= 2 : d.cohbcat === 'hi';
   d.any = d.dlco.measured || d.adj.measured || d.va.measured || d.kco.measured || d.hbKnown || has(d.pct) || has(d.abs) || d.cohbKnown;
@@ -325,7 +352,7 @@ function buildFacts(st) {
   /* ---------------- 6MWT ---------------- */
   const sx = blankIf(on, st, 'sixmw');
   f.six = {
-    dist: num(sx.dist), pred: num(sx.pred), lln: num(sx.lln), pct: num(sx.pct), eq: (sx.eq || '').trim(),
+    dist: toBase(st, 'walk', sx.dist), pred: toBase(st, 'walk', sx.pred), lln: toBase(st, 'walk', sx.lln), pct: num(sx.pct), eq: (sx.eq || '').trim(), unit: unitOf(st, 'walk'),
     s0: num(sx.spo2_base), sn: num(sx.spo2_nadir), se: num(sx.spo2_end), h0: num(sx.hr_base), hp: num(sx.hr_peak), h1: num(sx.hr_1min),
     b0: num(sx.borg_base), b1: num(sx.borg_end), o2: sx.o2 || '', o2flow: num(sx.o2_flow), o2desc: (sx.o2_desc || '').trim(), stop: sx.stop || '', stopWhy: (sx.stop_why || '').trim(), timeMin: num(sx.time_min),
     distCat: sx.dist_cat || '', desatSel: sx.desat || '', hrrSel: sx.hrr || ''
@@ -405,7 +432,35 @@ function buildFacts(st) {
   f.dl.pat = dlcoPattern(f);
   f.F = deriveFacts(f);
   f.suggest = suggestions(f);
+  f.prompts = prompts(f);
   return f;
+}
+
+/* ------------------------------------------------- pattern-triggered prompts
+   When a pattern makes one more value useful, the interface asks for it on the step where it is entered (or offers the
+   test on the first screen). Each prompt names the step (mod), the field or test, and why. Nothing is assumed from an
+   unanswered prompt. */
+function prompts(f) {
+  const out = [];
+  const add = (id, mod, field, text, test) => out.push({ id: id, mod: mod, field: field || '', test: test || '', text: text });
+  const s = f.sp, sp = s.pat, v = f.vol, vp = v.pat, d = f.dl, D = d.dlco, x = f.six, b = f.bd;
+  const spOn = f.on.spiro && s.any, volOn = f.on.vol && v.any, dlOn = f.on.dlco && d.any && D.measured && !D.invalid;
+  const restriction = volOn && vp.restriction && !sp.obstruction;
+  const obstruction = spOn && sp.obstruction;
+  if (restriction && (!f.on.dlco || (dlOn && !D.low)) && !v.erv.measured)
+    add('erv_restriction', 'vol', 'erv', 'Restrictive pattern' + (dlOn ? ' with a normal DLCO' : '') + ': enter the ERV if reported. A low ERV points to body habitus (obesity) rather than parenchymal disease.');
+  if (restriction && !f.on.dlco) add('dlco_restriction', 'tests', '', 'Restriction: add the DLCO if it was measured; a normal DLCO favors an extrapulmonary cause.', 'dlco');
+  if (restriction && dlOn && !D.low && !f.on.mip && !f.ctx.obese) add('mip_restriction', 'tests', '', 'Restriction with a normal DLCO: respiratory muscle pressures (MIP/MEP) separate a neuromuscular cause from chest-wall or obesity-related restriction.', 'mip');
+  if (spOn && (sp.lowFvcUnconfirmed || sp.obstLowFvcUnconfirmed) && !f.on.vol) add('vol_low_fvc', 'tests', '', 'Reduced FVC: add lung volumes (TLC) if measured to confirm or exclude restriction.', 'vol');
+  if (obstruction && !f.on.bd) add('bd_obstruction', 'spiro', 'bd', 'Airflow obstruction: enter the post-bronchodilator values if a bronchodilator was given.');
+  if (obstruction && volOn && !v.rvtlc.measured) add('rvtlc_obstruction', 'vol', 'rvtlc', 'Obstruction: enter RV/TLC to assess air trapping.');
+  if (f.on.bd && b.needPred) add('pred_bd', 'spiro', 'fev1', 'Enter the pre-bronchodilator % predicted (or the predicted value under bronchodilator details) so the change can be graded as % of predicted.');
+  if (dlOn && (D.low || D.high) && !d.basisKnown) add('basis_dlco', 'dlco', 'basis', 'Say whether the reported DLCO is corrected for hemoglobin; the interpretation differs.');
+  if (dlOn && D.low && !d.hbKnown && !d.hasAdj) add('hb_dlco', 'dlco', 'hbcat', 'Reduced DLCO: enter the hemoglobin. A low hemoglobin lowers the uncorrected DLCO, and the corrected % predicted is calculated from it.');
+  if (dlOn && D.low && !(d.va.measured && d.kco.measured)) add('va_kco_dlco', 'dlco', d.va.measured ? 'kco' : 'va', 'Reduced DLCO: enter VA and KCO to separate loss of alveolar volume from a true gas-transfer defect.');
+  if (f.on.sixmw && has(x.dist) && !has(x.sn) && !x.desatSel) add('spo2_walk', 'sixmw', 'desat', 'Enter the SpO2 nadir to assess exertional desaturation.');
+  if (f.on.sixmw && has(x.dist) && !has(x.llnUse) && !x.es.ok) add('demo_walk', 'ctx', 'age', 'Enter age, sex, height and weight on the Details step to calculate the predicted 6MWD and its LLN (Enright & Sherrill 1998).');
+  return out;
 }
 
 /* ---------------------------------------------------------- spirometry pattern
@@ -650,8 +705,8 @@ function deriveFacts(f) {
     put('spirometry.fev1_state', A.state); put('spirometry.fvc_state', B.state); put('spirometry.ratio_state', R.state);
     put('spirometry.fev1_severity', A.sevState); put('spirometry.fvc_severity', B.sevState);
     if (R.measured && !R.invalid) put('spirometry.ratio_near_lln', !!R.bl);
-    if (has(s.ratioCalc) && R.measured && !R.invalid) {
-      const fixed = s.ratioCalc < 0.70;
+    if (has(s.ratioV) && R.measured && !R.invalid) {
+      const fixed = s.ratioV < 0.70;
       put('spirometry.fixed_ratio_discordance', fixed && !R.low ? 'fixed_only' : (!fixed && R.low ? 'lln_only' : 'none'));
     }
     if (s.fef.measured && !s.fef.invalid) {

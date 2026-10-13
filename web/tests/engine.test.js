@@ -159,13 +159,21 @@ const hu = (r, idPrefix) => r.headsup.filter(h => h.id.indexOf(idPrefix) === 0)[
   eq(bd(2.0, 2.3, 3.0).facts.bd.sig, false, '10.0% of predicted is NOT significant (must exceed 10%)');
   eq(bd(2.0, 2.31, 3.0).facts.bd.sig, true, '10.3% of predicted significant');
   eq(bd(2.0, 2.19, 4.0).facts.bd.sig, false, '>=12% of baseline but <10% pred is not a response in the 2022 criteria');
-  ok(codes(bd(2.0, 2.4, 3.0), 'bd').indexOf('S62') >= 0, 'S62');
+  ok(codes(bd(2.0, 2.4, 3.0), 'spiro').indexOf('S62') >= 0, 'S62 (inside the spirometry section)');
   eq(bd(2.0, 2.1, 3.0).F['bronchodilator.response'], 'indeterminate', 'FEV1-only non-response is indeterminate (FVC not assessed)');
-  ok(codes(run(mk(['spiro', 'bd'], 'spiro.ratio=low', 'spiro.fev1=mod', 'spiro.fvc=wnl', 'bd.resp=none')), 'bd').indexOf('S61') >= 0, 'S61 when both assessed');
+  ok(codes(run(mk(['spiro', 'bd'], 'spiro.ratio=low', 'spiro.fev1=mod', 'spiro.fvc=wnl', 'bd.resp=none')), 'spiro').indexOf('S61') >= 0, 'S61 when both assessed');
+  // v5: the pre values and the predicted value come from the spirometry step; a post value alone switches the response on
+  const v5 = run(mk(['spiro'], 'spiro.ratio=low', 'spiro.fev1=mod', 'spiro.fvc=wnl', 'spiro.fev1_abs=2.0', 'spiro.fev1_pct=66.7', 'bd.fev1_post=2.4'));
+  ok(v5.facts.on.bd === true && v5.facts.bd.sig === true && Math.abs(v5.facts.bd.dF - 13.3) < 0.2, 'post value beside the pre value: bd on, change as % of predicted from the pre % predicted');
+  ok(/After bronchodilator: FEV1 2\.00 → 2\.40 L \(80% predicted\), a change of \+400 mL \(\+13\.3% of predicted\)/.test(secl(v5, 'spiro')), 'post-BD numbers in SPIROMETRY: ' + secl(v5, 'spiro'));
+  ok(!v5.sections.some(x => x.key === 'bd'), 'no separate bronchodilator section');
+  const needPred = run(mk(['spiro'], 'spiro.ratio=low', 'spiro.fev1=mod', 'spiro.fvc=wnl', 'spiro.fev1_abs=2.0', 'bd.fev1_post=2.4'));
+  ok(needPred.facts.bd.needPred && needPred.prompts.some(p => p.id === 'pred_bd'), 'without a predicted value the change cannot be graded: prompt');
+  ok(run(mk(['spiro'], 'spiro.ratio=low', 'spiro.fev1=mod')).prompts.some(p => p.id === 'bd_obstruction'), 'obstruction without BD prompts for post values');
   const direct = run(mk(['spiro', 'bd'], 'bd.dfev1_pp=11.2'));
   eq(direct.facts.bd.sig, true, 'direct %pred entry');
   ok(hasHU(run(mk(['spiro', 'bd'], 'bd.held=n', 'bd.dfev1_pp=3')), 'TQ4'), 'bronchodilator not withheld flagged');
-  ok(/Post-bronchodilator FEV1\/FVC remains reduced/.test(secl(run(mk(['spiro', 'bd'], 'spiro.ratio=low', 'bd.post_ratio=low')), 'bd')), 'persistent obstruction post-BD');
+  ok(/Post-bronchodilator FEV1\/FVC remains reduced/.test(secl(run(mk(['spiro', 'bd'], 'spiro.ratio=low', 'bd.post_ratio=low')), 'spiro')), 'persistent obstruction post-BD');
 })();
 
 /* ---------- FeNO, challenge ---------- */
@@ -400,10 +408,10 @@ const hu = (r, idPrefix) => r.headsup.filter(h => h.id.indexOf(idPrefix) === 0)[
 /* ---------- indications and equations ---------- */
 (function () {
   const r = run(mk(['spiro'], 'ctx.indic=asthma,dyspnea', 'ctx.indication=recurrent pneumonia', 'spiro.ratio=wnl', 'spiro.fev1=wnl', 'spiro.fvc=wnl'));
-  ok(/Reason for PFT: Dyspnea; Asthma; recurrent pneumonia/.test(r.text), 'indication line combines chips and free text', r.text.split('\n')[1]);
+  ok(/Reason for PFT: Dyspnea; Asthma; recurrent pneumonia/.test(r.textFull) && !/Reason for PFT/.test(r.text), 'indication line combines chips and free text (full copy only)', r.textFull.split('\n')[1]);
   ok(hasHU(r, 'IN1') && hasHU(r, 'IN11'), 'asthma/dyspnea with normal spirometry: tests suggested');
   ok(!/Indication:/.test(run(mk(['spiro'], 'spiro.ratio=wnl')).text), 'no indication line when none selected');
-  ok(/Reason for PFT: Recurrent pneumonia/.test(run(mk(['spiro'], 'ctx.indication=recurrent pneumonia')).text), 'free text only');
+  ok(/Reason for PFT: Recurrent pneumonia/.test(run(mk(['spiro'], 'ctx.indication=recurrent pneumonia')).textFull), 'free text only');
   ok(hasHU(run(mk(['spiro'], 'ctx.indic=ild', 'spiro.ratio=wnl', 'spiro.fev1=mild', 'spiro.fvc=mild')), 'IN3'), 'ILD without DLCO');
   ok(hasHU(run(mk(['spiro'], 'ctx.indic=ild', 'spiro.ratio=wnl', 'spiro.fev1=mild', 'spiro.fvc=mild')), 'IN4'), 'ILD without lung volumes');
   ok(!hasHU(run(mk(['spiro', 'dlco', 'vol'], 'ctx.indic=ild', 'spiro.ratio=wnl', 'dlco.dlco=wnl', 'vol.tlc=wnl')), 'IN3'), 'ILD with DLCO: no DLCO prompt');
@@ -416,9 +424,11 @@ const hu = (r, idPrefix) => r.headsup.filter(h => h.id.indexOf(idPrefix) === 0)[
   eq(P.INDICATIONS.reduce((a, g) => a + g.opts.length, 0), 24, 'common indications count');
   ok(run(mk(['spiro'], 'ctx.indic=bogus,asthma')).facts.ctx.indicLabels.length === 1 || true, 'unknown indications ignored safely');
   // equations
-  ok(/Reference values: GLI \(race-neutral spirometry\)/.test(run(mk(['spiro'], 'spiro.ratio=wnl')).text), 'default spirometry equation named');
-  ok(/Reference values: GLI \(2021 lung volumes, 2017 DLCO\)/.test(run(mk(['vol', 'dlco'], 'vol.tlc=wnl', 'dlco.dlco=wnl')).text), 'default volume/DLCO equations named');
-  ok(/GLI \(2012 spirometry\)/.test(run(mk(['spiro'], 'ctx.ref_spiro=gli2012', 'spiro.ratio=wnl')).text) && hasHU(run(mk(['spiro'], 'ctx.ref_spiro=gli2012', 'spiro.ratio=wnl')), 'EQ1'), 'GLI-2012 named and flagged');
+  ok(/Reference values: GLI \(race-neutral spirometry\)/.test(run(mk(['spiro'], 'spiro.ratio=wnl')).textFull), 'default spirometry equation named');
+  ok(/Reference values: GLI \(2021 lung volumes, 2017 DLCO\)/.test(run(mk(['vol', 'dlco'], 'vol.tlc=wnl', 'dlco.dlco=wnl')).textFull), 'default volume/DLCO equations named');
+  ok(/GLI \(2012 spirometry\)/.test(run(mk(['spiro'], 'ctx.ref_spiro=gli2012', 'spiro.ratio=wnl')).textFull) && hasHU(run(mk(['spiro'], 'ctx.ref_spiro=gli2012', 'spiro.ratio=wnl')), 'EQ1'), 'GLI-2012 named and flagged');
+  ok(!/Reference values/.test(run(mk(['spiro'], 'spiro.ratio=wnl')).text) && !/INTERPRETABILITY/.test(run(mk(['spiro'], 'spiro.ratio=wnl')).text), 'lean copy carries neither the header nor INTERPRETABILITY');
+  { const fs = mk(['spiro'], 'spiro.ratio=wnl'); fs.settings.copy = 'full'; ok(/INTERPRETABILITY: /.test(run(fs).text) && /Reference values/.test(run(fs).text), 'settings.copy=full switches the copied text to the full form'); }
   ok(hasHU(run(mk(['dlco'], 'ctx.ref_dlco=other', 'dlco.dlco=wnl')), 'EQ2'), 'non-GLI set flagged');
   ok(hasHU(run(mk(['sixmw'], 'ctx.age=60', 'ctx.hrmax_eq=fox', 'sixmw.hr_peak=120')), 'EQ3'), '220 - age flagged');
   eq(run(mk(['sixmw'], 'ctx.age=60')).facts.ctx.hrMax, 166, 'Tanaka HRmax is the default');
@@ -455,7 +465,8 @@ const hu = (r, idPrefix) => r.headsup.filter(h => h.id.indexOf(idPrefix) === 0)[
   eq(leaks, 0, 'report sections never carry disease names, conclusion sentences or suggestions across 1500 random states');
   // every section keeps its place: loop section right after spirometry
   const r = run(mk(['spiro', 'fvl', 'bd'], 'spiro.ratio=low', 'fvl.loop=concave', 'bd.resp=none'));
-  eq(r.sections.map(x => x.key).join(','), 'qual,fvl,spiro,bd,vol,dlco', 'template order: interpretability, curve, spirometry, bronchodilator, volumes (not performed), DLCO (not performed)');
+  eq(r.sections.map(x => x.key).join(','), 'qual,fvl,spiro,vol,dlco', 'template order: interpretability, curve, spirometry (with the bronchodilator response), volumes (not performed), DLCO (not performed)');
+  ok(/Spirometry did not significantly improve after bronchodilator administration/.test(secl(r, 'spiro')), 'bronchodilator verdict inside SPIROMETRY');
   ok(/^FLOW-VOLUME CURVE:/m.test(r.text) && /^LUNG VOLUMES: Plethysmography not performed\./m.test(r.text) && /^DIFFUSING CAPACITY: Maneuver not performed\./m.test(r.text), 'template headings and not-performed lines');
   ok(!/scooped|curvilinear/i.test(secl(r, 'spiro')), 'curve description is not inside SPIROMETRY');
   // migration of v2 states that kept the loop under spirometry
@@ -664,9 +675,20 @@ const hu = (r, idPrefix) => r.headsup.filter(h => h.id.indexOf(idPrefix) === 0)[
   r = run(mk(['dlco'], 'dlco.dlco=mild', 'dlco.basis=un', 'dlco.dlco_adj=wnl', 'dlco.va=wnl', 'dlco.kco=wnl'));
   eq(line(r, 'dlco'), "Mildly reduced before correction for hemoglobin and normal after correction. VA is normal and KCO is normal. The absolute diffusing capacity is reduced but corrects to the normal range when adjusted for this patient's anemia.", 'corrects with hemoglobin');
   r = run(mk(['dlco'], 'dlco.dlco=mod', 'dlco.basis=un', 'dlco.dlco_adj=mod', 'dlco.va=wnl', 'dlco.kco=low', 'dlco.dlco_pct=52', 'dlco.hb=14'));
-  eq(line(r, 'dlco'), 'DLCO 52% predicted. Moderately reduced, both uncorrected and after correction for hemoglobin. VA is normal and KCO is reduced. Hemoglobin 14.0 g/dL.', 'both bases reduced');
+  eq(line(r, 'dlco'), 'DLCO 52% predicted. Moderately reduced, both uncorrected and after correction for hemoglobin (Hgb 14.0 g/dL). VA is normal and KCO is reduced.', 'both bases reduced');
   r = run(mk(['dlco'], 'dlco.dlco=mod', 'dlco.basis=un', 'dlco.dlco_pct=52', 'dlco.hb=10', 'ctx.sex=M'));
-  ok(/The diffusing capacity corrects to 6\d% predicted when corrected for anemia \(Hgb 10\.0\)/.test(line(r, 'dlco')), 'hemoglobin correction estimate in the template words: ' + line(r, 'dlco'));
+  ok(/Moderately reduced; the value is not corrected for hemoglobin \(Hgb 10\.0 g\/dL, low\)\. Corrected for the anemia the DLCO is 6\d% predicted\./.test(line(r, 'dlco')), 'hemoglobin correction estimate in the template words: ' + line(r, 'dlco'));
+  // the correction basis is always stated with the value, never assumed
+  r = run(mk(['dlco'], 'dlco.dlco=mod', 'dlco.basis=adj', 'dlco.hb=11', 'ctx.sex=F'));
+  eq(line(r, 'dlco'), 'Moderately reduced; the value is corrected for hemoglobin (Hgb 11.0 g/dL, low).', 'corrected value: stated as corrected, no anemia caveat');
+  ok(!/Anemia may reduce|not corrected/.test(r.impression.join(' ')), 'no uncorrected-value wording in the interpretation when the value is corrected');
+  r = run(mk(['dlco'], 'dlco.dlco=wnl', 'dlco.basis=un', 'dlco.hb=10', 'ctx.sex=M'));
+  eq(line(r, 'dlco'), 'Normal; the value is not corrected for hemoglobin (Hgb 10.0 g/dL, low). Correction for the low hemoglobin would raise the value.', 'normal uncorrected value with anemia: direction of the correction stated');
+  r = run(mk(['dlco'], 'dlco.dlco=mod', 'dlco.basis=un', 'dlco.hbcat=nl'));
+  eq(line(r, 'dlco'), 'Moderately reduced; the value is not corrected for hemoglobin (hemoglobin normal per the report).', 'uncorrected with a normal hemoglobin: nothing more to say');
+  ok(!/Anemia may reduce/.test(r.impression.join(' ')), 'normal hemoglobin: no anemia sentence');
+  r = run(mk(['dlco'], 'dlco.dlco=mod'));
+  ok(r.prompts.some(p => p.id === 'basis_dlco') && r.prompts.some(p => p.id === 'hb_dlco'), 'low DLCO without basis or Hb: prompts for both');
   // levels
   st = mk(['spiro'], 'spiro.ratio=z-2.3', 'spiro.fev1=z-3.1', 'spiro.fvc=z-0.4', 'spiro.fev1_abs=1.55', 'spiro.fvc_abs=3.2', 'spiro.fev1_pct=48');
   const stdT = line(lvl(st, 'standard'), 'spiro'), expT = line(lvl(st, 'expanded'), 'spiro'), conT = line(lvl(st, 'concise'), 'spiro');
@@ -675,23 +697,32 @@ const hu = (r, idPrefix) => r.headsup.filter(h => h.id.indexOf(idPrefix) === 0)[
   ok(expT.length > stdT.length && !/grading scheme/.test(expT), 'detailed: adds the catalog caveats: ' + expT);
   // the whole report in the template's form
   r = run(mk(['spiro', 'vol', 'dlco'], 'ctx.indic=copd', 'ctx.smoke=former', 'spiro.ratio=z-2.3', 'spiro.fev1=z-3.1', 'spiro.fvc=z-0.4', 'vol.tlc=wnl', 'vol.rvtlc=high', 'vol.frc=high', 'dlco.dlco=mod', 'dlco.basis=adj'));
-  ok(/^INTERPRETABILITY: /m.test(r.text) && /^BRONCHODILATOR RESPONSE: A bronchodilator trial was not performed\./m.test(r.text) && /^DIFFUSING CAPACITY: /m.test(r.text) && /^CONCLUSION: /m.test(r.text), 'template headings: ' + r.text);
-  ok(/CONCLUSION: There is a moderate obstructive ventilatory defect with hyperinflation\. There is no evidence of a restrictive ventilatory defect\. Pattern is consistent with moderate COPD\. In the presence of an obstructive ventilatory defect the decreased diffusing capacity suggests pulmonary emphysema/.test(r.text), 'conclusion in the template words: ' + r.text.split('CONCLUSION')[1]);
-  ok(!/z = /.test(r.text) && !/within reference limits/.test(r.text) && !/Tests performed/.test(r.text) && /Reason for PFT: COPD/.test(r.text), 'report voice details');
+  ok(/^INTERPRETABILITY: /m.test(r.textFull) && !/BRONCHODILATOR RESPONSE/.test(r.textFull) && /^DIFFUSING CAPACITY: /m.test(r.text) && /^INTERPRETATION: /m.test(r.text) && !/CONCLUSION/.test(r.text), 'template headings, INTERPRETATION heading, colons: ' + r.text);
+  ok(/INTERPRETATION: There is a moderate obstructive ventilatory defect with hyperinflation\. There is no evidence of a restrictive ventilatory defect\. Pattern is consistent with moderate COPD\. In the presence of an obstructive ventilatory defect the decreased diffusing capacity suggests pulmonary emphysema/.test(r.text), 'conclusion in the template words: ' + r.text.split('INTERPRETATION')[1]);
+  ok(!/z = /.test(r.text) && !/within reference limits/.test(r.text) && !/Tests performed/.test(r.text) && /Reason for PFT: COPD/.test(r.textFull) && !/Reason for PFT/.test(r.text), 'report voice details');
+  ok(r.text.split('\n')[0].indexOf('SPIROMETRY:') === 0, 'lean copy starts with the first section');
   // the user's own sentence for an isolated low DLCO
   r = run(mk(['spiro', 'vol', 'dlco'], 'spiro.ratio=wnl', 'spiro.fev1=wnl', 'spiro.fvc=wnl', 'vol.tlc=wnl', 'vol.rvtlc=wnl', 'dlco.dlco=mod', 'dlco.basis=adj'));
-  ok(/The diffusion capacity is moderately impaired which can be seen in restrictive lung disease before FVC falls, pulmonary arterial disease \(i\.e\. PE, PH\), anemia, smoking before testing\. Clinical correlation recommended\./.test(r.impression.join(' ')), 'isolated low DLCO sentence: ' + r.impression.join(' '));
+  ok(/The diffusion capacity is moderately impaired which can be seen in restrictive lung disease before FVC falls, pulmonary arterial disease \(i\.e\. PE, PH\), smoking before testing \(the value is corrected for hemoglobin\)\. Clinical correlation recommended\./.test(r.impression.join(' ')), 'isolated low DLCO sentence (corrected value: no anemia): ' + r.impression.join(' '));
+  r = run(mk(['spiro', 'vol', 'dlco'], 'spiro.ratio=wnl', 'spiro.fev1=wnl', 'spiro.fvc=wnl', 'vol.tlc=wnl', 'vol.rvtlc=wnl', 'dlco.dlco=mod', 'dlco.basis=un'));
+  ok(/pulmonary arterial disease \(i\.e\. PE, PH\), anemia, smoking before testing\. Clinical correlation recommended\./.test(r.impression.join(' ')), 'isolated low DLCO sentence (uncorrected: anemia listed)');
+  ok(r.differentials.some(g => g.key === 'dlco_isolated' && g.dx.some(d => /anemia/.test(d.text))) && !run(mk(['spiro', 'vol', 'dlco'], 'spiro.ratio=wnl', 'spiro.fev1=wnl', 'spiro.fvc=wnl', 'vol.tlc=wnl', 'vol.rvtlc=wnl', 'dlco.dlco=mod', 'dlco.basis=adj')).differentials.some(g => g.dx.some(d => /anemia/.test(d.text))), 'anemia differential offered only for an uncorrected value');
   // asthma not excluded, obesity, template BD sentences
   r = run(mk(['spiro', 'bd'], 'ctx.indic=asthma', 'spiro.ratio=wnl', 'spiro.fev1=wnl', 'spiro.fvc=wnl', 'bd.resp=none'));
   ok(/Normal pulmonary function tests do not exclude asthma\. Suggest methacholine challenge testing if clinically indicated\./.test(r.impression.join(' ')), 'asthma not excluded with the suggestion');
   r = run(mk(['spiro', 'bd'], 'ctx.indic=copd', 'spiro.ratio=low', 'spiro.fev1=mod', 'spiro.fvc=wnl', 'bd.resp=none'));
   ok(/There is no significant reversal of airways obstruction after inhaling a bronchodilator\. Failure to meet reversibility thresholds during bronchodilator testing does not preclude a clinical response to inhaled bronchodilator therapy\./.test(r.impression.join(' ')), 'negative BD in the template words');
-  ok(/Spirometry did not significantly improve after bronchodilator administration\. Per ERS\/ATS 2022 criteria, FEV1 or FVC must increase by more than 10% of the predicted value to be considered significant\./.test(line(r, 'bd')), 'BD section in the template words: ' + line(r, 'bd'));
+  ok(/Spirometry did not significantly improve after bronchodilator administration\./.test(line(r, 'spiro')), 'BD verdict in the template words, inside SPIROMETRY: ' + line(r, 'spiro'));
+  ok(/Per ERS\/ATS 2022 criteria, FEV1 or FVC must increase by more than 10% of the predicted value/.test(line(lvl(mk(['spiro', 'bd'], 'spiro.ratio=low', 'spiro.fev1=mod', 'spiro.fvc=wnl', 'bd.resp=none'), 'expanded'), 'spiro')), 'the criterion is quoted at the detailed level');
   r = run(mk(['spiro', 'vol'], 'ctx.ht=170', 'ctx.wt=100', 'spiro.ratio=low', 'spiro.fev1=mild', 'spiro.fvc=wnl', 'vol.tlc=wnl'));
   ok(/Symptoms caused by airway obstruction may be increased in obese patients because they breathe at low lung volumes\./.test(r.impression.join(' ')), 'obesity note with obstruction');
   // units: inches and pounds
   r = run(mk(['spiro'], 'ctx.units=us', 'ctx.ht=70', 'ctx.wt=272', 'spiro.ratio=wnl', 'spiro.fev1=wnl', 'spiro.fvc=wnl'));
-  ok(Math.abs(r.facts.ctx.bmi - 39.0) < 0.2 && /BMI 39\.0 kg\/m\^2/.test(r.text) && /height 178 cm/.test(r.text), 'inches and pounds converted; BMI line as in the template: ' + r.text.split('\n').slice(0, 4).join(' | '));
+  ok(Math.abs(r.facts.ctx.bmi - 39.0) < 0.2 && /BMI 39\.0 kg\/m\^2/.test(r.textFull) && /height 178 cm/.test(r.textFull), 'v4 inches/pounds switch migrated; BMI line in the full copy: ' + r.textFull.split('\n').slice(0, 4).join(' | '));
+  { const u = mk(['spiro', 'sixmw'], 'ctx.ht=70', 'ctx.wt=272', 'sixmw.dist=1200'); u.units = { len: 'in', wt: 'lb', walk: 'ft', dlco: 'ml' }; const ru = run(u);
+    ok(Math.abs(ru.facts.ctx.bmi - 39.0) < 0.2 && Math.abs(ru.facts.six.dist - 365.8) < 0.2 && /Walked 366 m \(1200 ft\)/.test(secl(ru, 'six')), 'per-quantity units: in/lb/ft converted, feet shown beside metres: ' + secl(ru, 'six')); }
+  { const d = mk(['dlco'], 'dlco.dlco=wnl', 'dlco.dlco_abs=8.0'); d.units.dlco = 'si'; ok(Math.abs(run(d).facts.dl.abs - 23.9) < 0.1, 'DLCO in mmol/min/kPa converted to mL/min/mmHg'); }
+  { const n = P.normalizeState({ units: { walk: 'ft', bogus: 1, len: 'nope' } }); ok(n.units.walk === 'ft' && n.units.len === 'cm' && n.units.wt === 'kg', 'unit choices normalised'); }
 })();
 
 /* ---------- predicted 6MWD: Enright & Sherrill 1998 (the MDCalc calculator) ---------- */

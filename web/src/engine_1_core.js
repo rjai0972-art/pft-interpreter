@@ -122,10 +122,27 @@ const KIND_OPTS = {
   lo:     [['nm', 'Not measured'], ['wnl', 'WNL'], ['low', 'Below LLN ↓']]
 };
 
-/* Test catalogue (first screen) */
+/* Units a value can be typed in. Each quantity has a base unit (the engine and the report work in it) and the factors
+   that convert the alternatives into it. The choice is kept per quantity in state.units, so one selection applies to
+   every box that holds that quantity (this study, prior studies, the 6MWD trend). */
+const UNITS = {
+  len:  { label: 'Height',   base: 'cm', opts: [['cm', 'cm'], ['in', 'in']], f: { cm: 1, in: 2.54 } },
+  wt:   { label: 'Weight',   base: 'kg', opts: [['kg', 'kg'], ['lb', 'lb']], f: { kg: 1, lb: 0.45359237 } },
+  walk: { label: 'Distance', base: 'm',  opts: [['m', 'm'], ['ft', 'ft']],   f: { m: 1, ft: 0.3048 } },
+  dlco: { label: 'DLCO',     base: 'mL/min/mmHg', opts: [['ml', 'mL/min/mmHg'], ['si', 'mmol/min/kPa']], f: { ml: 1, si: 2.987 } }
+};
+function unitOf(st, q) { const u = UNITS[q]; const sel = st && st.units && st.units[q]; return (u && u.f[sel] !== undefined) ? sel : (u ? u.opts[0][0] : ''); }
+function unitLabel(st, q) { const u = UNITS[q], sel = unitOf(st, q); const o = u ? u.opts.filter(x => x[0] === sel)[0] : null; return o ? o[1] : ''; }
+/* a typed value in the selected unit -> the base unit */
+function toBase(st, q, raw) { const v = num(raw); if (!has(v)) return NaN; const u = UNITS[q]; return u ? v * u.f[unitOf(st, q)] : v; }
+/* a base-unit value -> the selected unit (for display next to the base value) */
+function fromBase(st, q, v) { const u = UNITS[q]; return (u && has(v)) ? v / u.f[unitOf(st, q)] : v; }
+
+/* Test catalogue (first screen). The bronchodilator response lives inside the spirometry step (hidden here: it is
+   switched on with a checkbox there or by any post-bronchodilator entry). */
 const TESTS = [
-  { key: 'spiro',  group: 'Spirometry',            name: 'Spirometry',                       desc: 'FEV1, FVC, FEV1/FVC, quality grade' },
-  { key: 'bd',     group: 'Spirometry',            name: 'Bronchodilator response',          desc: 'Pre/post FEV1 and FVC' },
+  { key: 'spiro',  group: 'Spirometry',            name: 'Spirometry',                       desc: 'FEV1, FVC, FEV1/FVC; bronchodilator response' },
+  { key: 'bd',     group: 'Spirometry',            name: 'Bronchodilator response',          desc: 'Pre/post FEV1 and FVC', hidden: true },
   { key: 'fvl',    group: 'Spirometry',            name: 'Flow–volume loop',                 desc: 'Loop shape, PEF, FEV1/PEF, FIF50/FEF50' },
   { key: 'vol',    group: 'Volumes & gas transfer', name: 'Lung volumes',                    desc: 'TLC, RV, RV/TLC, FRC, SVC' },
   { key: 'dlco',   group: 'Volumes & gas transfer', name: 'DLCO / KCO / VA',                 desc: 'Single-breath diffusing capacity, Hb adjustment' },
@@ -141,16 +158,18 @@ const TESTS = [
   { key: 'prior',  group: 'Comparison',            name: 'Comparison with prior PFT(s)',     desc: '% change, annualised decline, thresholds', hidden: true }
 ];
 
+/* Quick sets (the interface lets the user edit these and add their own). None selects the flow–volume loop: that is a
+   deliberate choice on the first screen. */
 const PRESETS = [
-  { name: 'Full PFT',                    tests: ['spiro', 'fvl', 'vol', 'dlco'] },
-  { name: 'Spirometry only',             tests: ['spiro', 'fvl'] },
-  { name: 'Spirometry + BD',             tests: ['spiro', 'fvl', 'bd'] },
-  { name: 'Spiro + BD + volumes + FeNO', tests: ['spiro', 'fvl', 'bd', 'vol', 'feno'] },
-  { name: 'ILD work-up',                 tests: ['spiro', 'fvl', 'vol', 'dlco', 'sixmw'] },
-  { name: 'Neuromuscular',               tests: ['spiro', 'fvl', 'vol', 'mip', 'post'] },
-  { name: 'Asthma: spiro + BD + FeNO',   tests: ['spiro', 'fvl', 'bd', 'feno'] },
-  { name: 'Methacholine challenge',      tests: ['spiro', 'fvl', 'bronch'] },
-  { name: 'Pre-op: spiro + DLCO',        tests: ['spiro', 'fvl', 'dlco'] },
+  { name: 'Full PFT',                    tests: ['spiro', 'vol', 'dlco'] },
+  { name: 'Spirometry only',             tests: ['spiro'] },
+  { name: 'Spirometry + BD',             tests: ['spiro', 'bd'] },
+  { name: 'Spiro + BD + volumes + FeNO', tests: ['spiro', 'bd', 'vol', 'feno'] },
+  { name: 'ILD work-up',                 tests: ['spiro', 'vol', 'dlco', 'sixmw'] },
+  { name: 'Neuromuscular',               tests: ['spiro', 'vol', 'mip', 'post'] },
+  { name: 'Asthma: spiro + BD + FeNO',   tests: ['spiro', 'bd', 'feno'] },
+  { name: 'Methacholine challenge',      tests: ['spiro', 'bronch'] },
+  { name: 'Pre-op: spiro + DLCO',        tests: ['spiro', 'dlco'] },
   { name: 'Exercise: 6MWT + CPET',       tests: ['sixmw', 'cpet'] }
 ];
 
@@ -204,28 +223,35 @@ const LIMITS = [
     ['cough', 'Cough in the first second (FEV1 affected)'], ['insp', 'Incomplete inspiration (volumes underestimated)'], ['slow', 'Slow or hesitant start'],
     ['leak', 'Mouth leak'], ['glottic', 'Glottic closure'], ['varef', 'Variable effort between maneuvers'], ['fatigue', 'Testing limited by fatigue'], ['symptom', 'Testing limited by symptoms']] }
 ];
-const HB_BASIS = [['', 'Not stated on the report'], ['un', 'Not adjusted for hemoglobin'], ['adj', 'Hemoglobin-adjusted']];
+const HB_BASIS = [['', 'Not stated on the report'], ['un', 'Not corrected for Hb'], ['adj', 'Corrected for Hb']];
 const HELD_OPTS = [['', 'Not recorded'], ['y', 'Withheld as required'], ['n', 'Not withheld']];
 const ICS_OPTS = [['', 'Not recorded'], ['y', 'On corticosteroids'], ['n', 'Not on corticosteroids']];
 
+/* Field extras used by the interface:
+     cols: { val: '<num id>', pct: '<num id>', v1/v2: ... }  value boxes drawn on the same row as the category buttons
+     more: true          hidden under "+ More" until wanted (not an essential index)
+     auto: '<name>'      the category is set from the typed values (the interface shows which one the numbers imply)
+     units: '<quantity>' the box can be typed in any unit of that quantity (UNITS)
+   Group extras: inline (its fields are drawn inside other rows), fold (collapsed), opt (optional typing), legacy (kept
+   for old case codes, never drawn). */
 const SCHEMA = {
   ctx: {
     title: 'Study details', src: 'ATS 2023 and ERS/ATS 2022 reference-set recommendations. No patient identifiers are collected.',
     groups: [
+      { title: 'Patient', rows: true, fields: [
+        N('age', 'Age', 'years', { min: 0, max: 120, step: 1 }),
+        S('sex', 'Sex (as used for reference values)', [['', 'Not entered'], ['M', 'Male'], ['F', 'Female']]),
+        S('smoke', 'Smoking status', [['', 'Not entered'], ['never', 'Never'], ['former', 'Former'], ['current', 'Current']]),
+        N('ht', 'Height', 'cm', { min: 10, max: 250, step: 0.5, units: 'len' }),
+        N('wt', 'Weight', 'kg', { min: 5, max: 900, step: 0.5, units: 'wt' })
+      ] },
       { title: 'Study', fields: [
         { id: 'date', label: 'Date of study', type: 'date' },
         M('indic', 'Indication(s): tap all that apply', INDICATIONS),
         T('indication', 'Other indication (type only if not listed above)', { ph: 'e.g. recurrent pneumonia, pre-bariatric surgery' })
       ] },
-      { title: 'Patient', fields: [
-        N('age', 'Age', 'years', { min: 0, max: 120, step: 1 }),
-        S('sex', 'Sex (as used for reference values)', [['', 'Not entered'], ['M', 'Male'], ['F', 'Female']]),
-        S('smoke', 'Smoking status', [['', 'Not entered'], ['never', 'Never'], ['former', 'Former'], ['current', 'Current']])
-      ] },
-      { title: 'Height and weight (optional, for BMI)', opt: true, fields: [
-        S('units', 'Units', [['', 'cm / kg'], ['us', 'in / lb']]),
-        N('ht', 'Height', 'cm', { min: 20, max: 230, step: 0.5 }),
-        N('wt', 'Weight', 'kg', { min: 5, max: 900, step: 0.5 })
+      { title: 'Units (legacy)', legacy: true, fields: [
+        S('units', 'Units', [['', 'cm / kg'], ['us', 'in / lb']])
       ] },
       { title: 'Reference equations (the recommended option is already selected)', opt: true, fields: [
         S('ref_spiro', 'Spirometry reference set', [['global', 'GLI Global, race-neutral (recommended, ATS 2023)'], ['gli2012', 'GLI-2012 (race-specific)'], ['other', 'Other / lab-specific']], { stack: true, hint: 'ATS 2023: race-neutral GLI Global replaces race-specific sets; the lab report decides which set produced the z-scores you enter' }),
@@ -239,50 +265,55 @@ const SCHEMA = {
 
   spiro: {
     title: 'Spirometry', src: 'ERS/ATS 2022 Fig 8 & Table 5; Annals ATS 2025 Table 1 (S-codes); ATS/ERS 2019 quality grades.',
-    intro: 'Tap a category for each index (or type a z-score in the small box). Order of reasoning: FEV1/FVC against the LLN, then the FEV1 z-score for severity, then the FVC for other pathology.',
+    intro: 'Tap a category for each index, or type the z-score. Order of reasoning: FEV1/FVC against the LLN, then the FEV1 z-score for severity, then the FVC for other pathology.',
+    columns: [['z', 'z-score'], ['val', 'Value'], ['pct', '% pred']],
     groups: [
-      { title: 'Indices vs. reference (pre-bronchodilator)', quick: ['ratio', 'fev1', 'fvc'], fields: [
-        P('ratio', 'FEV1/FVC', 'ratio', { hint: 'Below the LLN (z < −1.645) = airflow obstruction' }),
-        P('fev1', 'FEV1', 'grade', { hint: 'z-score sets the severity of the impairment' }),
-        P('fvc', 'FVC', 'gradeH', { hint: 'Low FVC with a low ratio = air trapping or coexisting restriction; needs lung volumes' }),
-        P('fef', 'FEF25–75% (informational)', 'both', { hint: 'Not used to define obstruction or severity (ERS/ATS 2022)' })
+      { title: 'Pre-bronchodilator', quick: ['ratio', 'fev1', 'fvc'], fields: [
+        P('ratio', 'FEV1/FVC', 'ratio', { hint: 'Below the LLN (z < −1.645) = airflow obstruction', cols: { val: 'ratio_abs' } }),
+        P('fev1', 'FEV1', 'grade', { hint: 'z-score sets the severity of the impairment', cols: { val: 'fev1_abs', pct: 'fev1_pct' } }),
+        P('fvc', 'FVC', 'gradeH', { hint: 'Low FVC with a low ratio = air trapping or coexisting restriction; needs lung volumes', cols: { val: 'fvc_abs', pct: 'fvc_pct' } }),
+        P('fef', 'FEF25–75%', 'both', { hint: 'Not used to define obstruction or severity (ERS/ATS 2022)', more: true })
       ] },
-      { title: 'Quality (graded separately for FEV1 and FVC)', fold: true, fields: [
-        S('qual_fev1', 'FEV1 grade', Q_OPTS, { hint: 'ATS/ERS 2019: A–B good; C–E usable, reduced confidence; U usable only; F not usable' }),
-        S('qual_fvc', 'FVC grade', Q_OPTS, { hint: 'A cough in the first second can spoil FEV1 while FVC stays usable, and early termination spoils FVC while FEV1 stays usable' }),
-        S('effort', 'Effort / cooperation', [['', 'Not noted'], ['poor', 'Submaximal effort'], ['weak', 'Weakness suspected']]),
-        M('limits', 'Limitations noted on the report', LIMITS, { hint: 'Only tap what is documented; the interpretation states which component each limitation affects' })
-      ] },
-      { title: 'Measured values (optional)', opt: true, fields: [
+      { title: 'Values', inline: true, fields: [
+        N('ratio_abs', 'FEV1/FVC', '', { min: 0, max: 100, step: 0.01, ph: '0.72' }),
         N('fev1_abs', 'FEV1', 'L', { min: 0, max: 8, step: 0.01 }),
         N('fvc_abs', 'FVC', 'L', { min: 0, max: 10, step: 0.01 }),
         N('fev1_pct', 'FEV1', '% pred', { min: 0, max: 200, step: 1 }),
         N('fvc_pct', 'FVC', '% pred', { min: 0, max: 200, step: 1 })
+      ] },
+      { title: 'Test quality', fold: true, fields: [
+        S('qual_fev1', 'FEV1 grade', Q_OPTS, { hint: 'ATS/ERS 2019: A–B good; C–E usable, reduced confidence; U usable only; F not usable' }),
+        S('qual_fvc', 'FVC grade', Q_OPTS, { hint: 'A cough in the first second can spoil FEV1 while FVC stays usable, and early termination spoils FVC while FEV1 stays usable' }),
+        S('effort', 'Effort / cooperation', [['', 'Not noted'], ['poor', 'Submaximal effort'], ['weak', 'Weakness suspected']]),
+        M('limits', 'Limitations noted on the report', LIMITS, { hint: 'Only tap what is documented; the interpretation states which component each limitation affects' })
       ] }
     ]
   },
 
+  /* Drawn inside the spirometry step: post-bronchodilator boxes beside the pre-bronchodilator values; the change is
+     calculated from them (the predicted value comes from the pre value and its % predicted, or is typed). */
   bd: {
     title: 'Bronchodilator response', src: 'ERS/ATS 2022 Box 1 (response = change > 10% of the predicted value in FEV1 and/or FVC); Annals ATS 2025 S61/S62.',
-    intro: 'Tap what the lab report states. Typed pre/post values (under “optional”) are only needed if you want the change calculated.',
+    intro: 'Type the post-bronchodilator values beside the pre-bronchodilator ones; the change is calculated. The lab’s own verdict can be tapped instead.',
     groups: [
+      { title: 'Post-bronchodilator values', inline: true, fields: [
+        N('fev1_post', 'FEV1 post', 'L', { step: 0.01 }), N('fvc_post', 'FVC post', 'L', { step: 0.01 }), N('post_ratio_abs', 'FEV1/FVC post', '', { step: 0.01, ph: '0.72' })
+      ] },
       { title: 'Response', fields: [
-        S('resp', 'Significant response (> 10% of predicted)?', [['', 'Not entered'], ['none', 'No response in FEV1 or FVC'], ['fev1', 'FEV1 responded'], ['fvc', 'FVC responded'], ['both', 'FEV1 and FVC responded'], ['ind', 'Could not be assessed']], { hint: '"No response" means both FEV1 and FVC were assessed and neither rose by more than 10% of predicted' }),
-        S('qc', 'Post-bronchodilator maneuver quality', QC_OPTS),
-        P('post_ratio', 'Post-BD FEV1/FVC', 'ratio', { hint: 'Persistently below the LLN after the bronchodilator = persistent airflow obstruction' }),
-        P('post_fev1', 'Post-BD FEV1', 'grade')
+        P('post_ratio', 'Post-BD FEV1/FVC', 'ratio', { hint: 'Persistently below the LLN after the bronchodilator = persistent airflow obstruction', more: true }),
+        P('post_fev1', 'Post-BD FEV1', 'grade', { more: true }),
+        S('resp', 'Response per the lab (if no post values are typed)', [['', 'Not entered'], ['none', 'No response'], ['fev1', 'FEV1 responded'], ['fvc', 'FVC responded'], ['both', 'FEV1 and FVC responded'], ['ind', 'Could not be assessed']], { hint: '"No response" means both FEV1 and FVC were assessed and neither rose by more than 10% of predicted', more: true })
       ] },
-      { title: 'Administration', fold: true, fields: [
+      { title: 'Bronchodilator details', fold: true, fields: [
         S('agent', 'Bronchodilator given', [['', 'Not recorded'], ['albuterol 400 mcg', 'Albuterol 400 mcg'], ['albuterol plus ipratropium', 'Albuterol + ipratropium'], ['another bronchodilator', 'Other']]),
-        S('held', 'Home bronchodilators', HELD_OPTS)
+        S('held', 'Home bronchodilators', HELD_OPTS),
+        S('qc', 'Post-bronchodilator maneuver quality', QC_OPTS),
+        N('fev1_pred', 'FEV1 predicted', 'L', { step: 0.01, hint: 'Only if the pre value has no % predicted' }), N('fvc_pred', 'FVC predicted', 'L', { step: 0.01 }),
+        N('dfev1_pp', 'Δ FEV1 as reported', '% of predicted', { step: 0.1, hint: 'positive = increase' }),
+        N('dfvc_pp', 'Δ FVC as reported', '% of predicted', { step: 0.1 })
       ] },
-      { title: 'Volumes in litres (optional, calculates the change)', opt: true, fields: [
-        N('fev1_pre', 'FEV1 pre', 'L', { step: 0.01 }), N('fev1_post', 'FEV1 post', 'L', { step: 0.01 }), N('fev1_pred', 'FEV1 predicted', 'L', { step: 0.01 }),
-        N('fvc_pre', 'FVC pre', 'L', { step: 0.01 }), N('fvc_post', 'FVC post', 'L', { step: 0.01 }), N('fvc_pred', 'FVC predicted', 'L', { step: 0.01 })
-      ] },
-      { title: 'Or the change as reported (optional)', opt: true, fields: [
-        N('dfev1_pp', 'Δ FEV1', '% of predicted', { step: 0.1, hint: 'positive = increase' }),
-        N('dfvc_pp', 'Δ FVC', '% of predicted', { step: 0.1 })
+      { title: 'Pre values (legacy)', legacy: true, fields: [
+        N('fev1_pre', 'FEV1 pre', 'L', { step: 0.01 }), N('fvc_pre', 'FVC pre', 'L', { step: 0.01 })
       ] }
     ]
   },
@@ -312,52 +343,56 @@ const SCHEMA = {
   vol: {
     title: 'Lung volumes', src: 'ERS/ATS 2022 Fig 10 & Table 8; Annals ATS 2025 Table 2 (V-codes); Owens 1987 (isolated low RV).',
     intro: 'TLC defines restriction; a high RV/TLC defines air trapping. With a low ratio on spirometry, a low TLC means a mixed pattern.',
+    columns: [['z', 'z-score'], ['val', 'Value'], ['pct', '% pred']],
     groups: [
-      { title: 'Method', fields: [
+      { title: 'Indices', quick: ['tlc', 'rv', 'rvtlc'], fields: [
+        P('tlc', 'TLC', 'gradeH', { hint: 'Low = restriction; high = hyperinflation or large lungs', cols: { val: 'tlc_abs', pct: 'tlc_pct' } }),
+        P('rv', 'RV', 'both', { hint: 'Isolated low RV with otherwise normal tests is a clinically significant finding (Owens 1987)', cols: { val: 'rv_abs', pct: 'rv_pct' } }),
+        P('rvtlc', 'RV/TLC', 'both', { hint: 'High = air trapping; with a low ratio on spirometry, hyperinflation with air trapping', cols: { val: 'rvtlc_pct' } }),
+        P('frc', 'FRC', 'both', { more: true, cols: { val: 'frc_abs' } }),
+        P('frctlc', 'FRC/TLC', 'both', { more: true }),
+        P('svc', 'SVC (slow vital capacity)', 'gradeH', { hint: 'Volumes are referenced to SVC, not FVC', more: true, cols: { val: 'svc_abs' } }),
+        P('erv', 'ERV', 'both', { hint: 'Low ERV is typical of obesity', more: true }),
+        P('ic', 'IC', 'both', { more: true })
+      ] },
+      { title: 'Values', inline: true, fields: [
+        N('tlc_abs', 'TLC', 'L', { step: 0.01 }), N('tlc_pct', 'TLC', '% pred', { step: 1 }),
+        N('rv_abs', 'RV', 'L', { step: 0.01 }), N('rv_pct', 'RV', '% pred', { step: 1 }),
+        N('rvtlc_pct', 'RV/TLC', '%', { step: 1, ph: '%' }),
+        N('frc_abs', 'FRC', 'L', { step: 0.01 }), N('svc_abs', 'SVC', 'L', { step: 0.01 })
+      ] },
+      { title: 'Method and test quality', fold: true, fields: [
         S('method', 'Technique', [['', 'Not recorded'], ['pleth', 'Plethysmography'], ['n2', 'N2 washout'], ['he', 'Helium dilution'], ['sb', 'Single-breath']]),
         S('qc', 'Test quality', QC_OPTS)
-      ] },
-      { title: 'Indices vs. reference', quick: ['tlc', 'rvtlc'], fields: [
-        P('tlc', 'TLC', 'gradeH', { hint: 'Low = restriction; high = hyperinflation or large lungs' }),
-        P('rvtlc', 'RV/TLC', 'both', { hint: 'High = air trapping; with a low ratio on spirometry, hyperinflation with air trapping' }),
-        P('rv', 'RV', 'both', { hint: 'Isolated low RV with otherwise normal tests is a clinically significant finding (Owens 1987)' }),
-        P('frc', 'FRC', 'both'),
-        P('frctlc', 'FRC/TLC', 'both'),
-        P('svc', 'SVC (slow vital capacity)', 'gradeH', { hint: 'Volumes are referenced to SVC, not FVC' }),
-        P('erv', 'ERV', 'both', { hint: 'Low ERV is typical of obesity' }),
-        P('ic', 'IC', 'both')
-      ] },
-      { title: 'Measured values (optional)', opt: true, fields: [
-        N('tlc_abs', 'TLC', 'L', { step: 0.01 }), N('rv_abs', 'RV', 'L', { step: 0.01 }),
-        N('frc_abs', 'FRC', 'L', { step: 0.01 }), N('svc_abs', 'SVC', 'L', { step: 0.01 })
       ] }
     ]
   },
 
   dlco: {
     title: 'DLCO / KCO / VA', src: 'ERS/ATS 2022 Fig 11; Annals ATS 2025 Table 3 (D-codes); ERS/ATS 2017 DLCO standard (Hb reference 14.6 g/dL men, 13.4 women and children).',
-    intro: 'Stratify DLCO by z-score. Read KCO only together with VA: a normal KCO does not exclude parenchymal or vascular loss when VA is low.',
+    intro: 'Stratify DLCO by z-score and say whether the reported value is corrected for hemoglobin. Read KCO only together with VA.',
+    columns: [['z', 'z-score'], ['val', 'Value'], ['pct', '% pred']],
     groups: [
-      { title: 'Indices vs. reference', quick: ['dlco', 'va', 'kco'], fields: [
-        P('dlco', 'DLCO as reported', 'gradeH'),
-        S('basis', 'Is that DLCO hemoglobin-adjusted?', HB_BASIS, { hint: 'The adjustment basis changes what a low value means; when the report does not say, the interpretation says so rather than assuming' }),
-        P('dlco_adj', 'Hb-adjusted DLCO (if the report shows both values)', 'gradeH', { hint: 'Leave blank unless the lab prints an adjusted value next to the unadjusted one' }),
-        P('va', 'VA', 'both'),
-        P('kco', 'KCO (DLCO/VA)', 'both')
+      { title: 'Indices', quick: ['dlco', 'va', 'kco'], fields: [
+        P('dlco', 'DLCO', 'gradeH', { cols: { val: 'dlco_abs', pct: 'dlco_pct' } }),
+        S('basis', 'Reported as', HB_BASIS, { hint: 'What a low value means depends on whether it is corrected for hemoglobin; when the report does not say, the interpretation says so rather than assuming' }),
+        S('hbcat', 'Hemoglobin', [NR, ['low', 'Low (anemia)'], ['nl', 'Normal'], ['high', 'High']], { cols: { val: 'hb' }, auto: 'hb', hint: 'With an uncorrected DLCO % predicted, the corrected value is calculated (ERS/ATS 2017)' }),
+        P('va', 'VA', 'both', { cols: { val: 'va_abs' } }),
+        P('kco', 'KCO (DLCO/VA)', 'both'),
+        P('dlco_adj', 'Hb-corrected DLCO (if the report prints both values)', 'gradeH', { hint: 'Only when the lab prints a corrected value next to the uncorrected one', more: true }),
+        S('cohbcat', 'Carboxyhemoglobin', [['', 'Not recorded'], ['nl', 'Below 2%'], ['hi', '2% or higher']], { hint: 'Raised COHb lowers DLCO by about 1% per 1%', more: true, cols: { val: 'cohb' }, auto: 'cohb' }),
+        S('vatlc', 'VA/TLC', [NR, ['ok', '0.85 or higher'], ['low', 'Below 0.85']], { hint: '0.85 is the Annals ATS 2025 convention, not a universal cut-off', more: true })
       ] },
-      { title: 'Blood and quality', fold: true, fields: [
-        S('hbcat', 'Hemoglobin', [NR, ['low', 'Low (anemia)'], ['nl', 'Normal'], ['high', 'High']]),
-        S('cohbcat', 'Carboxyhemoglobin', [['', 'Not recorded'], ['nl', 'Below 2%'], ['hi', '2% or higher']], { hint: 'Raised COHb lowers DLCO by about 1% per 1%' }),
-        S('vatlc', 'VA/TLC', [NR, ['ok', '0.85 or higher'], ['low', 'Below 0.85']], { hint: '0.85 is the Annals ATS 2025 convention, not a universal cut-off' }),
-        S('qc', 'Test quality', QC_OPTS, { hint: 'Standard reporting needs two grade-A maneuvers within 2 mL/min/mmHg; a single usable maneuver is a limitation' }),
-        S('single', 'Number of usable maneuvers', [['', 'Not noted'], ['one', 'Only one usable maneuver']])
-      ] },
-      { title: 'Measured values (optional)', opt: true, fields: [
+      { title: 'Values', inline: true, fields: [
+        N('dlco_abs', 'DLCO', 'mL/min/mmHg', { step: 0.1, units: 'dlco' }),
+        N('dlco_pct', 'DLCO', '% pred', { step: 1 }),
         N('hb', 'Hemoglobin', 'g/dL', { step: 0.1, min: 3, max: 25 }),
         N('cohb', 'Carboxyhemoglobin', '%', { step: 0.1, min: 0, max: 40 }),
-        N('dlco_abs', 'DLCO measured', 'mL/min/mmHg', { step: 0.1 }),
-        N('dlco_pct', 'DLCO (not adjusted)', '% pred', { step: 1, hint: 'Enables an Hb-adjusted % predicted estimate' }),
         N('va_abs', 'VA', 'L', { step: 0.01, hint: 'With TLC on the Lung volumes step this gives VA/TLC' })
+      ] },
+      { title: 'Test quality', fold: true, fields: [
+        S('qc', 'Test quality', QC_OPTS, { hint: 'Standard reporting needs two grade-A maneuvers within 2 mL/min/mmHg; a single usable maneuver is a limitation' }),
+        S('single', 'Number of usable maneuvers', [['', 'Not noted'], ['one', 'Only one usable maneuver']])
       ] }
     ]
   },
@@ -431,11 +466,11 @@ const SCHEMA = {
     intro: 'Cut-points: adults < 25 / 25–50 / > 50 ppb; children (< 12 y) < 20 / 20–35 / > 35 ppb.',
     groups: [
       { title: 'Result', fields: [
-        S('band', 'FeNO level', [NR, ['low', 'Low'], ['int', 'Intermediate'], ['high', 'High']], { hint: 'Adult: low < 25, intermediate 25–50, high > 50 ppb' }),
+        S('band', 'FeNO level', [NR, ['low', 'Low'], ['int', 'Intermediate'], ['high', 'High']], { hint: 'Adult: low < 25, intermediate 25–50, high > 50 ppb', cols: { val: 'val' }, auto: 'feno' }),
         S('ics', 'Corticosteroid therapy', ICS_OPTS),
         C('confound', 'Possible confounder (recent exercise, spirometry, nitrate-rich food, viral infection)')
       ] },
-      { title: 'Measured value (optional)', opt: true, fields: [N('val', 'FeNO', 'ppb', { step: 1, min: 0 })] }
+      { title: 'Values', inline: true, fields: [N('val', 'FeNO', 'ppb', { step: 1, min: 0, ph: 'ppb' })] }
     ]
   },
 
@@ -493,21 +528,21 @@ const SCHEMA = {
     intro: 'Room-air values unless oxygen was used.',
     groups: [
       { title: 'Findings', fields: [
-        S('dist_cat', 'Distance walked', [NR, ['wnl', 'Within normal limits'], ['low', 'Below the LLN']]),
-        S('desat', 'Desaturation', [NR, ['none', 'None significant'], ['fall', 'Fall of 4 points or more, nadir above 88%'], ['le88', 'Nadir 88% or lower']]),
-        S('hrr', 'Heart-rate recovery at 1 minute', [NR, ['nl', 'Normal'], ['abn', 'Abnormal (13–18 bpm or less)']]),
-        S('o2', 'Oxygen', [['', 'Not noted (room air)'], ['o2', 'Supplemental oxygen']]),
-        S('stop', 'Completion', [['', 'Not noted (completed)'], ['early', 'Stopped early']])
+        S('dist_cat', 'Distance walked', [NR, ['wnl', 'Within normal limits'], ['low', 'Below the LLN']], { cols: { val: 'dist' }, auto: 'sixDist', hint: 'Typed distance is compared with the LLN (reported, or calculated below from age, sex, height and weight)' }),
+        S('desat', 'Desaturation', [NR, ['none', 'None significant'], ['fall', 'Fall of 4 points or more, nadir above 88%'], ['le88', 'Nadir 88% or lower']], { cols: { v1: 'spo2_base', v2: 'spo2_nadir' }, auto: 'sixDesat' }),
+        S('hrr', 'Heart-rate recovery at 1 minute', [NR, ['nl', 'Normal'], ['abn', 'Abnormal (13–18 bpm or less)']], { cols: { v1: 'hr_peak', v2: 'hr_1min' }, auto: 'sixHrr' }),
+        S('o2', 'Oxygen', [['', 'Not noted (room air)'], ['o2', 'Supplemental oxygen']], { cols: { v1: 'o2_flow' } }),
+        S('stop', 'Completion', [['', 'Not noted (completed)'], ['early', 'Stopped early']], { cols: { v1: 'time_min' }, more: true })
       ] },
-      { title: 'Measured values (optional)', opt: true, fields: [
-        N('dist', '6MWD', 'm', { step: 1 }), N('pred', 'Predicted', 'm', { step: 1 }), N('lln', 'LLN', 'm', { step: 1 }), N('pct', '% predicted', '%', { step: 1 }),
+      { title: 'Values', inline: true, fields: [
+        N('dist', '6MWD', 'm', { step: 1, units: 'walk', ph: 'distance' }), N('pred', 'Predicted', 'm', { step: 1, units: 'walk' }), N('lln', 'LLN', 'm', { step: 1, units: 'walk' }), N('pct', '% predicted', '%', { step: 1 }),
         S('eq', 'Reference equation', [['', 'Not stated'], ['Enright & Sherrill 1998', 'Enright & Sherrill 1998'], ['Casanova 2011', 'Casanova 2011'], ['Troosters 1999', 'Troosters 1999'], ['another equation', 'Other']], { stack: true }),
-        N('spo2_base', 'SpO2 baseline', '%', { step: 1 }), N('spo2_nadir', 'SpO2 nadir', '%', { step: 1 }), N('spo2_end', 'SpO2 end', '%', { step: 1 }),
-        N('hr_base', 'HR baseline', 'bpm', { step: 1 }), N('hr_peak', 'HR peak', 'bpm', { step: 1 }), N('hr_1min', 'HR at 1 min recovery', 'bpm', { step: 1 }),
+        N('spo2_base', 'SpO2 at rest', '%', { step: 1, ph: 'rest' }), N('spo2_nadir', 'SpO2 nadir', '%', { step: 1, ph: 'nadir' }), N('spo2_end', 'SpO2 end', '%', { step: 1 }),
+        N('hr_base', 'HR baseline', 'bpm', { step: 1 }), N('hr_peak', 'HR peak', 'bpm', { step: 1, ph: 'peak' }), N('hr_1min', 'HR at 1 min recovery', 'bpm', { step: 1, ph: '1 min' }),
         N('borg_base', 'Borg dyspnea baseline', '0–10', { step: 0.5 }), N('borg_end', 'Borg dyspnea end', '0–10', { step: 0.5 }),
-        N('o2_flow', 'Oxygen flow', 'L/min', { step: 0.5 }),
+        N('o2_flow', 'Oxygen flow', 'L/min', { step: 0.5, ph: 'flow' }),
         T('o2_desc', 'Oxygen device and setting (e.g. nasal cannula 2 L/min continuous, pulse-dose setting 3)'),
-        N('time_min', 'Minutes walked (if stopped early)', 'min', { step: 0.5, min: 0, max: 6 }),
+        N('time_min', 'Minutes walked (if stopped early)', 'min', { step: 0.5, min: 0, max: 6, ph: 'min' }),
         T('stop_why', 'Reason (if stopped early)')
       ] }
     ]
@@ -621,8 +656,9 @@ function blankModule(key) {
 function blankPrior() { const o = {}; PRIOR_FIELDS.forEach(f => { o[f.id] = f.type === 'chk' ? false : ''; }); return o; }
 function blankTrendRow() { return { date: '', dist: '', nadir: '', o2: '' }; }
 
+function defaultUnits() { const u = {}; Object.keys(UNITS).forEach(q => { u[q] = UNITS[q].opts[0][0]; }); return u; }
 function defaultState() {
-  const st = { v: 3, tests: {}, settings: { band: CFG.band, headsupInCopy: false, style: 'standard', serial: 'ers' }, review: {}, prior: { cur: {}, list: [blankPrior()] }, trend6: { list: [blankTrendRow()] } };
+  const st = { v: 5, tests: {}, settings: { band: CFG.band, headsupInCopy: false, style: 'standard', serial: 'ers', copy: 'lean' }, units: defaultUnits(), review: {}, prior: { cur: {}, list: [blankPrior()] }, trend6: { list: [blankTrendRow()] } };
   TESTS.forEach(t => { st.tests[t.key] = false; });
   Object.keys(SCHEMA).forEach(k => { st[k] = blankModule(k); });
   CUR_FIELDS.forEach(f => { st.prior.cur[f.id] = ''; });
@@ -640,6 +676,17 @@ function normalizeState(raw) {
     if (STYLES.indexOf(raw.settings.style) >= 0) st.settings.style = raw.settings.style;
     if (st.settings.style === 'numeric') st.settings.style = 'standard';
     if (raw.settings.serial === 'local') st.settings.serial = 'local';
+    if (raw.settings.copy === 'full') st.settings.copy = 'full';
+  }
+  if (raw.units && typeof raw.units === 'object') Object.keys(UNITS).forEach(q => { const v = raw.units[q]; if (v !== undefined && UNITS[q].f[v] !== undefined) st.units[q] = v; });
+  // v4 states carried one "in / lb" switch on the Details step; it wins over the default unit choices
+  if (raw.ctx && typeof raw.ctx === 'object' && raw.ctx.units === 'us') { if (st.units.len === 'cm') st.units.len = 'in'; if (st.units.wt === 'kg') st.units.wt = 'lb'; }
+  // v4 bronchodilator states typed the pre values on their own step; the spirometry values now serve as the pre values
+  if (raw.bd && typeof raw.bd === 'object' && raw.spiro && typeof raw.spiro === 'object') {
+    const sp = Object.assign({}, raw.spiro);
+    if (String(sp.fev1_abs || '') === '' && String(raw.bd.fev1_pre || '') !== '') sp.fev1_abs = raw.bd.fev1_pre;
+    if (String(sp.fvc_abs || '') === '' && String(raw.bd.fvc_pre || '') !== '') sp.fvc_abs = raw.bd.fvc_pre;
+    raw = Object.assign({}, raw, { spiro: sp });
   }
   if (raw.review && typeof raw.review === 'object') Object.keys(raw.review).forEach(k => { if (raw.review[k] && /^[a-z0-9_.]+$/.test(k)) st.review[k] = true; });
   // v2 states had one spirometry grade (the lower of the two); v3 grades FEV1 and FVC separately

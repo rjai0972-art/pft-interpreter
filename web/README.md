@@ -9,7 +9,7 @@ node build_catalog.js   # catalog/pft_phrases.json -> src/engine_1a_catalog.js (
 node build.js           # dist/engine.js, dist/ui.js, dist/PFT_Interpreter_standalone.html
 node build_desktop.js   # ../app/index.html
 node tests/engine.test.js && node tests/catalog.test.js      # engine rules, handoff fixtures
-node tests/e2e.js; node tests/e2e2.js; node tests/e2e3.js; node tests/e2e4.js; node tests/e2e_fuzz.js   # browser (Playwright)
+node tests/e2e.js; node tests/e2e2.js; node tests/e2e3.js; node tests/e2e4.js; node tests/e2e5.js; node tests/e2e_fuzz.js   # browser (Playwright)
 ```
 
 ## How the interpretation is built
