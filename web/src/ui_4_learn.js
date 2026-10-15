@@ -2,6 +2,12 @@
 /* ========================================================================== Learn
    A reading section: topics from window.PFT_EDU, each ending with the glossary entries that belong to it. */
 const EDU = window.PFT_EDU || { topics: {}, groups: [] };
+/* Learn is organised in areas (a dropdown above the topic list); each area has its groups of topics. */
+const LEARN_CATS = [
+  { id: 'pft', title: 'PFT interpretation', topics: EDU.topics, groups: EDU.groups },
+  { id: 'airway', title: 'Anatomy & bronchoscopy', topics: AN.topics, groups: AN.groups }
+];
+function learnCatOf(topic) { return LEARN_CATS.filter(c => c.topics[topic])[0] || LEARN_CATS[0]; }
 
 function eduFig(kind) {
   if (kind === 'zscale') return zKey();
@@ -82,22 +88,26 @@ function eduBlocks(id, topic) {
     if (b.table) { out.push(eduTable(b.table)); }
     if (b.note) out.push(h('p', { class: 'fine', text: b.note }));
     if (b.fig) { const f = eduFig(b.fig); if (f) out.push(f); }
+    if (b.widget) { const w = anatWidget(b.widget); if (w) out.push(w); }
   });
   return out;
 }
 function stepLearn() {
-  const topics = EDU.topics;
-  if (!topics[learnTopic]) learnTopic = 'basics';
+  const cat = learnCatOf(learnTopic), topics = cat.topics;
+  if (!topics[learnTopic]) learnTopic = cat.groups[0].ids[0];
   const t = topics[learnTopic];
-  const nav = h('nav', { class: 'learn-nav', id: 'learn-nav', 'aria-label': 'Learn topics' }, EDU.groups.map(g => h('div', { class: 'ln-group' }, [
+  const catSel = h('select', { class: 'learn-cat', id: 'learn-cat', 'aria-label': 'Learning area', onchange: (e) => {
+    const c = LEARN_CATS.filter(x => x.id === e.target.value)[0]; learnTerm = ''; setMode('learn', { topic: c.groups[0].ids[0] }); } },
+    LEARN_CATS.map(c => h('option', { value: c.id, selected: c.id === cat.id, text: c.title })));
+  const nav = h('nav', { class: 'learn-nav', id: 'learn-nav', 'aria-label': 'Learn topics' }, cat.groups.map(g => h('div', { class: 'ln-group' }, [
     h('h3', { text: g.title }),
     h('ul', {}, g.ids.filter(id => topics[id]).map(id => h('li', {}, [h('button', { type: 'button', class: 'ln-btn', 'data-topic': id, 'aria-current': id === learnTopic ? 'true' : null, text: topics[id].title,
       onclick: () => { learnTerm = ''; setMode('learn', { topic: id }); } })])))])));
   const toggle = h('button', { type: 'button', class: 'btn sm learn-toggle', 'aria-expanded': 'false', 'aria-controls': 'learn-nav', text: 'Topics ▾', onclick: () => { const o = nav.classList.toggle('open'); toggle.setAttribute('aria-expanded', String(o)); } });
   const lead = GL.terms['test.' + learnTopic];
-  const idx = EDU.groups.reduce((a, g) => a.concat(g.ids), []).filter(id => topics[id]), pos = idx.indexOf(learnTopic);
+  const idx = cat.groups.reduce((a, g) => a.concat(g.ids), []).filter(id => topics[id]), pos = idx.indexOf(learnTopic);
   const prev = pos > 0 ? idx[pos - 1] : null, next = pos < idx.length - 1 ? idx[pos + 1] : null;
-  const article = h('article', { class: 'card learn-body', 'data-topic': learnTopic }, [
+  const article = h('article', { class: 'card learn-body', 'data-topic': learnTopic, 'data-cat': cat.id }, [
     h('div', { class: 'step-head' }, [h('p', { class: 'kicker', text: t.kicker || '' }), h('h2', { text: t.title }), lead && lead.w ? h('p', { class: 'intro', text: lead.w }) : null]),
     eduBlocks(learnTopic, t),
     S.tests[learnTopic] ? h('div', { class: 'learn-go' }, [h('button', { type: 'button', class: 'btn sm', text: 'Go to this test in the current case →', onclick: () => goto(learnTopic) })]) : null,
@@ -105,5 +115,5 @@ function stepLearn() {
       prev ? h('button', { type: 'button', class: 'btn', text: '← ' + topics[prev].title, onclick: () => setMode('learn', { topic: prev }) }) : h('span'),
       next ? h('button', { type: 'button', class: 'btn primary', text: topics[next].title + ' →', onclick: () => setMode('learn', { topic: next }) }) : null])
   ]);
-  $('main').appendChild(h('div', { class: 'learn' }, [h('div', { class: 'learn-side' }, [toggle, nav]), article]));
+  $('main').appendChild(h('div', { class: 'learn' }, [h('div', { class: 'learn-side' }, [h('div', { class: 'learn-cat-row' }, [catSel, toggle]), nav]), article]));
 }

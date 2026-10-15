@@ -1,7 +1,7 @@
 # PFT Interpreter — web source
 
 The app is one self-contained HTML page. `src/` holds the engine (four parts plus the generated phrase catalog), the
-interface, the glossary, the Learn text and the worked examples; `build.js` assembles `dist/PFT_Interpreter_standalone.html`
+interface, the glossary, the Learn text (`education.js` for the PFT area, `anatomy.js` for the anatomy and bronchoscopy area with the bronchial tree, the nodal stations and the segment table behind `ui_4b_anatomy.js`) and the worked examples; `build.js` assembles `dist/PFT_Interpreter_standalone.html`
 and `build_desktop.js` copies it to `../app/index.html`, which GitHub Pages serves and the desktop app loads.
 
 ```
@@ -9,7 +9,7 @@ node build_catalog.js   # catalog/pft_phrases.json -> src/engine_1a_catalog.js (
 node build.js           # dist/engine.js, dist/ui.js, dist/PFT_Interpreter_standalone.html
 node build_desktop.js   # ../app/index.html
 node tests/engine.test.js && node tests/catalog.test.js      # engine rules, handoff fixtures
-node tests/e2e6.js; node tests/e2e2.js; node tests/e2e3.js; node tests/e2e4.js; node tests/e2e_fuzz.js   # browser (Playwright)
+node tests/e2e6.js; node tests/e2e7.js; node tests/e2e2.js; node tests/e2e3.js; node tests/e2e4.js; node tests/e2e_fuzz.js   # browser (Playwright)
 ```
 
 ## How the interpretation is built

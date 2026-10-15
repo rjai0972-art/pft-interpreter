@@ -334,15 +334,20 @@ function gridHead(mod, ctx) {
   const cells = [];
   const hd = (text, cls, unit) => h('span', { class: 'ix-c hd' + (cls ? ' ' + cls : ''), text: text }, unit ? [h('span', { class: 'u' })] : null);   // the empty unit span keeps the header cell as wide as the boxes below it
   (ctx.columns || []).forEach(k => cells.push(k === 'z' ? h('span', { class: 'ix-c hd zc', text: 'z-score' }) : hd(ctx.colLabels[k] || k, '', true)));
-  if (ctx.priors) ctx.priors.forEach((p, i) => { const pr = PRIOR_MAP[mod]; for (let j = 0; j < pr.n; j++) cells.push(hd(j === 0 ? (pr.n > 1 ? 'Prior ' + (ctx.priors.length > 1 ? (i + 1) + ' ' : '') + 'value' : 'Prior' + (ctx.priors.length > 1 ? ' ' + (i + 1) : '')) : '% pred', 'pri', true)); });
+  // one box per prior study: its label and date sit in the column header
+  if (ctx.priors) ctx.priors.forEach((p, i) => {
+    const sub = h('span', { class: 'hd-sub' });
+    widgets.push(() => { sub.textContent = p.date ? dateShort(p.date) : 'no date'; });
+    cells.push(h('span', { class: 'ix-c hd pri two', 'data-prior-hd': String(i + 1) }, [h('span', { text: ctx.priors.length > 1 ? 'Prior ' + (i + 1) : 'Prior' }), sub, h('span', { class: 'u' })]));
+  });
   if (ctx.bd) { cells.push(hd('Post-BD', 'post', true)); cells.push(h('span', { class: 'ix-c hd txt', text: 'Δ' })); }
   const head = h('div', { class: 'ix ix-head' }, [h('div', { class: 'ix-l' }), h('div', { class: 'ix-seg' }), h('div', { class: 'ix-vals' }, cells)]);
   if (!ctx.priors) return head;
-  // a line above the header with the date of each prior study (the column's identity), aligned with its boxes
-  const n = ctx.priors.length, pr = PRIOR_MAP[mod];
-  const dates = [h('span', { class: 'pr-head cur' }, [h('span', { class: 'pr-hl', text: 'This study' }), h('span', { class: 'fine', text: S.ctx.date ? dateShort(S.ctx.date) : 'date at the top of the page' })])];
-  ctx.priors.forEach((p, i) => dates.push(priorHeadCell(p, i, n)));
-  return [h('div', { class: 'pr-dates', 'data-prior-dates': mod, style: '--pr-n:' + n + ';--pr-w:' + pr.n }, dates), head];
+  // a strip above the grid with the date of each prior study (shared by every test that has comparable indices)
+  const n = ctx.priors.length;
+  const chips = [h('span', { class: 'pr-head cur' }, [h('span', { class: 'pr-hl', text: 'This study' }), h('span', { class: 'fine', text: S.ctx.date ? dateShort(S.ctx.date) : 'date at the top of the page' })])];
+  ctx.priors.forEach((p, i) => chips.push(priorHeadCell(p, i, n)));
+  return [h('div', { class: 'pr-dates', 'data-prior-dates': mod }, chips), head];
 }
 /* how many value boxes a grid row carries; past four the boxes go on a line of their own under the buttons */
 function gridCells(mod, ctx) { return (ctx.columns ? ctx.columns.length : 0) + (ctx.priors ? ctx.priors.length * PRIOR_MAP[mod].n : 0) + (ctx.bd ? 2 : 0); }
@@ -801,12 +806,13 @@ function bdBlock(ctx) {
 }
 
 /* ------------------------------------------------- prior study, inline on the test step */
-/* Per step: which rows get prior cells (prior field id, unit) and the comparability flags. The prior value switches the
-   comparison on by itself. */
+/* Per step: which rows get a prior cell (prior field id, unit) and the comparability flags. One box per prior study — the
+   measured value in the same units as this study's value box; the report computes the percent change from the two
+   absolute values and says whether it crosses the serial threshold. The prior value switches the comparison on by itself. */
 const PRIOR_MAP = {
-  spiro: { fields: { fev1: [['fev1', 'L'], ['fev1_pct', '%']], fvc: [['fvc', 'L'], ['fvc_pct', '%']] }, n: 2, cmp: ['ref_diff', 'bd_diff', 'qual_diff'] },
+  spiro: { fields: { fev1: [['fev1', 'L']], fvc: [['fvc', 'L']] }, n: 1, cmp: ['ref_diff', 'bd_diff', 'qual_diff'] },
   vol: { fields: { tlc: [['tlc', 'L']] }, n: 1, cmp: ['method_diff', 'ref_diff'] },
-  dlco: { fields: { dlco: [['dlco', 'dlco'], ['dlco_pct', '%']] }, n: 2, cmp: ['hb_diff', 'ref_diff'] },
+  dlco: { fields: { dlco: [['dlco', 'dlco']] }, n: 1, cmp: ['hb_diff', 'ref_diff'] },
   feno: { fields: { band: [['feno', 'ppb']] }, n: 1, cmp: [] }
 };
 let priorAdded = false;   // a prior column was added this session (before any value is typed)

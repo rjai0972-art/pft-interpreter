@@ -10,6 +10,7 @@ const frag = tpl
   .replace('/*ENGINE*/', () => safe(rd('dist/engine.js')))
   .replace('/*GLOSSARY*/', () => safe(rd('src/glossary.js')))
   .replace('/*EDUCATION*/', () => safe(rd('src/education.js')))
+  .replace('/*ANATOMY*/', () => safe(rd('src/anatomy.js')))
   .replace('/*EXAMPLES*/', () => safe(rd('src/examples.js')))
   .replace('/*UI*/', () => safe(rd('dist/ui.js')));
 fs.mkdirSync(path.join(__dirname, 'dist'), { recursive: true });

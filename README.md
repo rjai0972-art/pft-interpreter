@@ -81,7 +81,7 @@ and the single-file browser version (`PFT_Interpreter_standalone.html`) always w
 - Code signing is optional and not set up. For Windows add a signing certificate to the build; for Mac add an Apple Developer ID and notarization.
   Until then the first-launch steps above are needed.
 
-## How the reading is built (version 6.0)
+## How the reading is built (version 7.0)
 
 The rules layer computes every measurement state before any wording is chosen (ERS/ATS 2022 z-scores and the LLN;
 a reviewed adult phrase catalog anchored to the ERS/ATS 2022, ATS/ERS 2019, ERS/ATS 2023, ERS/ATS 2017, ERS 2019 and
@@ -121,11 +121,28 @@ the essentials (FEV1/FVC, FEV1, FVC; TLC, RV, RV/TLC; DLCO, its correction basis
 under "+ More". Each index is one row: category buttons, then the z-score, value and % predicted boxes beside them; a
 typed z-score sets the category, and a typed value sets it where a threshold exists. Every box can be typed in the
 unit on the report (tap the unit: cm/in, kg/lb, m/ft, mL/min/mmHg or mmol/min/kPa); the choice applies to that quantity
-everywhere and is remembered. "+ prior study" in a section's header adds a column of prior boxes beside this study's
-values, with the prior study's date in the column header (the same column appears on every test that has comparable
-indices; "+ older study" adds another). "Bronchodilator given" adds post-bronchodilator boxes beside the pre values.
+everywhere and is remembered. "+ prior study" in a section's header adds one box per index for the earlier study beside this
+study's values (FEV1 and FVC in litres, TLC in litres, DLCO in its unit, FeNO in ppb) and a date chip above the grid;
+the report computes the percent change from the two measured values and says whether it crosses the serial threshold
+("+ older study" adds another column; the same columns appear on every test that has comparable indices). Z-scores and
+percent predicted are not extrapolated from the demographics — that needs the reference equations' lookup tables, which
+the app does not carry — so the clinician grades the severity and the comparison rests on the measured values.
+"Bronchodilator given" adds post-bronchodilator boxes beside the pre values.
 When a pattern makes one more value useful, the section asks for it (a restrictive pattern with a normal DLCO asks for
 the ERV; a reduced DLCO asks for its correction basis, the hemoglobin and VA/KCO; obstruction asks for
 post-bronchodilator values). The report builds on the right as values are entered, with the copy buttons, the optional
 wording, differentials, prompts and the heads-up list beneath it. Two themes, linen and charcoal, in neutral tones.
+
+Learn has two areas, chosen from a dropdown above the topic list. "PFT interpretation" is the reading-room curriculum
+(the logic, each test, reference equations, change over time, the phrase catalog and worked examples). "Anatomy &
+bronchoscopy" adds: lungs, lobes and segments with a lobe map and the Boyden numbering; a bronchial-tree navigator (an
+anterior-view map and a scope view from wherever you are, with the landmarks, the pitfalls and the EBUS stations on
+that wall; a drill that hides the labels and asks for a segment from the carina); the IASLC nodal-station map (borders,
+N category, which of EBUS, EUS and mediastinoscopy reaches each station, where to put the transducer, a tap-the-station
+quiz); ventilation and perfusion (a one-alveolus sandbox along the V/Q line on air or 100% oxygen, West's zones, the
+causes of hypoxaemia); and the bronchoscopy essentials distilled from the BTS 2013 guideline, the ACCP 2011 sedation
+statement, the 2017 antithrombotic review, the ATS 2012 BAL guideline and the local BAL protocol (indications and
+risk, the pre-procedure checklist, sedation and topical anaesthesia with a lidocaine running total, antiplatelets and
+anticoagulants, BAL technique and cell counts, biopsy numbers and bleeding management, infection and ICU bronchoscopy,
+EBUS-TBNA).
 Source code and tests: `web/`; the catalog and its rule specification: `web/catalog/`.
