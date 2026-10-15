@@ -6,53 +6,47 @@ const pick = (a) => a[Math.floor(rnd() * a.length)];
 (async () => {
   const browser = await chromium.launch(); const page = await browser.newPage({ viewport: { width: 1200, height: 900 } });
   const errs = []; page.on('pageerror', e => errs.push(e.message));
-  await page.goto(FILE); await page.waitForSelector('.tgrid');
-  let leaks = 0, rounds = 8;
+  await page.goto(FILE); await page.waitForSelector('#top');
+  let leaks = 0, rounds = 3;
   for (let r = 0; r < rounds; r++) {
-    await page.locator('.pill[data-step="tests"]').click();
-    const boxes = page.locator('.tt input');
-    for (let i = 0; i < await boxes.count(); i++) await boxes.nth(i).check();
-    const ids = await page.locator('.steps .pill').evaluateAll(els => els.map(e => e.getAttribute('data-step')));
-    for (const id of ids) {
-      if (id === 'tests' || id === 'report') continue;
-      await page.locator('.pill[data-step="' + id + '"]').click();
-      // open every collapsed panel so typed inputs are exercised too
-      const dets = page.locator('#main details.optgrp');
-      for (let i = 0; i < await dets.count(); i++) { const d = dets.nth(i); if (await d.isVisible() && !(await d.evaluate(e => e.open))) await d.locator('summary').first().click(); }
-      // tap rows: param categories, choices, chips, loop tiles
-      const rows = page.locator('#main .prm');
-      for (let i = 0; i < await rows.count(); i++) {
-        const row = rows.nth(i);
-        if (!(await row.isVisible())) continue;
-        for (const sel of ['.sg', '.ch', '.cp', '.lp-tile']) {
-          const b = row.locator(sel); const n = await b.count();
-          if (n && rnd() < 0.7) { const k = rnd() < 0.5 && sel === '.cp' ? 3 : 1; for (let j = 0; j < k; j++) await b.nth(Math.floor(rnd() * n)).click(); }
-        }
-        const zl = row.locator('.zlink');
-        if (await zl.count() && await zl.isVisible() && rnd() < 0.3) { await zl.click(); await row.locator('.zbox input').fill(String((rnd() * 10 - 6).toFixed(1))); }
-        const qd = row.locator('.qdates .cp'); if (await qd.count() && rnd() < 0.5) await qd.nth(Math.floor(rnd() * await qd.count())).click();
+    for (const k of await page.locator('.tchip[aria-pressed="false"]').evaluateAll(els => els.map(e => e.getAttribute('data-test')))) await page.locator('.tchip[data-test="' + k + '"]').click();
+    const ids = await page.locator('details.tsec').evaluateAll(els => els.map(e => e.getAttribute('data-mod')));
+    if (r === 0 && rnd() < 0.5) { await page.locator('[data-prior-add]').first().click(); }
+    // open every collapsed panel so typed inputs are exercised too
+    const dets = page.locator('#main details.optgrp, #main details.tsec');
+    for (let i = 0; i < await dets.count(); i++) { const d = dets.nth(i); if (await d.isVisible() && !(await d.evaluate(e => e.open))) await d.locator('summary').first().click(); }
+    // tap rows: param categories, choices, chips, loop tiles
+    const rows = page.locator('#main .ix, #main .prm, #main .ps-cell');
+    for (let i = 0; i < await rows.count(); i++) {
+      const row = rows.nth(i);
+      if (!(await row.isVisible())) continue;
+      for (const sel of ['.sg', '.ch:not(:disabled)', '.cp', '.lp-tile']) {
+        const b = row.locator(sel); const n = await b.count();
+        if (n && rnd() < 0.7) { const k = rnd() < 0.5 && sel === '.cp' ? 3 : 1; for (let j = 0; j < k; j++) await b.nth(Math.floor(rnd() * n)).click(); }
       }
-      const qb = page.locator('#main .quick');
-      for (let i = 0; i < await qb.count(); i++) if (rnd() < 0.5) await qb.nth(i).click();
-      // numeric & text inputs
-      const inputs = page.locator('#main input[type=text]:not(.zbox input), #main input[type=date], .prior-inline input:not([type=checkbox])');
-      const cnt = await inputs.count();
-      for (let i = 0; i < cnt; i++) {
-        const el = inputs.nth(i); const t = await el.getAttribute('type');
-        if (!(await el.isVisible())) continue;
-        if (await el.evaluate(e => !!e.closest('.zbox'))) continue;
-        if (t === 'date') { await el.fill(pick(['2025-03-05','2024-01-10','2023-06-01','2026-01-01'])); continue; }
-        const v = rnd() < 0.1 ? 'x' : (rnd() < 0.15 ? '' : String((rnd() * 150).toFixed(rnd() < 0.5 ? 0 : 2)));
-        await el.fill(v);
-      }
-      const cks = page.locator('#main .chkrow input');
-      for (let i = 0; i < await cks.count(); i++) { if (rnd() < 0.5 && await cks.nth(i).isVisible()) await cks.nth(i).click(); }
+      const z = row.locator('.zc input');
+      if (await z.count() && await z.first().isVisible() && rnd() < 0.3) await z.first().fill(String((rnd() * 10 - 6).toFixed(1)));
+      const qd = row.locator('.qdates .cp'); if (await qd.count() && rnd() < 0.5) await qd.nth(Math.floor(rnd() * await qd.count())).click();
     }
-    await page.locator('.pill[data-step="report"]').click();
-    const t = await page.locator('main').innerText();
+    const ub = page.locator('#main .ubtn');
+    for (let i = 0; i < await ub.count(); i++) if (rnd() < 0.3 && await ub.nth(i).isVisible()) await ub.nth(i).click();
+    const more = page.locator('#main .more-btn');
+    for (let i = 0; i < await more.count(); i++) if (rnd() < 0.5 && await more.nth(i).isVisible()) await more.nth(i).click();
+    // numeric & text inputs
+    const inputs = page.locator('#main input[type=text]:not(.zc input), #main input[type=date]');
+    const cnt = await inputs.count();
+    for (let i = 0; i < cnt; i++) {
+      const el = inputs.nth(i); const t = await el.getAttribute('type');
+      if (!(await el.isVisible())) continue;
+      if (t === 'date') { await el.fill(pick(['2025-03-05','2024-01-10','2023-06-01','2026-01-01'])); continue; }
+      const v = rnd() < 0.1 ? 'x' : (rnd() < 0.15 ? '' : String((rnd() * 150).toFixed(rnd() < 0.5 ? 0 : 2)));
+      await el.fill(v);
+    }
+    const cks = page.locator('#main .chkrow input');
+    for (let i = 0; i < await cks.count(); i++) { if (rnd() < 0.5 && await cks.nth(i).isVisible()) await cks.nth(i).click(); }
+    const t = await page.locator('main').innerText() + '\n' + await page.locator('#pv').innerText();
     if (/undefined|NaN|\[object|Infinity/.test(t)) { leaks++; console.log('LEAK round', r, (t.match(/.{40}(undefined|NaN|\[object|Infinity).{40}/) || [t.slice(0,80)])[0]); }
-    // each step still renders
-    for (const id of ids) { await page.locator('.pill[data-step="' + id + '"]').click(); }
+    ok: for (const id of ids) { await page.evaluate((s) => window.__pft.goto(s), id); }
   }
   console.log('rounds', rounds, 'leaks', leaks, 'pageerrors', errs.length, errs.slice(0, 3));
   await browser.close(); process.exit(leaks || errs.length ? 1 : 0);

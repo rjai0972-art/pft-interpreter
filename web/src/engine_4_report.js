@@ -50,22 +50,39 @@ function diseaseContext(f) {
   return { copd: c.hasInd('copd'), asthma: c.hasInd('asthma'), ild: c.hasInd('ild') || c.hasInd('ctd') || c.hasInd('sarc'), nmd: c.hasInd('nmd'),
     smoker: c.smoke === 'current' || c.smoke === 'former', obese: !!c.obese };
 }
+/* The DLCO as a clause of the pattern sentence: "a moderately reduced diffusing capacity" (sets f._dlcoFolded so the
+   diffusing-capacity paragraph does not say it again). */
+function dlcoFold(f) {
+  const d = f.dl, D = d.dlco;
+  if (!(f.on.dlco && d.any && D.measured) || D.invalid) return null;
+  f._dlcoFolded = true;
+  return { low: D.low, high: D.high, word: dlcoWord(f).replace(/DLCO$/, 'diffusing capacity'), sev: D.sev || '' };
+}
 function ventCore(f) {
   const s = f.sp, R = s.ratio, A = s.fev1, B = s.fvc, sp = s.pat, v = f.vol, vp = v.pat, T = v.tlc, d = f.dl, D = d.dlco;
   const out = [];
   const haveSp = f.on.spiro && s.any, haveVol = f.on.vol && v.any, haveDl = f.on.dlco && d.any && D.measured && !D.invalid;
   if (!haveSp && !haveVol) return out;
-  const sevA = sevOf(A), sevB = sevOf(B), cx = diseaseContext(f), bdPos = /^(both|fev1|fvc)$/.test(f.F['bronchodilator.response'] || '');
+  const sevA = sevOf(A), sevB = sevOf(B), cx = diseaseContext(f);
+  const tlcKnown = haveVol && v.qc !== 'inv' && T.measured && !T.invalid;
   const volPhrase = () => {
-    if (!(haveVol && v.qc !== 'inv' && T.measured)) return '';
+    if (!tlcKnown) return '';
     if (vp.hyperTlc) return ' with hyperinflation and air trapping';
     if (vp.hyperinflation) return ' with hyperinflation';
     if (vp.airTrapping) return ' with air trapping';
+    if (!T.low && !vp.restriction) return ' with a normal TLC';
     return '';
   };
-  const noRestr = () => (haveVol && T.measured && !T.invalid && !T.low && !vp.restriction) ? 'There is no evidence of a restrictive ventilatory defect.' : '';
+  const ervLow = haveVol && v.erv.measured && !v.erv.invalid && v.erv.low;
 
-  if (!haveSp) { out.push(volOnlyLead(f) + '.'); return out; }
+  if (!haveSp) {
+    let t = volOnlyLead(f);
+    const dl = dlcoFold(f);
+    if (dl && vp.restriction) t += dl.low ? ', with ' + dl.word + '; the combination suggests a parenchymal (interstitial) process rather than an extrapulmonary cause' : (!dl.high ? ', with a normal diffusing capacity, which favors an extrapulmonary cause (chest wall, obesity, neuromuscular) over interstitial lung disease' + (ervLow ? '; the reduced ERV points to body habitus' : '') : '');
+    else if (dl) t += ' with ' + dl.word;
+    out.push(t + '.');
+    return out;
+  }
 
   if (sp.indeterminate) {
     if (s.fvcUnder && R.measured && !R.low) out.push('Early termination may have underestimated the FVC and raised the FEV1/FVC, so the spirometric pattern cannot be classified reliably; repeat testing is suggested if it would change management.' + (T.low ? ' TLC is reduced, which establishes restriction independently.' : ''));
@@ -82,22 +99,26 @@ function ventCore(f) {
   if (R.low) {
     if (sp.kind === 'effort' && !T.low) { out.push('Reduced FEV1/FVC and FVC, most likely from submaximal effort or muscle weakness; repeat testing is suggested if clinically needed.'); return out; }
     if (sp.mixed) {
-      out.push('There is a mixed obstructive and restrictive ventilatory defect' + (sevA || vp.sev ? ' (' + [sevA ? sevA + ' obstruction' : '', vp.sev ? vp.sev + ' restriction' : ''].filter(Boolean).join(', ') + ')' : '') + '.');
+      const dl = dlcoFold(f);
+      out.push('There is a mixed obstructive and restrictive ventilatory defect' + (sevA || vp.sev ? ' (' + [sevA ? sevA + ' obstruction' : '', vp.sev ? vp.sev + ' restriction' : ''].filter(Boolean).join(', ') + ')' : '') +
+        (dl ? (dl.low ? ' with ' + dl.word + ', as in combined fibrosis and emphysema or interstitial disease with airway involvement' : ' with ' + dl.word) : '') + '.');
       if (sp.kind === 'effort') out.push('Submaximal effort or muscle weakness probably contributes to the spirometric values; the low TLC does not depend on the forced maneuver.');
       return out;
     }
-    if (sp.preservedFev1) out.push('There is an obstructive ventilatory defect with a preserved FEV1' + volPhrase() + '.');
-    else if (sevA) out.push('There is a ' + sevA + ' obstructive ventilatory defect' + volPhrase() + '.');
-    else out.push('There is an obstructive ventilatory defect' + volPhrase() + '; the severity is not graded because FEV1 ' + (A.invalid ? 'is not interpretable' : 'was not entered') + '.');
-    const nr = noRestr(); if (nr) out.push(nr);
-    if (B.low && !B.invalid && !(T.measured && !T.invalid)) out.push('In the presence of an obstructive ventilatory defect a reduced vital capacity may represent air trapping due to obstruction or a concomitant restrictive ventilatory defect.');
+    const dl = dlcoFold(f);
+    let t;
+    if (sp.preservedFev1) t = 'There is an obstructive ventilatory defect with a preserved FEV1' + volPhrase();
+    else if (sevA) t = 'There is a ' + sevA + ' obstructive ventilatory defect' + volPhrase();
+    else t = 'There is an obstructive ventilatory defect' + volPhrase() + '; the severity is not graded because FEV1 ' + (A.invalid ? 'is not interpretable' : 'was not entered');
+    if (dl) t += dl.low ? ' and ' + dl.word + ', consistent with emphysema' : (dl.high ? ' and ' + dl.word : ' and a normal diffusing capacity, which argues against emphysema');
+    out.push(t + '.');
+    if (B.low && !B.invalid && !tlcKnown) out.push('The reduced FVC may represent air trapping or a coexisting restrictive defect; lung volumes would clarify.');
     // disease pattern
     const sevWord = sevA || '';
     if (cx.copd && !cx.asthma) out.push('Pattern is consistent with ' + (sevWord ? sevWord + ' ' : '') + 'COPD.');
     else if (cx.asthma && !cx.copd) out.push('Pattern is consistent with asthma.');
     else if (cx.copd && cx.asthma) out.push('Pattern is consistent with ' + (sevWord ? sevWord + ' ' : '') + 'COPD and/or asthma; clinical correlation recommended.');
     else if (cx.smoker) out.push('In a ' + f.ctx.smoke + ' smoker this pattern is consistent with ' + (sevWord ? sevWord + ' ' : '') + 'COPD.');
-    else if (bdPos) out.push('The significant bronchodilator response suggests asthma; clinical correlation recommended.');
     if (cx.obese) out.push('Symptoms caused by airway obstruction may be increased in obese patients because they breathe at low lung volumes.');
     return out;
   }
@@ -105,19 +126,27 @@ function ventCore(f) {
   /* ratio preserved */
   if (sp.kind === 'effort' && !vp.restriction) { out.push('Reduced FEV1 and FVC with a normal ratio, most likely from submaximal effort or muscle weakness; repeat testing is suggested if clinically needed.'); return out; }
   if (vp.restriction) {
-    out.push('There is a ' + (vp.sev ? vp.sev + ' ' : '') + 'restrictive ventilatory defect' + (vp.complex ? ' with an elevated RV/TLC (complex restriction)' : '') + '.');
-    out.push('There is no evidence of an obstructive ventilatory defect.');
-    if (cx.ild) out.push('Pattern is consistent with ' + (f.ctx.hasInd('ild') ? 'interstitial lung disease' : 'restrictive disorder (e.g., ILD, morbid obesity, neuromuscular disorder, etc.)') + '.');
-    else if (cx.nmd || (f.on.mip && (f.mp.mip === 'low' || f.mp.snip === 'low'))) out.push('Pattern is consistent with restrictive disorder; with reduced respiratory pressures a neuromuscular cause should be considered.');
-    else out.push('Pattern is consistent with restrictive disorder (e.g., ILD, morbid obesity, neuromuscular disorder, etc.).');
-    if (cx.obese) out.push('Reduction in lung volumes is commonly caused by obesity' + (has(f.ctx.bmi) ? ' (BMI ' + fmt(f.ctx.bmi, 1) + ')' : '') + '.');
+    const dl = dlcoFold(f);
+    let t = 'There is a ' + (vp.sev ? vp.sev + ' ' : '') + 'restrictive ventilatory defect without airflow obstruction' + (vp.complex ? ', with an elevated RV/TLC (complex restriction)' : '');
+    const nm = cx.nmd || (f.on.mip && (f.mp.mip === 'low' || f.mp.snip === 'low'));
+    if (dl && dl.low) t += ', with ' + dl.word + '; the combination suggests a parenchymal (interstitial) process rather than an extrapulmonary cause' + (cx.ild ? ', consistent with the known interstitial lung disease' : '') + '.';
+    else if (dl && !dl.high) t += ', with a normal diffusing capacity, which favors an extrapulmonary cause (chest wall, obesity, neuromuscular) over interstitial lung disease' + (ervLow ? '; the reduced ERV points to body habitus' : '') + (cx.obese && has(f.ctx.bmi) ? ' (BMI ' + fmt(f.ctx.bmi, 1) + ')' : '') + '.';
+    else {
+      t += (dl ? ', with ' + dl.word : '') + '.';
+      if (cx.ild) t += ' Pattern is consistent with ' + (f.ctx.hasInd('ild') ? 'interstitial lung disease' : 'restrictive disorder (e.g., ILD, morbid obesity, neuromuscular disorder, etc.)') + '.';
+      else t += ' Pattern is consistent with restrictive disorder (e.g., ILD, morbid obesity, neuromuscular disorder, etc.).';
+      if (cx.obese) t += ' Reduction in lung volumes is commonly caused by obesity' + (has(f.ctx.bmi) ? ' (BMI ' + fmt(f.ctx.bmi, 1) + ')' : '') + '.';
+    }
+    if (nm) t += ' Reduced respiratory pressures point to a neuromuscular cause.';
+    out.push(t);
     if (sp.kind === 'effort') out.push('Submaximal effort or muscle weakness probably contributes to the spirometric values; the low TLC does not depend on the forced maneuver.');
     return out;
   }
   if (sp.nonspecific) {
-    out.push('Reduced ' + (A.low && B.low ? 'FEV1 and FVC' : (A.low ? 'FEV1' : 'FVC')) + ' with a normal FEV1/FVC and a normal TLC (nonspecific pattern). There is no evidence of an obstructive or restrictive ventilatory defect.');
+    const dl = dlcoFold(f);
+    out.push('Reduced ' + (A.low && B.low ? 'FEV1 and FVC' : (A.low ? 'FEV1' : 'FVC')) + ' with a normal FEV1/FVC and a normal TLC (nonspecific pattern), without obstruction or restriction' +
+      (dl ? (dl.low ? ', with ' + dl.word + ', which raises the question of early interstitial or pulmonary vascular disease' : ', with ' + dl.word) : '') + '.');
     out.push(vp.airTrapping ? 'The elevated RV/TLC points to air trapping as the likely cause.' : 'This pattern may be due to poor effort, air trapping' + (cx.obese ? ' or obesity' : '') + '; a bronchodilator response and airway resistance may help clarify the cause.');
-    if (cx.obese && !vp.airTrapping) out.push('Reduction in lung volumes is commonly caused by obesity.');
     return out;
   }
   if (sp.highTlcReview) {
@@ -128,38 +157,41 @@ function ventCore(f) {
     let t;
     if (A.low && B.low) t = (sevA === sevB ? cap(sevA || 'reduced') + ' reduction in FEV1 and FVC' : cap(sevA || 'reduced') + ' reduction in FEV1 and ' + (sevB || 'reduced') + ' reduction in FVC') + ' with a preserved FEV1/FVC, which is suggestive of restriction, but cannot definitively assess given no lung volumes; consider obtaining lung volumes. This may also reflect mild obstruction with air trapping.';
     else t = cap(sevB || 'reduced') + ' reduction in FVC which is suggestive of restriction, but cannot definitively assess given no lung volumes; consider obtaining lung volumes.';
+    const dl = dlcoFold(f);
+    if (dl && dl.low) t += ' The ' + dl.word.replace(/^an? /, '') + ' favors a parenchymal (interstitial) process if restriction is confirmed.';
+    else if (dl && !dl.high) t += ' The normal diffusing capacity favors an extrapulmonary cause if restriction is confirmed.';
+    else if (dl) t += ' The diffusing capacity is elevated.';
+    if (cx.obese) t += ' Reduction in lung volumes is commonly caused by obesity.';
     out.push(t);
-    out.push('There is no evidence of an obstructive ventilatory defect.');
-    if (cx.obese) out.push('Reduction in lung volumes is commonly caused by obesity.');
     return out;
   }
   if (sp.kind === 'isolatedFEV1') {
-    out.push('Isolated ' + (sevA || 'reduced') + ' reduction in FEV1 with a normal FEV1/FVC and FVC' + (T.measured && T.low ? ' and a reduced TLC' : '') + '; this may represent early airway disease. There is no evidence of an obstructive ventilatory defect by the FEV1/FVC.');
+    const dl = dlcoFold(f);
+    out.push('Isolated ' + (sevA || 'reduced') + ' reduction in FEV1 with a normal FEV1/FVC and FVC' + (T.measured && T.low ? ' and a reduced TLC' : '') + (dl ? ' and ' + dl.word : '') + '; this may represent early airway disease.');
     return out;
   }
   if (sp.normal) {
     const F = f.F;
-    if (F['integrated.all_normal']) { out.push('Pattern is consistent with normal pulmonary function.' + (sp.kind === 'borderline' ? ' Some values lie close to the lower limit of normal.' : '')); return out; }
+    if (F['integrated.all_normal']) { dlcoFold(f); out.push('Pattern is consistent with normal pulmonary function.' + (sp.kind === 'borderline' ? ' Some values lie close to the lower limit of normal.' : '')); return out; }
     if (F['patterns.isolated_low_dlco']) { out.push('Spirometry and lung volumes are normal.'); return out; }   // the DLCO sentence follows in dlcoMechanism
+    const dl = dlcoFold(f);
+    const dlTail = dl ? (dl.low ? ', with ' + dl.word : (dl.high ? ', with ' + dl.word : ' and a normal diffusing capacity')) : '';
     let t;
-    if (haveVol && !T.invalid && T.measured) {
-      if (vp.normal) t = 'Pattern is consistent with normal spirometry and lung volumes';
-      else if (vp.airTrapping) t = 'Spirometry is normal; lung volumes indicate air trapping (elevated RV/TLC), which can be an early sign of small airway disease';
-      else if (vp.hyperinflation || vp.hyperTlc) t = 'Spirometry is normal; lung volumes indicate hyperinflation' + (vp.hyperTlc ? ' with an increased TLC' : '') + ' despite a normal FEV1/FVC';
-      else if (vp.largeLungs) t = 'Spirometry is normal; TLC is increased with normal RV/TLC and FRC/TLC, most likely large lungs rather than hyperinflation';
-      else if (vp.lowRV) t = 'Spirometry is normal; RV is reduced with a normal TLC (isolated low RV), which can accompany pulmonary or chest wall disease';
-      else if (vp.unclassified) t = 'Spirometry is normal; TLC is increased but the volume fractions were not entered, so large lungs cannot be distinguished from hyperinflation';
-      else if (vp.rvHighFractionNormal) t = 'Spirometry is normal; RV is increased with a normal RV/TLC, which does not by itself establish air trapping';
-      else if (vp.kind === 'borderline') t = 'Spirometry is normal; TLC is normal but close to the LLN';
-      else if (vp.kind === 'rvHighNoFraction') t = 'Spirometry is normal; RV is increased but RV/TLC was not entered, so air trapping cannot be classified';
-      else t = 'Pattern is consistent with normal spirometry';
-    } else t = 'Pattern is consistent with normal spirometry';
+    if (tlcKnown) {
+      if (vp.normal) t = 'Pattern is consistent with normal spirometry and lung volumes' + dlTail + ', without obstruction or restriction';
+      else if (vp.airTrapping) t = 'Spirometry is normal; lung volumes indicate air trapping (elevated RV/TLC), which can be an early sign of small airway disease' + dlTail;
+      else if (vp.hyperinflation || vp.hyperTlc) t = 'Spirometry is normal; lung volumes indicate hyperinflation' + (vp.hyperTlc ? ' with an increased TLC' : '') + ' despite a normal FEV1/FVC' + dlTail;
+      else if (vp.largeLungs) t = 'Spirometry is normal; TLC is increased with normal RV/TLC and FRC/TLC, most likely large lungs rather than hyperinflation' + dlTail;
+      else if (vp.lowRV) t = 'Spirometry is normal; RV is reduced with a normal TLC (isolated low RV), which can accompany pulmonary or chest wall disease' + dlTail;
+      else if (vp.unclassified) t = 'Spirometry is normal; TLC is increased but the volume fractions were not entered, so large lungs cannot be distinguished from hyperinflation' + dlTail;
+      else if (vp.rvHighFractionNormal) t = 'Spirometry is normal; RV is increased with a normal RV/TLC, which does not by itself establish air trapping' + dlTail;
+      else if (vp.kind === 'borderline') t = 'Spirometry is normal; TLC is normal but close to the LLN' + dlTail;
+      else if (vp.kind === 'rvHighNoFraction') t = 'Spirometry is normal; RV is increased but RV/TLC was not entered, so air trapping cannot be classified' + dlTail;
+      else t = 'Pattern is consistent with normal spirometry' + dlTail;
+    } else t = 'Normal spirometry' + (dl && !dl.low && !dl.high ? ' and diffusing capacity' : '') + ', without obstruction' + (B.measured && B.wnl ? '; the normal FVC argues against restriction' : '') + (dl && (dl.low || dl.high) ? ', with ' + dl.word : '');
     if (sp.kind === 'borderline') t += ', although some values lie close to the lower limit of normal';
     else if (sp.kind === 'concave') t += ', although the curvilinear flow-volume curve raises the question of mild airflow limitation at low lung volumes';
     out.push(t + '.');
-    if (!(haveVol && T.measured)) out.push('There is no evidence of an obstructive ventilatory defect' + (B.measured && B.wnl ? ', and the normal FVC argues against a restrictive ventilatory defect' : '') + '.');
-    else out.push('There is no evidence of an obstructive ' + (vp.normal ? 'or restrictive ' : '') + 'ventilatory defect.');
-    if (haveDl && !D.low && !D.high && R.measured) { /* normal DLCO: nothing further */ }
     if (cx.asthma || f.ctx.hasInd('wheeze') || f.ctx.hasInd('cough')) out.push('Normal pulmonary function tests do not exclude asthma.' + (!f.on.bronch ? ' Suggest methacholine challenge testing if clinically indicated.' : ''));
     return out;
   }
@@ -169,7 +201,8 @@ function ventCore(f) {
   else if (B.measured && B.wnl && !A.measured) t += '; FEV1 was not entered';
   else if (B.high || A.high) t += '; the ' + (B.high ? 'FVC' : 'FEV1') + ' is above the ULN, which can be a normal variant';
   if (haveVol && vp.restriction) { out.push(volOnlyLead(f) + '.'); return out; }
-  out.push(t + volPhrase() + '.');
+  const dl = dlcoFold(f);
+  out.push(t + volPhrase() + (dl ? ', with ' + dl.word : '') + '.');
   return out;
 }
 function volOnlyLead(f) {
@@ -201,12 +234,14 @@ function dlcoMechanism(f) {
   const co = (has(d.cohb) && d.cohb >= 2) || d.cohbcat === 'hi' ? ' The elevated carboxyhemoglobin lowers the measured DLCO (about 1% per 1% COHb).' : '';
   const sevW = D.sev ? SEV_ADV[D.sev].replace('ly', 'ly') : '';
   if (D.high) {
-    out.push((pat.hb === 'explained' ? 'The increased diffusing capacity is accounted for by the hemoglobin adjustment.' : 'DLCO may be relatively increased in left ventricular failure, asthma, pulmonary hemorrhage, or obesity.') + co);
+    out.push((pat.hb === 'explained' ? 'The increased diffusing capacity is accounted for by the hemoglobin adjustment.' : (f._dlcoFolded ? 'An increased DLCO can be seen in' : 'DLCO may be relatively increased in') + ' left ventricular failure, asthma, pulmonary hemorrhage, or obesity.') + co);
     return out;
   }
   if (!D.low) {
-    if (haveSp && R.low) out.push('The normal diffusing capacity argues against the presence of pulmonary emphysema.');
-    else if (f.on.vol && vp.restriction) out.push('The normal diffusing capacity favors an extrapulmonary cause of restriction (chest wall, obesity, neuromuscular) over interstitial lung disease.');
+    if (!f._dlcoFolded) {
+      if (haveSp && R.low) out.push('The normal diffusing capacity argues against the presence of pulmonary emphysema.');
+      else if (f.on.vol && vp.restriction) out.push('The normal diffusing capacity favors an extrapulmonary cause of restriction (chest wall, obesity, neuromuscular) over interstitial lung disease.');
+    }
     if (pat.mech === 'incompleteWNL') out.push('The low VA with a high KCO suggests incomplete lung expansion during the maneuver.');
     if (co) out.push(co.trim());
     return out;
@@ -214,6 +249,7 @@ function dlcoMechanism(f) {
   // reduced DLCO
   const lab = D.sev ? SEV_ADV[D.sev] + ' impaired' : 'impaired';
   if (pat.hb === 'full') out.push('The absolute diffusing capacity is reduced but corrects to the normal range when adjusted for this patient\'s anemia.' + co);
+  else if (f._dlcoFolded) { /* said with the ventilatory pattern */ }
   else if (f.F['patterns.isolated_low_dlco'] || (!haveSp && !(f.on.vol && f.vol.any))) {
     // anemia is only a candidate when the value is not corrected for hemoglobin
     const corrected = d.reportedAdjusted || (d.adj.measured && !d.adj.invalid);
@@ -235,10 +271,11 @@ function dlcoMechanism(f) {
   if (mech && pat.hb !== 'full') out.push(mech);
   // hemoglobin and smoking
   if (pat.hb !== 'full' && pat.hb !== 'adjustedLow' && pat.hb !== 'partial') {
-    if (pat.hb === 'noadj' && d.anemic === true) out.push('Anemia may reduce the diffusing capacity independent of pulmonary function. The value reported is not corrected for the patient\'s hemoglobin concentration.');
-    else if (pat.hb === 'noadj' && d.anemic !== false) out.push('Anemia may reduce the diffusing capacity independent of pulmonary function. The value reported is not corrected for the patient\'s hemoglobin concentration.' + (f.review && f.review['study.hb'] ? '' : ' Suggest hemoglobin determination if clinically indicated.'));
+    const askHb = (f.review && f.review['study.hb']) ? '' : '; suggest hemoglobin determination if clinically indicated';
+    if (pat.hb === 'noadj' && d.anemic === true) out.push(has(d.adjPct) ? 'Part of the reduction reflects the anemia (' + Math.round(d.adjPct) + '% predicted after correction for hemoglobin).' : 'Part of the reduction may reflect the anemia (the value is not corrected for hemoglobin).');
+    else if (pat.hb === 'noadj' && d.anemic !== false) out.push('The value is not corrected for hemoglobin, so anemia could contribute' + askHb + '.');
     else if (pat.hb === 'unknownBasis' && d.anemic === true) out.push('Whether the DLCO is corrected for hemoglobin is not stated; with a hemoglobin of ' + fmt(d.hb, 1) + ' g/dL, part of the reduction could reflect anemia if the value is uncorrected.');
-    else if (pat.hb === 'none' || (pat.hb === 'unknownBasis' && !d.hbKnown)) out.push('Anemia may reduce the diffusing capacity independent of pulmonary function.' + (f.review && f.review['study.hb'] ? '' : ' Suggest hemoglobin determination if clinically indicated.'));
+    else if (pat.hb === 'none' || (pat.hb === 'unknownBasis' && !d.hbKnown)) out.push('Anemia could contribute to a reduced DLCO' + askHb + '.');
   }
   if (f.ctx.smoke === 'current') out.push('Ongoing smoking may falsely lower DLCO via carbon monoxide displacement of oxygen from hemoglobin.');
   if (co) out.push(co.trim());
@@ -249,19 +286,21 @@ function dlcoMechanism(f) {
 function bdImpression(f) {
   const b = f.bd, out = [];
   if (!(f.on.bd && b.any)) return out;
-  const F = f.F, resp = F['bronchodilator.response'];
-  const pp = (x) => has(x) ? fsign(x, 0) + '% of predicted' : '';
+  const F = f.F, resp = F['bronchodilator.response'], cx = diseaseContext(f), R = f.sp.ratio;
+  const pp = (x) => has(x) ? fsign(x, 0) + '%' : '';
+  const nums = [pp(b.dF) ? 'FEV1 ' + pp(b.dF) : '', pp(b.dV) ? 'FVC ' + pp(b.dV) : ''].filter(Boolean).join(', ');
+  const numsTxt = nums ? ' (' + nums + ' of predicted)' : '';
+  const ratioTail = b.obstructionStatus === 'persistent' ? '; obstruction persists after bronchodilator' : (b.obstructionStatus === 'normalized' ? '; FEV1/FVC normalizes after bronchodilator' : '');
   if (resp === 'both' || resp === 'fev1' || resp === 'fvc') {
-    const nums = resp === 'both' ? [pp(b.dF) ? 'FEV1 ' + pp(b.dF) : '', pp(b.dV) ? 'FVC ' + pp(b.dV) : ''].filter(Boolean).join(', ') : (resp === 'fev1' ? pp(b.dF) : pp(b.dV));
-    out.push('There is significant reversal of airways obstruction after inhaling a bronchodilator' + (nums ? ' (' + nums + ')' : '') + (b.obstructionStatus === 'persistent' ? ', although obstruction persists after bronchodilator' : (b.obstructionStatus === 'normalized' ? ', and the FEV1/FVC normalizes after bronchodilator' : '')) + '.');
-    if (F['patterns.normal_baseline_bd_positive']) out.push('Baseline spirometry is normal, so the response indicates variable airway physiology rather than a diagnosis of asthma by itself.');
+    let t = 'Significant reversal of airways obstruction after bronchodilator' + numsTxt + ratioTail;
+    if (F['patterns.normal_baseline_bd_positive']) t += '; with normal baseline spirometry this indicates variable airway physiology rather than asthma by itself';
+    else if (R.low && !cx.copd && !cx.asthma && !cx.smoker) t += ', which suggests asthma; clinical correlation recommended';
+    out.push(t + '.');
   } else if (resp === 'negative') {
-    out.push('There is no significant reversal of airways obstruction after inhaling a bronchodilator' + (b.obstructionStatus === 'normalized' ? ', although the FEV1/FVC normalizes after bronchodilator' : '') + '.');
     const best = Math.max(has(b.dF) ? b.dF : -Infinity, has(b.dV) ? b.dV : -Infinity);
-    if (isFinite(best) && best >= 5) out.push('Regarding bronchodilators, increases between 5 and 10% of predicted may indicate some degree of reversibility.');
-    if (f.sp.ratio.low) out.push('Failure to meet reversibility thresholds during bronchodilator testing does not preclude a clinical response to inhaled bronchodilator therapy.');
+    out.push('No significant bronchodilator response' + numsTxt + ratioTail + (isFinite(best) && best >= 5 ? '; increases of 5–10% of predicted may indicate some reversibility' : '') + '.');
   } else if (resp === 'indeterminate') {
-    out.push('The bronchodilator response cannot be assessed' + (b.rel === 'invalid' ? ' (post-bronchodilator maneuvers not interpretable)' : (!(b.assessedF && b.assessedV) && b.resp !== 'ind' ? ((b.assessedF || b.assessedV) ? ' (only ' + (b.assessedF ? 'FEV1' : 'FVC') + ' could be assessed)' : ' (no pre- and post-bronchodilator values were entered)') : '')) + '.');
+    out.push('The bronchodilator response cannot be assessed' + (b.rel === 'invalid' ? ' (post-bronchodilator maneuvers not interpretable)' : (b.needPred ? ' as % of predicted without the predicted value' : (!(b.assessedF && b.assessedV) && b.resp !== 'ind' ? ((b.assessedF || b.assessedV) ? ' (only ' + (b.assessedF ? 'FEV1' : 'FVC') + ' could be assessed)' : ' (no pre- and post-bronchodilator values were entered)') : ''))) + '.');
   }
   if (b.held === 'n') out.push('Recent bronchodilator use may have blunted the response.');
   if (b.drop) out.push('FEV1 or FVC fell after bronchodilator; check effort and timing.');
@@ -281,6 +320,7 @@ function reviewAdditions(f) {
 
 function buildImpression(f, secs) {
   const out = [];
+  f._dlcoFolded = false;
   const add = (s) => { if (s) out.push(s); };
   const by = {}; secs.forEach(s => { by[s.key] = s; });
   const sp = f.sp;
@@ -820,7 +860,7 @@ function interpret(raw) {
 }
 
 const API = {
-  version: '5.0.0',
+  version: '6.0.0',
   catalogVersion: CATALOG.version,
   Z_LLN: Z_LLN, Z_ULN: Z_ULN, STYLES: STYLES,
   TESTS: TESTS, PRESETS: PRESETS, SCHEMA: SCHEMA, LOOPS: LOOPS, INDICATIONS: INDICATIONS, KIND_OPTS: KIND_OPTS, PRIOR_FIELDS: PRIOR_FIELDS, CUR_FIELDS: CUR_FIELDS, MAX_PRIORS: MAX_PRIORS, MAX_TREND: MAX_TREND,

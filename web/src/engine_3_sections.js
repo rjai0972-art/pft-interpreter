@@ -349,41 +349,30 @@ function bdLines(f) {
   if (!b.any) return out;
   const pre = [];
   if (b.agent) pre.push(cap(b.agent) + ' was administered');
-  if (b.held === 'y') pre.push('home bronchodilators were withheld');
-  else if (b.held === 'n') pre.push('bronchodilators were taken before testing');
+  if (b.held === 'n') pre.push('bronchodilators were taken before testing');
   if (pre.length) L(pre.join('; '));
   if (b.qc === 'limited') L('Technical factors reduce confidence in the post-bronchodilator maneuvers');
   if (b.qc === 'inv') L('The post-bronchodilator maneuvers are not interpretable');
-  const line = (name, p0, p1, dpp, postPct) => {
-    if (has(p0) && has(p1)) {
-      const dm = (p1 - p0) * 1000;
-      return name + ' ' + fmt(p0, 2) + ' → ' + fmt(p1, 2) + ' L' + (has(postPct) ? ' (' + Math.round(postPct) + '% predicted)' : '') + ', a change of ' + fsign(dm, 0) + ' mL' + (has(dpp) ? ' (' + fsign(dpp, 1) + '% of predicted)' : (p0 > 0 ? ' (' + fsign((p1 - p0) / p0 * 100, 0) + '% of baseline)' : ''));
-    }
-    if (has(p1)) return name + ' ' + fmt(p1, 2) + ' L after bronchodilator' + (has(postPct) ? ' (' + Math.round(postPct) + '% predicted)' : '');
-    if (has(dpp)) return name + ' changed by ' + fsign(dpp, 1) + '% of predicted';
+  // one sentence with every number that was entered: "After bronchodilator: FEV1 1.55 → 1.95 L (+400 mL, +12.4% of predicted); FVC …; FEV1/FVC 0.52 → 0.60"
+  const part = (name, p0, p1, dpp, dml) => {
+    if (has(p0) && has(p1)) return name + ' ' + fmt(p0, 2) + ' → ' + fmt(p1, 2) + ' L (' + fsign(dml, 0) + ' mL' + (has(dpp) ? ', ' + fsign(dpp, 1) + '% of predicted' : (p0 > 0 ? ', ' + fsign((p1 - p0) / p0 * 100, 0) + '% of baseline' : '')) + ')';
+    if (has(p1)) return name + ' ' + fmt(p1, 2) + ' L';
+    if (has(dpp)) return name + ' ' + fsign(dpp, 1) + '% of predicted';
     return '';
   };
   if (f.style !== 'concise') {
-    const nums = [line('FEV1', b.f1pre, b.f1post, b.dF, b.postPctF), line('FVC', b.vpre, b.vpost, b.dV, b.postPctV)].filter(Boolean);
-    if (has(b.postRatioV)) nums.push('FEV1/FVC ' + (has(f.sp.ratioV) ? fmt(f.sp.ratioV, 2) + ' → ' : '') + fmt(b.postRatioV, 2) + ' after bronchodilator');
+    const nums = [part('FEV1', b.f1pre, b.f1post, b.dF, b.dFmL), part('FVC', b.vpre, b.vpost, b.dV, b.dVmL)].filter(Boolean);
+    if (has(b.postRatioV)) nums.push('FEV1/FVC ' + (has(f.sp.ratioV) ? fmt(f.sp.ratioV, 2) + ' → ' : '') + fmt(b.postRatioV, 2));
     if (nums.length) L('After bronchodilator: ' + nums.join('; '));
   }
   const resp = f.F['bronchodilator.response'];
-  if (resp === 'both' || resp === 'fev1' || resp === 'fvc') { out.codes.push('S62'); L('Spirometry significantly improved after bronchodilator administration (' + (resp === 'both' ? 'FEV1 and FVC' : resp.toUpperCase()) + ')'); }
-  else if (resp === 'negative') { out.codes.push('S61'); L('Spirometry did not significantly improve after bronchodilator administration'); }
-  else if (resp === 'indeterminate') {
-    let why = '';
-    if (b.rel === 'invalid') why = 'post-bronchodilator maneuvers not interpretable';
-    else if (b.resp === 'ind') why = 'reported as not assessable';
-    else if (b.needPred) why = 'the predicted value is needed to express the change as % of predicted';
-    else if (!(b.assessedF && b.assessedV)) why = 'only ' + (b.assessedF ? 'FEV1' : (b.assessedV ? 'FVC' : 'incomplete data')) + ' could be assessed';
-    L('The bronchodilator response cannot be assessed' + (why ? ' (' + why + ')' : ''));
-  }
-  if (resp && resp !== 'not_performed' && f.style === 'expanded') L('Per ERS/ATS 2022 criteria, FEV1 or FVC must increase by more than 10% of the predicted value to be considered significant');
+  if (resp === 'both' || resp === 'fev1' || resp === 'fvc') out.codes.push('S62');
+  else if (resp === 'negative') out.codes.push('S61');
   if (b.legacyAvail && b.discordant) L('By the 2005 ATS criteria (12% and 200 mL from baseline) the response would ' + (b.legacyF || b.legacyV ? '' : 'not ') + 'be considered significant');
-  if (b.drop) L('FEV1 or FVC fell by more than 10% of predicted after bronchodilator');
-  if (b.postRatio.measured) L(metricLine(f, 'metric.ratio', b.postRatio, 'Post-bronchodilator FEV1/FVC').replace(/ is reduced/, ' remains reduced'));
-  if (b.postFev1.measured) L(metricLine(f, 'metric.fev1', b.postFev1, 'Post-bronchodilator FEV1'));
+  const post = [];
+  if (b.postRatio.measured && !b.postRatio.invalid) post.push('FEV1/FVC ' + (b.postRatio.low ? 'remains reduced' : 'is normal') + zp(b.postRatio));
+  if (b.postFev1.measured && !b.postFev1.invalid) post.push('FEV1 is ' + STATE_WORD[metricState(b.postFev1)] + zp(b.postFev1));
+  if (post.length) L('Post-bronchodilator ' + post.join(' and '));
   return out;
 }
 /* kept for callers that still want the response as a section of its own */
@@ -1057,14 +1046,45 @@ function serialPhrase(f, m, p) {
 }
 function priorHead(p) { return 'Since last testing (' + (p.dateOk ? dateShortUS(p.date) : 'prior study #' + p.idx) + (intervalWords(p.years) ? ', ' + intervalWords(p.years) + ' earlier' : '') + '): '; }
 function dateShortUS(iso) { const d = parseDate(iso); return d ? (d.getUTCMonth() + 1) + '/' + d.getUTCDate() + '/' + d.getUTCFullYear() : String(iso || ''); }
+/* "FEV1 −16% (−300 mL, 1.85 → 1.55 L)" — the change of one index, compact */
+/* a percent change printed so it never reads as equal to the threshold it did not reach (−14.7% is "−14.7%", not "−15%") */
+function relTxt(x, th) { const r0 = Math.round(Math.abs(x)); return (has(th) && r0 === th && Math.abs(x) < th) ? fsign(x, 1) + '%' : fsign(x, 0) + '%'; }
+function changeTxt(m, th) {
+  if (m.pp) return m.name + ' ' + fsign(m.dAbs, 0) + ' points (' + fmt(m.prior, 0) + ' → ' + fmt(m.cur, 0) + '% predicted)';
+  if (m.k === 'fev1' || m.k === 'fvc' || m.k === 'tlc') return m.name + ' ' + (has(m.dPct) ? relTxt(m.dPct, th) + ' (' : '(') + fsign(m.dAbs * 1000, 0) + ' mL, ' + fmt(m.prior, 2) + ' → ' + fmt(m.cur, 2) + ' L)';
+  if (m.k === 'dlco') return m.name + ' ' + (has(m.dPct) ? relTxt(m.dPct, th) + ' (' : '(') + fmt(m.prior, 1) + ' → ' + fmt(m.cur, 1) + ' mL/min/mmHg)';
+  if (m.k === 'six') return '6MWD ' + fsign(m.dAbs, 0) + ' m (' + fmt(m.prior, 0) + ' → ' + fmt(m.cur, 0) + ' m)';
+  return m.name + ' ' + fsign(m.dAbs, m.d) + ' ' + m.unit + (has(m.dPct) ? ' (' + fsign(m.dPct, 0) + '%)' : '');
+}
+/* One sentence per prior study: the indices that changed significantly, then the ones that did not, then the ones that
+   cannot be judged. "Since last testing (3/5/2024, 1 year earlier): FEV1 −16% (−300 mL, 1.85 → 1.55 L), a significant
+   decline; FVC and DLCO without significant change (margin of error ~15% and ~10%)." */
+function serialSentence(f, p, first) {
+  const groups = { sig: [], ns: [], na: [], plain: [] }, margins = [], th = serialThresholds(f);
+  const thOf = (m) => /dlco/.test(m.k) ? th.dlco : (/fev1|fvc/.test(m.k) ? th.spiro : NaN);
+  p.metrics.forEach(m => {
+    const v = serialVerdict(f, m, p);
+    if (v.why) { groups.na.push({ m: m, why: v.why }); return; }
+    if (v.sig === null) { groups.plain.push(m); return; }
+    if (v.margin && margins.indexOf(v.margin) < 0) margins.push(v.margin);
+    (v.sig ? groups.sig : groups.ns).push(m);
+  });
+  const bits = [];
+  if (groups.sig.length) bits.push(groups.sig.map(m => changeTxt(m, thOf(m))).join(', ') + ', ' + (groups.sig.length > 1 ? 'significant changes' : 'a significant ' + (groups.sig[0].dAbs < 0 ? 'decline' : 'increase')));
+  if (groups.ns.length) bits.push(joinNames(groups.ns.map(m => m.name + (m.pp ? ' % predicted' : ''))) + ' without significant change (' + groups.ns.map(m => m.pp ? fsign(m.dAbs, 0) + ' points' : (has(m.dPct) ? relTxt(m.dPct, thOf(m)) : fsign(m.dAbs, m.d) + ' ' + m.unit)).join(', ') + ')');
+  if (groups.plain.length) bits.push(groups.plain.map(m => changeTxt(m)).join(', '));
+  if (groups.na.length) bits.push(joinNames(groups.na.map(x => x.m.name)) + ' not directly comparable (' + uniq(groups.na.map(x => x.why)).join('; ') + ')');
+  let t = (first ? 'Since last testing' : 'Since') + ' (' + (p.dateOk ? dateShortUS(p.date) : 'prior study #' + p.idx) + (intervalWords(p.years) ? ', ' + intervalWords(p.years) + ' earlier' : '') + '): ' + bits.join('; ');
+  if (f.style === 'expanded' && margins.length) t += ' (testing margin of error ' + margins.join(' and ') + ')';
+  return t;
+}
 function secPrior(f) {
   const sec = newSec('prior', 'PAST TESTING COMPARISON');
   if (!f.on.prior || !f.prior.any) { sec.empty = true; sec.lines.push('No prior study entered.'); return sec; }
   f.priors.forEach((p, i) => {
     if (!p.metrics.length) return;
+    put(sec, serialSentence(f, p, i === 0));
     if (i === 0) {
-      put(sec, priorHead(p).replace(/: $/, ''));
-      p.metrics.forEach(m => put(sec, serialPhrase(f, m, p)));
       const ppf = p.metrics.map(m => ({ m: m, v: serialVerdict(f, m, p) })).filter(x => x.v.ppf);
       if (ppf.length) put(sec, 'The ' + joinNames(ppf.map(x => x.m.name)) + ' decline' + (ppf.length > 1 ? 's' : '') + ' within a year (' + ppf.map(x => x.m.name + ' ' + fsign(x.m.dAbs, 0) + ' points') .join(', ') + ') ' + (ppf.every(x => x.v.ppf === 'meets') ? 'meet' + (ppf.length > 1 ? '' : 's') : 'would meet') + ' the physiologic criterion for progressive pulmonary fibrosis' + (ppf.every(x => x.v.ppf === 'meets') ? '' : ' in a fibrotic interstitial lung disease') + ' (ATS/ERS/JRS/ALAT 2022); FVC and DLCO count as one domain');
       if (has(p.ccs)) put(sec, 'The conditional change score for FEV1 is ' + fz(p.ccs) + ', ' + (Math.abs(p.ccs) > 1.96 ? 'outside' : 'within') + ' the range expected in healthy children and young people');
@@ -1072,9 +1092,6 @@ function secPrior(f) {
         const fm = p.metrics.filter(m => m.k === 'fev1')[0];
         if (fm && has(fm.pctPerYear)) put(sec, 'Annualised FEV1 change ' + fsign(fm.pctPerYear, 1) + '%/yr (' + fsign(fm.perYear * 1000, 0) + ' mL/yr)' + (has(fm.q0) ? '; FEV1Q ' + fmt(fm.q0, 2) + ' → ' + fmt(fm.q1, 2) : ''));
       }
-    } else {
-      const parts = p.metrics.map(m => m.name + ' ' + (m.pp ? fmt(m.prior, 0) + '% → ' + fmt(m.cur, 0) + '% predicted' : (m.k === 'fev1' || m.k === 'fvc' || m.k === 'tlc' ? fmt(m.prior, 2) + ' → ' + fmt(m.cur, 2) + ' L' : fmt(m.prior, m.d) + ' → ' + fmt(m.cur, m.d) + ' ' + m.unit)));
-      put(sec, 'Since ' + (p.dateOk ? dateShortUS(p.date) : 'prior study #' + p.idx) + (intervalWords(p.years) ? ' (' + intervalWords(p.years) + ' earlier)' : '') + ': ' + parts.join(', '));
     }
   });
   return sec;
@@ -1092,14 +1109,10 @@ function priorImpression(f) {
     const v = serialVerdict(f, m, p);
     if (v.why) { limited.push(m.name); return; }
     if (v.sig !== null) anyVerdict = true;
-    if (v.sig) sig.push(m.name + ' has ' + (m.dAbs < 0 ? 'declined' : 'increased') + ' (' + (m.pp ? fsign(m.dAbs, 0) + ' points of predicted' : (m.k === 'six' ? fsign(m.dAbs, 0) + ' m' : (m.k === 'feno' ? fsign(m.dAbs, 0) + ' ppb' : (has(m.dPct) ? fsign(m.dPct, 0) + '%' : fsign(m.dAbs, m.d) + ' ' + m.unit)))) + ')');
+    if (v.sig) sig.push(m.name + (m.pp ? ' % predicted' : '') + ' ' + (m.dAbs < 0 ? 'declined' : 'increased') + ' (' + (m.pp ? fsign(m.dAbs, 0) + ' points' : (m.k === 'six' ? fsign(m.dAbs, 0) + ' m' : (m.k === 'feno' ? fsign(m.dAbs, 0) + ' ppb' : (has(m.dPct) ? fsign(m.dPct, 0) + '%' : fsign(m.dAbs, m.d) + ' ' + m.unit)))) + ')');
   });
-  if (sig.length) out.push('Compared to the study of ' + when + ', ' + joinNames(sig) + '.');
-  else if (anyVerdict) out.push('Compared to earlier studies, there has been no significant change.');
-  if (limited.length) out.push(cap(joinNames(limited)) + (limited.length > 1 ? ' are' : ' is') + ' not directly comparable with the prior study.');
-  if (f.priors.length > 1) {
-    const q = f.priors[1];
-    if (q.metrics.length) out.push('Over ' + (intervalWords(q.years) || 'the longer interval') + ' (since ' + (q.dateOk ? monthWords(q.date) : 'the earlier study') + '): ' + q.metrics.map(m => m.name + ' ' + (m.pp ? fmt(m.prior, 0) + '% → ' + fmt(m.cur, 0) + '% predicted' : (m.k === 'fev1' || m.k === 'fvc' || m.k === 'tlc' ? fmt(m.prior, 2) + ' → ' + fmt(m.cur, 2) + ' L' : fmt(m.prior, m.d) + ' → ' + fmt(m.cur, m.d) + ' ' + m.unit))).join(', ') + '.');
-  }
+  if (sig.length) out.push('Compared to ' + when + ', ' + joinNames(sig) + (limited.length ? '; ' + joinNames(limited) + (limited.length > 1 ? ' are' : ' is') + ' not directly comparable' : '') + '.');
+  else if (anyVerdict) out.push('No significant change from ' + when + (limited.length ? ' (' + joinNames(limited) + ' not directly comparable)' : '') + '.');
+  else if (limited.length) out.push(cap(joinNames(limited)) + (limited.length > 1 ? ' are' : ' is') + ' not directly comparable with the prior study.');
   return out;
 }

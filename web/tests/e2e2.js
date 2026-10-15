@@ -20,12 +20,13 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
   page.on('pageerror', e => errs.push('pageerror: ' + e.message));
   page.on('console', m => { if (m.type() === 'error' && !/fonts\.g|ERR_|Failed to load resource/.test(m.text())) errs.push('console: ' + m.text()); });
   await page.goto(FILE);
-  await page.waitForSelector('.tgrid');
+  await page.waitForSelector('#top');
 
   /* ---------------- (i) pop-ups ---------------- */
   const pop = page.locator('#pop');
   ok(await pop.isHidden(), 'pop-up hidden at start');
-  const ibTest = page.locator('.ttw .ib').first();
+  await page.locator('.tchip[data-test="spiro"]').click();
+  const ibTest = page.locator('details.tsec[data-mod="spiro"] > summary .ib').first();
   await ibTest.hover(); await page.waitForTimeout(350);
   ok(await pop.isVisible(), 'hover opens the pop-up');
   ok(/Spirometry/.test(await pop.innerText()), 'pop-up has the test name');
@@ -61,26 +62,20 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
     const b = await pop.boundingBox(), vp = page.viewportSize();
     ok(b && b.x >= 0 && b.y >= 0 && b.x + b.width <= vp.width + 0.5 && b.y + b.height <= vp.height + 0.5, 'pop-up inside the viewport: ' + label + ' ' + JSON.stringify(b));
   };
-  await page.locator('.ttw .ib').first().click(); await page.waitForTimeout(100); await inView('test info'); await page.keyboard.press('Escape');
+  await page.locator('[data-field="spiro.fvc"] .ib').first().click(); await page.waitForTimeout(100); await inView('FVC info'); await page.keyboard.press('Escape');
 
   // every (i) on every step maps to a glossary entry
-  await page.getByRole('button', { name: 'Full PFT', exact: true }).click();
-  const boxes = page.locator('.tt input');
-  for (let i = 0; i < await boxes.count(); i++) await boxes.nth(i).check();
-  const pills = await page.locator('.steps .pill').allInnerTexts();
+  for (const k of await page.locator('.tchip[aria-pressed="false"]').evaluateAll(els => els.map(e => e.getAttribute('data-test')))) await page.locator('.tchip[data-test="' + k + '"]').click();
+  const secs = await page.locator('details.tsec').evaluateAll(els => els.map(e => e.getAttribute('data-mod')));
   let totalIb = 0, perStep = {};
-  for (let k = 0; k < pills.length; k++) {
-    await page.locator('.steps .pill').nth(k).click();
-    const bad = await page.evaluate(() => Array.from(document.querySelectorAll('[data-gloss]')).filter(e => !window.PFT_GLOSS.terms[e.getAttribute('data-gloss')]).length);
-    const n = await page.locator('main .ib').count();
-    perStep[pills[k]] = n; totalIb += n;
-    ok(bad === 0, 'all (i) keys exist on step ' + pills[k]);
-  }
-  ok(totalIb > 120, 'many (i) buttons across the steps: ' + totalIb);
-  for (const nm of ['Spirometry', 'Flow–volume loop', 'Lung volumes', 'DLCO', '6MWT', 'CPET', 'MIP / MEP']) ok(perStep[nm] >= 3, 'step has (i) buttons: ' + nm + ' = ' + perStep[nm]);
+  const bad = await page.evaluate(() => Array.from(document.querySelectorAll('[data-gloss]')).filter(e => !window.PFT_GLOSS.terms[e.getAttribute('data-gloss')]).length);
+  ok(bad === 0, 'all (i) keys exist on the page');
+  for (const k of secs) { const n = await page.locator('details.tsec[data-mod="' + k + '"] .ib').count(); perStep[k] = n; totalIb += n; }
+  ok(totalIb > 120, 'many (i) buttons across the sections: ' + totalIb);
+  for (const nm of ['spiro', 'fvl', 'vol', 'dlco', 'sixmw', 'cpet', 'mip']) ok(perStep[nm] >= 3, 'section has (i) buttons: ' + nm + ' = ' + perStep[nm]);
 
   // Learn more goes to the right topic and term
-  await page.locator('.steps .pill', { hasText: 'Lung volumes' }).click();
+  await page.evaluate(() => window.__pft.goto('vol'));
   await page.locator('[data-field="vol.tlc"] .ib').first().click();
   await page.locator('.pop-more').click(); await page.waitForTimeout(300);
   ok(await page.locator('.learn-body').getAttribute('data-topic') === 'vol', 'Learn more opens the lung-volumes topic');
@@ -102,11 +97,12 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
   await page.locator('.ln-btn[data-topic="sixmw"]').click();
   ok(await page.locator('.learn-go').count() === 1, 'a topic for a selected test offers a jump back to it');
   await page.locator('.vw[data-view="case"]').click();
-  ok(await page.locator('.steps').isVisible(), 'back to the case: steps visible');
+  ok(await page.locator('#top').isVisible(), 'back to the case: the page is back');
 
   /* ---------------- 6MWD trend ---------------- */
-  await page.locator('.steps .pill', { hasText: '6MWT' }).click();
-  ok(await page.locator('.tr-block').count() === 1, 'trend block on the 6MWT step');
+  await page.evaluate(() => window.__pft.goto('sixmw'));
+  await page.locator('[data-group="trend"]').evaluate(e => { e.open = true; });
+  ok(await page.locator('.tr-block').count() === 1, 'trend block on the 6MWT section');
   ok(await page.locator('.tr-empty').count() === 1, 'empty-state message before two walks');
   const rows = () => page.locator('.tr-row:not(.today)');
   const addWalk = async (i, date, dist, nadir) => {
@@ -115,9 +111,8 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
     await rows().nth(i).locator('input.num').first().fill(dist);
     if (nadir) await rows().nth(i).locator('input.num').nth(1).fill(nadir);
   };
-  await page.locator('.steps .pill', { hasText: 'Details' }).click();
-  await page.getByLabel('Date of study').fill('2026-03-01');
-  await page.locator('.steps .pill', { hasText: '6MWT' }).click();
+  await page.locator('[data-field="ctx.date"] input').fill('2026-03-01');
+  await page.locator('[data-group="trend"]').evaluate(e => { e.open = true; });
   await addWalk(0, '2025-03-01', '430');
   await addWalk(1, '2025-09-01', '410', '92');
   await page.locator('.tr-row.today input.num').first().fill('360');
@@ -154,7 +149,6 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
   await rows().nth(2).getByRole('button', { name: /Remove walk 3/ }).click();
   ok(await rows().count() === 2, 'row removed');
   // report text
-  await page.locator('.steps .pill', { hasText: 'Report' }).click();
   const six = await page.locator('[data-sec="six"] p').innerText();
   ok(/6MWD trend over 3 walks/.test(six) && /Latest versus previous walk: -50 m/.test(six), 'report carries the trend: ' + six.slice(0, 160));
   ok(/minimal important difference/.test(await page.locator('.interp').innerText()), 'interpretation mentions the MID');
@@ -162,6 +156,7 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
   /* ---------------- tips with pictures ---------------- */
   await page.locator('.vw[data-view="case"]').click();
   await loadExample(page, 2); // low FVC no lung volumes
+  await page.locator('#headsup').evaluate(e => { e.open = true; });
   const tip1 = page.locator('.hu-item[data-id="TIP1"]');
   ok(await tip1.count() === 1, 'restriction tip present on the low-FVC example');
   await tip1.locator('summary').click();
@@ -174,10 +169,12 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
   await page.screenshot({ path: SHOTS + '/e_tip.png' });
   // upper airway tip
   await loadExample(page, 5);
+  await page.locator('#headsup').evaluate(e => { e.open = true; });
   const ids = await page.locator('.hu-item').evaluateAll(els => els.map(e => e.getAttribute('data-id')));
   ok(ids.indexOf('TIP4') >= 0, 'upper-airway tip on the upper-airway example: ' + ids.join());
   ok(await page.locator('.hu-item[data-id="TIP4"] .look-fig').count() === 3, 'upper-airway tip shows the three loop pictures');
   await loadExample(page, 6);
+  await page.locator('#headsup').evaluate(e => { e.open = true; });
 
   // ratings tune notes/tips only
   const item = page.locator('.hu-item[data-lvl="note"]').first();
@@ -188,8 +185,9 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
   await item.locator('.rt[data-rate="n"]').click();
   ok(await item.locator('.rt[data-rate="n"]').getAttribute('aria-pressed') === 'false', 'rating toggles off');
   await page.evaluate((id) => { localStorage.setItem('pft.feedback.v1', JSON.stringify((() => { const o = {}; o[id] = { title: 't', by: { a: 'n', b: 'n', c: 'n' } }; o['__alert'] = { title: 'x', by: { a: 'n', b: 'n', c: 'n', d: 'n' } }; return o; })())); }, nid);
-  await page.reload(); await page.waitForSelector('.tgrid');
+  await page.reload(); await page.waitForSelector('#top');
   await loadExample(page, 6);
+  await page.locator('#headsup').evaluate(e => { e.open = true; });
   ok(await page.locator('#headsup > .hu-item[data-id="' + nid + '"]').count() === 0, 'a note rated not useful three times moves out of the main list');
   ok(await page.locator('.hu-quiet .hu-item[data-id="' + nid + '"]').count() === 1, 'it is kept in the quieter list');
   ok(await page.locator('.hu-item[data-lvl="alert"], .hu-item[data-lvl="caution"]').count() >= 1, 'alerts and cautions stay visible');
@@ -214,9 +212,8 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
   const rec = await page.evaluate(() => JSON.parse(localStorage.getItem('pft.bank.v1'))[0]);
   ok(rec.label === 'COPD A' && rec.codes.length >= 2 && Object.keys(rec.sig).length > 3 && rec.state.v >= 2, 'saved record has label, codes, signature, state');
   // free text is dropped by default
-  await page.locator('.steps .pill', { hasText: 'Details' }).click();
+  await page.locator('details.ind').evaluate(e => { e.open = true; });
   await page.getByLabel('Other indication (type only if not listed above)').fill('patient John Q');
-  await page.locator('.steps .pill', { hasText: 'Report' }).click();
   await page.locator('#save-bank').click(); await page.locator('#bank-label').fill('with text'); await page.locator('#bank-save-go').click();
   const rec2 = await page.evaluate(() => JSON.parse(localStorage.getItem('pft.bank.v1'))[0]);
   ok(rec2.state.ctx.indication === '', 'free text left out of the saved case by default');
@@ -268,9 +265,8 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
   // similar cases
   await page.locator('.vw[data-view="case"]').click();
   await loadExample(page, 0);
-  await page.locator('.steps .pill', { hasText: 'Flow–volume loop' }).click();
+  await page.evaluate(() => window.__pft.goto('fvl'));
   await page.locator('[data-field="fvl.loop"] .lp-tile[data-loop="concave"]').click();   // now differs from the saved COPD case
-  await page.locator('.steps .pill', { hasText: 'Report' }).click();
   ok(await page.locator('#similar').count() === 1, 'similar-case card appears for a related saved case');
   const simTxt = await page.locator('#similar').innerText();
   ok(/needing changes|agreed|not been reviewed/.test(simTxt) && /match/.test(simTxt), 'similar card message: ' + simTxt.slice(0, 200).replace(/\n/g, ' / '));
@@ -284,10 +280,11 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
   const m = await browser.newContext({ viewport: { width: 400, height: 800 }, colorScheme: 'dark', hasTouch: true, isMobile: true });
   const mp = await m.newPage();
   const merrs = []; mp.on('pageerror', e => merrs.push(e.message));
-  await mp.goto(FILE); await mp.waitForSelector('.tgrid');
+  await mp.goto(FILE); await mp.waitForSelector('#top');
   const ov = async (label) => { const o = await mp.evaluate(() => ({ sw: document.documentElement.scrollWidth, iw: window.innerWidth })); ok(o.sw <= o.iw + 1, 'no horizontal overflow at 400px: ' + label + ' (' + o.sw + ' vs ' + o.iw + ')'); };
-  await ov('tests');
-  await mp.locator('.ttw .ib').first().tap(); await mp.waitForTimeout(200);
+  await ov('empty page');
+  await mp.locator('.tchip[data-test="spiro"]').tap();
+  await mp.locator('[data-field="spiro.fvc"] .ib').first().tap(); await mp.waitForTimeout(200);
   const pb = await mp.locator('#pop').boundingBox();
   ok(pb && pb.x >= 0 && pb.x + pb.width <= 400.5, 'pop-up fits at 400px: ' + JSON.stringify(pb));
   await mp.screenshot({ path: SHOTS + '/m_pop.png' });
@@ -302,9 +299,9 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
   await mp.locator('.learn-toggle').tap(); await mp.locator('.ln-btn[data-topic="equations"]').tap(); await mp.waitForSelector('.learn-body[data-topic="equations"]'); await ov('learn equations');
   await mp.locator('.vw[data-view="case"]').tap();
   await loadExample(mp, 1, true);
-  await mp.locator('.steps .pill', { hasText: '6MWT' }).tap();
-  await ov('6MWT step'); await mp.screenshot({ path: SHOTS + '/m_six.png', fullPage: true });
-  await mp.locator('.steps .pill', { hasText: 'Report' }).tap(); await ov('report with tips'); await mp.screenshot({ path: SHOTS + '/m_report.png', fullPage: true });
+  await mp.evaluate(() => window.__pft.goto('sixmw'));
+  await ov('6MWT section'); await mp.screenshot({ path: SHOTS + '/m_six.png', fullPage: true });
+  await ov('report with tips'); await mp.screenshot({ path: SHOTS + '/m_report.png', fullPage: true });
   await mp.locator('.vw[data-view="bank"]').tap(); await ov('bank');
   ok(merrs.length === 0, 'no mobile errors ' + merrs.join('|'));
 

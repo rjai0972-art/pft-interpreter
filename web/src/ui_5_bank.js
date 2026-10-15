@@ -240,7 +240,7 @@ function stepBank() {
     listBox.textContent = '';
     const all = bankLoad();
     const items = all.filter(c => bankFilter === 'all' || (bankFilter === 'todo' ? !(c.review && c.review.status) : (c.review && c.review.status === bankFilter)));
-    if (!all.length) { listBox.appendChild(h('p', { class: 'empty-note', text: 'No saved cases yet. Finish a case, open the Report step and choose “Save to case bank”.' })); return; }
+    if (!all.length) { listBox.appendChild(h('p', { class: 'empty-note', text: 'No saved cases yet. Finish a case and choose “Save to case bank” under the report.' })); return; }
     if (!items.length) { listBox.appendChild(h('p', { class: 'empty-note', text: 'No cases match this filter.' })); return; }
     items.forEach(c => listBox.appendChild(bankCaseEl(c, refreshBank)));
   }

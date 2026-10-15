@@ -81,7 +81,7 @@ and the single-file browser version (`PFT_Interpreter_standalone.html`) always w
 - Code signing is optional and not set up. For Windows add a signing certificate to the build; for Mac add an Apple Developer ID and notarization.
   Until then the first-launch steps above are needed.
 
-## How the reading is built (version 5.0)
+## How the reading is built (version 6.0)
 
 The rules layer computes every measurement state before any wording is chosen (ERS/ATS 2022 z-scores and the LLN;
 a reviewed adult phrase catalog anchored to the ERS/ATS 2022, ATS/ERS 2019, ERS/ATS 2023, ERS/ATS 2017, ERS 2019 and
@@ -91,42 +91,41 @@ counts as normal; a component that failed quality criteria drives no pattern or 
 stated, not assumed.
 
 The report follows the reading room's standard language and format (the attendings' PFT reading template), every
-heading with a colon: FLOW-VOLUME CURVE, SPIROMETRY ("Moderate obstructive impairment present (FEV1/FVC below the LLN;
-FEV1 z −3.1)." / "Mildly reduced FVC suggests possible restrictive impairment." and, inside the same section, the
-bronchodilator response: "After bronchodilator: FEV1 1.55 → 1.95 L (60% predicted), a change of +400 mL (+12.4% of
-predicted). Spirometry significantly improved after bronchodilator administration (FEV1)."), LUNG VOLUMES ("Reduced
-Total Lung Capacity (TLC) is consistent with moderate restrictive impairment." / "Lung volumes indicate air
-trapping."), RESPIRATORY FORCES, DIFFUSING CAPACITY ("Moderately reduced; the value is not corrected for hemoglobin
-(Hgb 10.0 g/dL, low). Corrected for the anemia the DLCO is 58% predicted." / "Moderately reduced; the value is
-corrected for hemoglobin."), PAST TESTING COMPARISON ("Since last testing (3/1/2024): FEV1 has changed by −16% & −300
-mL. This change is likely to be significant given testing margin of error of ~15%."), 6MWT ("Exertional hypoxemia
-evidenced by a 10-point decline in oxygen saturation." / "Reduced walking distance given the predicted normal
-range…") and INTERPRETATION ("There is a moderate obstructive ventilatory defect with hyperinflation. Pattern is
-consistent with moderate COPD. In the presence of an obstructive ventilatory defect the decreased diffusing capacity
-suggests pulmonary emphysema." / "The diffusion capacity is moderately impaired which can be seen in restrictive lung
-disease before FVC falls, pulmonary arterial disease (i.e. PE, PH), anemia, smoking before testing. Clinical
-correlation recommended." — anemia is listed, and offered as a differential, only when the value is not corrected for
-hemoglobin). The grades come from z-scores rather than the template's percent cut-offs, the bronchodilator criterion
-is the ERS/ATS 2022 one (the 2005 result is quoted when the two disagree), and the "significant change" margin on past
-testing is a setting: ERS/ATS (FEV1 and FVC 15%, DLCO 10%) or the reading-room template (10% and 20%). Tapped
-suggestions become "Suggest …" sentences at the end of the interpretation; the attestation line and "There are no
-prior studies available for comparison." are offered as taps. Lung volumes or a DLCO that were not ticked print as
-"not performed", as in the template.
+heading with a colon, and says each thing once. The sections carry the facts: SPIROMETRY ("Moderate obstructive
+impairment present (FEV1/FVC below the LLN; FEV1 z −3.1)." and, in the same section, one sentence for the
+bronchodilator numbers: "After bronchodilator: FEV1 1.55 → 1.95 L (+400 mL, +12.4% of predicted); FVC 3.10 → 3.30 L
+(+200 mL, +5.5% of predicted)."), LUNG VOLUMES, DIFFUSING CAPACITY ("Moderately reduced; the value is not corrected for
+hemoglobin (Hgb 10.0 g/dL, low). Corrected for the anemia the DLCO is 58% predicted."), PAST TESTING COMPARISON (one
+sentence per prior study: "Since last testing (3/5/2024, 1 year earlier): FEV1 −16% (−300 mL, 1.85 → 1.55 L), a
+significant decline; FVC without significant change (−2%)."), 6MWT. The INTERPRETATION reads the tests together in
+as few sentences as the findings allow: "There is a moderate obstructive ventilatory defect with hyperinflation and a
+moderately reduced diffusing capacity, consistent with emphysema. Pattern is consistent with moderate COPD. Significant
+reversal of airways obstruction after bronchodilator (FEV1 +12% of predicted)." / "There is a mild restrictive
+ventilatory defect without airflow obstruction, with a normal diffusing capacity, which favors an extrapulmonary cause
+(chest wall, obesity, neuromuscular) over interstitial lung disease; the reduced ERV points to body habitus." / "… with
+a moderately reduced diffusing capacity; the combination suggests a parenchymal (interstitial) process rather than an
+extrapulmonary cause." The user's own sentence for an isolated low DLCO is kept, with anemia listed (and offered as a
+differential) only when the value is not corrected for hemoglobin. Grades come from z-scores rather than the template's
+percent cut-offs; the bronchodilator criterion is the ERS/ATS 2022 one (the 2005 result is quoted when the two
+disagree); the "significant change" margin on past testing is a setting (ERS/ATS or the reading-room template). Tapped
+suggestions become "Suggest …" sentences; the attestation line, "no prior studies" and the clinical-response caveat
+after a negative bronchodilator test are offered as taps.
 
 What is copied is the sections and the INTERPRETATION. The header (date, demographics, BMI, reference set) and the
 INTERPRETABILITY section are added only when "With header" is chosen in the settings.
 
-The interface: the entry form on the left and the report, as it will read, building on the right in real time. Each
-index is one row — category buttons, then the z-score, value and % predicted boxes beside them; a typed z-score sets
-the category, and a typed value sets it where a threshold exists (6MWD against the LLN, SpO2 nadir, heart-rate
-recovery, hemoglobin, FeNO). Only the essentials are shown (FEV1/FVC, FEV1, FVC; TLC, RV, RV/TLC; DLCO, its hemoglobin
-correction, VA, KCO) and the rest sits under "+ More". Every value box can be typed in the unit on the report (tap the
-unit: cm/in, kg/lb, m/ft, mL/min/mmHg or mmol/min/kPa); the choice applies to that quantity everywhere and is
-remembered. "Compare with a prior study" sits at the top of the step and adds a column of prior boxes beside this
-study's values (several priors add several columns); "Bronchodilator given" adds post-bronchodilator boxes beside the
-pre values and the change is calculated from them. When a pattern makes one more value useful, the step asks for it
-(a restrictive pattern with a normal DLCO asks for the ERV; a reduced DLCO asks for its hemoglobin basis, the
-hemoglobin and VA/KCO; obstruction asks for post-bronchodilator values); nothing is assumed from an unanswered prompt.
-Quick sets on the first screen can be edited and new ones saved from the current selection; none of the built-in sets
-picks the flow–volume loop. Two themes (paper and slate) are selectable in the header.
+The interface is one page. At the top: the patient strip (age, sex, smoking, height, weight with a BMI, date), the
+indications as a dropdown, the tests as a row of chips with the quick sets in a dropdown (editable; none picks the
+flow–volume loop), and a settings fold. Each tapped test is a collapsible section beneath, in test order, showing only
+the essentials (FEV1/FVC, FEV1, FVC; TLC, RV, RV/TLC; DLCO, its correction basis, hemoglobin, VA, KCO) with the rest
+under "+ More". Each index is one row: category buttons, then the z-score, value and % predicted boxes beside them; a
+typed z-score sets the category, and a typed value sets it where a threshold exists. Every box can be typed in the
+unit on the report (tap the unit: cm/in, kg/lb, m/ft, mL/min/mmHg or mmol/min/kPa); the choice applies to that quantity
+everywhere and is remembered. "+ prior study" in a section's header adds a column of prior boxes beside this study's
+values, with the prior study's date in the column header (the same column appears on every test that has comparable
+indices; "+ older study" adds another). "Bronchodilator given" adds post-bronchodilator boxes beside the pre values.
+When a pattern makes one more value useful, the section asks for it (a restrictive pattern with a normal DLCO asks for
+the ERV; a reduced DLCO asks for its correction basis, the hemoglobin and VA/KCO; obstruction asks for
+post-bronchodilator values). The report builds on the right as values are entered, with the copy buttons, the optional
+wording, differentials, prompts and the heads-up list beneath it. Two themes, linen and charcoal, in neutral tones.
 Source code and tests: `web/`; the catalog and its rule specification: `web/catalog/`.

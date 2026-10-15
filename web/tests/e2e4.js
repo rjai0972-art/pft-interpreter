@@ -20,10 +20,11 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
   page.on('pageerror', e => errs.push('pageerror: ' + e.message));
   page.on('console', m => { if (m.type() === 'error' && !/fonts\.g|ERR_|Failed to load resource/.test(m.text())) errs.push('console: ' + m.text()); });
   await page.goto(FILE);
-  await page.waitForSelector('.tgrid');
+  await page.waitForSelector('#top');
 
   // COPD example: suggestions and wording level
   await loadExample(page, 0);
+  await page.locator('details[data-group="settings"]').evaluate(e => { e.open = true; });
   ok(await page.locator('[data-field="settings.style"] .ch').count() === 3, 'three wording levels');
   await openCard(page, 'suggest');
   const sug = page.locator('#suggest .sug');
@@ -75,14 +76,14 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
 
   // prior comparability flags live with the prior block on each test step
   await page.evaluate(() => window.__pft.goto('dlco'));
-  await page.waitForSelector('[data-prior-block="dlco"]');
-  await page.locator('input[data-prior-toggle="dlco"]').check();
+  await page.waitForSelector('[data-prior-add="dlco"]');
+  if (/prior study/.test(await page.locator('[data-prior-add="dlco"]').innerText())) await page.locator('[data-prior-add="dlco"]').click();
   await page.locator('[data-cell="dlco.dlco_abs"] input').fill('14.2');
-  await page.locator('[data-cell="prior.dlco"] input').fill('17.0');
-  ok(await page.locator('[data-cell="prior.dlco"] .ubtn').innerText() === 'mL', 'the prior DLCO box carries the unit switch');
-  ok(/DLCO has changed by -16% & -2\.8 mL\/min\/mmHg \(17\.0 → 14\.2\)\. This change is likely to be significant given testing margin of error of ~10%/.test(await page.locator('#pv .sec[data-sec="prior"]').innerText()), 'DLCO comparison with its 10% threshold: ' + await page.locator('#pv .sec[data-sec="prior"]').innerText());
-  const cmp = page.locator('[data-group="cmp"]');
-  ok(await cmp.locator('input[type=checkbox]').count() === 2, 'the DLCO step offers the two comparability flags that matter for DLCO');
+  await page.locator('[data-cell="prior.dlco"] input').first().fill('17.0');
+  ok(await page.locator('[data-cell="prior.dlco"] .ubtn').first().innerText() === 'mL', 'the prior DLCO box carries the unit switch');
+  ok(/DLCO -16% \(17\.0 → 14\.2 mL\/min\/mmHg\)[^.]*significant/.test(await page.locator('#pv .sec[data-sec="prior"]').innerText()), 'DLCO comparison with its 10% threshold: ' + await page.locator('#pv .sec[data-sec="prior"]').innerText());
+  const cmp = page.locator('details.tsec[data-mod="dlco"] [data-group="cmp"]');
+  ok(await cmp.locator('input[type=checkbox]').count() === 2, 'the DLCO section offers the two comparability flags that matter for DLCO');
   await cmp.locator('summary').click();
   await cmp.locator('input[type=checkbox]').first().check(); await page.waitForTimeout(80);
   ok(/not directly comparable \(different hemoglobin-adjustment basis\)/.test(await page.locator('#pv .sec[data-sec="prior"]').innerText()), 'hemoglobin-basis flag caveats the DLCO comparison: ' + await page.locator('#pv .sec[data-sec="prior"]').innerText());
@@ -116,8 +117,8 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
   const G = page.locator('#differentials .dx-group[data-dx-group="dlco_isolated"]');
   ok(await G.locator('.dx[data-dx^="dx."]').count() === 6 && await G.locator('.dx[data-dx^="study."]').count() === 6, 'six differentials and six studies offered for the finding');
   ok(await page.locator('#differentials .dx-group[data-dx-group="general"] .dx').count() >= 3, 'general suggestions (repeat PFTs, clinic consultation, e-consult) offered');
-  const nSug0 = (await page.locator('#doc .interp').innerText().then(t => t.match(/Suggest /g) || [])).length;
-  ok(await page.locator('#differentials .dx.on').count() === 0 && !/Differential considerations/.test(await page.locator('#doc').innerText()) && nSug0 === 1, 'nothing included by default (only the template\'s own hemoglobin suggestion)');
+  const nSug0 = (await page.locator('#doc .interp').innerText().then(t => t.match(/[Ss]uggest /g) || [])).length;
+  ok(await page.locator('#differentials .dx.on').count() === 0 && !/Differential considerations/.test(await page.locator('#doc').innerText()) && nSug0 === 1, 'nothing included by default (only the template\'s own hemoglobin suggestion): ' + nSug0);
   ok(await page.locator('#suggest .sug[data-sug="dlco.isolated_differential"]').count() === 1 && await page.locator('#suggest .sug[data-sug="followup.hb"]').count() === 1, 'the generic catalog wording is offered while nothing itemized overlaps it');
   ok(await page.locator('#suggest .sug[data-sug="local.attest"]').count() === 1 && await page.locator('#suggest .sug[data-sug="local.no_prior"]').count() === 1, 'reading-room template sentences (attestation, no prior studies) are offered as taps');
   await page.locator('#differentials .dx[data-dx="dx.dlco_isolated.ild_early"]').click(); await page.waitForTimeout(100);
@@ -145,10 +146,8 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
   await page.locator('#suggest .sug[data-sug="local.attest"]').click(); await page.waitForTimeout(100);
   ok(/PFT interpretation was reviewed with the attending Pulmonologist identified as an additional signer to this note\.$/.test(await page.locator('#doc .interp .impr-p').innerText().then(t => t.trim())), 'attestation sentence closes the conclusion');
   await page.locator('#suggest .sug[data-sug="local.attest"]').click(); await page.waitForTimeout(100);
-  // the live preview on an entry step notes the offer
-  await page.evaluate(() => window.__pft.goto('dlco'));
-  await page.waitForSelector('#pv .pv-sug');
-  ok(/differentials and studies for 2 findings/.test(await page.locator('#pv .pv-sug').innerText()), 'preview points to the differentials on the Report step');
+  // the differentials card summarises the offer
+  ok(/6 studies included/.test(await page.locator('#differentials summary').evaluate(e => e.textContent)), 'the differentials card summarises what is included');
   await page.evaluate(() => { window.__pft.state.review = {}; window.__pft.goto('report'); });
   await page.waitForSelector('#differentials');
   await openCard(page, 'differentials');
@@ -156,20 +155,21 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
 
   // predicted 6MWD calculator on the 6MWT step (Enright & Sherrill 1998, as on MDCalc)
   await page.evaluate(() => { const S = window.PFT.defaultState(); Object.keys(S.tests).forEach(k => { S.tests[k] = false; }); S.tests.sixmw = true; S.sixmw.dist = '420'; window.__pft.load(S, 'sixmw'); });
-  await page.waitForSelector('[data-es]');
+  await page.waitForSelector('[data-es-fold]');
+  await page.locator('[data-es-fold]').evaluate(e => { e.open = true; });
   ok(await page.locator('[data-es]').getAttribute('data-es-state') === 'missing' && /Needs age, sex, height, weight/.test(await page.locator('[data-es] .es-body').innerText()), 'calculator names the missing demographics');
   await page.locator('[data-es-go]').click();
   await page.waitForSelector('[data-field="settings.band"]', { state: 'attached' });
   ok(await page.locator('#main [data-field="ctx.ht"]').count() === 1, 'the link leads to the Details step');
   await page.evaluate(() => { const S = window.__pft.state; S.ctx.age = '65'; S.ctx.sex = 'M'; S.ctx.ht = '175'; S.ctx.wt = '80'; window.__pft.goto('sixmw'); });
-  await page.waitForSelector('[data-es][data-es-state="calc"]');
+  await page.waitForSelector('[data-es][data-es-state="calc"]', { state: 'attached' });
   const esTiles = await page.locator('[data-es] .stat .sv').allInnerTexts();
   ok(esTiles.join('|') === '549 m|396 m|77%', 'predicted, LLN and % predicted tiles: ' + esTiles.join('|'));
   ok(/7\.57 × height/.test(await page.locator('[data-es] .es-body').innerText()) && /used in the report because no laboratory predicted value/.test(await page.locator('[data-es] .es-body').innerText()), 'equation and precedence note shown');
   ok(/Walked 420 m \(77% predicted; LLN 396 m\)\. Total distance within predicted normal range given sex, age, height and weight\./.test(await page.locator('#pv .sec[data-sec="six"]').innerText()), 'the preview reports the calculated reference');
   await page.screenshot({ path: 'shots/46_sixmw_calculator.png', fullPage: true });
   await page.evaluate(() => { const S = window.__pft.state; S.sixmw.pred = '500'; S.sixmw.eq = 'Enright & Sherrill 1998'; window.__pft.goto('sixmw'); });
-  await page.waitForSelector('[data-es][data-es-state="lab"]');
+  await page.waitForSelector('[data-es][data-es-state="lab"]', { state: 'attached' });
   ok(/laboratory-reported predicted value entered below is used/.test(await page.locator('[data-es] .es-body').innerText()), 'a reported predicted value takes precedence');
 
   // composed section sentences

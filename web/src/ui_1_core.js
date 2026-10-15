@@ -1,5 +1,6 @@
 /* PFT Interpreter — interface. Everything on screen is generated from PFT.SCHEMA; the engine does the reasoning.
-   Layout: the entry form on the left, the report as it will read on the right, building in real time. */
+   One page: patient details and the test selector at the top, every selected test as a collapsible section beneath,
+   and the report as it will read on the right, building in real time. */
 (function () {
 'use strict';
 const P = window.PFT, X = window.PFT_EXAMPLES;
@@ -20,7 +21,7 @@ function unitPrefs() { const u = prefGet('pft.units.v1'); const out = {}; if (u 
 
 let S = freshState();
 let R = P.interpret(S);
-let step = 'tests';
+let step = 'ctx';            // the section the page was last asked to show (for scrolling and the running report)
 let mode = 'case';           // 'case' | 'learn' | 'bank'
 let learnTopic = 'basics', learnTerm = '';
 let widgets = [];            // paint callbacks for the currently rendered step
@@ -102,47 +103,33 @@ function decodeCase(s) {
   } catch (e) { return null; }
 }
 
-/* -------------------------------------------------------------------- steps */
-function stepList() {
-  const l = [{ id: 'tests', name: 'Tests' }, { id: 'ctx', name: 'Details' }];
+/* ----------------------------------------------------------------- sections */
+function stepList() {   // the order of the sections on the page (kept for callers)
+  const l = [{ id: 'ctx', name: 'Details' }];
   P.TESTS.forEach(t => { if (S.tests[t.key] && !t.hidden) l.push({ id: t.key, name: SHORT[t.key] || t.name }); });
   l.push({ id: 'report', name: 'Report' });
   return l;
 }
 function secFor(mod) { return R.sections.filter(s => s.key === (SECKEY[mod] || mod))[0]; }
 function stepHasData(id) {
-  if (id === 'tests') return false;
   if (id === 'ctx') { const c = S.ctx; return !!(c.age || c.sex || c.ht || c.indication || (c.indic && c.indic.length)); }
   if (id === 'report') return R.anyData;
   const s = secFor(id); return !!(s && !s.empty);
 }
+/* Show a section: switch the test on if needed, render, and scroll to it (the report column scrolls to its section). */
 function goto(id) {
-  mode = 'case'; step = id; render();
-  window.scrollTo(0, 0);
+  mode = 'case';
+  if (id === 'tests') id = 'ctx';
+  const t = P.TESTS.filter(x => x.key === id)[0];
+  if (t && !S.tests[id]) S.tests[id] = true;
+  step = id; render();
+  const el = id === 'report' ? $('pv') : (id === 'ctx' ? $('top') : document.getElementById('sec-' + id));
+  if (el && el.scrollIntoView) { try { el.scrollIntoView({ block: 'start' }); } catch (e) { /* ignore */ } }
+  else window.scrollTo(0, 0);
+  if (el && el.tagName === 'DETAILS') el.open = true;
   const m = $('main'); if (m) m.focus({ preventScroll: true });
 }
-function neighbour(dir) {
-  const l = stepList(); let i = -1;
-  l.forEach((x, k) => { if (x.id === step) i = k; });
-  return l[i + dir] || null;
-}
-function renderSteps() {
-  const nav = $('steps'); const prevScroll = nav.scrollLeft; nav.textContent = '';
-  nav.hidden = mode !== 'case';
-  if (mode !== 'case') return;
-  const promptSteps = {}; (R.prompts || []).forEach(p => { promptSteps[p.mod] = (promptSteps[p.mod] || 0) + 1; });
-  stepList().forEach(s => {
-    const cls = ['pill'];
-    if (stepHasData(s.id)) cls.push('has');
-    if (s.id === 'report' && R.counts.alert > 0) cls.push('warn');
-    const b = h('button', { type: 'button', class: cls.join(' '), 'data-step': s.id, 'aria-current': s.id === step ? 'step' : null, onclick: () => goto(s.id) },
-      [h('span', { class: 'dot', 'aria-hidden': 'true' }), s.name, promptSteps[s.id] ? h('span', { class: 'ask', title: plural(promptSteps[s.id], 'value') + ' would help on this step', text: '?' }) : null]);
-    nav.appendChild(b);
-  });
-  nav.scrollLeft = prevScroll;
-  const cur = nav.querySelector('[aria-current="step"]');
-  if (cur && cur.scrollIntoView) { try { cur.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch (e) { /* ignore */ } }
-}
+function renderSteps() { /* no stepper on the single page */ }
 function renderHeaderChip() {
   const c = R.counts, total = c.alert + c.caution + c.note + c.tip, box = $('hu-chip');
   box.textContent = '';
@@ -150,8 +137,8 @@ function renderHeaderChip() {
   const lvl = c.alert ? 'alert' : (c.caution ? 'caution' : 'note');
   const bits = [];
   if (c.alert) bits.push(c.alert + ' alert'); if (c.caution) bits.push(c.caution + ' caution'); if (c.tip) bits.push(c.tip + ' look-for'); if (c.note) bits.push(c.note + ' note');
-  box.appendChild(h('button', { type: 'button', class: 'chip ' + lvl, title: 'Open the heads-up list', 'aria-label': 'Heads-up: ' + bits.join(', ') + '. Open report.',
-    onclick: () => { goto('report'); const hu = $('headsup'); if (hu && hu.scrollIntoView) hu.scrollIntoView({ block: 'start' }); } },
+  box.appendChild(h('button', { type: 'button', class: 'chip ' + lvl, title: 'Open the heads-up list', 'aria-label': 'Heads-up: ' + bits.join(', ') + '. Open the list.',
+    onclick: () => { if (mode !== 'case') { mode = 'case'; render(); } const hu = $('headsup'); if (hu) { hu.open = true; if (hu.scrollIntoView) hu.scrollIntoView({ block: 'start' }); } } },
     ['Heads-up · ' + bits.join(' · ')]));
 }
 
@@ -175,7 +162,7 @@ function setMode(m, opts) {
 function openLearn(topic, term) { closePop(); setMode('learn', { topic: topic, term: term }); }
 function loadState(st, to, msg) {
   S = P.normalizeState(st); R = P.interpret(S); mode = 'case'; caseTok = rnd();
-  const l = stepList(); step = l.some(x => x.id === to) ? to : 'tests';
+  const l = stepList(); step = l.some(x => x.id === to) ? to : 'ctx';
   render(); window.scrollTo(0, 0);
   const m = $('main'); if (m) m.focus({ preventScroll: true });
   if (msg) toast(msg);
@@ -347,9 +334,15 @@ function gridHead(mod, ctx) {
   const cells = [];
   const hd = (text, cls, unit) => h('span', { class: 'ix-c hd' + (cls ? ' ' + cls : ''), text: text }, unit ? [h('span', { class: 'u' })] : null);   // the empty unit span keeps the header cell as wide as the boxes below it
   (ctx.columns || []).forEach(k => cells.push(k === 'z' ? h('span', { class: 'ix-c hd zc', text: 'z-score' }) : hd(ctx.colLabels[k] || k, '', true)));
-  if (ctx.priors) ctx.priors.forEach((p, i) => { const pr = PRIOR_MAP[mod]; for (let j = 0; j < pr.n; j++) cells.push(hd(j === 0 ? 'Prior' + (ctx.priors.length > 1 ? ' ' + (i + 1) : '') : '', 'pri', true)); });
+  if (ctx.priors) ctx.priors.forEach((p, i) => { const pr = PRIOR_MAP[mod]; for (let j = 0; j < pr.n; j++) cells.push(hd(j === 0 ? (pr.n > 1 ? 'Prior ' + (ctx.priors.length > 1 ? (i + 1) + ' ' : '') + 'value' : 'Prior' + (ctx.priors.length > 1 ? ' ' + (i + 1) : '')) : '% pred', 'pri', true)); });
   if (ctx.bd) { cells.push(hd('Post-BD', 'post', true)); cells.push(h('span', { class: 'ix-c hd txt', text: 'Δ' })); }
-  return h('div', { class: 'ix ix-head', 'aria-hidden': 'true' }, [h('div', { class: 'ix-l' }), h('div', { class: 'ix-seg' }), h('div', { class: 'ix-vals' }, cells)]);
+  const head = h('div', { class: 'ix ix-head' }, [h('div', { class: 'ix-l' }), h('div', { class: 'ix-seg' }), h('div', { class: 'ix-vals' }, cells)]);
+  if (!ctx.priors) return head;
+  // a line above the header with the date of each prior study (the column's identity), aligned with its boxes
+  const n = ctx.priors.length, pr = PRIOR_MAP[mod];
+  const dates = [h('span', { class: 'pr-head cur' }, [h('span', { class: 'pr-hl', text: 'This study' }), h('span', { class: 'fine', text: S.ctx.date ? dateShort(S.ctx.date) : 'date at the top of the page' })])];
+  ctx.priors.forEach((p, i) => dates.push(priorHeadCell(p, i, n)));
+  return [h('div', { class: 'pr-dates', 'data-prior-dates': mod, style: '--pr-n:' + n + ';--pr-w:' + pr.n }, dates), head];
 }
 /* how many value boxes a grid row carries; past four the boxes go on a line of their own under the buttons */
 function gridCells(mod, ctx) { return (ctx.columns ? ctx.columns.length : 0) + (ctx.priors ? ctx.priors.length * PRIOR_MAP[mod].n : 0) + (ctx.bd ? 2 : 0); }
@@ -538,13 +531,6 @@ function groupEl(mod, g, ctx) {
   if (g.when) widgets.push(() => { el.hidden = g.when.is.indexOf(S[mod][g.when.f]) < 0; });
   return el;
 }
-function navRow() {
-  const prev = neighbour(-1), next = neighbour(1);
-  return h('div', { class: 'nav' }, [
-    prev ? h('button', { type: 'button', class: 'btn', onclick: () => goto(prev.id), text: '← ' + prev.name }) : h('span'),
-    next ? h('button', { type: 'button', class: 'btn primary', onclick: () => goto(next.id), text: (next.id === 'report' ? 'View report' : 'Next: ' + next.name) + ' →' }) : null
-  ]);
-}
 function stepHead(title, intro, src, gkey, keepIntro) {
   return h('div', { class: 'step-head' }, [h('div', { class: 'sh-title' }, [h('h2', { text: title }), gkey ? info(gkey) : null]), keepIntro && intro ? h('p', { class: 'intro', text: intro }) : null]);
 }
@@ -594,51 +580,33 @@ function quickSets() {
 }
 function saveQuickSets(list) { prefSet(QS_KEY, list); }
 let qsEdit = false;
-function stepTests() {
-  const main = $('main');
+/* Quick sets as a dropdown (plus an editor), and one tap-chip per test: a ticked test is a section on the page. */
+function testPicker() {
   const shown = P.TESTS.filter(t => !t.hidden);
-  const groups = []; shown.forEach(t => { if (groups.indexOf(t.group) < 0) groups.push(t.group); });
-  const count = h('span', { class: 'count' });
-  const cont = h('button', { type: 'button', class: 'btn primary', text: 'Continue →', onclick: () => goto('ctx') });
-  const rows = {};
-  const selBlock = groups.map(g => h('div', { class: 'sel-group' }, [
-    h('h3', { text: g }),
-    h('div', { class: 'tgrid' }, shown.filter(t => t.group === g).map(t => {
-      const id = uid('tt');
-      const cb = h('input', { type: 'checkbox', id: id, 'data-test': t.key, checked: !!S.tests[t.key],
-        onchange: (e) => { S.tests[t.key] = e.target.checked; sync(); } });
-      const lab = h('label', { class: 'tt', for: id }, [cb, h('span', {}, [h('span', { class: 'nm', text: t.name }), h('span', { class: 'ds', text: t.desc })])]);
-      rows[t.key] = { lab: lab, cb: cb };
-      return h('div', { class: 'ttw' }, [lab, info('test.' + t.key)]);
-    }))
-  ]));
-  widgets.push(() => {
-    let n = 0;
-    shown.forEach(t => { const r = rows[t.key]; r.cb.checked = !!S.tests[t.key]; r.lab.classList.toggle('on', !!S.tests[t.key]); if (S.tests[t.key]) n++; });
-    count.textContent = n ? plural(n, 'test') + ' selected' : 'Select at least one test';
-    cont.disabled = !n;
-  });
-  // quick sets, editable
-  const qsBox = h('div', { class: 'presets', 'data-quicksets': '1' });
-  const editBtn = h('button', { type: 'button', class: 'lnk', 'data-qs-edit': '1', text: 'Edit', onclick: () => { qsEdit = !qsEdit; paintQs(); } });
+  const sel = h('select', { id: 'qs', 'aria-label': 'Quick sets', onchange: (e) => {
+    const v = e.target.value; if (v === '') return;
+    if (v === '__edit') { qsEdit = !qsEdit; paintQs(); e.target.value = ''; return; }
+    const q = quickSets()[+v]; if (q) { Object.keys(S.tests).forEach(k => { S.tests[k] = q.tests.indexOf(k) >= 0; }); render(); }
+  } });
+  const edBox = h('div', { class: 'qs-editbox', hidden: true });
   const selectedTests = () => Object.keys(S.tests).filter(k => S.tests[k]);
   function paintQs() {
     const list = quickSets();
-    qsBox.textContent = '';
-    editBtn.textContent = qsEdit ? 'Done' : 'Edit';
-    if (!qsEdit) {
-      list.forEach(q => qsBox.appendChild(h('button', { type: 'button', class: 'chip qs', 'data-qs': q.name, title: q.tests.map(k => SHORT[k] || k).join(', '), text: q.name,
-        onclick: () => { Object.keys(S.tests).forEach(k => { S.tests[k] = q.tests.indexOf(k) >= 0; }); sync(); } })));
-      return;
-    }
-    const ed = h('div', { class: 'qs-edit' });
+    sel.textContent = '';
+    sel.appendChild(h('option', { value: '', text: 'Quick set…' }));
+    list.forEach((q, i) => sel.appendChild(h('option', { value: String(i), text: q.name, title: q.tests.map(k => SHORT[k] || k).join(', ') })));
+    sel.appendChild(h('option', { value: '__edit', text: qsEdit ? 'Close the editor' : 'Edit quick sets…' }));
+    sel.value = '';
+    edBox.hidden = !qsEdit; edBox.textContent = '';
+    if (!qsEdit) return;
+    const ed = h('div', { class: 'qs-edit', 'data-quicksets': '1' });
     list.forEach((q, i) => {
       const nameIn = h('input', { type: 'text', value: q.name, 'aria-label': 'Quick set name', maxlength: '48', oninput: (e) => { const l = quickSets(); l[i].name = e.target.value; saveQuickSets(l); } });
       ed.appendChild(h('div', { class: 'qs-row', 'data-qs-row': q.name }, [
         nameIn,
         h('span', { class: 'fine qs-tests', text: q.tests.map(k => SHORT[k] || k).join(', ') || 'no tests' }),
         h('span', { class: 'qs-acts' }, [
-          h('button', { type: 'button', class: 'btn sm quiet', text: 'Set to current selection', title: 'Replace this quick set\'s tests with the tests ticked below', onclick: () => { const l = quickSets(); l[i].tests = selectedTests(); saveQuickSets(l); paintQs(); toast('Quick set updated'); } }),
+          h('button', { type: 'button', class: 'btn sm quiet', text: 'Set to current selection', title: 'Replace this quick set\'s tests with the tests ticked here', onclick: () => { const l = quickSets(); l[i].tests = selectedTests(); saveQuickSets(l); paintQs(); toast('Quick set updated'); } }),
           h('button', { type: 'button', class: 'btn sm quiet danger', text: 'Delete', onclick: () => { const l = quickSets(); l.splice(i, 1); saveQuickSets(l); paintQs(); } })
         ])
       ]));
@@ -650,17 +618,30 @@ function stepTests() {
       if (!ts.length) { toast('Tick the tests first'); return; }
       const l = quickSets(); l.push({ name: nm, tests: ts }); saveQuickSets(l); newName.value = ''; paintQs(); toast('Quick set saved');
     } })]));
-    ed.appendChild(h('div', { class: 'qs-row' }, [h('button', { type: 'button', class: 'lnk', 'data-qs-reset': '1', text: 'Restore the built-in quick sets', onclick: () => { saveQuickSets(P.PRESETS.map(p => ({ name: p.name, tests: p.tests.slice() }))); paintQs(); } })]));
-    qsBox.appendChild(ed);
+    ed.appendChild(h('div', { class: 'qs-row' }, [
+      h('button', { type: 'button', class: 'lnk', 'data-qs-reset': '1', text: 'Restore the built-in quick sets', onclick: () => { saveQuickSets(P.PRESETS.map(p => ({ name: p.name, tests: p.tests.slice() }))); paintQs(); } }),
+      h('button', { type: 'button', class: 'lnk', 'data-qs-done': '1', text: 'Done', onclick: () => { qsEdit = false; paintQs(); } })
+    ]));
+    edBox.appendChild(ed);
   }
   paintQs();
-  main.appendChild(h('div', { class: 'card' }, [
-    stepHead('Which tests were performed?', 'Tick what was done; each test becomes one step. The bronchodilator response is entered inside Spirometry.', null, null, true),
-    promptStrip('tests'),
-    h('div', { class: 'sel-group' }, [h('div', { class: 'grp-head' }, [h('h3', { text: 'Quick sets' }), editBtn]), qsBox]),
-    selBlock,
-    h('div', { class: 'start-row' }, [cont, count])
-  ]));
+  const chips = {};
+  const groups = []; shown.forEach(t => { if (groups.indexOf(t.group) < 0) groups.push(t.group); });
+  const chipRow = h('div', { class: 'tchips' }, groups.map(g => h('span', { class: 'tgroup', 'aria-label': g }, shown.filter(t => t.group === g).map(t => {
+    const b = h('button', { type: 'button', class: 'tchip', 'data-test': t.key, 'aria-pressed': 'false', title: t.desc, text: SHORT[t.key] || t.name,
+      onclick: () => { S.tests[t.key] = !S.tests[t.key]; render(); if (S.tests[t.key]) { const el = document.getElementById('sec-' + t.key); if (el && el.scrollIntoView) el.scrollIntoView({ block: 'start' }); } } });
+    chips[t.key] = b; return b;
+  }))));
+  const count = h('span', { class: 'fine count' });
+  widgets.push(() => {
+    let n = 0;
+    shown.forEach(t => { chips[t.key].setAttribute('aria-pressed', String(!!S.tests[t.key])); if (S.tests[t.key]) n++; });
+    count.textContent = n ? plural(n, 'test') + ' on the page' : 'Tap the tests that were performed';
+  });
+  return h('div', { class: 'tests-row', 'data-tests': '1' }, [
+    h('div', { class: 'tests-head' }, [h('span', { class: 'lab', text: 'Tests' }), sel, count]),
+    chipRow, edBox
+  ]);
 }
 function methodNote() {
   const li = (t) => h('li', { text: t });
@@ -679,39 +660,88 @@ function methodNote() {
   ])]);
 }
 
-/* ------------------------------------------------------------ step: details */
-function stepCtx() {
-  const main = $('main'), m = P.SCHEMA.ctx;
+/* ------------------------------------------------------------ the top of the page */
+/* Patient details in one strip, the indications as a dropdown, the tests, and a settings fold. */
+function patientStrip() {
+  const m = P.SCHEMA.ctx, g = m.groups.filter(x => x.title === 'Patient')[0];
+  const cells = g.fields.map(f => {
+    if (f.type === 'num') {
+      const extra = textCell('note');
+      if (f.id === 'wt') widgets.push(() => { const bm = R.facts.ctx.bmi; extra.textContent = isNum(bm) ? 'BMI ' + bm.toFixed(1) : ''; });
+      return h('div', { class: 'ps-cell', 'data-field': 'ctx.' + f.id }, [h('span', { class: 'ps-l' }, [f.label, info(glossKey('ctx', f.id))]), h('div', { class: 'ix-vals' }, [numCell('ctx', f, { aria: f.label }), extra])]);
+    }
+    const blank = f.opts[0][0] === '';
+    const btns = (blank ? f.opts.slice(1) : f.opts).map(o => h('button', { type: 'button', class: 'ch', role: 'radio', 'data-v': o[0], 'aria-checked': 'false', text: o[1],
+      onclick: () => { const cur = S.ctx[f.id]; S.ctx[f.id] = (cur === o[0] && blank) ? '' : o[0]; sync(); } }));
+    widgets.push(() => btns.forEach(b => b.setAttribute('aria-checked', String(b.getAttribute('data-v') === S.ctx[f.id]))));
+    return h('div', { class: 'ps-cell', 'data-field': 'ctx.' + f.id }, [h('span', { class: 'ps-l', text: f.id === 'sex' ? 'Sex' : (f.id === 'smoke' ? 'Smoking' : f.label) }), h('div', { class: 'seg', role: 'radiogroup', 'aria-label': f.label }, btns)]);
+  });
+  const dateId = uid('d');
+  const dateIn = h('input', { type: 'date', id: dateId, 'aria-label': 'Date of study', value: S.ctx.date, oninput: (e) => { S.ctx.date = e.target.value; sync(); } });
+  widgets.push(() => { if (document.activeElement !== dateIn && dateIn.value !== S.ctx.date) dateIn.value = S.ctx.date; });
+  cells.push(h('div', { class: 'ps-cell', 'data-field': 'ctx.date' }, [h('label', { class: 'ps-l', for: dateId, text: 'Date' }), dateIn]));
+  return h('div', { class: 'pstrip', 'data-patient': '1' }, cells);
+}
+function indicationsFold() {
+  const m = P.SCHEMA.ctx, g = m.groups.filter(x => x.title === 'Study')[0];
+  const multi = g.fields.filter(f => f.type === 'multi')[0], other = g.fields.filter(f => f.type === 'txt')[0];
+  const sum = h('span', { class: 'ind-sum' });
+  const det = h('details', { class: 'optgrp fold ind', 'data-group': 'indications' }, [
+    h('summary', {}, [h('span', { class: 't', text: 'Indications' }), sum]),
+    h('div', { class: 'fields' }, [multiField('ctx', multi), txtField('ctx', other, 'txt')])
+  ]);
+  widgets.push(() => {
+    const labels = R.facts.ctx.indicLabels.slice(); if (R.facts.ctx.indication) labels.push(R.facts.ctx.indication);
+    sum.textContent = labels.length ? labels.join(', ') : 'none selected';
+    sum.classList.toggle('on', labels.length > 0);
+  });
+  return det;
+}
+function settingsFold() {
+  const m = P.SCHEMA.ctx, eq = m.groups.filter(x => /^Reference equations/.test(x.title))[0];
   const BANDS = [['0', 'Off'], ['0.25', '0.25 SD (default)'], ['0.5', '0.5 SD']];
   const bb = BANDS.map(o => h('button', { type: 'button', class: 'ch', role: 'radio', 'data-v': o[0], 'aria-checked': 'false', text: o[1], onclick: () => { S.settings.band = o[0]; sync(); } }));
   widgets.push(() => bb.forEach(b => b.setAttribute('aria-checked', String(Number(S.settings.band) === Number(b.getAttribute('data-v'))))));
-  const card = h('div', { class: 'card' }, [
-    stepHead(m.title, '', m.src),
+  return h('details', { class: 'optgrp fold', 'data-group': 'settings' }, [h('summary', {}, [h('span', { class: 't', text: 'Settings: reference equations, thresholds, wording, what the copy includes' })]), h('div', { class: 'fields' }, [
+    groupEl('ctx', eq),
+    serialRow(),
+    h('div', { class: 'prm ch-row', 'data-field': 'settings.band' }, [
+      h('div', { class: 'prm-top' }, [h('span', { class: 'prm-l', text: 'Near-LLN review flag' }), h('span', { class: 'hint', text: 'A value this close above the LLN is marked "near the LLN". It stays within normal limits; this is a local review convention, not a category' })]),
+      h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Near-LLN review flag' }, bb)
+    ]),
+    styleRow(),
+    copyRow()
+  ])]);
+}
+function topCard() {
+  return h('div', { class: 'card top', id: 'top' }, [
+    patientStrip(),
     promptStrip('ctx'),
-    m.groups.map(g => groupEl('ctx', g)),
-    h('details', { class: 'optgrp fold', 'data-group': 'settings' }, [h('summary', {}, [h('span', { class: 't', text: 'Settings: thresholds, wording level, what the copy includes' })]), h('div', { class: 'fields' }, [
-      serialRow(),
-      h('div', { class: 'prm ch-row', 'data-field': 'settings.band' }, [
-        h('div', { class: 'prm-top' }, [h('span', { class: 'prm-l', text: 'Near-LLN review flag' }), h('span', { class: 'hint', text: 'A value this close above the LLN is marked "near the LLN". It stays within normal limits; this is a local review convention, not a category' })]),
-        h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Near-LLN review flag' }, bb)
-      ]),
-      styleRow(),
-      copyRow()
-    ])]),
-    navRow()
+    indicationsFold(),
+    testPicker(),
+    promptStrip('tests'),
+    settingsFold()
   ]);
-  main.appendChild(card);
 }
 
-/* -------------------------------------------------------------- step: module */
-function stepModule(key) {
+/* --------------------------------------------------------------- test sections */
+const secOpen = {};
+function testSection(key) {
   const m = P.SCHEMA[key];
   const extra = [];
   if (key === 'fvl') extra.push(h('div', { class: 'learn-link' }, [h('button', { type: 'button', class: 'btn sm quiet', 'data-learn': 'loops', text: 'Learn: how to read a flow–volume loop and what each pattern means →', onclick: () => openLearn('loops') })]));
-  if (key === 'sixmw') { extra.push(predCalcBlock()); extra.push(trendBlock()); }
+  if (key === 'sixmw') {
+    // the calculator and the trend fold away until wanted (the calculator's result is used by the report regardless)
+    const es = predCalcBlock(), tr = trendBlock();
+    const esF = h('details', { class: 'optgrp fold', 'data-group': 'calc', 'data-es-fold': '1', open: !!foldOpen.calc, ontoggle: (e) => { foldOpen.calc = e.target.open; } }, [h('summary', {}, [h('span', { class: 't', text: 'Predicted 6MWD calculator (Enright & Sherrill 1998)' }), h('span', { class: 'tag es-tag' })]), es]);
+    widgets.push(() => { const x = R.facts.six, t = esF.querySelector('.es-tag'); t.textContent = x.es && x.es.ok ? 'predicted ' + Math.round(x.es.pred) + ' m, LLN ' + Math.round(x.es.lln) + ' m' : ''; t.hidden = !t.textContent; });
+    const hasTrend = S.trend6.list.some(r => String(r.dist || '').trim() !== '' || String(r.date || '').trim() !== '');
+    extra.push(esF);
+    extra.push(h('details', { class: 'optgrp fold', 'data-group': 'trend', 'data-trend': '1', open: hasTrend || !!foldOpen.trend, ontoggle: (e) => { foldOpen.trend = e.target.open; } }, [h('summary', {}, [h('span', { class: 't', text: 'Walk distance over time (earlier walks)' })]), tr]));
+  }
   const ctx = { columns: m.columns ? m.columns.map(c => c[0]) : null, colLabels: {} };
   (m.columns || []).forEach(c => { ctx.colLabels[c[0]] = c[1]; });
-  const pr = PRIOR_MAP[key] ? priorBlock(key, ctx) : null;
+  if (PRIOR_MAP[key] && priorShown()) ctx.priors = S.prior.list;
   if (key === 'spiro' && (S.tests.bd || P.bdEntered(S.bd))) ctx.bd = true;
   const body = [];
   m.groups.forEach((g, gi) => {
@@ -719,12 +749,7 @@ function stepModule(key) {
     const isGrid = !!(m.columns && gi === 0 && !g.inline && !g.fold && !g.opt);
     const isRows = !isGrid && !g.inline && !g.fold && !g.opt && !g.when && g.fields.some(f => f.type === 'param' || (f.type === 'sel' && !f.ui));
     if (isGrid || isRows) {
-      const head = h('div', { class: 'grp-head' }, [h('h3', { text: g.title })]);
-      if (g.quick) {
-        const names = g.quick.map(id => g.fields.filter(f => f.id === id)[0].label).join(', ');
-        head.appendChild(h('button', { type: 'button', class: 'btn sm quiet quick', text: 'Unselected = normal', title: 'Marks ' + names + ' as within normal limits wherever nothing is selected yet',
-          onclick: () => { g.quick.forEach(id => { const p = S[key][id]; if (p.c === 'nm' && p.z === '') p.c = 'wnl'; }); sync(); } }));
-      }
+      const head = h('div', { class: 'grp-head' }, [h('h3', { text: g.title }), isGrid && PRIOR_MAP[key] ? priorTools(key) : null]);
       const rows = g.fields.map(f => (f.type === 'param' || (f.type === 'sel' && !f.ui)) ? indexRow(key, f, isGrid ? ctx : { priors: ctx.priors }) : fieldEl(key, f));
       const moreRows = g.fields.filter(f => f.more);
       body.push(h('section', { class: 'grp ixg' + (isGrid ? ' grid' : '') + (isGrid && gridCells(key, ctx) > 4 ? ' stack' : ''), 'data-grid': key }, [head, isGrid ? gridHead(key, ctx) : null, rows, moreToggle(key, moreRows)]));
@@ -733,18 +758,21 @@ function stepModule(key) {
     }
   });
   const bd = key === 'spiro' ? bdBlock(ctx) : null;
-  // order: prompts, prior toggle (top), grid, bronchodilator, more values, folds (quality lower), extras
   const folds = body.filter(x => x.tagName === 'DETAILS'), mains = body.filter(x => x.tagName !== 'DETAILS');
-  $('main').appendChild(h('div', { class: 'card' }, [
-    stepHead(m.title, m.intro, m.src, 'test.' + key),
-    promptStrip(key),
-    pr ? pr.top : null,
-    extra.filter(x => x.getAttribute('data-trend') !== '1' && x.getAttribute('data-es') !== '1'),
-    mains, bd, pr ? pr.foot : null, folds,
-    extra.filter(x => x.getAttribute('data-es') === '1'),
-    extra.filter(x => x.getAttribute('data-trend') === '1'),
-    navRow()
-  ]));
+  const tag = h('span', { class: 'tag' });
+  const det = h('details', { class: 'card tsec', id: 'sec-' + key, 'data-mod': key, open: secOpen[key] !== false, ontoggle: (e) => { secOpen[key] = e.target.open; } }, [
+    h('summary', { class: 'tsec-h' }, [h('h2', { text: m.title }), info('test.' + key), tag,
+      h('button', { type: 'button', class: 'lnk tsec-x', 'data-remove': key, title: 'Remove this test from the page', 'aria-label': 'Remove ' + m.title, text: 'remove', onclick: (e) => { e.preventDefault(); e.stopPropagation(); S.tests[key] = false; render(); } })]),
+    h('div', { class: 'tsec-b' }, [
+      promptStrip(key),
+      extra.filter(x => x.getAttribute('data-trend') !== '1' && x.getAttribute('data-es-fold') !== '1'),
+      mains, bd, PRIOR_MAP[key] && priorShown() ? priorFoot(key) : null, folds,
+      extra.filter(x => x.getAttribute('data-es-fold') === '1'),
+      extra.filter(x => x.getAttribute('data-trend') === '1')
+    ])
+  ]);
+  widgets.push(() => { const sec = secFor(key); const n = (sec && !sec.empty) ? 'entered' : ''; tag.textContent = n; tag.hidden = !n; });
+  return det;
 }
 
 /* ------------------------------------------------- bronchodilator, inside the spirometry step */
@@ -781,43 +809,35 @@ const PRIOR_MAP = {
   dlco: { fields: { dlco: [['dlco', 'dlco'], ['dlco_pct', '%']] }, n: 2, cmp: ['hb_diff', 'ref_diff'] },
   feno: { fields: { band: [['feno', 'ppb']] }, n: 1, cmp: [] }
 };
-const priorOpen = {};
-function priorHasValues(key) { const def = PRIOR_MAP[key]; const ids = []; Object.keys(def.fields).forEach(k => def.fields[k].forEach(d => ids.push(d[0]))); return S.prior.list.some(p => ids.some(id => String(p[id] || '').trim() !== '')); }
-function priorBlock(key, ctx) {
-  const def = PRIOR_MAP[key];
+let priorAdded = false;   // a prior column was added this session (before any value is typed)
+function priorShown() { return priorAdded || S.prior.list.some(p => P.PRIOR_FIELDS.some(fd => fd.type !== 'chk' && fd.id !== 'date' && String(p[fd.id] || '').trim() !== '')); }
+/* "+ prior study" in the grid header: adds a column of prior boxes beside this study's values (the same column appears on
+   every test that has comparable indices); the date goes in the column header */
+function priorTools(key) {
+  const box = h('span', { class: 'pr-tools' });
+  if (!priorShown()) box.appendChild(h('button', { type: 'button', class: 'lnk', 'data-prior-add': key, text: '+ prior study', onclick: () => { priorAdded = true; render(); } }));
+  else if (S.prior.list.length < P.MAX_PRIORS) box.appendChild(h('button', { type: 'button', class: 'lnk', 'data-prior-add': key, text: '+ older study', onclick: () => { S.prior.list.push(P.blankPrior()); render(); } }));
+  return box;
+}
+/* the header cell of a prior column: its date (with quick intervals) and a remove button */
+function priorHeadCell(p, i, n) {
   const INTERVALS = [['3 mo', 3], ['6 mo', 6], ['1 yr', 12], ['2 yr', 24], ['3 yr', 36]];
-  const open = priorOpen[key] || priorHasValues(key);
-  if (open) ctx.priors = S.prior.list;
-  const cbId = uid('pc');
-  const cb = h('input', { type: 'checkbox', id: cbId, checked: open, 'data-prior-toggle': key, onchange: (e) => {
-    priorOpen[key] = e.target.checked;
-    if (!e.target.checked) { const ids = []; Object.keys(def.fields).forEach(k => def.fields[k].forEach(d => ids.push(d[0]))); S.prior.list.forEach(p => ids.forEach(id => { p[id] = ''; })); }
-    render();
-  } });
-  const dates = h('div', { class: 'pr-dates' });
-  if (open) {
-    S.prior.list.forEach((p, i) => {
-      const inp = h('input', { type: 'date', value: p.date, 'aria-label': 'Date of prior study ' + (i + 1), oninput: (e) => { p.date = e.target.value; sync(); } });
-      widgets.push(() => { if (document.activeElement !== inp && inp.value !== p.date) inp.value = p.date; });
-      dates.appendChild(h('div', { class: 'pr-date' }, [
-        h('span', { class: 'pr-l', text: S.prior.list.length > 1 ? 'Prior ' + (i + 1) : 'Prior study' }), inp,
-        h('span', { class: 'qd' }, INTERVALS.map(iv => h('button', { type: 'button', class: 'lnk', 'data-months': String(iv[1]), text: iv[0], title: iv[0] + ' before this study', onclick: () => { p.date = shiftMonths(S.ctx.date, iv[1]); sync(); } }))),
-        S.prior.list.length > 1 ? h('button', { type: 'button', class: 'lnk', text: 'remove', onclick: () => { S.prior.list.splice(i, 1); render(); } }) : null
-      ]));
-    });
-    if (S.prior.list.length < P.MAX_PRIORS) dates.appendChild(h('button', { type: 'button', class: 'lnk', 'data-prior-add': '1', text: '+ older study', onclick: () => { S.prior.list.push(P.blankPrior()); render(); } }));
-  }
-  const top = h('section', { class: 'grp prior-inline', 'data-prior-block': key }, [
-    h('div', { class: 'chkrow big' }, [cb, h('label', { for: cbId, text: 'Compare with a prior study' }), open ? h('span', { class: 'fine', text: 'Prior values go in the columns beside this study\'s values.' }) : null]),
-    open ? dates : null
+  const inp = h('input', { type: 'date', value: p.date, 'aria-label': 'Date of prior study ' + (i + 1), oninput: (e) => { p.date = e.target.value; sync(); } });
+  widgets.push(() => { if (document.activeElement !== inp && inp.value !== p.date) inp.value = p.date; });
+  return h('span', { class: 'pr-head', 'data-prior-col': String(i + 1) }, [
+    h('span', { class: 'pr-hl' }, [h('span', { text: n > 1 ? 'Prior ' + (i + 1) : 'Prior' }),
+      h('button', { type: 'button', class: 'lnk', 'data-prior-remove': String(i + 1), title: 'Remove this prior study', 'aria-label': 'Remove prior study ' + (i + 1), text: '×', onclick: () => {
+        S.prior.list.splice(i, 1); if (!S.prior.list.length) { S.prior.list.push(P.blankPrior()); priorAdded = false; } render(); } })]),
+    inp,
+    h('span', { class: 'qd' }, INTERVALS.map(iv => h('button', { type: 'button', class: 'lnk', 'data-months': String(iv[1]), text: iv[0], title: iv[0] + ' before this study', onclick: () => { p.date = shiftMonths(S.ctx.date, iv[1]); sync(); } })))
   ]);
-  let foot = null;
-  if (open && def.cmp.length) {
-    const flags = def.cmp.map(id => P.PRIOR_FIELDS.filter(f => f.id === id)[0]).filter(Boolean);
-    foot = h('details', { class: 'plain pr-cmp', 'data-group': 'cmp' }, [h('summary', { text: 'Prior study not directly comparable? (different equations, bronchodilator state, method…)' }),
-      h('div', {}, S.prior.list.map((p, i) => h('div', { class: 'pr-cmpcol' }, [S.prior.list.length > 1 ? h('b', { text: 'Prior ' + (i + 1) }) : null].concat(flags.map(f => { const id = uid('pf'); return h('div', { class: 'chkrow' }, [h('input', { type: 'checkbox', id: id, checked: !!p[f.id], onchange: (e) => { p[f.id] = e.target.checked; sync(); } }), h('label', { for: id, text: f.label })]); })))))]);
-  }
-  return { top: top, foot: foot };
+}
+function priorFoot(key) {
+  const def = PRIOR_MAP[key];
+  if (!def.cmp.length) return null;
+  const flags = def.cmp.map(id => P.PRIOR_FIELDS.filter(f => f.id === id)[0]).filter(Boolean);
+  return h('details', { class: 'plain pr-cmp', 'data-group': 'cmp' }, [h('summary', { text: 'Prior study not directly comparable? (different equations, bronchodilator state, method…)' }),
+    h('div', {}, S.prior.list.map((p, i) => h('div', { class: 'pr-cmpcol' }, [S.prior.list.length > 1 ? h('b', { text: 'Prior ' + (i + 1) }) : null].concat(flags.map(f => { const id = uid('pf'); return h('div', { class: 'chkrow' }, [h('input', { type: 'checkbox', id: id, checked: !!p[f.id], onchange: (e) => { p[f.id] = e.target.checked; sync(); } }), h('label', { for: id, text: f.label })]); })))))]);
 }
 function dateShort(iso) { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso); return m ? (+m[2]) + '/' + (+m[3]) + '/' + m[1] : iso; }
 
@@ -863,7 +883,7 @@ function suggestCard() {
     h('div', { class: 'sug-list' }, chips)
   ]);
 }
-const foldOpen = { suggest: false, dx: false, hu: false };
+const foldOpen = { suggest: false, dx: false, hu: false, prompts: false, calc: false, trend: false };
 
 /* Differential considerations and additional studies, offered per verified finding and included only when tapped. */
 function dxToggle(id) { if (S.review[id]) delete S.review[id]; else S.review[id] = true; sync(); }
@@ -906,22 +926,6 @@ function studiesBlock(cls) {
 
 /* ------------------------------------------------------------- step: report */
 function reportText() { return (S.settings.copy === 'full') ? R.textFull : R.textLean; }
-function reportDoc() {
-  const full = S.settings.copy === 'full';
-  const doc = h('article', { class: 'doc', id: 'doc' }, [
-    h('div', { class: 'dt', text: 'Pulmonary function test report' }),
-    full ? h('div', { class: 'meta' }, (R.header || []).map(t => h('span', { text: t }))) : null
-  ]);
-  R.sections.forEach(s => { if (!full && s.key === 'qual') return; doc.appendChild(h('div', { class: 'sec', 'data-sec': s.key }, [
-    h('h3', { text: s.title + ':' }),
-    h('p', { text: s.lines.join(' ') })
-  ])); });
-  const codes = uniq(R.sections.reduce((a, s) => a.concat(s.codes || []), []));
-  doc.appendChild(h('div', { class: 'interp' }, [h('h3', { text: 'INTERPRETATION:' }),
-    R.impression.length ? h('p', { class: 'impr-p' }, R.impression.map(t => h('span', { class: 'impr-s', text: t + ' ' }))) : h('p', { class: 'fine', text: 'No interpretable data entered.' }),
-    codes.length ? h('div', { class: 'codes-row', 'data-codes': codes.join(',') }, [h('span', { class: 'fine' }, ['Annals ATS 2025 codes', h('span', { class: 'noprint', text: ' (tap for meaning)' })]), h('span', { class: 'codes' }, codes.map(codeChip))]) : null]));
-  return doc;
-}
 /* A small picture of each loop named in a "look for" tip, drawn with the same shapes as the gallery. */
 function lookFigures(look) {
   return h('div', { class: 'look-figs' }, (look || []).map(l => h('figure', { class: 'look-fig', 'data-loop': l.k }, [loopSvg(l.k), h('figcaption', { text: l.cap })])));
@@ -945,8 +949,8 @@ function headsupCard() {
   const quiet = all.filter(x => fbQuiet(x)), items = all.filter(x => !fbQuiet(x));
   const c = R.counts;
   const sum = h('div', { class: 'hu-sum' }, ['alert', 'caution', 'tip', 'note'].filter(k => c[k]).map(k => h('span', { class: 'chip ' + k, text: c[k] + ' ' + (k === 'tip' ? 'look-for' : k) })));
-  const card = h('section', { class: 'card hu', id: 'headsup', 'aria-labelledby': 'hu-h' }, [
-    h('div', { class: 'hu-head' }, [h('h2', { id: 'hu-h', text: 'Heads-up' }), sum]),
+  const card = h('details', { class: 'card hu fold-card', id: 'headsup', 'aria-labelledby': 'hu-h', open: c.alert > 0 || foldOpen.hu, ontoggle: (e) => { foldOpen.hu = e.target.open; } }, [
+    h('summary', { class: 'hu-head' }, [h('h2', { id: 'hu-h', text: 'Heads-up' }), sum]),
     h('p', { class: 'fine', text: 'For you, not the report: discordance, data-entry checks, technique, what to look for on the tracing, and missing tests that would change the reading. Tap an item to open it.' })
   ]);
   if (!all.length) {
@@ -964,71 +968,26 @@ function headsupCard() {
 function promptsCard() {
   const list = R.prompts || [];
   if (!list.length) return null;
-  return h('section', { class: 'card prompts-card', id: 'prompts' }, [
-    h('div', { class: 'hu-head' }, [h('h2', { text: 'Values that would help' }), h('span', { class: 'chip note', text: String(list.length) })]),
+  return h('details', { class: 'card prompts-card fold-card', id: 'prompts', open: foldOpen.prompts, ontoggle: (e) => { foldOpen.prompts = e.target.open; } }, [
+    h('summary', { class: 'hu-head' }, [h('h2', { text: 'Values that would help' }), h('span', { class: 'chip note', text: String(list.length) })]),
     h('div', { class: 'prompts' }, list.map(p => h('div', { class: 'prompt', 'data-prompt': p.id }, [h('span', { class: 'prompt-t', text: p.text }),
       h('button', { type: 'button', class: 'btn sm', text: p.test ? 'Add ' + (SHORT[p.test] || p.test) : 'Go to ' + (p.mod === 'ctx' ? 'Details' : (SHORT[p.mod] || p.mod)), onclick: () => { if (p.test) { S.tests[p.test] = true; goto(p.test); } else { goto(p.mod); setTimeout(() => revealField(p.mod, p.field), 30); } } })])))
   ]);
 }
-function stepReport() {
-  const main = $('main');
-  const caseBox = h('textarea', { class: 'case', id: 'case-box', rows: '3', placeholder: 'Paste a case code here to load it', 'aria-label': 'Case code' });
-  main.appendChild(h('div', { class: 'card' }, [
-    h('div', { class: 'bar' }, [h('h2', { text: 'Report', class: 'h2s' }), h('div', { class: 'btns' }, [
-      h('button', { type: 'button', class: 'btn primary', id: 'copy-report', text: 'Copy report', onclick: () => copyText(reportText(), 'Report copied') }),
-      h('button', { type: 'button', class: 'btn', id: 'copy-all', text: 'Copy with heads-up', onclick: () => copyText(R.textWithHeadsup, 'Report and heads-up copied') }),
-      h('button', { type: 'button', class: 'btn', id: 'save-bank', text: 'Save to case bank', onclick: () => { const pn = $('bank-save'); if (pn) { pn.hidden = !pn.hidden; if (!pn.hidden) { const i = pn.querySelector('input[type=text]'); if (i) i.focus(); } } } })
-    ])]),
-    bankSavePanel(),
-    h('div', { id: 'fallback', class: 'fallback' }),
-    h('div', { class: 'style-inline' }, [copyRow(), styleRow()])
-  ]));
-  // the report, the suggested additions and the heads-up repaint whenever the result changes (wording level, a tapped suggestion)
-  const live = h('div', { id: 'report-live' });
-  let liveKey = null;
-  widgets.push(() => {
-    const dxKey = (R.differentials || []).map(g => g.key + ':' + g.dx.concat(g.studies).map(x => x.on ? '1' : '0').join('')).join(',');
-    const key = R.textFull + '|' + (R.suggestions || []).map(x => x.id + (x.on ? '1' : '0') + (x.superseded ? 's' : '')).join(',') + '|' + dxKey + '|' + R.headsup.map(x => x.id).join(',') + '|' + S.settings.copy + '|' + (R.prompts || []).map(p => p.id).join(',');
-    if (key === liveKey) return;
-    liveKey = key;
-    live.textContent = '';
-    live.appendChild(reportDoc());
-    const sc = suggestCard(); if (sc) live.appendChild(sc);
-    const dc = dxCard(); if (dc) live.appendChild(dc);
-    const pc = promptsCard(); if (pc) live.appendChild(pc);
-    live.appendChild(headsupCard());
-    const pl = $('plain'); if (pl) pl.textContent = reportText();
-  });
-  main.appendChild(live);
-  const sim = similarCard(); if (sim) main.appendChild(sim);
-  main.appendChild(h('div', { class: 'card' }, [
-    h('details', { class: 'plain' }, [h('summary', { text: 'Plain-text version' }), h('pre', { class: 'plain', id: 'plain', text: reportText() })]),
-    h('details', { class: 'plain' }, [h('summary', { text: 'Save or load a case' }), h('div', { class: 'fallback' }, [
-      h('p', { class: 'fine', text: 'A case code holds every entry on this page so the case can be reopened later. It contains no patient identifiers unless you typed some into a free-text field.' }),
-      caseBox,
-      h('div', { class: 'btns', style: 'display:flex;flex-wrap:wrap;gap:8px' }, [
-        h('button', { type: 'button', class: 'btn sm', id: 'copy-case', text: 'Copy case code', onclick: () => copyText(encodeCase(), 'Case code copied') }),
-        h('button', { type: 'button', class: 'btn sm', id: 'load-case', text: 'Load from box', onclick: () => {
-          const st = decodeCase(caseBox.value);
-          if (st) loadState(st, 'report', 'Case loaded'); else toast('That is not a valid case code');
-        } })
-      ])
-    ])]),
-    h('div', { class: 'nav' }, [h('button', { type: 'button', class: 'btn', text: '← Back to the last step', onclick: () => { const p = neighbour(-1); goto(p ? p.id : 'tests'); } })])
-  ]));
-}
-
-/* ------------------------------------------------- running report (right-hand column) */
-/* While the forms are being clicked through, the report as it will read builds on the right in real time. It is the same
-   text as the Report step; the section for the current step is marked and anything that just changed flashes once. */
-let pvPrev = null, pvScrollTo = true;
-function pvShown() { return mode === 'case' && step !== 'report'; }
+/* ------------------------------------------------- the report column (right-hand side) */
+/* The report as it will read builds here in real time. It is the whole report: the sections and the INTERPRETATION,
+   the copy buttons, and beneath them the optional wording, differentials, prompts and the heads-up list. */
+let pvPrev = null, pvKey = null;
+function pvShown() { return mode === 'case'; }
 function paintPreview() {
   const pv = $('pv'); if (!pv) return;
   const cur = SECKEY[step] || step, prev = pvPrev || {}, next = { sec: {}, impr: [] };
   const full = S.settings.copy === 'full';
-  const doc = h('div', { class: 'doc pv-doc' }, [
-    h('div', { class: 'dt', text: 'Report' }),
+  const dxKey = (R.differentials || []).map(g => g.key + ':' + g.dx.concat(g.studies).map(x => x.on ? '1' : '0').join('')).join(',');
+  const key = R.textFull + '|' + (R.suggestions || []).map(x => x.id + (x.on ? '1' : '0') + (x.superseded ? 's' : '')).join(',') + '|' + dxKey + '|' + R.headsup.map(x => x.id).join(',') + '|' + S.settings.copy + '|' + (R.prompts || []).map(p => p.id).join(',') + '|' + step;
+  if (key === pvKey) return;
+  pvKey = key;
+  const doc = h('article', { class: 'doc pv-doc', id: 'doc' }, [
     full ? h('div', { class: 'meta' }, (R.header || []).map(t => h('span', { text: t }))) : null
   ]);
   R.sections.forEach(s => {
@@ -1038,7 +997,7 @@ function paintPreview() {
     const changed = !!txt && prev.sec && prev.sec[s.key] !== undefined && prev.sec[s.key] !== txt;
     doc.appendChild(h('div', { class: 'sec' + (s.key === cur ? ' cur' : '') + (changed ? ' chg' : ''), 'data-sec': s.key }, [
       h('h3', { text: s.title + ':' }),
-      txt ? h('p', { text: txt }) : h('p', { class: 'pv-empty', text: s.key === cur ? 'Waiting for values on this step.' : 'Not entered yet.' })
+      txt ? h('p', { text: txt }) : h('p', { class: 'pv-empty', text: 'Not entered yet.' })
     ]));
   });
   next.impr = R.impression.slice();
@@ -1048,36 +1007,49 @@ function paintPreview() {
     R.impression.length
       ? h('p', { class: 'impr-p' }, R.impression.map(t => h('span', { class: 'impr-s' + (prev.impr && had.indexOf(t) < 0 ? ' chg' : ''), text: t + ' ' })))
       : h('p', { class: 'pv-empty', text: 'The interpretation appears here as values are entered.' }),
-    codes.length ? h('div', { class: 'codes-row' }, [h('span', { class: 'fine', text: 'Annals ATS 2025 codes' }), h('span', { class: 'codes' }, codes.map(codeChip))]) : null]));
-  const oldDoc = pv.querySelector('.pv-doc'), keepTop = oldDoc ? oldDoc.scrollTop : 0;
+    codes.length ? h('div', { class: 'codes-row', 'data-codes': codes.join(',') }, [h('span', { class: 'fine' }, ['Annals ATS 2025 codes', h('span', { class: 'noprint', text: ' (tap for meaning)' })]), h('span', { class: 'codes' }, codes.map(codeChip))]) : null]));
+  const body = pv.querySelector('.pv-body'), keepTop = body ? body.scrollTop : 0;
   pv.textContent = '';
   pv.appendChild(h('div', { class: 'pv-head' }, [
-    h('h2', { text: 'Running report' }),
+    h('h2', { text: 'Report' }),
     h('div', { class: 'pv-btns' }, [
-      h('button', { type: 'button', class: 'btn sm', id: 'pv-copy', text: 'Copy', onclick: () => copyText(reportText(), 'Report copied') }),
-      h('button', { type: 'button', class: 'btn sm', id: 'pv-open', text: 'Full report', onclick: () => goto('report') })
+      h('button', { type: 'button', class: 'btn sm primary', id: 'copy-report', text: 'Copy', onclick: () => copyText(reportText(), 'Report copied') }),
+      h('button', { type: 'button', class: 'btn sm', id: 'copy-all', title: 'Copy the report with the heads-up list appended', text: '+ heads-up', onclick: () => copyText(R.textWithHeadsup, 'Report and heads-up copied') }),
+      h('button', { type: 'button', class: 'btn sm', id: 'save-bank', text: 'Save', title: 'Save to the case bank', onclick: () => { const pn = $('bank-save'); if (pn) { pn.hidden = !pn.hidden; if (!pn.hidden) { const i = pn.querySelector('input[type=text]'); if (i) i.focus(); } } } })
     ])
   ]));
-  const nSug = (R.suggestions || []).filter(x => !x.superseded).length, nOn = (R.suggestions || []).filter(x => x.on && !x.superseded).length;
-  const nGrp = (R.differentials || []).length;
-  const notes = [];
-  if (nSug) notes.push((nOn ? nOn + ' of ' : '') + plural(nSug, 'optional sentence'));
-  if (nGrp) notes.push('differentials and studies for ' + plural(nGrp, 'finding'));
-  if (notes.length) doc.appendChild(h('p', { class: 'fine pv-sug', text: cap(notes.join('; ')) + ' on the Report step (tap to include).' }));
-  pv.appendChild(doc);
+  const nb = h('div', { class: 'pv-body' }, [
+    bankSavePanel(),
+    h('div', { id: 'fallback', class: 'fallback' }),
+    doc,
+    suggestCard(), dxCard(), promptsCard(), headsupCard(), similarCard(),
+    h('details', { class: 'plain', id: 'plain-fold' }, [h('summary', { text: 'Plain text' }), h('pre', { class: 'plain', id: 'plain', text: reportText() })]),
+    caseCodeFold()
+  ]);
+  pv.appendChild(nb);
   pvPrev = next;
-  if (pvScrollTo) {
-    pvScrollTo = false;
-    const el = doc.querySelector('.sec.cur');
-    doc.scrollTop = el ? Math.max(0, el.offsetTop - 70) : 0;
-  } else doc.scrollTop = keepTop;
+  nb.scrollTop = keepTop;
+}
+function caseCodeFold() {
+  const caseBox = h('textarea', { class: 'case', id: 'case-box', rows: '3', placeholder: 'Paste a case code here to load it', 'aria-label': 'Case code' });
+  return h('details', { class: 'plain' }, [h('summary', { text: 'Save or load a case code' }), h('div', { class: 'fallback' }, [
+    h('p', { class: 'fine', text: 'A case code holds every entry on this page so the case can be reopened later. It contains no patient identifiers unless you typed some into a free-text field.' }),
+    caseBox,
+    h('div', { class: 'btns', style: 'display:flex;flex-wrap:wrap;gap:8px' }, [
+      h('button', { type: 'button', class: 'btn sm', id: 'copy-case', text: 'Copy case code', onclick: () => copyText(encodeCase(), 'Case code copied') }),
+      h('button', { type: 'button', class: 'btn sm', id: 'load-case', text: 'Load from box', onclick: () => {
+        const st = decodeCase(caseBox.value);
+        if (st) loadState(st, 'ctx', 'Case loaded'); else toast('That is not a valid case code');
+      } })
+    ])
+  ])]);
 }
 function renderPreview() {
   const pv = $('pv'), work = $('work');
   const show = pvShown();
   pv.hidden = !show; work.classList.toggle('has-pv', show);
-  if (!show) { pv.textContent = ''; pvPrev = null; return; }
-  pvScrollTo = true;
+  if (!show) { pv.textContent = ''; pvPrev = null; pvKey = null; return; }
+  pvKey = null;
   widgets.push(paintPreview);
 }
 /* The panel is sticky; give it the height that is actually left on screen so it never runs off the bottom. */
@@ -1086,6 +1058,7 @@ function fitPreview() {
   fitQueued = false;
   const pv = $('pv'); if (!pv || pv.hidden || !pv.offsetParent) return;
   if (!$('work').classList.contains('has-pv') || window.innerWidth < 900) { pv.style.height = ''; return; }
+  // the column is as tall as the window allows; its body scrolls
   const work = $('work').getBoundingClientRect();
   const stick = parseFloat(getComputedStyle(pv).top) || 0;
   const top = Math.max(stick, work.top);
@@ -1094,7 +1067,7 @@ function fitPreview() {
 }
 function queueFit() { if (!fitQueued) { fitQueued = true; requestAnimationFrame(fitPreview); } }
 function wirePreview() { window.addEventListener('scroll', queueFit, { passive: true }); window.addEventListener('resize', queueFit); }
-function measureSteps() { const n = $('steps'); if (n && n.offsetHeight) document.documentElement.style.setProperty('--steps-h', n.offsetHeight + 'px'); }
+function measureSteps() { document.documentElement.style.setProperty('--steps-h', '0px'); }
 
 /* ---------------------------------------------------------------- theme */
 const THEME_KEY = 'pft.theme.v1';
@@ -1117,16 +1090,17 @@ function wireTheme() {
 
 /* ---------------------------------------------------------------- dispatcher */
 function render() {
-  if (!stepList().some(x => x.id === step)) step = 'tests';
+  if (!stepList().some(x => x.id === step)) step = 'ctx';
   closePop();
   widgets = [];
   const main = $('main'); main.textContent = '';
   if (mode === 'learn') stepLearn();
   else if (mode === 'bank') stepBank();
-  else if (step === 'tests') stepTests();
-  else if (step === 'ctx') stepCtx();
-  else if (step === 'report') stepReport();
-  else stepModule(step);
+  else {
+    main.appendChild(topCard());
+    P.TESTS.forEach(t => { if (S.tests[t.key] && !t.hidden) main.appendChild(testSection(t.key)); });
+    if (!P.TESTS.some(t => S.tests[t.key] && !t.hidden)) main.appendChild(h('p', { class: 'fine empty-page', text: 'Tap a test above (or pick a quick set) to start entering values. Each test becomes a section here; the report builds on the right.' }));
+  }
   renderPreview();
   sync();
   measureSteps();
@@ -1143,7 +1117,16 @@ function wireHeader() {
       return;
     }
     clearTimeout(newTimer); newArmed = false; b.textContent = 'New case'; b.classList.remove('danger');
-    loadState(freshState(), 'tests', 'Cleared');
+    priorAdded = false; loadState(freshState(), 'ctx', 'Cleared');
+  });
+  // the report marks the section that is being edited: follow the focus on the page
+  $('main').addEventListener('focusin', (e) => {
+    const sec = e.target.closest && e.target.closest('[data-mod]');
+    const id = sec ? sec.getAttribute('data-mod') : (e.target.closest && e.target.closest('#top') ? 'ctx' : '');
+    if (!id || id === step) return;
+    step = id;
+    const cur = SECKEY[step] || step;
+    document.querySelectorAll('#pv .sec').forEach(el => el.classList.toggle('cur', el.getAttribute('data-sec') === cur));
   });
   document.querySelectorAll('.vw').forEach(v => v.addEventListener('click', () => {
     const m = v.getAttribute('data-view');

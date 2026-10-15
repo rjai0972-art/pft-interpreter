@@ -46,7 +46,7 @@ function trendTodayRow() {
   const un = h('span', { class: 'unit', text: 'm' });
   widgets.push(() => {
     un.textContent = P.unitLabel(S, 'walk');
-    dt.textContent = S.ctx.date ? fmtDay(S.ctx.date) : 'date not set (Details step)';
+    dt.textContent = S.ctx.date ? fmtDay(S.ctx.date) : 'date not set (top of the page)';
     dt.classList.toggle('missing', !S.ctx.date);
     if (document.activeElement !== dist && dist.value !== String(S.sixmw.dist)) dist.value = S.sixmw.dist;
     if (document.activeElement !== nad && nad.value !== String(S.sixmw.spo2_nadir)) nad.value = S.sixmw.spo2_nadir;
@@ -197,7 +197,7 @@ function predCalcBlock() {
   const has = (v) => typeof v === 'number' && isFinite(v), fmt = (v, d) => has(v) ? v.toFixed(d) : '?';
   const vals = h('div', { class: 'stats es-stats' });
   const body = h('p', { class: 'fine es-body' });
-  const goBtn = h('button', { type: 'button', class: 'btn sm', 'data-es-go': '1', text: 'Enter them on the Details step →', onclick: () => goto('ctx') });
+  const goBtn = h('button', { type: 'button', class: 'btn sm', 'data-es-go': '1', text: 'Enter them at the top of the page →', onclick: () => goto('ctx') });
   const t6 = (label, value, sub) => h('div', { class: 'stat' }, [h('div', { class: 'sv', text: String(value) }), h('div', { class: 'sl', text: label }), sub ? h('div', { class: 'ss', text: sub }) : null]);
   const card = h('section', { class: 'grp es-card', 'data-es': '1', 'aria-labelledby': 'es-h' }, [
     h('div', { class: 'grp-head' }, [h('h3', { id: 'es-h', text: 'Predicted 6MWD calculator (Enright & Sherrill 1998, as on MDCalc)' })]),

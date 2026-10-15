@@ -168,7 +168,7 @@ VEC.machine_checkable_fixtures.forEach(fx => {
   // positive_bdr_persistent_obstruction
   r = run(mk(['spiro', 'bd'], 'spiro.ratio=low', 'spiro.fev1=mild', 'spiro.fvc=wnl', 'bd.resp=fev1', 'bd.post_ratio=low'));
   ok(autoIds(r).indexOf('bd.fev1') >= 0 && autoIds(r).indexOf('bd.persistent') >= 0, 'positive response with persistent obstruction both offered');
-  ok(/although obstruction persists after bronchodilator/.test(r.impression.join(' ')), 'coexistence stated');
+  ok(/; obstruction persists after bronchodilator/.test(r.impression.join(' ')), 'coexistence stated');
   // reference_change_serial
   r = run(mk(['spiro', 'prior'], 'spiro.fev1_abs=2.0', 'spiro.fev1_pct=74', 'prior.1.fev1=2.0', 'prior.1.fev1_pct=80', 'prior.1.date=2024-01-01', 'prior.1.ref_diff=1', 'ctx.date=2025-01-01'));
   ok(autoIds(r).concat(eligibleIds(r)).indexOf('serial.reference_changed') >= 0, 'reference change offered');
