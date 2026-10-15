@@ -353,16 +353,16 @@ function bdLines(f) {
   if (pre.length) L(pre.join('; '));
   if (b.qc === 'limited') L('Technical factors reduce confidence in the post-bronchodilator maneuvers');
   if (b.qc === 'inv') L('The post-bronchodilator maneuvers are not interpretable');
-  // one sentence with every number that was entered: "After bronchodilator: FEV1 1.55 → 1.95 L (+400 mL, +12.4% of predicted); FVC …; FEV1/FVC 0.52 → 0.60"
+  // one sentence with every number that was entered: "After bronchodilator: FEV1 1.55 to 1.95 L (+400 mL, +12.4% of predicted); FVC …; FEV1/FVC 0.52 to 0.60"
   const part = (name, p0, p1, dpp, dml) => {
-    if (has(p0) && has(p1)) return name + ' ' + fmt(p0, 2) + ' → ' + fmt(p1, 2) + ' L (' + fsign(dml, 0) + ' mL' + (has(dpp) ? ', ' + fsign(dpp, 1) + '% of predicted' : (p0 > 0 ? ', ' + fsign((p1 - p0) / p0 * 100, 0) + '% of baseline' : '')) + ')';
+    if (has(p0) && has(p1)) return name + ' ' + fmt(p0, 2) + ' to ' + fmt(p1, 2) + ' L (' + fsign(dml, 0) + ' mL' + (has(dpp) ? ', ' + fsign(dpp, 1) + '% of predicted' : (p0 > 0 ? ', ' + fsign((p1 - p0) / p0 * 100, 0) + '% of baseline' : '')) + ')';
     if (has(p1)) return name + ' ' + fmt(p1, 2) + ' L';
     if (has(dpp)) return name + ' ' + fsign(dpp, 1) + '% of predicted';
     return '';
   };
   if (f.style !== 'concise') {
     const nums = [part('FEV1', b.f1pre, b.f1post, b.dF, b.dFmL), part('FVC', b.vpre, b.vpost, b.dV, b.dVmL)].filter(Boolean);
-    if (has(b.postRatioV)) nums.push('FEV1/FVC ' + (has(f.sp.ratioV) ? fmt(f.sp.ratioV, 2) + ' → ' : '') + fmt(b.postRatioV, 2));
+    if (has(b.postRatioV)) nums.push('FEV1/FVC ' + (has(f.sp.ratioV) ? fmt(f.sp.ratioV, 2) + ' to ' : '') + fmt(b.postRatioV, 2));
     if (nums.length) L('After bronchodilator: ' + nums.join('; '));
   }
   const resp = f.F['bronchodilator.response'];
@@ -1034,9 +1034,9 @@ function serialVerdict(f, m, p) {
 function serialPhrase(f, m, p) {
   const v = serialVerdict(f, m, p);
   let t;
-  if (m.pp) t = m.name + ' has changed by ' + fsign(m.dAbs, 0) + ' points of predicted (' + fmt(m.prior, 0) + '% → ' + fmt(m.cur, 0) + '%)';
-  else if (m.k === 'fev1' || m.k === 'fvc' || m.k === 'tlc') t = m.name + ' has changed by ' + (has(m.dPct) ? fsign(m.dPct, 0) + '% & ' : '') + fsign(m.dAbs * 1000, 0) + ' mL (' + fmt(m.prior, 2) + ' → ' + fmt(m.cur, 2) + ' L)';
-  else if (m.k === 'dlco') t = m.name + ' has changed by ' + (has(m.dPct) ? fsign(m.dPct, 0) + '% & ' : '') + fsign(m.dAbs, 1) + ' mL/min/mmHg (' + fmt(m.prior, 1) + ' → ' + fmt(m.cur, 1) + ')';
+  if (m.pp) t = m.name + ' has changed by ' + fsign(m.dAbs, 0) + ' points of predicted (' + fmt(m.prior, 0) + '% to ' + fmt(m.cur, 0) + '%)';
+  else if (m.k === 'fev1' || m.k === 'fvc' || m.k === 'tlc') t = m.name + ' has changed by ' + (has(m.dPct) ? fsign(m.dPct, 0) + '% & ' : '') + fsign(m.dAbs * 1000, 0) + ' mL (' + fmt(m.prior, 2) + ' to ' + fmt(m.cur, 2) + ' L)';
+  else if (m.k === 'dlco') t = m.name + ' has changed by ' + (has(m.dPct) ? fsign(m.dPct, 0) + '% & ' : '') + fsign(m.dAbs, 1) + ' mL/min/mmHg (' + fmt(m.prior, 1) + ' to ' + fmt(m.cur, 1) + ')';
   else t = m.name + ' has changed by ' + fsign(m.dAbs, m.d) + ' ' + m.unit + (has(m.dPct) ? ' (' + fsign(m.dPct, 0) + '%)' : '');
   if (v.why) return t + '. This change is not directly comparable (' + v.why + ')';
   if (v.sig === null) return t;
@@ -1046,18 +1046,18 @@ function serialPhrase(f, m, p) {
 }
 function priorHead(p) { return 'Since last testing (' + (p.dateOk ? dateShortUS(p.date) : 'prior study #' + p.idx) + (intervalWords(p.years) ? ', ' + intervalWords(p.years) + ' earlier' : '') + '): '; }
 function dateShortUS(iso) { const d = parseDate(iso); return d ? (d.getUTCMonth() + 1) + '/' + d.getUTCDate() + '/' + d.getUTCFullYear() : String(iso || ''); }
-/* "FEV1 −16% (−300 mL, 1.85 → 1.55 L)" — the change of one index, compact */
+/* "FEV1 −16% (−300 mL, 1.85 to 1.55 L)" — the change of one index, compact */
 /* a percent change printed so it never reads as equal to the threshold it did not reach (−14.7% is "−14.7%", not "−15%") */
 function relTxt(x, th) { const r0 = Math.round(Math.abs(x)); return (has(th) && r0 === th && Math.abs(x) < th) ? fsign(x, 1) + '%' : fsign(x, 0) + '%'; }
 function changeTxt(m, th) {
-  if (m.pp) return m.name + ' ' + fsign(m.dAbs, 0) + ' points (' + fmt(m.prior, 0) + ' → ' + fmt(m.cur, 0) + '% predicted)';
-  if (m.k === 'fev1' || m.k === 'fvc' || m.k === 'tlc') return m.name + ' ' + (has(m.dPct) ? relTxt(m.dPct, th) + ' (' : '(') + fsign(m.dAbs * 1000, 0) + ' mL, ' + fmt(m.prior, 2) + ' → ' + fmt(m.cur, 2) + ' L)';
-  if (m.k === 'dlco') return m.name + ' ' + (has(m.dPct) ? relTxt(m.dPct, th) + ' (' : '(') + fmt(m.prior, 1) + ' → ' + fmt(m.cur, 1) + ' mL/min/mmHg)';
-  if (m.k === 'six') return '6MWD ' + fsign(m.dAbs, 0) + ' m (' + fmt(m.prior, 0) + ' → ' + fmt(m.cur, 0) + ' m)';
+  if (m.pp) return m.name + ' ' + fsign(m.dAbs, 0) + ' points (' + fmt(m.prior, 0) + ' to ' + fmt(m.cur, 0) + '% predicted)';
+  if (m.k === 'fev1' || m.k === 'fvc' || m.k === 'tlc') return m.name + ' ' + (has(m.dPct) ? relTxt(m.dPct, th) + ' (' : '(') + fsign(m.dAbs * 1000, 0) + ' mL, ' + fmt(m.prior, 2) + ' to ' + fmt(m.cur, 2) + ' L)';
+  if (m.k === 'dlco') return m.name + ' ' + (has(m.dPct) ? relTxt(m.dPct, th) + ' (' : '(') + fmt(m.prior, 1) + ' to ' + fmt(m.cur, 1) + ' mL/min/mmHg)';
+  if (m.k === 'six') return '6MWD ' + fsign(m.dAbs, 0) + ' m (' + fmt(m.prior, 0) + ' to ' + fmt(m.cur, 0) + ' m)';
   return m.name + ' ' + fsign(m.dAbs, m.d) + ' ' + m.unit + (has(m.dPct) ? ' (' + fsign(m.dPct, 0) + '%)' : '');
 }
 /* One sentence per prior study: the indices that changed significantly, then the ones that did not, then the ones that
-   cannot be judged. "Since last testing (3/5/2024, 1 year earlier): FEV1 −16% (−300 mL, 1.85 → 1.55 L), a significant
+   cannot be judged. "Since last testing (3/5/2024, 1 year earlier): FEV1 −16% (−300 mL, 1.85 to 1.55 L), a significant
    decline; FVC and DLCO without significant change (margin of error ~15% and ~10%)." */
 function serialSentence(f, p, first) {
   const groups = { sig: [], ns: [], na: [], plain: [] }, margins = [], th = serialThresholds(f);
@@ -1090,7 +1090,7 @@ function secPrior(f) {
       if (has(p.ccs)) put(sec, 'The conditional change score for FEV1 is ' + fz(p.ccs) + ', ' + (Math.abs(p.ccs) > 1.96 ? 'outside' : 'within') + ' the range expected in healthy children and young people');
       if (f.style === 'expanded') {
         const fm = p.metrics.filter(m => m.k === 'fev1')[0];
-        if (fm && has(fm.pctPerYear)) put(sec, 'Annualised FEV1 change ' + fsign(fm.pctPerYear, 1) + '%/yr (' + fsign(fm.perYear * 1000, 0) + ' mL/yr)' + (has(fm.q0) ? '; FEV1Q ' + fmt(fm.q0, 2) + ' → ' + fmt(fm.q1, 2) : ''));
+        if (fm && has(fm.pctPerYear)) put(sec, 'Annualised FEV1 change ' + fsign(fm.pctPerYear, 1) + '%/yr (' + fsign(fm.perYear * 1000, 0) + ' mL/yr)' + (has(fm.q0) ? '; FEV1Q ' + fmt(fm.q0, 2) + ' to ' + fmt(fm.q1, 2) : ''));
       }
     }
   });

@@ -7,7 +7,11 @@ const P = window.PFT, X = window.PFT_EXAMPLES;
 const pad2 = (n) => (n < 10 ? '0' : '') + n;
 const toISO = (d) => d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
 const todayISO = () => toISO(new Date());
-function freshState() { const st = P.defaultState(); st.ctx.date = todayISO(); st.units = Object.assign(st.units, unitPrefs()); return st; }
+const WORDING_KEY = 'pft.wording.v1';
+/* the wording level sets the phrase style and the copy form with it */
+function applyWording(st, w) { st.settings.wording = w; st.settings.style = { min: 'concise', std: 'standard', full: 'expanded' }[w]; st.settings.copy = w === 'full' ? 'full' : 'lean'; return st; }
+function wordingPref() { const w = prefGet(WORDING_KEY); return (w === 'min' || w === 'std' || w === 'full') ? w : 'min'; }
+function freshState() { const st = P.defaultState(); st.ctx.date = todayISO(); st.units = Object.assign(st.units, unitPrefs()); applyWording(st, wordingPref()); return st; }
 function shiftMonths(iso, m) {
   const d = /^\d{4}-\d{2}-\d{2}$/.test(iso || '') ? new Date(iso + 'T00:00:00') : new Date();
   if (isNaN(d.getTime())) return '';
@@ -161,6 +165,7 @@ function setMode(m, opts) {
 }
 function openLearn(topic, term) { closePop(); setMode('learn', { topic: topic, term: term }); }
 function loadState(st, to, msg) {
+  st = st || {}; st.settings = applyWording({ settings: Object.assign({}, st.settings || {}) }, wordingPref()).settings;   // the wording level is a preference of the reader, not of the case
   S = P.normalizeState(st); R = P.interpret(S); mode = 'case'; caseTok = rnd();
   const l = stepList(); step = l.some(x => x.id === to) ? to : 'ctx';
   render(); window.scrollTo(0, 0);
@@ -684,8 +689,8 @@ function patientStrip() {
   const dateId = uid('d');
   const dateIn = h('input', { type: 'date', id: dateId, 'aria-label': 'Date of study', value: S.ctx.date, oninput: (e) => { S.ctx.date = e.target.value; sync(); } });
   widgets.push(() => { if (document.activeElement !== dateIn && dateIn.value !== S.ctx.date) dateIn.value = S.ctx.date; });
-  cells.push(h('div', { class: 'ps-cell', 'data-field': 'ctx.date' }, [h('label', { class: 'ps-l', for: dateId, text: 'Date' }), dateIn]));
-  return h('div', { class: 'pstrip', 'data-patient': '1' }, cells);
+  const dateCell = h('div', { class: 'ps-cell ps-date', 'data-field': 'ctx.date' }, [h('label', { class: 'ps-l', for: dateId, text: 'Study date' }), dateIn]);
+  return h('div', { class: 'pstrip-wrap' }, [dateCell, h('div', { class: 'pstrip', 'data-patient': '1' }, cells)]);
 }
 function indicationsFold() {
   const m = P.SCHEMA.ctx, g = m.groups.filter(x => x.title === 'Study')[0];
@@ -707,15 +712,14 @@ function settingsFold() {
   const BANDS = [['0', 'Off'], ['0.25', '0.25 SD (default)'], ['0.5', '0.5 SD']];
   const bb = BANDS.map(o => h('button', { type: 'button', class: 'ch', role: 'radio', 'data-v': o[0], 'aria-checked': 'false', text: o[1], onclick: () => { S.settings.band = o[0]; sync(); } }));
   widgets.push(() => bb.forEach(b => b.setAttribute('aria-checked', String(Number(S.settings.band) === Number(b.getAttribute('data-v'))))));
-  return h('details', { class: 'optgrp fold', 'data-group': 'settings' }, [h('summary', {}, [h('span', { class: 't', text: 'Settings: reference equations, thresholds, wording, what the copy includes' })]), h('div', { class: 'fields' }, [
+  return h('details', { class: 'optgrp fold', 'data-group': 'settings' }, [h('summary', {}, [h('span', { class: 't', text: 'Settings: reference equations, thresholds, wording' })]), h('div', { class: 'fields' }, [
     groupEl('ctx', eq),
     serialRow(),
     h('div', { class: 'prm ch-row', 'data-field': 'settings.band' }, [
       h('div', { class: 'prm-top' }, [h('span', { class: 'prm-l', text: 'Near-LLN review flag' }), h('span', { class: 'hint', text: 'A value this close above the LLN is marked "near the LLN". It stays within normal limits; this is a local review convention, not a category' })]),
       h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Near-LLN review flag' }, bb)
     ]),
-    styleRow(),
-    copyRow()
+    wordingRow()
   ])]);
 }
 function topCard() {
@@ -853,26 +857,18 @@ function serialRow() {
   const btns = SERIAL_OPTS.map(o => h('button', { type: 'button', class: 'ch', role: 'radio', 'data-v': o[0], 'aria-checked': 'false', text: o[1], onclick: () => { S.settings.serial = o[0]; sync(); } }));
   widgets.push(() => btns.forEach(b => b.setAttribute('aria-checked', String((S.settings.serial || 'ers') === b.getAttribute('data-v')))));
   return h('div', { class: 'prm ch-row', 'data-field': 'settings.serial' }, [
-    h('div', { class: 'prm-top' }, [h('span', { class: 'prm-l', text: 'Significant change on past testing' }), h('span', { class: 'hint', text: 'The margin of error quoted in the PAST TESTING COMPARISON section' })]),
+    h('div', { class: 'prm-top' }, [h('span', { class: 'prm-l', text: 'Significant change on past testing' }), h('span', { class: 'hint', text: 'The margin that makes a change since the prior study "significant"' })]),
     h('div', { class: 'seg stack', role: 'radiogroup', 'aria-label': 'Significant change thresholds' }, btns)
   ]);
 }
-const STYLE_OPTS = [['concise', 'Concise'], ['standard', 'Standard'], ['expanded', 'Detailed']];
-function styleRow() {
-  const btns = STYLE_OPTS.map(o => h('button', { type: 'button', class: 'ch', role: 'radio', 'data-v': o[0], 'aria-checked': 'false', text: o[1], onclick: () => { S.settings.style = o[0]; sync(); } }));
-  widgets.push(() => btns.forEach(b => b.setAttribute('aria-checked', String(S.settings.style === b.getAttribute('data-v')))));
-  return h('div', { class: 'prm ch-row', 'data-field': 'settings.style' }, [
-    h('div', { class: 'prm-top' }, [h('span', { class: 'prm-l', text: 'Wording level' }), h('span', { class: 'hint', text: 'Concise: findings only. Standard: numbers, then findings. Detailed: adds the caveats.' })]),
+const WORDING_OPTS = [['min', 'Minimal', 'Findings only: one or two sentences a section, the bronchodilator verdict and the change since the prior study inside the section of the index.'], ['std', 'Standard', 'The numbers line, then the findings; past testing in its own section.'], ['full', 'Detailed', 'Adds the header (date, demographics, BMI, reference set), interpretability and the caveats.']];
+function wordingRow() {
+  const btns = WORDING_OPTS.map(o => h('button', { type: 'button', class: 'ch', role: 'radio', 'data-v': o[0], 'aria-checked': 'false', text: o[1], title: o[2], onclick: () => { applyWording(S, o[0]); prefSet(WORDING_KEY, o[0]); sync(); } }));
+  const hint = h('span', { class: 'hint' });
+  widgets.push(() => { btns.forEach(b => b.setAttribute('aria-checked', String((S.settings.wording || 'std') === b.getAttribute('data-v')))); const o = WORDING_OPTS.filter(x => x[0] === (S.settings.wording || 'std'))[0]; hint.textContent = o ? o[2] : ''; });
+  return h('div', { class: 'prm ch-row', 'data-field': 'settings.wording' }, [
+    h('div', { class: 'prm-top' }, [h('span', { class: 'prm-l', text: 'Wording' }), hint]),
     h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Wording level' }, btns)
-  ]);
-}
-const COPY_OPTS = [['lean', 'Sections and interpretation only'], ['full', 'With header: date, demographics, BMI, reference set, interpretability']];
-function copyRow() {
-  const btns = COPY_OPTS.map(o => h('button', { type: 'button', class: 'ch', role: 'radio', 'data-v': o[0], 'aria-checked': 'false', text: o[1], onclick: () => { S.settings.copy = o[0]; sync(); } }));
-  widgets.push(() => btns.forEach(b => b.setAttribute('aria-checked', String((S.settings.copy || 'lean') === b.getAttribute('data-v')))));
-  return h('div', { class: 'prm ch-row', 'data-field': 'settings.copy' }, [
-    h('div', { class: 'prm-top' }, [h('span', { class: 'prm-l', text: 'What the copied report includes' })]),
-    h('div', { class: 'seg stack', role: 'radiogroup', 'aria-label': 'Copied report contents' }, btns)
   ]);
 }
 /* Review-only catalog wording: offered when the findings make it relevant, included only when tapped. */
@@ -931,7 +927,7 @@ function studiesBlock(cls) {
 }
 
 /* ------------------------------------------------------------- step: report */
-function reportText() { return (S.settings.copy === 'full') ? R.textFull : R.textLean; }
+function reportText() { return R.text; }
 /* A small picture of each loop named in a "look for" tip, drawn with the same shapes as the gallery. */
 function lookFigures(look) {
   return h('div', { class: 'look-figs' }, (look || []).map(l => h('figure', { class: 'look-fig', 'data-loop': l.k }, [loopSvg(l.k), h('figcaption', { text: l.cap })])));
@@ -990,7 +986,7 @@ function paintPreview() {
   const cur = SECKEY[step] || step, prev = pvPrev || {}, next = { sec: {}, impr: [] };
   const full = S.settings.copy === 'full';
   const dxKey = (R.differentials || []).map(g => g.key + ':' + g.dx.concat(g.studies).map(x => x.on ? '1' : '0').join('')).join(',');
-  const key = R.textFull + '|' + (R.suggestions || []).map(x => x.id + (x.on ? '1' : '0') + (x.superseded ? 's' : '')).join(',') + '|' + dxKey + '|' + R.headsup.map(x => x.id).join(',') + '|' + S.settings.copy + '|' + (R.prompts || []).map(p => p.id).join(',') + '|' + step;
+  const key = R.text + '|' + R.textFull + '|' + (R.suggestions || []).map(x => x.id + (x.on ? '1' : '0') + (x.superseded ? 's' : '')).join(',') + '|' + dxKey + '|' + R.headsup.map(x => x.id).join(',') + '|' + S.settings.copy + '|' + (R.prompts || []).map(p => p.id).join(',') + '|' + step;
   if (key === pvKey) return;
   pvKey = key;
   const doc = h('article', { class: 'doc pv-doc', id: 'doc' }, [

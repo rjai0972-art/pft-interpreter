@@ -647,6 +647,8 @@ details.optgrp > .fine { padding-bottom: 0; }
 .hu-item .hu-b p { margin: 0; font-size: 14px; line-height: 1.5; }
 
 /* ---- the single page: top card (patient strip, indications, tests), test sections, the report column ---- */
+.pstrip-wrap { display: grid; gap: 8px; }
+.ps-date { justify-self: start; }
 .pstrip { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: flex-start; }
 .ps-cell { display: grid; gap: 4px; min-width: 0; }
 .ps-cell .ps-l { font-size: 11.5px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); display: inline-flex; align-items: center; }

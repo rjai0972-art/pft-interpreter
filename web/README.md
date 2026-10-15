@@ -30,6 +30,10 @@ node tests/e2e6.js; node tests/e2e7.js; node tests/e2e2.js; node tests/e2e3.js; 
    appends the catalog's caveats. Prior studies are compared inside their own section (`priorLines`, `serialVerdict`)
    with the percent change and a significance verdict; `priorImpression` writes the serial sentences of the
    interpretation. The interpretation is a paragraph, not a numbered list.
+   At the minimal wording level (`engine_3b_minimal.js`, the interface's default) the spirometry, lung-volume, DLCO
+   and 6MWT sections are rewritten as one or two sentences each without the numbers line, the bronchodilator verdict
+   and the change since the prior study are folded into the section of their index, and there is no past-testing or
+   quality section; `minimalImpression` writes the one- or two-sentence interpretation.
 5. **The Interpretation** is one synthesis: ventilatory pattern, lung volumes and gas transfer in one statement, then
    the gas-transfer mechanism, bronchodilator response, adjunct tests, serial change, and what would clarify the picture.
    Review-only wording (disease context, differentials, follow-up) is offered as *suggested additions* and included

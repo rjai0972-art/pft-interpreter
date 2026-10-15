@@ -81,7 +81,7 @@ and the single-file browser version (`PFT_Interpreter_standalone.html`) always w
 - Code signing is optional and not set up. For Windows add a signing certificate to the build; for Mac add an Apple Developer ID and notarization.
   Until then the first-launch steps above are needed.
 
-## How the reading is built (version 7.0)
+## How the reading is built (version 7.1)
 
 The rules layer computes every measurement state before any wording is chosen (ERS/ATS 2022 z-scores and the LLN;
 a reviewed adult phrase catalog anchored to the ERS/ATS 2022, ATS/ERS 2019, ERS/ATS 2023, ERS/ATS 2017, ERS 2019 and
@@ -91,30 +91,34 @@ counts as normal; a component that failed quality criteria drives no pattern or 
 stated, not assumed.
 
 The report follows the reading room's standard language and format (the attendings' PFT reading template), every
-heading with a colon, and says each thing once. The sections carry the facts: SPIROMETRY ("Moderate obstructive
-impairment present (FEV1/FVC below the LLN; FEV1 z −3.1)." and, in the same section, one sentence for the
-bronchodilator numbers: "After bronchodilator: FEV1 1.55 → 1.95 L (+400 mL, +12.4% of predicted); FVC 3.10 → 3.30 L
-(+200 mL, +5.5% of predicted)."), LUNG VOLUMES, DIFFUSING CAPACITY ("Moderately reduced; the value is not corrected for
-hemoglobin (Hgb 10.0 g/dL, low). Corrected for the anemia the DLCO is 58% predicted."), PAST TESTING COMPARISON (one
-sentence per prior study: "Since last testing (3/5/2024, 1 year earlier): FEV1 −16% (−300 mL, 1.85 → 1.55 L), a
-significant decline; FVC without significant change (−2%)."), 6MWT. The INTERPRETATION reads the tests together in
-as few sentences as the findings allow: "There is a moderate obstructive ventilatory defect with hyperinflation and a
-moderately reduced diffusing capacity, consistent with emphysema. Pattern is consistent with moderate COPD. Significant
-reversal of airways obstruction after bronchodilator (FEV1 +12% of predicted)." / "There is a mild restrictive
-ventilatory defect without airflow obstruction, with a normal diffusing capacity, which favors an extrapulmonary cause
-(chest wall, obesity, neuromuscular) over interstitial lung disease; the reduced ERV points to body habitus." / "… with
-a moderately reduced diffusing capacity; the combination suggests a parenchymal (interstitial) process rather than an
-extrapulmonary cause." The user's own sentence for an isolated low DLCO is kept, with anemia listed (and offered as a
-differential) only when the value is not corrected for hemoglobin. Grades come from z-scores rather than the template's
-percent cut-offs; the bronchodilator criterion is the ERS/ATS 2022 one (the 2005 result is quoted when the two
-disagree); the "significant change" margin on past testing is a setting (ERS/ATS or the reading-room template). Tapped
-suggestions become "Suggest …" sentences; the attestation line, "no prior studies" and the clinical-response caveat
-after a negative bronchodilator test are offered as taps.
+heading with a colon, and says each thing once. Three wording levels, chosen in the settings and remembered:
 
-What is copied is the sections and the INTERPRETATION. The header (date, demographics, BMI, reference set) and the
-INTERPRETABILITY section are added only when "With header" is chosen in the settings.
+- **Minimal** (the default) — findings only, one or two sentences a section, no numbers line (the lab report has the
+  numbers), the bronchodilator verdict and the change since the prior study inside the section of the index they belong
+  to, and an interpretation of a sentence or two: "SPIROMETRY: FEV1/FVC below the LLN with moderate reduction in FEV1
+  and FVC. Significant bronchodilator response in FEV1 (+38% of predicted; ERS/ATS 2022). Since the prior study (Jul
+  2026), significant increase in FEV1 (+30%) and FVC (+33%)." / "LUNG VOLUMES: Hyperinflation (TLC above the ULN)
+  with air trapping (RV/TLC above the ULN)." / "DIFFUSING CAPACITY: Moderately reduced (not corrected for
+  hemoglobin)." / "INTERPRETATION: Moderate obstructive defect with hyperinflation and air trapping and a significant
+  bronchodilator response. Diffusing capacity moderately impaired, which can be seen in emphysema, pulmonary vascular
+  disease, anemia, or smoking before the study." The causes listed after a reduced DLCO follow the pattern (emphysema
+  first with obstruction, interstitial disease first with restriction, the template's list when spirometry and volumes
+  are normal); anemia appears only when the value is not corrected for hemoglobin.
+- **Standard** — the numbers line, then the findings; the bronchodilator numbers in one sentence ("After
+  bronchodilator: FEV1 1.55 to 1.95 L (+400 mL, +12.4% of predicted); FVC 3.10 to 3.30 L (+200 mL, +5.5% of
+  predicted)."); PAST TESTING COMPARISON as its own section with one sentence per prior study; the fuller
+  interpretation ("There is a moderate obstructive ventilatory defect with hyperinflation and a moderately reduced
+  diffusing capacity, consistent with emphysema. …").
+- **Detailed** — adds the header (date, demographics, BMI, reference set), the INTERPRETABILITY section and the
+  catalog's caveats.
 
-The interface is one page. At the top: the patient strip (age, sex, smoking, height, weight with a BMI, date), the
+Grades come from z-scores rather than the template's percent cut-offs; the bronchodilator criterion is the ERS/ATS 2022
+one (the 2005 result is quoted when the two disagree); the "significant change" margin on past testing is a setting
+(ERS/ATS or the reading-room template). Tapped suggestions become "Suggest …" sentences; the attestation line, "no
+prior studies" and the clinical-response caveat after a negative bronchodilator test are offered as taps. Changes are
+written "1.85 to 1.55 L", never with arrows.
+
+The interface is one page. At the top: the study date, then the patient strip (age, sex, smoking, height, weight with a BMI), the
 indications as a dropdown, the tests as a row of chips with the quick sets in a dropdown (editable; none picks the
 flow–volume loop), and a settings fold. Each tapped test is a collapsible section beneath, in test order, showing only
 the essentials (FEV1/FVC, FEV1, FVC; TLC, RV, RV/TLC; DLCO, its correction basis, hemoglobin, VA, KCO) with the rest

@@ -15,6 +15,7 @@ async function loadExample(page, i) {
 (async () => {
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: 1380, height: 900 }, permissions: ['clipboard-read', 'clipboard-write'] });
+  await ctx.addInitScript(() => { try { localStorage.setItem('pft.wording.v1', JSON.stringify('std')); } catch (e) {} });   // these checks read the standard wording
   const page = await ctx.newPage();
   const errs = [];
   page.on('pageerror', e => errs.push('pageerror: ' + e.message));
@@ -109,7 +110,7 @@ async function loadExample(page, i) {
   await sp.locator('input[data-bd-toggle]').check();
   await sp.locator('[data-cell="bd.fev1_post"] input').fill('1.95');
   ok(/\+12\.4% pred/.test(await fev1.locator('.delta').innerText()), 'change beside the post value');
-  ok(/After bronchodilator: FEV1 1\.55 → 1\.95 L \(\+400 mL, \+12\.4% of predicted\)\.$/.test(await pv('spiro')) && (await pv('spiro')).split('bronchodilator').length === 2, 'one bronchodilator sentence inside SPIROMETRY: ' + await pv('spiro'));
+  ok(/After bronchodilator: FEV1 1\.55 to 1\.95 L \(\+400 mL, \+12\.4% of predicted\)\.$/.test(await pv('spiro')) && (await pv('spiro')).split('bronchodilator').length === 2, 'one bronchodilator sentence inside SPIROMETRY: ' + await pv('spiro'));
   ok(/Pattern is consistent with asthma\. Significant reversal of airways obstruction after bronchodilator \(FEV1 \+12% of predicted\)\./.test(await page.locator('#pv .interp').innerText()) && !/significantly improved/.test(await pv('spiro')), 'verdict once, in the interpretation: ' + await page.locator('#pv .interp').innerText());
   // prior column from the header, its date in the column header
   await sp.locator('[data-prior-add="spiro"]').click();
@@ -120,7 +121,7 @@ async function loadExample(page, i) {
   await page.locator('[data-cell="prior.fev1"] input').fill('1.85');
   await page.locator('[data-cell="prior.fvc"] input').fill('3.25');
   await sp.locator('[data-cell="spiro.fvc_abs"] input').fill('3.20');
-  ok(/Since last testing \(3\/5\/2024, 1 year earlier\): FEV1 -16% \(-300 mL, 1\.85 → 1\.55 L\), a significant decline; FVC without significant change \(-2%\)\.$/.test(await pv('prior')), 'past testing in one sentence: ' + await pv('prior'));
+  ok(/Since last testing \(3\/5\/2024, 1 year earlier\): FEV1 -16% \(-300 mL, 1\.85 to 1\.55 L\), a significant decline; FVC without significant change \(-2%\)\.$/.test(await pv('prior')), 'past testing in one sentence: ' + await pv('prior'));
   ok(await sp.locator('[data-grid="spiro"].stack').count() === 1, 'with prior and post columns the boxes stack under the buttons');
   const xs = await sp.locator('[data-grid="spiro"] .ix:visible [data-cell$=".z"] input').evaluateAll(els => els.map(e => Math.round(e.getBoundingClientRect().x)));
   ok(xs.length === 3 && xs.every(x => x === xs[0]), 'z boxes aligned in one column: ' + xs.join(','));
@@ -189,11 +190,11 @@ async function loadExample(page, i) {
   const clip = await page.evaluate(() => navigator.clipboard.readText());
   ok(/^SPIROMETRY: /.test(clip) && /\nINTERPRETATION: /.test(clip) && !/INTERPRETABILITY|Reference values|BMI|Date:/.test(clip), 'lean copy: ' + clip.slice(0, 60));
   await page.locator('details[data-group="settings"]').evaluate(e => { e.open = true; });
-  await page.locator('[data-field="settings.copy"] .ch[data-v="full"]').click();
+  await page.locator('[data-field="settings.wording"] .ch[data-v="full"]').click();
   ok(/68-year-old, male/.test(await page.locator('#pv .meta').innerText()) && /Reason for PFT: Dyspnea; Asthma; recurrent pneumonia/.test(await page.locator('#pv .meta').innerText()), 'full copy shows the header');
   await page.locator('#copy-report').click(); await page.waitForTimeout(200);
   ok(/^PULMONARY FUNCTION TEST REPORT/.test(await page.evaluate(() => navigator.clipboard.readText())), 'full report on request');
-  await page.locator('[data-field="settings.copy"] .ch[data-v="lean"]').click();
+  await page.locator('[data-field="settings.wording"] .ch[data-v="std"]').click();
   await page.locator('details[data-group="settings"]').evaluate(e => { e.open = false; });
   ok(await page.locator('#prompts').count() === 1 && /VA and KCO/.test(await page.locator('#prompts').evaluate(e => e.textContent)), 'the report column lists the values that would help');
   await page.locator('#prompts').evaluate(e => { e.open = true; });
@@ -260,6 +261,7 @@ async function loadExample(page, i) {
 
   // ---- phone
   const m = await browser.newContext({ viewport: { width: 400, height: 800 }, colorScheme: 'dark' });
+  await m.addInitScript(() => { try { localStorage.setItem('pft.wording.v1', JSON.stringify('std')); } catch (e) {} });
   const mp = await m.newPage();
   const merrs = []; mp.on('pageerror', e => merrs.push(e.message));
   await mp.goto(FILE); await mp.waitForSelector('#top');

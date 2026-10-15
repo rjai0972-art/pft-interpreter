@@ -15,6 +15,7 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
 (async () => {
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, acceptDownloads: true });
+  await ctx.addInitScript(() => { try { localStorage.setItem('pft.wording.v1', JSON.stringify('std')); } catch (e) {} });   // these checks read the standard wording
   const page = await ctx.newPage();
   const errs = [];
   page.on('pageerror', e => errs.push('pageerror: ' + e.message));
@@ -278,6 +279,7 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
 
   /* ---------------- mobile, dark ---------------- */
   const m = await browser.newContext({ viewport: { width: 400, height: 800 }, colorScheme: 'dark', hasTouch: true, isMobile: true });
+  await m.addInitScript(() => { try { localStorage.setItem('pft.wording.v1', JSON.stringify('std')); } catch (e) {} });
   const mp = await m.newPage();
   const merrs = []; mp.on('pageerror', e => merrs.push(e.message));
   await mp.goto(FILE); await mp.waitForSelector('#top');

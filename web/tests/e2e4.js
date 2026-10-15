@@ -15,6 +15,7 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
 (async () => {
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: 1360, height: 900 } });
+  await ctx.addInitScript(() => { try { localStorage.setItem('pft.wording.v1', JSON.stringify('std')); } catch (e) {} });   // these checks read the standard wording
   const page = await ctx.newPage();
   const errs = [];
   page.on('pageerror', e => errs.push('pageerror: ' + e.message));
@@ -25,7 +26,7 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
   // COPD example: suggestions and wording level
   await loadExample(page, 0);
   await page.locator('details[data-group="settings"]').evaluate(e => { e.open = true; });
-  ok(await page.locator('[data-field="settings.style"] .ch').count() === 3, 'three wording levels');
+  ok(await page.locator('[data-field="settings.wording"] .ch').count() === 3, 'three wording levels');
   await openCard(page, 'suggest');
   const sug = page.locator('#suggest .sug');
   const nSug = await sug.count();
@@ -45,13 +46,14 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
   // wording level changes the section text, not the facts
   const std = await page.locator('#doc .sec[data-sec="spiro"] p').innerText();
   ok(/1\.55 L \(z -3\.1\)/.test(std), 'standard level prints the measured FEV1 with its z-score: ' + std.slice(0, 120));
-  await page.locator('[data-field="settings.style"] .ch[data-v="concise"]').click(); await page.waitForTimeout(80);
+  await page.locator('[data-field="settings.wording"] .ch[data-v="min"]').click(); await page.waitForTimeout(80);
   const conTxt = await page.locator('#doc .sec[data-sec="spiro"] p').innerText();
-  ok(!/1\.55 L \(z/.test(conTxt) && /Moderate obstructive impairment present \(FEV1\/FVC z -3\.4, below the LLN; FEV1 z -3\.1\)/.test(conTxt), 'concise level drops the numbers line: ' + conTxt.slice(0, 120));
-  await page.locator('[data-field="settings.style"] .ch[data-v="expanded"]').click(); await page.waitForTimeout(80);
+  ok(!/1\.55 L/.test(conTxt) && /^FEV1\/FVC below the LLN with moderate reduction in FEV1/.test(conTxt), 'minimal level drops the numbers line: ' + conTxt.slice(0, 120));
+  ok(await page.locator('#pv .sec[data-sec="prior"]').count() === 0, 'minimal level has no PAST TESTING section');
+  await page.locator('[data-field="settings.wording"] .ch[data-v="full"]').click(); await page.waitForTimeout(80);
   const expTxt = await page.locator('#doc .sec[data-sec="spiro"] p').innerText();
   ok(expTxt.length > std.length, 'detailed level is longer');
-  await page.locator('[data-field="settings.style"] .ch[data-v="standard"]').click(); await page.waitForTimeout(80);
+  await page.locator('[data-field="settings.wording"] .ch[data-v="std"]').click(); await page.waitForTimeout(80);
   ok(!/\{[a-z_]+\}/.test(await page.locator('#doc').innerText()), 'no placeholder in the report');
   await page.screenshot({ path: 'shots/41_report_suggestions.png', fullPage: true });
 
@@ -81,7 +83,7 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
   await page.locator('[data-cell="dlco.dlco_abs"] input').fill('14.2');
   await page.locator('[data-cell="prior.dlco"] input').first().fill('17.0');
   ok(await page.locator('[data-cell="prior.dlco"] .ubtn').first().innerText() === 'mL', 'the prior DLCO box carries the unit switch');
-  ok(/DLCO -16% \(17\.0 → 14\.2 mL\/min\/mmHg\)[^.]*significant/.test(await page.locator('#pv .sec[data-sec="prior"]').innerText()), 'DLCO comparison with its 10% threshold: ' + await page.locator('#pv .sec[data-sec="prior"]').innerText());
+  ok(/DLCO -16% \(17\.0 to 14\.2 mL\/min\/mmHg\)[^.]*significant/.test(await page.locator('#pv .sec[data-sec="prior"]').innerText()), 'DLCO comparison with its 10% threshold: ' + await page.locator('#pv .sec[data-sec="prior"]').innerText());
   const cmp = page.locator('details.tsec[data-mod="dlco"] [data-group="cmp"]');
   ok(await cmp.locator('input[type=checkbox]').count() === 2, 'the DLCO section offers the two comparability flags that matter for DLCO');
   await cmp.locator('summary').click();

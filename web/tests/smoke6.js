@@ -5,6 +5,7 @@ const FILE = 'file://' + path.join(__dirname, '..', 'dist', 'PFT_Interpreter_sta
 (async () => {
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: 1380, height: 900 } });
+  await ctx.addInitScript(() => { try { localStorage.setItem('pft.wording.v1', JSON.stringify('std')); } catch (e) {} });   // these checks read the standard wording
   const page = await ctx.newPage();
   const errs = [];
   page.on('pageerror', e => errs.push('pageerror: ' + e.message));

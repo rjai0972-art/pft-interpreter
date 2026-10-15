@@ -849,18 +849,25 @@ function interpret(raw) {
   headsup.forEach(h => { counts[h.lvl]++; });
   const anyData = secs.some(s => !s.empty);
   const full = !!(st.settings && st.settings.copy === 'full');
+  const wording = (st.settings && st.settings.wording === 'min') ? 'min' : (full ? 'full' : 'std');
+  // the minimal level rewrites the sections and the interpretation; the fuller levels keep them
+  const secsMin = minimalSections(f, secs), imprMin = minimalImpression(f, secsMin);
+  const useMin = wording === 'min';
+  const outSecs = useMin ? secsMin : secs, outImpr = useMin ? imprMin : impression;
   return {
-    state: st, facts: f, F: f.F, suggestions: f.suggest, differentials: f.dx, studies: f.studies, prompts: f.prompts, style: f.style, sections: secs, impression: impression, headsup: headsup, counts: counts, anyData: anyData,
+    state: st, facts: f, F: f.F, suggestions: f.suggest, differentials: f.dx, studies: f.studies, prompts: f.prompts, style: f.style, wording: wording,
+    sections: outSecs, impression: outImpr, sectionsStd: secs, impressionStd: impression, headsup: headsup, counts: counts, anyData: anyData,
     header: headerLines(f),
-    text: buildText(f, secs, impression, headsup, false, full),
-    textWithHeadsup: buildText(f, secs, impression, headsup, true, full),
+    text: buildText(f, outSecs, outImpr, headsup, false, full),
+    textWithHeadsup: buildText(f, outSecs, outImpr, headsup, true, full),
+    textMin: buildText(f, secsMin, imprMin, headsup, false, false),
     textLean: buildText(f, secs, impression, headsup, false, false),
     textFull: buildText(f, secs, impression, headsup, false, true)
   };
 }
 
 const API = {
-  version: '7.0.0',
+  version: '7.1.0',
   catalogVersion: CATALOG.version,
   Z_LLN: Z_LLN, Z_ULN: Z_ULN, STYLES: STYLES,
   TESTS: TESTS, PRESETS: PRESETS, SCHEMA: SCHEMA, LOOPS: LOOPS, INDICATIONS: INDICATIONS, KIND_OPTS: KIND_OPTS, PRIOR_FIELDS: PRIOR_FIELDS, CUR_FIELDS: CUR_FIELDS, MAX_PRIORS: MAX_PRIORS, MAX_TREND: MAX_TREND,
@@ -869,7 +876,7 @@ const API = {
   defaultState: defaultState, normalizeState: normalizeState, blankPrior: blankPrior, blankTrendRow: blankTrendRow,
   interpret: interpret, res: res, num: num, catFromZ: catFromZ, fz: fz,
   phrase: phrase, eligiblePhrases: eligiblePhrases, factMatches: factMatches, catPhrase: catPhrase,
-  _internal: { spiroPattern: spiroPattern, volPattern: volPattern, dlcoPattern: dlcoPattern, buildFacts: buildFacts, deriveFacts: deriveFacts, cpetEval: cpetEval, abgEval: abgEval, mchCategory: mchCategory, methacholineFacts: methacholineFacts, mchAutoCategory: mchAutoCategory, fenoBand: fenoBand, exerciseState: exerciseState, placeholderValues: placeholderValues, differentialGroups: differentialGroups, differentialText: differentialText, prompts: prompts, bdLines: bdLines, CFG: CFG }
+  _internal: { minimalSections: minimalSections, minimalImpression: minimalImpression, spiroPattern: spiroPattern, volPattern: volPattern, dlcoPattern: dlcoPattern, buildFacts: buildFacts, deriveFacts: deriveFacts, cpetEval: cpetEval, abgEval: abgEval, mchCategory: mchCategory, methacholineFacts: methacholineFacts, mchAutoCategory: mchAutoCategory, fenoBand: fenoBand, exerciseState: exerciseState, placeholderValues: placeholderValues, differentialGroups: differentialGroups, differentialText: differentialText, prompts: prompts, bdLines: bdLines, CFG: CFG }
 };
 
 if (typeof module !== 'undefined' && module.exports) module.exports = API;

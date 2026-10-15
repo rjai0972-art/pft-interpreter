@@ -658,7 +658,7 @@ function blankTrendRow() { return { date: '', dist: '', nadir: '', o2: '' }; }
 
 function defaultUnits() { const u = {}; Object.keys(UNITS).forEach(q => { u[q] = UNITS[q].opts[0][0]; }); return u; }
 function defaultState() {
-  const st = { v: 5, tests: {}, settings: { band: CFG.band, headsupInCopy: false, style: 'standard', serial: 'ers', copy: 'lean' }, units: defaultUnits(), review: {}, prior: { cur: {}, list: [blankPrior()] }, trend6: { list: [blankTrendRow()] } };
+  const st = { v: 5, tests: {}, settings: { band: CFG.band, headsupInCopy: false, style: 'standard', serial: 'ers', copy: 'lean', wording: 'std' }, units: defaultUnits(), review: {}, prior: { cur: {}, list: [blankPrior()] }, trend6: { list: [blankTrendRow()] } };
   TESTS.forEach(t => { st.tests[t.key] = false; });
   Object.keys(SCHEMA).forEach(k => { st[k] = blankModule(k); });
   CUR_FIELDS.forEach(f => { st.prior.cur[f.id] = ''; });
@@ -677,6 +677,11 @@ function normalizeState(raw) {
     if (st.settings.style === 'numeric') st.settings.style = 'standard';
     if (raw.settings.serial === 'local') st.settings.serial = 'local';
     if (raw.settings.copy === 'full') st.settings.copy = 'full';
+    // the wording level: 'min' (findings only, one or two sentences a section), 'std' (numbers, then findings, past testing
+    // in its own section) or 'full' (the header, interpretability and caveats). The interface sets style and copy with it;
+    // a state saved before the level existed keeps its style and copy and reads as 'std' (or 'full' with the full copy).
+    if (raw.settings.wording === 'min' || raw.settings.wording === 'std' || raw.settings.wording === 'full') st.settings.wording = raw.settings.wording;
+    else st.settings.wording = st.settings.copy === 'full' ? 'full' : 'std';
   }
   if (raw.units && typeof raw.units === 'object') Object.keys(UNITS).forEach(q => { const v = raw.units[q]; if (v !== undefined && UNITS[q].f[v] !== undefined) st.units[q] = v; });
   // v4 states carried one "in / lb" switch on the Details step; it wins over the default unit choices
