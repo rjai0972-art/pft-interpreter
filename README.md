@@ -81,7 +81,7 @@ and the single-file browser version (`PFT_Interpreter_standalone.html`) always w
 - Code signing is optional and not set up. For Windows add a signing certificate to the build; for Mac add an Apple Developer ID and notarization.
   Until then the first-launch steps above are needed.
 
-## How the reading is built (version 7.1)
+## How the reading is built (version 7.2)
 
 The rules layer computes every measurement state before any wording is chosen (ERS/ATS 2022 z-scores and the LLN;
 a reviewed adult phrase catalog anchored to the ERS/ATS 2022, ATS/ERS 2019, ERS/ATS 2023, ERS/ATS 2017, ERS 2019 and
@@ -118,30 +118,27 @@ one (the 2005 result is quoted when the two disagree); the "significant change" 
 prior studies" and the clinical-response caveat after a negative bronchodilator test are offered as taps. Changes are
 written "1.85 to 1.55 L", never with arrows.
 
-The interface is one page. At the top: the study date, then the patient strip (age, sex, smoking, height, weight with a BMI), the
-indications as a dropdown, the tests as a row of chips with the quick sets in a dropdown (editable; none picks the
-flow–volume loop), and a settings fold. Each tapped test is a collapsible section beneath, in test order, showing only
-the essentials (FEV1/FVC, FEV1, FVC; TLC, RV, RV/TLC; DLCO, its correction basis, hemoglobin, VA, KCO) with the rest
-under "+ More". Each index is one row: category buttons, then the z-score, value and % predicted boxes beside them; a
-typed z-score sets the category, and a typed value sets it where a threshold exists. Every box can be typed in the
-unit on the report (tap the unit: cm/in, kg/lb, m/ft, mL/min/mmHg or mmol/min/kPa); the choice applies to that quantity
-everywhere and is remembered. "+ prior study" in a section's header adds one box per index for the earlier study beside this
-study's values (FEV1 and FVC in litres, TLC in litres, DLCO in its unit, FeNO in ppb) and a date chip above the grid;
-the report computes the percent change from the two measured values and says whether it crosses the serial threshold
-("+ older study" adds another column; the same columns appear on every test that has comparable indices). Z-scores and
-percent predicted are not extrapolated from the demographics — that needs the reference equations' lookup tables, which
-the app does not carry — so the clinician grades the severity and the comparison rests on the measured values.
-"Bronchodilator given" adds post-bronchodilator boxes beside the pre values.
-When a pattern makes one more value useful, the section asks for it (a restrictive pattern with a normal DLCO asks for
-the ERV; a reduced DLCO asks for its correction basis, the hemoglobin and VA/KCO; obstruction asks for
-post-bronchodilator values). The report builds on the right as values are entered, with the copy buttons, the optional
-wording, differentials, prompts and the heads-up list beneath it. Two themes, linen and charcoal, in neutral tones.
+The interface is one page, kept compact so that a whole test fits on a tablet screen. At the top: one row with the
+study date, age, sex, smoking, height and weight (BMI), then the tests as a row of chips with the quick sets in a
+dropdown, then two slim lines for the indications and the settings. Each tapped test is a collapsible section
+beneath, in test order, with the test-quality grading as a folded line under the title, the (i) at the side, and the
+"Bronchodilator" and "Prior study" toggles on the group header. Each index takes two short lines: the label with its
+category chips, then its value boxes in aligned columns (z-score, value, % predicted, the post-bronchodilator value
+with its change, the prior study's value); a typed z-score sets the category, and a typed value sets it where a
+threshold exists. Every box can be typed in the unit on the report (tap the unit); the choice is remembered. When a
+pattern makes one more value useful, the section asks for it. The report builds on the right as values are entered
+(below the form on narrower screens), with the copy buttons, the optional wording, differentials, prompts and the
+heads-up list beneath it. Two themes, linen and charcoal, in neutral tones.
 
 Learn has two areas, chosen from a dropdown above the topic list. "PFT interpretation" is the reading-room curriculum
 (the logic, each test, reference equations, change over time, the phrase catalog and worked examples). "Anatomy &
 bronchoscopy" adds: lungs, lobes and segments with a lobe map and the Boyden numbering; a bronchial-tree navigator (an
 anterior-view map and a scope view from wherever you are, with the landmarks, the pitfalls and the EBUS stations on
-that wall; a drill that hides the labels and asks for a segment from the carina); the IASLC nodal-station map (borders,
+that wall; a drill that hides the labels and asks for a segment from the carina) with a navigable 3D model of the same
+tree (three.js, inlined, MIT): orbit the whole tree, or stand inside the selected airway where the openings ahead are
+real holes in a wall built on the fly by marching cubes over the airway capsules, with cartilage rings in front and
+the flat membrane behind — a procedural model from standard dimensions, not a patient's CT — plus links to CT-derived
+models and a virtual-bronchoscopy simulator on their own sites; the IASLC nodal-station map (borders,
 N category, which of EBUS, EUS and mediastinoscopy reaches each station, where to put the transducer, a tap-the-station
 quiz); ventilation and perfusion (a one-alveolus sandbox along the V/Q line on air or 100% oxygen, West's zones, the
 causes of hypoxaemia); and the bronchoscopy essentials distilled from the BTS 2013 guideline, the ACCP 2011 sedation

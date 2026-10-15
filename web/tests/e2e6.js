@@ -93,7 +93,7 @@ async function loadExample(page, i) {
   ok(await sp.locator('.tsec-h h2').innerText() === 'Spirometry' && await sp.evaluate(e => e.open), 'spirometry section open');
   ok(await sp.locator('[data-grid="spiro"] .ix:visible:not(.ix-head)').count() === 3 && await sp.locator('[data-field="spiro.fef"]').isHidden(), 'only FEV1/FVC, FEV1 and FVC visible');
   ok(await sp.locator('.btn.quick').count() === 0, 'no "unselected = normal" button');
-  ok(await sp.locator('input[data-prior-toggle]').count() === 0 && await sp.locator('[data-prior-add="spiro"]').count() === 1, 'no prior checkbox: "+ prior study" sits in the grid header');
+  ok(await sp.locator('input[data-prior-toggle="spiro"]').count() === 1 && await sp.locator('[data-prior-add="spiro"]').count() === 0 && await sp.locator('input[data-bd-toggle]').count() === 1, 'the prior-study and bronchodilator toggles sit in the grid header');
   const ratio = sp.locator('[data-field="spiro.ratio"]');
   await ratio.getByRole('button', { name: 'Below LLN ↓' }).click();
   ok(await ratio.locator('.sg[aria-pressed="true"]').innerText() === 'Low', 'ratio pressed');
@@ -113,7 +113,7 @@ async function loadExample(page, i) {
   ok(/After bronchodilator: FEV1 1\.55 to 1\.95 L \(\+400 mL, \+12\.4% of predicted\)\.$/.test(await pv('spiro')) && (await pv('spiro')).split('bronchodilator').length === 2, 'one bronchodilator sentence inside SPIROMETRY: ' + await pv('spiro'));
   ok(/Pattern is consistent with asthma\. Significant reversal of airways obstruction after bronchodilator \(FEV1 \+12% of predicted\)\./.test(await page.locator('#pv .interp').innerText()) && !/significantly improved/.test(await pv('spiro')), 'verdict once, in the interpretation: ' + await page.locator('#pv .interp').innerText());
   // prior column from the header, its date in the column header
-  await sp.locator('[data-prior-add="spiro"]').click();
+  await sp.locator('[data-prior-toggle="spiro"]').check();
   ok(await page.locator('[data-prior-dates="spiro"] .pr-head').count() === 2 && await page.locator('[data-cell="prior.fev1"]').count() === 1, 'a prior column with a date header appears beside this study');
   ok(await page.locator('details.tsec[data-mod="vol"] [data-prior-dates="vol"]').count() === 1 && await page.locator('[data-cell="prior.tlc"]').count() === 1, 'the same prior column appears on lung volumes');
   await page.locator('[data-prior-dates="spiro"] .qd .lnk', { hasText: '1 yr' }).click();
@@ -122,7 +122,7 @@ async function loadExample(page, i) {
   await page.locator('[data-cell="prior.fvc"] input').fill('3.25');
   await sp.locator('[data-cell="spiro.fvc_abs"] input').fill('3.20');
   ok(/Since last testing \(3\/5\/2024, 1 year earlier\): FEV1 -16% \(-300 mL, 1\.85 to 1\.55 L\), a significant decline; FVC without significant change \(-2%\)\.$/.test(await pv('prior')), 'past testing in one sentence: ' + await pv('prior'));
-  ok(await sp.locator('[data-grid="spiro"].stack').count() === 1, 'with prior and post columns the boxes stack under the buttons');
+  ok(await sp.locator('[data-grid="spiro"] .ix-head .ix-c.hd').count() >= 5, 'the column headers cover this study, the prior and the post-bronchodilator boxes');
   const xs = await sp.locator('[data-grid="spiro"] .ix:visible [data-cell$=".z"] input').evaluateAll(els => els.map(e => Math.round(e.getBoundingClientRect().x)));
   ok(xs.length === 3 && xs.every(x => x === xs[0]), 'z boxes aligned in one column: ' + xs.join(','));
   await page.locator('[data-prior-add="spiro"]').click();
@@ -133,9 +133,9 @@ async function loadExample(page, i) {
   await page.locator('.pr-cmp input[type=checkbox]').nth(1).check();
   ok(/not directly comparable \(different bronchodilator state\)/.test(await pv('prior')), 'comparability flag caveats the comparison');
   await page.locator('.pr-cmp input[type=checkbox]').nth(1).uncheck();
-  // quality below the indices, folded
-  const qg = sp.locator('details.optgrp.fold', { hasText: 'Test quality' });
-  ok(await qg.evaluate(e => !e.open) && (await qg.boundingBox()).y > (await sp.locator('[data-grid="spiro"]').boundingBox()).y, 'test quality folded below the indices');
+  // quality as one folded line under the title, above the indices
+  const qg = sp.locator('details.qfold', { hasText: 'Test quality' });
+  ok(await qg.evaluate(e => !e.open) && (await qg.boundingBox()).y < (await sp.locator('[data-grid="spiro"]').boundingBox()).y && await sp.locator('details.optgrp.fold', { hasText: 'Test quality' }).count() === 0, 'test quality folded under the title');
 
   // ---- lung volumes and DLCO sections: essentials, prompts, correction wording
   const vol = page.locator('details.tsec[data-mod="vol"]');
@@ -271,7 +271,7 @@ async function loadExample(page, i) {
   await checkOverflow('example');
   ok((await mp.locator('#pv').boundingBox()).y > (await mp.locator('#main').boundingBox()).y + 100, 'phone: report below the form');
   await mp.evaluate(() => { const S = window.__pft.state; S.tests.bd = true; window.__pft.goto('spiro'); });
-  await mp.locator('[data-prior-add="spiro"]').click();
+  await mp.locator('[data-prior-toggle="spiro"]').check();
   await checkOverflow('prior and post columns');
   ok(merrs.length === 0, 'no mobile errors ' + merrs.join('|'));
   await m.close();

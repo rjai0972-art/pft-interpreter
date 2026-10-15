@@ -97,6 +97,22 @@ const TREE = {
   lb10: { name: 'Posterior basal segment (LB10)', side: 'L', lobe: 'LLL', b: 'B10', kids: [], xy: [288, 348], see: 'The large, dependent posterior basal segment behind the heart, against the posterior costophrenic angle.', tip: 'Dependent atelectasis and aspiration collect here in a supine patient.' }
 };
 Object.keys(TREE).forEach(k => { TREE[k].id = k; TREE[k].kids.forEach(c => { TREE[c].parent = k; }); });
+/* The same tree in three dimensions for the 3D model (millimetres; x toward the patient's left, y anterior, z up; the carina
+   at the origin). Each airway runs from its parent's end point `b` (or its own `a`) to its end `b` with radius `r`. The
+   lengths, angles and calibres follow the standard adult dimensions (trachea 11 cm × 18 mm; right main 2.5 cm at ~25°, left
+   main 5 cm at ~45°; lobar 4–5 mm, segmental 3 mm) — a teaching model, not a patient. */
+const TREE3D = {
+  larynx: { a: [0, 2, 126], b: [0, 0, 110], r: 7.5, rings: false },
+  trachea: { a: [0, 0, 110], b: [0, 0, 0], r: 9, rings: true },
+  rmb: { b: [-13, -3, -24], r: 7, rings: true }, rul: { b: [-34, -8, -18], r: 4.5 },
+  rb1: { b: [-42, -6, 6], r: 3 }, rb2: { b: [-54, -24, -14], r: 3 }, rb3: { b: [-54, 10, -26], r: 3 },
+  bi: { b: [-18, -6, -48], r: 6 }, rml: { b: [-30, 16, -66], r: 4 }, rb4: { b: [-50, 22, -80], r: 2.8 }, rb5: { b: [-28, 30, -86], r: 2.8 },
+  rll: { b: [-22, -12, -62], r: 5 }, rb6: { b: [-32, -34, -62], r: 3 }, rb7: { b: [-14, -6, -94], r: 2.5 }, rb8: { b: [-36, 14, -100], r: 3 }, rb9: { b: [-54, -6, -98], r: 3 }, rb10: { b: [-30, -30, -102], r: 3.2 },
+  lmb: { b: [34, -6, -30], r: 6.5, rings: true }, lul: { b: [46, 4, -26], r: 4.5 }, lud: { b: [50, 2, -12], r: 3.5 },
+  lb12: { b: [54, -12, 12], r: 3 }, lb3: { b: [62, 20, -16], r: 3 }, ling: { b: [54, 16, -46], r: 3.5 }, lb4: { b: [66, 26, -56], r: 2.6 }, lb5: { b: [58, 26, -72], r: 2.6 },
+  lll: { b: [42, -14, -56], r: 5 }, lb6: { b: [50, -38, -54], r: 3 }, lb78: { b: [40, 10, -98], r: 3 }, lb9: { b: [66, -6, -96], r: 3 }, lb10: { b: [48, -34, -102], r: 3.2 }
+};
+Object.keys(TREE3D).forEach(k => { const n = TREE3D[k]; if (!n.a) n.a = TREE3D[TREE[k].parent].b; });
 const SEGMENTS = [
   ['Right upper', 'B1 apical · B2 posterior · B3 anterior', '3'],
   ['Right middle', 'B4 lateral · B5 medial', '2'],
@@ -207,12 +223,20 @@ T.airway = { title: 'Lungs, lobes and segments', kicker: 'The map the scope foll
 T.tree = { title: 'Bronchial tree navigator', kicker: 'Walk the airway, name what you see', blocks: [
   { p: 'Start at the larynx and advance into any opening; the map on the left shows where you are, the circle on the right shows what the scope sees from there, and the notes name the landmarks, the pitfalls and the EBUS stations that sit against that wall. Use the drill to practise finding a segment from the carina without looking.' },
   { widget: 'tree' },
+  { h: 'The same tree in three dimensions', p: 'Orbit the whole tree, or stand inside the airway you have selected above and look at the openings ahead the way the scope does; the two views and the navigator share one position.' },
+  { widget: 'tree3d' },
   { h: 'Orientation rules', ul: [
     'Find the posterior membrane. Cartilage rings are in front and at the sides; the flat wall with longitudinal folds is behind. Keep it at 6 o’clock and the picture is oriented.',
     'The picture here puts the patient’s right on the right, as when the bronchoscopist faces the patient (the ATS and Olympus atlases). From the head of the bed the image is a mirror image — flip the switch to practise that way.',
     'Right side: main bronchus → upper lobe laterally at 2 cm → bronchus intermedius → middle lobe in front, lower lobe behind, B6 opening backward just inside the lower lobe. Left side: long main bronchus → secondary carina → upper lobe (upper division plus lingula) in front and above, lower lobe behind.',
     'Count the openings. Two in front on the right means middle lobe (B4, B5); four or five behind means lower lobe. A single posterior opening at the lower lobe entrance is B6, not the basal trunk.',
-    'Turn the scope on its axis to bring an orifice into the centre of the picture before flexing into it; forcing flexion against the wall is what damages scopes and mucosa.'] }
+    'Turn the scope on its axis to bring an orifice into the centre of the picture before flexing into it; forcing flexion against the wall is what damages scopes and mucosa.'] },
+  { h: 'More to explore (open on their own sites)', p: 'Segmented models from real CT scans and a virtual bronchoscopy simulator; each belongs to its author and opens in a new tab.', links: [
+    ['Virtual Bronchoscopy simulation — University of Toronto, Perioperative Interactive Education', 'https://pie.med.utoronto.ca/VB/VB_content/simulation.html', 'drive a scope through a CT-derived airway'],
+    ['Tracheobronchial tree (Sketchfab)', 'https://sketchfab.com/3d-models/tracheobronchial-tree-d3cbd7d5adb74ba7b54c1df151900b96', 'segmented airway model'],
+    ['3D bronchus model (Sketchfab)', 'https://sketchfab.com/3d-models/3d-bronchus-model-c1f1686b95d4494f8d68f3c87188089f', ''],
+    ['Lungs and bronchial tree (Sketchfab)', 'https://sketchfab.com/3d-models/lungs-bronchial-tree-3ef7f35a436849dc8a5ee6a3d2a393a9', 'airways inside the lungs'],
+    ['Airway model (Sketchfab viewer)', 'https://sketchfab.com/models/ec147b3fe06a41689711710024c1342a/embed', '']] }
 ] };
 
 T.stations = { title: 'Mediastinal nodal stations', kicker: 'IASLC map · EBUS and EUS reach · N staging', blocks: [
@@ -492,6 +516,6 @@ const GROUPS = [
   { title: 'Bronchoscopy', ids: ['bronch_basics', 'bronch_prep', 'sedation', 'antithrombotic', 'bal', 'sampling', 'icu', 'ebus'] }
 ];
 
-root.PFT_ANAT = { topics: T, groups: GROUPS, TREE: TREE, STATIONS: STATIONS, SEGMENTS: SEGMENTS };
+root.PFT_ANAT = { topics: T, groups: GROUPS, TREE: TREE, TREE3D: TREE3D, STATIONS: STATIONS, SEGMENTS: SEGMENTS };
 if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_ANAT;
 })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this));

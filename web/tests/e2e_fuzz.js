@@ -11,7 +11,7 @@ const pick = (a) => a[Math.floor(rnd() * a.length)];
   for (let r = 0; r < rounds; r++) {
     for (const k of await page.locator('.tchip[aria-pressed="false"]').evaluateAll(els => els.map(e => e.getAttribute('data-test')))) await page.locator('.tchip[data-test="' + k + '"]').click();
     const ids = await page.locator('details.tsec').evaluateAll(els => els.map(e => e.getAttribute('data-mod')));
-    if (r === 0 && rnd() < 0.5) { await page.locator('[data-prior-add]').first().click(); }
+    if (r === 0 && rnd() < 0.5) { await page.locator('[data-prior-toggle]').first().check(); }
     // open every collapsed panel so typed inputs are exercised too
     const dets = page.locator('#main details.optgrp, #main details.tsec');
     for (let i = 0; i < await dets.count(); i++) { const d = dets.nth(i); if (await d.isVisible() && !(await d.evaluate(e => e.open))) await d.locator('summary').first().click(); }

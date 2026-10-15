@@ -12,6 +12,7 @@ const frag = tpl
   .replace('/*EDUCATION*/', () => safe(rd('src/education.js')))
   .replace('/*ANATOMY*/', () => safe(rd('src/anatomy.js')))
   .replace('/*EXAMPLES*/', () => safe(rd('src/examples.js')))
+  .replace('/*THREE*/', () => '/* three.js r147 — MIT License, (c) 2010-2022 three.js authors (vendor/three.LICENSE) */\n' + safe(rd('vendor/three.min.js')))
   .replace('/*UI*/', () => safe(rd('dist/ui.js')));
 fs.mkdirSync(path.join(__dirname, 'dist'), { recursive: true });
 fs.writeFileSync(path.join(__dirname, 'dist/pft_interpreter.page.html'), frag);

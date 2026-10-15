@@ -5,8 +5,9 @@ const path = require('path');
 const FILE = process.env.PFT_URL || ('file://' + path.join(__dirname, '..', 'dist', 'PFT_Interpreter_standalone.html'));
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.log('FAIL', m); } };
+const uniqN = (a) => a.filter((x, i) => a.indexOf(x) === i).length;
 (async () => {
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist'] });
   const ctx = await browser.newContext({ viewport: { width: 1360, height: 900 } });
   const page = await ctx.newPage();
   const errs = []; page.on('pageerror', e => errs.push(String(e)));
@@ -61,6 +62,24 @@ const ok = (c, m) => { if (c) pass++; else { fail++; console.log('FAIL', m); } }
   ok(await page.locator('.an-drill[data-drill="done"]').count() === 1 && /shortest route/.test(await txt('.an-found')), 'reaching the target by the shortest route is recognised: ' + await txt('.an-found'));
   await page.locator('[data-drill-stop]').click(); await page.waitForTimeout(60);
   ok(await page.locator('.an-scope .an-ol').count() >= 1, 'labels return when the drill stops');
+
+  // ---- the 3D airway: outside and inside views share the navigator's position
+  await page.locator('[data-crumb="trachea"]').click(); await page.waitForSelector('.an-tree[data-at="trachea"]');
+  ok(await page.locator('.an-fig-3d').count() === 1 && await page.locator('canvas.an-3d').count() === 1, 'the 3D figure renders a WebGL canvas');
+  ok(await page.evaluate(() => typeof THREE !== 'undefined' && THREE.REVISION === '147'), 'three.js r147 is inlined');
+  await page.locator('[data-3d-mode="in"]').click(); await page.waitForTimeout(500);
+  ok(await page.locator('[data-3d-mode="in"]').getAttribute('aria-checked') === 'true' && /Inside the trachea/.test(await txt('.an-fig-3d figcaption')), 'inside view from the trachea');
+  await page.locator('.an-scope [data-open="rmb"]').click(); await page.waitForTimeout(700);
+  ok(/Inside the right main bronchus/.test(await txt('.an-fig-3d figcaption')), 'the inside view follows the navigator');
+  ok(await page.evaluate(() => { const c = document.querySelector('canvas.an-3d'); return c.width > 100 && c.height > 100; }), 'the canvas has a size');
+  await page.locator('canvas.an-3d').focus(); await page.keyboard.press('ArrowUp'); await page.waitForTimeout(500);
+  ok(await page.locator('.an-tree').getAttribute('data-at') === 'trachea', '↑ on the canvas pulls back');
+  await page.waitForTimeout(100); await page.keyboard.press('2'); await page.waitForTimeout(500);
+  ok(await page.locator('.an-tree').getAttribute('data-at') === 'lmb', 'key 2 advances into the second opening (focus kept on the canvas)');
+  await page.locator('[data-3d-mode="out"]').click(); await page.waitForTimeout(300);
+  ok(/Outside: drag to orbit/.test(await txt('.an-fig-3d figcaption')), 'back to the outside view');
+  ok(await page.locator('.edu-links a[href*="utoronto"]').count() === 1 && await page.locator('.edu-links a[target="_blank"]').count() === 5, 'external models and the virtual bronchoscopy simulator are linked');
+  if (await page.locator('[data-crumb="trachea"]').count()) { await page.locator('[data-crumb="trachea"]').click(); await page.waitForSelector('.an-tree[data-at="trachea"]'); }
 
   // ---- nodal stations
   await page.evaluate(() => window.__pft.setMode('learn', { topic: 'stations' })); await page.waitForSelector('.an-stations');
@@ -120,7 +139,7 @@ const ok = (c, m) => { if (c) pass++; else { fail++; console.log('FAIL', m); } }
   await page.selectOption('#qs', { label: 'Full PFT' });
   await page.locator('[data-field="ctx.date"] input').fill('2025-03-05');
   await page.locator('[data-cell="spiro.fev1_abs"] input').fill('1.55');
-  await page.locator('[data-prior-add="spiro"]').click();
+  await page.locator('[data-prior-toggle="spiro"]').check();
   ok(await page.locator('[data-cell="prior.fev1"]').count() === 1 && await page.locator('[data-cell="prior.fev1_pct"]').count() === 0 && await page.locator('[data-cell="prior.dlco_pct"]').count() === 0, 'one value box per prior study, no % predicted boxes');
   ok(await page.locator('[data-prior-hd="1"]').count() >= 1 && /no date/.test(await txt('[data-prior-hd="1"]')), 'the column header carries the date slot');
   await page.locator('[data-prior-dates="spiro"] .qd .lnk', { hasText: '1 yr' }).first().click();
@@ -130,7 +149,7 @@ const ok = (c, m) => { if (c) pass++; else { fail++; console.log('FAIL', m); } }
   ok(await page.locator('[data-cell="prior.fev1"]').count() === 4 && await page.locator('[data-prior-dates="spiro"] .pr-head').count() === 5, 'four prior columns');
   ok(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1), 'no horizontal overflow with four priors');
   const chipsTop = await page.locator('[data-prior-dates="spiro"] .pr-head').evaluateAll(els => els.map(e => Math.round(e.getBoundingClientRect().top)));
-  ok(chipsTop.every(t => t === chipsTop[0]), 'the five date chips sit on one line at 1360 px');
+  ok(uniqN(chipsTop) <= 3, 'the five date chips take at most three lines beside the report column at 1360 px (' + uniqN(chipsTop) + ')');
   ok(/Since the prior study \(Mar 2024\), significant decline in FEV1 \(-16%\)/.test(await page.evaluate(() => window.__pft.result.text)), 'percent change and significance from the two absolute values, inside SPIROMETRY at the minimal level: ' + await page.evaluate(() => window.__pft.result.text));
 
   // ---- minimal wording (the default): findings only, serial change inside the section, no numbers line
@@ -160,8 +179,8 @@ const ok = (c, m) => { if (c) pass++; else { fail++; console.log('FAIL', m); } }
   await page.locator('[data-field="settings.wording"] .ch[data-v="min"]').click(); await page.waitForTimeout(80);
   ok((await page.evaluate(() => window.__pft.result.text)) === minText, 'back to minimal');
   // the study date sits above the age box, top left
-  const dateB = await page.locator('[data-field="ctx.date"]').boundingBox(), ageB = await page.locator('[data-field="ctx.age"]').boundingBox();
-  ok(dateB.y + dateB.height <= ageB.y + 1 && Math.abs(dateB.x - ageB.x) < 2, 'the study date is above the age box, aligned left');
+  const dateB = await page.locator('[data-field="ctx.date"]').boundingBox(), ageB = await page.locator('[data-field="ctx.age"]').boundingBox(), stripB = await page.locator('.pstrip').boundingBox();
+  ok(dateB.x < ageB.x && Math.abs(dateB.x - stripB.x) < 2 && Math.abs(dateB.y - ageB.y) < 4, 'the study date is the first cell of the patient row, top left');
 
   // ---- phone: the widgets fit
   await ctx.close();

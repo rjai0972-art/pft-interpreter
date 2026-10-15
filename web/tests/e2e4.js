@@ -78,8 +78,8 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
 
   // prior comparability flags live with the prior block on each test step
   await page.evaluate(() => window.__pft.goto('dlco'));
-  await page.waitForSelector('[data-prior-add="dlco"]');
-  if (/prior study/.test(await page.locator('[data-prior-add="dlco"]').innerText())) await page.locator('[data-prior-add="dlco"]').click();
+  await page.waitForSelector('[data-prior-toggle="dlco"]');
+  if (!(await page.locator('[data-prior-toggle="dlco"]').isChecked())) await page.locator('[data-prior-toggle="dlco"]').check();
   await page.locator('[data-cell="dlco.dlco_abs"] input').fill('14.2');
   await page.locator('[data-cell="prior.dlco"] input').first().fill('17.0');
   ok(await page.locator('[data-cell="prior.dlco"] .ubtn').first().innerText() === 'mL', 'the prior DLCO box carries the unit switch');

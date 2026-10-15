@@ -27,7 +27,7 @@ const FILE = 'file://' + path.join(__dirname, '..', 'dist', 'PFT_Interpreter_sta
   await page.locator('[data-cell="spiro.fvc_abs"] input').fill('3.10');
   await page.locator('input[data-bd-toggle]').check();
   await page.locator('[data-cell="bd.fev1_post"] input').fill('1.98');
-  await page.locator('[data-prior-add="spiro"]').click();
+  await page.locator('[data-prior-toggle="spiro"]').check();
   await page.locator('[data-cell="prior.fev1"] input').first().fill('1.90');
   await page.locator('[data-prior-dates="spiro"] .qd .lnk', { hasText: '1 yr' }).first().click();
   await page.locator('[data-field="vol.tlc"] .sg[data-v="mild"]').click();

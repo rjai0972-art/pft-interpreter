@@ -1,7 +1,7 @@
 # PFT Interpreter — web source
 
-The app is one self-contained HTML page. `src/` holds the engine (four parts plus the generated phrase catalog), the
-interface, the glossary, the Learn text (`education.js` for the PFT area, `anatomy.js` for the anatomy and bronchoscopy area with the bronchial tree, the nodal stations and the segment table behind `ui_4b_anatomy.js`) and the worked examples; `build.js` assembles `dist/PFT_Interpreter_standalone.html`
+The app is one self-contained HTML page (`vendor/three.min.js`, three.js r147 under the MIT license, is inlined for the 3D airway model in Learn). `src/` holds the engine (four parts plus the generated phrase catalog), the
+interface, the glossary, the Learn text (`education.js` for the PFT area, `anatomy.js` for the anatomy and bronchoscopy area with the bronchial tree, its 3D skeleton, the nodal stations and the segment table behind `ui_4b_anatomy.js` and `ui_4c_tree3d.js`) and the worked examples; `build.js` assembles `dist/PFT_Interpreter_standalone.html`
 and `build_desktop.js` copies it to `../app/index.html`, which GitHub Pages serves and the desktop app loads.
 
 ```

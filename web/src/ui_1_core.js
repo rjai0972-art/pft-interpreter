@@ -202,7 +202,7 @@ function optLabel(kind, cat) {
 }
 /* short button labels for the category buttons (the full names stay in the accessible name) */
 const SHORT_OPT = { 'WNL': 'WNL', 'Near LLN': 'Near LLN', 'Mild ↓': 'Mild', 'Moderate ↓': 'Moderate', 'Severe ↓': 'Severe', 'Above ULN ↑': 'High', 'Below LLN ↓': 'Low' };
-const U_SHORT = { 'mL/min/mmHg': 'mL', 'mmol/min/kPa': 'SI', '% pred': '%', '% of predicted': '%', 'cmH2O': 'cmH2O' };
+const U_SHORT = { 'mL/min/mmHg': 'mL', 'mmol/min/kPa': 'SI', '% pred': '%', '% of predicted': '%', 'cmH2O': 'cmH2O', years: 'y' };
 function prmLabel(mod, f, text) { return h('span', { class: 'prm-lw' }, [h('span', { class: 'prm-l', text: text || f.label }), info(glossKey(mod, f.id))]); }
 /* a unit button beside a value box: tap to switch the unit for that quantity everywhere */
 function unitBtn(q) {
@@ -338,7 +338,7 @@ function moreToggle(mod, rows, label) {
 function gridHead(mod, ctx) {
   const cells = [];
   const hd = (text, cls, unit) => h('span', { class: 'ix-c hd' + (cls ? ' ' + cls : ''), text: text }, unit ? [h('span', { class: 'u' })] : null);   // the empty unit span keeps the header cell as wide as the boxes below it
-  (ctx.columns || []).forEach(k => cells.push(k === 'z' ? h('span', { class: 'ix-c hd zc', text: 'z-score' }) : hd(ctx.colLabels[k] || k, '', true)));
+  (ctx.columns || []).forEach(k => cells.push(k === 'z' ? h('span', { class: 'ix-c hd zc', text: 'z', title: 'z-score' }) : hd(ctx.colLabels[k] || k, '', true)));
   // one box per prior study: its label and date sit in the column header
   if (ctx.priors) ctx.priors.forEach((p, i) => {
     const sub = h('span', { class: 'hd-sub' });
@@ -646,7 +646,7 @@ function testPicker() {
   widgets.push(() => {
     let n = 0;
     shown.forEach(t => { chips[t.key].setAttribute('aria-pressed', String(!!S.tests[t.key])); if (S.tests[t.key]) n++; });
-    count.textContent = n ? plural(n, 'test') + ' on the page' : 'Tap the tests that were performed';
+    count.textContent = n ? plural(n, 'test') + ' on the page' : '';
   });
   return h('div', { class: 'tests-row', 'data-tests': '1' }, [
     h('div', { class: 'tests-head' }, [h('span', { class: 'lab', text: 'Tests' }), sel, count]),
@@ -672,6 +672,7 @@ function methodNote() {
 
 /* ------------------------------------------------------------ the top of the page */
 /* Patient details in one strip, the indications as a dropdown, the tests, and a settings fold. */
+const PS_SHORT = { Male: 'M', Female: 'F' };
 function patientStrip() {
   const m = P.SCHEMA.ctx, g = m.groups.filter(x => x.title === 'Patient')[0];
   const cells = g.fields.map(f => {
@@ -681,22 +682,23 @@ function patientStrip() {
       return h('div', { class: 'ps-cell', 'data-field': 'ctx.' + f.id }, [h('span', { class: 'ps-l' }, [f.label, info(glossKey('ctx', f.id))]), h('div', { class: 'ix-vals' }, [numCell('ctx', f, { aria: f.label }), extra])]);
     }
     const blank = f.opts[0][0] === '';
-    const btns = (blank ? f.opts.slice(1) : f.opts).map(o => h('button', { type: 'button', class: 'ch', role: 'radio', 'data-v': o[0], 'aria-checked': 'false', text: o[1],
+    const btns = (blank ? f.opts.slice(1) : f.opts).map(o => h('button', { type: 'button', class: 'ch sc', role: 'radio', 'data-v': o[0], 'aria-checked': 'false', text: PS_SHORT[o[1]] || o[1], 'aria-label': PS_SHORT[o[1]] ? o[1] : null, title: PS_SHORT[o[1]] ? o[1] : null,
       onclick: () => { const cur = S.ctx[f.id]; S.ctx[f.id] = (cur === o[0] && blank) ? '' : o[0]; sync(); } }));
     widgets.push(() => btns.forEach(b => b.setAttribute('aria-checked', String(b.getAttribute('data-v') === S.ctx[f.id]))));
-    return h('div', { class: 'ps-cell', 'data-field': 'ctx.' + f.id }, [h('span', { class: 'ps-l', text: f.id === 'sex' ? 'Sex' : (f.id === 'smoke' ? 'Smoking' : f.label) }), h('div', { class: 'seg', role: 'radiogroup', 'aria-label': f.label }, btns)]);
+    return h('div', { class: 'ps-cell', 'data-field': 'ctx.' + f.id }, [h('span', { class: 'ps-l', text: f.id === 'sex' ? 'Sex' : (f.id === 'smoke' ? 'Smoking' : f.label) }), h('div', { class: 'segc', role: 'radiogroup', 'aria-label': f.label }, btns)]);
   });
   const dateId = uid('d');
   const dateIn = h('input', { type: 'date', id: dateId, 'aria-label': 'Date of study', value: S.ctx.date, oninput: (e) => { S.ctx.date = e.target.value; sync(); } });
   widgets.push(() => { if (document.activeElement !== dateIn && dateIn.value !== S.ctx.date) dateIn.value = S.ctx.date; });
   const dateCell = h('div', { class: 'ps-cell ps-date', 'data-field': 'ctx.date' }, [h('label', { class: 'ps-l', for: dateId, text: 'Study date' }), dateIn]);
-  return h('div', { class: 'pstrip-wrap' }, [dateCell, h('div', { class: 'pstrip', 'data-patient': '1' }, cells)]);
+  // one compact row: the date first (top left), then the patient
+  return h('div', { class: 'pstrip', 'data-patient': '1' }, [dateCell].concat(cells));
 }
 function indicationsFold() {
   const m = P.SCHEMA.ctx, g = m.groups.filter(x => x.title === 'Study')[0];
   const multi = g.fields.filter(f => f.type === 'multi')[0], other = g.fields.filter(f => f.type === 'txt')[0];
   const sum = h('span', { class: 'ind-sum' });
-  const det = h('details', { class: 'optgrp fold ind', 'data-group': 'indications' }, [
+  const det = h('details', { class: 'slim ind', 'data-group': 'indications' }, [
     h('summary', {}, [h('span', { class: 't', text: 'Indications' }), sum]),
     h('div', { class: 'fields' }, [multiField('ctx', multi), txtField('ctx', other, 'txt')])
   ]);
@@ -712,7 +714,7 @@ function settingsFold() {
   const BANDS = [['0', 'Off'], ['0.25', '0.25 SD (default)'], ['0.5', '0.5 SD']];
   const bb = BANDS.map(o => h('button', { type: 'button', class: 'ch', role: 'radio', 'data-v': o[0], 'aria-checked': 'false', text: o[1], onclick: () => { S.settings.band = o[0]; sync(); } }));
   widgets.push(() => bb.forEach(b => b.setAttribute('aria-checked', String(Number(S.settings.band) === Number(b.getAttribute('data-v'))))));
-  return h('details', { class: 'optgrp fold', 'data-group': 'settings' }, [h('summary', {}, [h('span', { class: 't', text: 'Settings: reference equations, thresholds, wording' })]), h('div', { class: 'fields' }, [
+  return h('details', { class: 'slim', 'data-group': 'settings' }, [h('summary', {}, [h('span', { class: 't', text: 'Settings' }), h('span', { class: 'fine', text: 'reference equations · thresholds · wording' })]), h('div', { class: 'fields' }, [
     groupEl('ctx', eq),
     serialRow(),
     h('div', { class: 'prm ch-row', 'data-field': 'settings.band' }, [
@@ -726,10 +728,9 @@ function topCard() {
   return h('div', { class: 'card top', id: 'top' }, [
     patientStrip(),
     promptStrip('ctx'),
-    indicationsFold(),
     testPicker(),
     promptStrip('tests'),
-    settingsFold()
+    h('div', { class: 'slim-row' }, [indicationsFold(), settingsFold()])
   ]);
 }
 
@@ -758,7 +759,7 @@ function testSection(key) {
     const isGrid = !!(m.columns && gi === 0 && !g.inline && !g.fold && !g.opt);
     const isRows = !isGrid && !g.inline && !g.fold && !g.opt && !g.when && g.fields.some(f => f.type === 'param' || (f.type === 'sel' && !f.ui));
     if (isGrid || isRows) {
-      const head = h('div', { class: 'grp-head' }, [h('h3', { text: g.title }), isGrid && PRIOR_MAP[key] ? priorTools(key) : null]);
+      const head = h('div', { class: 'grp-head' }, [h('h3', { text: g.title }), isGrid ? h('span', { class: 'grp-tools' }, [key === 'spiro' ? bdToggle() : null, PRIOR_MAP[key] ? priorTools(key) : null]) : null]);
       const rows = g.fields.map(f => (f.type === 'param' || (f.type === 'sel' && !f.ui)) ? indexRow(key, f, isGrid ? ctx : { priors: ctx.priors }) : fieldEl(key, f));
       const moreRows = g.fields.filter(f => f.more);
       body.push(h('section', { class: 'grp ixg' + (isGrid ? ' grid' : '') + (isGrid && gridCells(key, ctx) > 4 ? ' stack' : ''), 'data-grid': key }, [head, isGrid ? gridHead(key, ctx) : null, rows, moreToggle(key, moreRows)]));
@@ -767,15 +768,19 @@ function testSection(key) {
     }
   });
   const bd = key === 'spiro' ? bdBlock(ctx) : null;
-  const folds = body.filter(x => x.tagName === 'DETAILS'), mains = body.filter(x => x.tagName !== 'DETAILS');
+  const allFolds = body.filter(x => x.tagName === 'DETAILS'), mains = body.filter(x => x.tagName !== 'DETAILS');
+  // the test-quality fold sits under the title as one slim line; the other folds stay at the foot
+  const qFolds = allFolds.filter(x => /quality/i.test(x.getAttribute('data-group') || '')), folds = allFolds.filter(x => qFolds.indexOf(x) < 0);
+  qFolds.forEach(q => { q.classList.add('qfold'); q.classList.remove('optgrp'); });
   const tag = h('span', { class: 'tag' });
   const det = h('details', { class: 'card tsec', id: 'sec-' + key, 'data-mod': key, open: secOpen[key] !== false, ontoggle: (e) => { secOpen[key] = e.target.open; } }, [
-    h('summary', { class: 'tsec-h' }, [h('h2', { text: m.title }), info('test.' + key), tag,
-      h('button', { type: 'button', class: 'lnk tsec-x', 'data-remove': key, title: 'Remove this test from the page', 'aria-label': 'Remove ' + m.title, text: 'remove', onclick: (e) => { e.preventDefault(); e.stopPropagation(); S.tests[key] = false; render(); } })]),
+    h('summary', { class: 'tsec-h' }, [h('h2', { text: m.title }), tag, h('span', { class: 'tsec-side' }, [info('test.' + key),
+      h('button', { type: 'button', class: 'lnk tsec-x', 'data-remove': key, title: 'Remove this test from the page', 'aria-label': 'Remove ' + m.title, text: 'remove', onclick: (e) => { e.preventDefault(); e.stopPropagation(); S.tests[key] = false; render(); } })])]),
     h('div', { class: 'tsec-b' }, [
+      qFolds,
       promptStrip(key),
       extra.filter(x => x.getAttribute('data-trend') !== '1' && x.getAttribute('data-es-fold') !== '1'),
-      mains, bd, PRIOR_MAP[key] && priorShown() ? priorFoot(key) : null, folds,
+      mains, bd, h('div', { class: 'foot-row' }, [folds, PRIOR_MAP[key] && priorShown() ? priorFoot(key) : null]),
       extra.filter(x => x.getAttribute('data-es-fold') === '1'),
       extra.filter(x => x.getAttribute('data-trend') === '1')
     ])
@@ -785,7 +790,7 @@ function testSection(key) {
 }
 
 /* ------------------------------------------------- bronchodilator, inside the spirometry step */
-function bdBlock(ctx) {
+function bdToggle() {
   const id = uid('bd');
   const on = !!(S.tests.bd || P.bdEntered(S.bd));
   const cb = h('input', { type: 'checkbox', id: id, checked: on, 'data-bd-toggle': '1', onchange: (e) => {
@@ -793,20 +798,20 @@ function bdBlock(ctx) {
     else { S.tests.bd = false; S.bd = P.normalizeState({}).bd; }
     render();
   } });
+  return h('span', { class: 'chk-inline' }, [cb, h('label', { for: id, text: 'Bronchodilator' })]);
+}
+function bdBlock(ctx) {
+  const on = !!(S.tests.bd || P.bdEntered(S.bd));
+  if (!on) return null;
   const m = P.SCHEMA.bd;
   const kids = [];
-  if (on) {
-    m.groups.forEach(g => {
-      if (g.legacy || g.inline) return;
-      if (g.fold) { kids.push(groupEl('bd', g)); return; }
-      const rows = g.fields.map(f => (f.type === 'param' || (f.type === 'sel' && !f.ui)) ? indexRow('bd', f, { columns: null }) : fieldEl('bd', f));
-      kids.push(h('section', { class: 'grp ixg', 'data-grid': 'bd' }, [rows, moreToggle('bd', g.fields.filter(f => f.more), 'More')]));
-    });
-  }
-  return h('section', { class: 'grp bd-block', 'data-bd': String(on) }, [
-    h('div', { class: 'chkrow big' }, [cb, h('label', { for: id, text: 'Bronchodilator given' }), on ? h('span', { class: 'fine', text: 'Type the post values beside the pre values; the change is calculated.' }) : null]),
-    kids
-  ]);
+  m.groups.forEach(g => {
+    if (g.legacy || g.inline) return;
+    if (g.fold) { kids.push(groupEl('bd', g)); return; }
+    const rows = g.fields.map(f => (f.type === 'param' || (f.type === 'sel' && !f.ui)) ? indexRow('bd', f, { columns: null }) : fieldEl('bd', f));
+    kids.push(h('section', { class: 'grp ixg', 'data-grid': 'bd' }, [rows, moreToggle('bd', g.fields.filter(f => f.more), 'More')]));
+  });
+  return h('section', { class: 'grp bd-block', 'data-bd': String(on) }, kids);
 }
 
 /* ------------------------------------------------- prior study, inline on the test step */
@@ -824,9 +829,14 @@ function priorShown() { return priorAdded || S.prior.list.some(p => P.PRIOR_FIEL
 /* "+ prior study" in the grid header: adds a column of prior boxes beside this study's values (the same column appears on
    every test that has comparable indices); the date goes in the column header */
 function priorTools(key) {
-  const box = h('span', { class: 'pr-tools' });
-  if (!priorShown()) box.appendChild(h('button', { type: 'button', class: 'lnk', 'data-prior-add': key, text: '+ prior study', onclick: () => { priorAdded = true; render(); } }));
-  else if (S.prior.list.length < P.MAX_PRIORS) box.appendChild(h('button', { type: 'button', class: 'lnk', 'data-prior-add': key, text: '+ older study', onclick: () => { S.prior.list.push(P.blankPrior()); render(); } }));
+  const box = h('span', { class: 'pr-tools' }), id = uid('pr'), shown = priorShown();
+  const cb = h('input', { type: 'checkbox', id: id, checked: shown, 'data-prior-toggle': key, onchange: (e) => {
+    if (e.target.checked) { priorAdded = true; }
+    else { priorAdded = false; S.prior.list = [P.blankPrior()]; }
+    render();
+  } });
+  box.appendChild(h('span', { class: 'chk-inline' }, [cb, h('label', { for: id, text: 'Prior study' })]));
+  if (shown && S.prior.list.length < P.MAX_PRIORS) box.appendChild(h('button', { type: 'button', class: 'lnk', 'data-prior-add': key, text: '+ older', onclick: () => { S.prior.list.push(P.blankPrior()); render(); } }));
   return box;
 }
 /* the header cell of a prior column: its date (with quick intervals) and a remove button */
@@ -1101,7 +1111,7 @@ function render() {
   else {
     main.appendChild(topCard());
     P.TESTS.forEach(t => { if (S.tests[t.key] && !t.hidden) main.appendChild(testSection(t.key)); });
-    if (!P.TESTS.some(t => S.tests[t.key] && !t.hidden)) main.appendChild(h('p', { class: 'fine empty-page', text: 'Tap a test above (or pick a quick set) to start entering values. Each test becomes a section here; the report builds on the right.' }));
+    if (!P.TESTS.some(t => S.tests[t.key] && !t.hidden)) main.appendChild(h('p', { class: 'fine empty-page', text: 'Tap the tests that were performed, or pick a quick set.' }));
   }
   renderPreview();
   sync();

@@ -361,6 +361,7 @@ function zonesFig() {
 }
 function anatWidget(kind) {
   if (kind === 'tree') return treeNav();
+  if (kind === 'tree3d') return tree3dFig();
   if (kind === 'stations') return stationMap();
   if (kind === 'vq') return vqSandbox();
   if (kind === 'lido') return lidoCalc();
