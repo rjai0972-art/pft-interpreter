@@ -12,11 +12,17 @@ async function loadExample(page, i) {
   await page.locator('.learn-body[data-topic="examples"] .ex').nth(i).click();
   await page.waitForSelector('#top');
 }
+async function tickTest(key, on) {   // the Additional studies list: a tick puts a test on the page
+  const d = pageRef.locator('details.more-tests'); await d.evaluate(e => { e.open = true; });
+  const cb = pageRef.locator('[data-test-on="' + key + '"]'); if (on) await cb.check(); else await cb.uncheck();
+  await pageRef.waitForTimeout(60);
+}
+let pageRef = null;
 (async () => {
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: 1380, height: 900 }, permissions: ['clipboard-read', 'clipboard-write'] });
   await ctx.addInitScript(() => { try { localStorage.setItem('pft.wording.v1', JSON.stringify('std')); } catch (e) {} });   // these checks read the standard wording
-  const page = await ctx.newPage();
+  const page = await ctx.newPage(); pageRef = page;
   const errs = [];
   page.on('pageerror', e => errs.push('pageerror: ' + e.message));
   page.on('console', m => { if (m.type() === 'error' && !/fonts\.g|ERR_|Failed to load resource/.test(m.text())) errs.push('console: ' + m.text()); });
@@ -29,11 +35,11 @@ async function loadExample(page, i) {
   ok(await page.locator('.steps, .pill').count() === 0, 'no step tabs');
   ok(await page.locator('#top .pstrip').count() === 1 && (await page.locator('#top .pstrip').boundingBox()).y < (await page.locator('details.ind').boundingBox()).y, 'patient details at the very top, indications below as a dropdown');
   ok(await page.locator('details.ind').evaluate(e => !e.open) && /none selected/.test(await page.locator('details.ind summary').innerText()), 'indications folded with a summary');
-  ok(await page.locator('.tchip').count() === 13 && await page.locator('.tchip[aria-pressed="true"]').count() === 0, '13 test chips, none pressed');
+  ok(await page.locator('.tchip').count() === 3 && await page.locator('.tchip[aria-pressed="true"]').count() === 3 && await page.locator('[data-test-on]').count() === 13, 'the three default tests as chips, all on; the 13 tests in the Additional studies list');
   ok(await page.locator('#qs option').count() === 12 && (await page.locator('#qs option').nth(1).innerText()) === 'Full PFT', 'quick sets as a dropdown: 10 built-in sets plus the editor entry');
-  ok(await page.locator('details.tsec').count() === 0 && await page.locator('.empty-page').count() === 1, 'no test sections before a test is tapped');
+  ok(await page.locator('details.tsec').count() === 3 && await page.locator('.empty-page').count() === 0, 'the default tests are sections from the start');
   ok(await page.locator('#pv').isVisible() && /INTERPRETATION:/.test(await page.locator('#pv').innerText()), 'the report column is there from the start');
-  ok(await page.locator('#pv .sec h3').count() === 0, 'nothing to report yet');
+  ok(await page.locator('#pv .sec h3').count() === 3 && /Not entered yet/.test(await page.locator('#pv').innerText()), 'the report waits for values');
   ok(await page.locator('.ex').count() === 0 && await page.locator('.zkey').count() === 0, 'no worked examples or z-key on the page');
   ok(await page.locator('[data-field="ctx.date"] input').inputValue() === today, 'study date defaults to today');
   await page.screenshot({ path: 'shots/61_empty.png', fullPage: true });
@@ -45,7 +51,7 @@ async function loadExample(page, i) {
   ok(await page.locator('#qs').inputValue() === '', 'the dropdown resets after applying');
   await page.selectOption('#qs', '__edit');
   ok(await page.locator('.qs-row').count() === 12, 'editor lists the sets with a new-set row');
-  await page.locator('.tchip[data-test="fvl"]').click();
+  await tickTest('fvl', true);
   await page.locator('.qs-new input').fill('My set');
   await page.locator('[data-qs-add]').click();
   ok(await page.locator('.qs-row').count() === 13, 'a quick set saved from the current selection');
@@ -53,7 +59,7 @@ async function loadExample(page, i) {
   await page.locator('[data-qs-done]').click();
   const opts = await page.locator('#qs option').allInnerTexts();
   ok(opts.indexOf('My set') === 10 && opts.indexOf('Full PFT') < 0, 'edited list persists in the dropdown: ' + opts.join(', '));
-  await page.locator('.tchip[data-test="fvl"]').click();
+  await page.locator('.tchip[data-test="fvl"]').click();   // a chip while on: tapping it removes it
   await page.selectOption('#qs', { label: 'My set' });
   ok(await page.locator('.tchip[data-test="fvl"][aria-pressed="true"]').count() === 1 && await page.locator('details.tsec[data-mod="fvl"]').count() === 1, 'the saved set restores its tests');
   await page.selectOption('#qs', '__edit'); await page.locator('[data-qs-reset]').click(); await page.locator('[data-qs-done]').click();
@@ -93,40 +99,43 @@ async function loadExample(page, i) {
   ok(await sp.locator('.tsec-h h2').innerText() === 'Spirometry' && await sp.evaluate(e => e.open), 'spirometry section open');
   ok(await sp.locator('[data-grid="spiro"] .ix:visible:not(.ix-head)').count() === 3 && await sp.locator('[data-field="spiro.fef"]').isHidden(), 'only FEV1/FVC, FEV1 and FVC visible');
   ok(await sp.locator('.btn.quick').count() === 0, 'no "unselected = normal" button');
-  ok(await sp.locator('input[data-prior-toggle="spiro"]').count() === 1 && await sp.locator('[data-prior-add="spiro"]').count() === 0 && await sp.locator('input[data-bd-toggle]').count() === 1, 'the prior-study and bronchodilator toggles sit in the grid header');
+  ok(await sp.locator('input[data-prior-toggle="spiro"]').count() === 1 && await sp.locator('[data-prior-add="spiro"]').count() === 0 && await sp.locator('input[data-bd-toggle]').count() === 1 && await sp.locator('input[data-vals-toggle="spiro"]').count() === 1, 'the bronchodilator, prior-study and values toggles sit in the grid header');
+  ok(await sp.locator('[data-cell]').count() === 0 && await sp.locator('table.ct').count() === 0, 'no value boxes until a toggle asks for them');
   const ratio = sp.locator('[data-field="spiro.ratio"]');
   await ratio.getByRole('button', { name: 'Below LLN ↓' }).click();
   ok(await ratio.locator('.sg[aria-pressed="true"]').innerText() === 'Low', 'ratio pressed');
-  await ratio.locator('[data-cell="spiro.ratio_abs"] input').fill('0.48');
+  await sp.locator('input[data-vals-toggle="spiro"]').check();
+  ok(await sp.locator('table.ct').count() === 1 && await sp.locator('table.ct tbody tr').count() === 3 && await sp.locator('[data-cell="spiro.fev1.z"]').count() === 1, '"Values" opens the table: one row per index, z / value / % predicted');
+  await sp.locator('[data-cell="spiro.ratio_abs"] input').fill('0.48');
   const fev1 = sp.locator('[data-field="spiro.fev1"]');
-  await fev1.locator('[data-cell="spiro.fev1.z"] input').fill('-3.1');
+  await sp.locator('[data-cell="spiro.fev1.z"] input').fill('-3.1');
   ok(await fev1.locator('.sg[aria-pressed="true"]').innerText() === 'Moderate', 'z -3.1 -> Moderate pressed');
-  await fev1.locator('[data-cell="spiro.fev1_abs"] input').fill('1.55');
-  await fev1.locator('[data-cell="spiro.fev1_pct"] input').fill('48');
+  await sp.locator('[data-cell="spiro.fev1_abs"] input').fill('1.55');
+  await sp.locator('[data-cell="spiro.fev1_pct"] input').fill('48');
   await sp.locator('[data-field="spiro.fvc"]').getByRole('button', { name: 'WNL' }).click();
   ok(/Moderate obstructive impairment present/.test(await pv('spiro')) && /FEV1\/FVC 0\.48/.test(await pv('spiro')), 'running report: the template statement with the typed ratio: ' + await pv('spiro'));
   ok(await page.locator('#pv .sec.cur[data-sec="spiro"]').count() === 1, 'the section being edited is marked in the report');
   // bronchodilator inside the section, one sentence in the report
   await sp.locator('input[data-bd-toggle]').check();
   await sp.locator('[data-cell="bd.fev1_post"] input').fill('1.95');
-  ok(/\+12\.4% pred/.test(await fev1.locator('.delta').innerText()), 'change beside the post value');
+  ok(/\+12\.4% pred/.test(await sp.locator('[data-ct-row="spiro.fev1"] .delta').innerText()), 'change beside the post value');
   ok(/After bronchodilator: FEV1 1\.55 to 1\.95 L \(\+400 mL, \+12\.4% of predicted\)\.$/.test(await pv('spiro')) && (await pv('spiro')).split('bronchodilator').length === 2, 'one bronchodilator sentence inside SPIROMETRY: ' + await pv('spiro'));
   ok(/Pattern is consistent with asthma\. Significant reversal of airways obstruction after bronchodilator \(FEV1 \+12% of predicted\)\./.test(await page.locator('#pv .interp').innerText()) && !/significantly improved/.test(await pv('spiro')), 'verdict once, in the interpretation: ' + await page.locator('#pv .interp').innerText());
   // prior column from the header, its date in the column header
   await sp.locator('[data-prior-toggle="spiro"]').check();
-  ok(await page.locator('[data-prior-dates="spiro"] .pr-head').count() === 2 && await page.locator('[data-cell="prior.fev1"]').count() === 1, 'a prior column with a date header appears beside this study');
+  ok(await page.locator('[data-prior-dates="spiro"] [data-prior-hd="1"]').count() === 1 && await page.locator('[data-cell="prior.fev1"]').count() === 1 && await page.locator('[data-prior-dates="spiro"] [data-prior-date="1"]').count() === 1, 'the comparison table opens with a prior column whose header holds the date');
   ok(await page.locator('details.tsec[data-mod="vol"] [data-prior-dates="vol"]').count() === 1 && await page.locator('[data-cell="prior.tlc"]').count() === 1, 'the same prior column appears on lung volumes');
-  await page.locator('[data-prior-dates="spiro"] .qd .lnk', { hasText: '1 yr' }).click();
+  await page.locator('[data-prior-dates="spiro"] [data-prior-date="1"]').first().fill('2024-03-05');
   ok((await state()).prior.list[0].date === '2024-03-05', 'one-year chip sets the prior date in the header');
   await page.locator('[data-cell="prior.fev1"] input').fill('1.85');
   await page.locator('[data-cell="prior.fvc"] input').fill('3.25');
   await sp.locator('[data-cell="spiro.fvc_abs"] input').fill('3.20');
   ok(/Since last testing \(3\/5\/2024, 1 year earlier\): FEV1 -16% \(-300 mL, 1\.85 to 1\.55 L\), a significant decline; FVC without significant change \(-2%\)\.$/.test(await pv('prior')), 'past testing in one sentence: ' + await pv('prior'));
-  ok(await sp.locator('[data-grid="spiro"] .ix-head .ix-c.hd').count() >= 5, 'the column headers cover this study, the prior and the post-bronchodilator boxes');
-  const xs = await sp.locator('[data-grid="spiro"] .ix:visible [data-cell$=".z"] input').evaluateAll(els => els.map(e => Math.round(e.getBoundingClientRect().x)));
+  ok(await sp.locator('table.ct thead tr').nth(1).locator('th').count() === 7 && /this study/i.test(await sp.locator('table.ct thead tr').nth(0).innerText()) && /3\/5\/2025/.test(await sp.locator('table.ct .ct-date').innerText()), 'the column headers cover this study (with its date), the post-bronchodilator and the prior boxes: ' + (await sp.locator('table.ct thead').innerText()).replace(/\s+/g, ' '));
+  const xs = await sp.locator('table.ct [data-cell$=".z"] input').evaluateAll(els => els.map(e => Math.round(e.getBoundingClientRect().x)));
   ok(xs.length === 3 && xs.every(x => x === xs[0]), 'z boxes aligned in one column: ' + xs.join(','));
   await page.locator('[data-prior-add="spiro"]').click();
-  ok(await page.locator('[data-cell="prior.fev1"]').count() === 2 && await page.locator('[data-prior-dates="spiro"] .pr-head').count() === 3, '"+ older study" adds a second prior column');
+  ok(await page.locator('[data-cell="prior.fev1"]').count() === 2 && await page.locator('[data-prior-dates="spiro"] [data-prior-hd]').count() === 2, '"+ older" adds a second prior column');
   await page.locator('[data-prior-remove="2"]').first().click();
   ok(await page.locator('[data-cell="prior.fev1"]').count() === 1, 'a prior column can be removed from its header');
   await page.locator('.pr-cmp summary').first().click();
@@ -171,7 +180,7 @@ async function loadExample(page, i) {
   await dl.locator('[data-unit="dlco"]').first().click(); await dl.locator('[data-cell="dlco.dlco_abs"] input').fill('');
 
   // ---- 6MWT: feet, auto categories, folded calculator and trend
-  await page.locator('.tchip[data-test="sixmw"]').click();
+  await tickTest('sixmw', true);
   await page.locator('[data-field="ctx.wt"] input').fill('82');
   const six = page.locator('details.tsec[data-mod="sixmw"]');
   ok(await six.locator('[data-group="calc"]').evaluate(e => !e.open) && await six.locator('[data-group="trend"]').evaluate(e => !e.open), 'calculator and trend folded');
@@ -211,7 +220,7 @@ async function loadExample(page, i) {
   ok(/^PFT1:/.test(code), 'case code copied');
   await page.getByRole('button', { name: 'New case' }).click();
   await page.getByRole('button', { name: 'Click again to clear' }).click();
-  ok(await page.locator('details.tsec').count() === 0 && (await state()).ctx.date === today && (await state()).units.wt === 'kg', 'new case clears the page, resets the date, keeps the unit choice');
+  ok(await page.locator('details.tsec').count() === 3 && await page.locator('details.tsec .tag:visible', { hasText: 'entered' }).count() === 0 && (await state()).ctx.date === today && (await state()).units.wt === 'kg', 'new case clears the page back to the three default tests, resets the date, keeps the unit choice');
   await page.locator('details.plain', { hasText: 'Save or load a case code' }).locator('summary').click();
   await page.fill('#case-box', code);
   await page.locator('#load-case').click();
@@ -252,7 +261,7 @@ async function loadExample(page, i) {
   ok(await br.locator('.grp:visible h3', { hasText: /^Methacholine result$/ }).count() === 1 && await br.locator('.grp:visible h3', { hasText: /^Mannitol result$/ }).count() === 0, 'methacholine group visible, mannitol hidden');
   await br.locator('[data-field="bronch.type"]').getByRole('radio', { name: 'Mannitol' }).click();
   ok(await br.locator('.grp:visible h3', { hasText: /^Mannitol result$/ }).count() === 1, 'mannitol visible after tap');
-  for (const k of await page.locator('.tchip[aria-pressed="false"]').evaluateAll(els => els.map(e => e.getAttribute('data-test')))) await page.locator('.tchip[data-test="' + k + '"]').click();
+  for (const k of await page.locator('[data-test-on]:not(:checked)').evaluateAll(els => els.map(e => e.getAttribute('data-test-on')))) await tickTest(k, true);
   ok(await page.locator('details.tsec').count() === 13, 'all 13 tests on one page: ' + await page.locator('details.tsec').count());
   await page.locator('details.tsec[data-mod="spiro"] > summary').click();
   ok(await page.locator('details.tsec[data-mod="spiro"]').evaluate(e => !e.open), 'a section folds from its header');

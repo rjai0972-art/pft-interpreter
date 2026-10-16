@@ -11,7 +11,11 @@ const WORDING_KEY = 'pft.wording.v1';
 /* the wording level sets the phrase style and the copy form with it */
 function applyWording(st, w) { st.settings.wording = w; st.settings.style = { min: 'concise', std: 'standard', full: 'expanded' }[w]; st.settings.copy = w === 'full' ? 'full' : 'lean'; return st; }
 function wordingPref() { const w = prefGet(WORDING_KEY); return (w === 'min' || w === 'std' || w === 'full') ? w : 'min'; }
-function freshState() { const st = P.defaultState(); st.ctx.date = todayISO(); st.units = Object.assign(st.units, unitPrefs()); applyWording(st, wordingPref()); return st; }
+/* the tests a new case starts with (chips on the page); the rest wait in the "Additional studies" list */
+const DEFAULTS_KEY = 'pft.defaults.v1', DEFAULT_TESTS = ['spiro', 'vol', 'dlco'];
+function defaultTests() { const v = prefGet(DEFAULTS_KEY); return Array.isArray(v) ? v.filter(k => P.TESTS.some(t => t.key === k && !t.hidden)) : DEFAULT_TESTS.slice(); }
+function saveDefaultTests(list) { prefSet(DEFAULTS_KEY, list); }
+function freshState() { const st = P.defaultState(); st.ctx.date = todayISO(); st.units = Object.assign(st.units, unitPrefs()); applyWording(st, wordingPref()); defaultTests().forEach(k => { st.tests[k] = true; }); return st; }
 function shiftMonths(iso, m) {
   const d = /^\d{4}-\d{2}-\d{2}$/.test(iso || '') ? new Date(iso + 'T00:00:00') : new Date();
   if (isNaN(d.getTime())) return '';
@@ -281,7 +285,8 @@ function indexRow(mod, f, ctx) {
     else if (ctx.columns) cells.push(blankCell());
   });
   // prior studies: the same quantities for each earlier study
-  if (ctx.priors && ctx.priors.length) {
+  if (ctx.noVals) cells.length = 0;
+  if (ctx.priors && ctx.priors.length && !ctx.noVals) {
     const pr = PRIOR_MAP[mod], defs = (pr && pr.fields[f.id]) || [];
     ctx.priors.forEach(p => {
       defs.forEach(d => { const pf = P.PRIOR_FIELDS.filter(x => x.id === d[0])[0]; cells.push(numCell('prior', { id: d[0], label: 'Prior ' + (pf ? pf.label : d[0]), unit: d[1] === 'walk' || d[1] === 'dlco' ? '' : d[1], units: d[1] === 'walk' || d[1] === 'dlco' ? d[1] : null }, { get: () => p[d[0]], set: (v) => { p[d[0]] = v; }, cls: 'pri', grid: true })); });
@@ -289,7 +294,7 @@ function indexRow(mod, f, ctx) {
     });
   }
   // post-bronchodilator: the post value and the change as % of predicted
-  if (ctx.bd) {
+  if (ctx.bd && !ctx.noVals) {
     const bdf = { ratio: 'post_ratio_abs', fev1: 'fev1_post', fvc: 'fvc_post' }[f.id];
     if (bdf) {
       const nf = fieldDef('bd', bdf);
@@ -562,6 +567,14 @@ function revealField(mod, id) {
   if (id === 'bd') { S.tests.bd = true; render(); const el = document.querySelector('[data-cell="bd.fev1_post"] input'); if (el) el.focus(); return; }
   const f = fieldDef(mod, id);
   if (f && f.more) { moreOpen[mod] = true; sync(); }
+  // a prompt for a number (a hemoglobin, a % predicted): open the value boxes of the section and go to that box
+  const pt = ((R.prompts || []).filter(p => p.mod === mod && p.field === id)[0] || {}).text || '';
+  if (f && f.cols && gridFields(mod).indexOf(f) >= 0 && ((f.type === 'sel' && f.auto) || /% predicted/.test(pt))) {
+    if (!valsShown(mod)) { valsOpen[mod] = true; render(); }
+    const cid = f.cols.pct && /% predicted/.test(pt) ? f.cols.pct : (f.cols.val || f.cols.pct);
+    const cell = document.querySelector('[data-cell="' + mod + '.' + cid + '"] input');
+    if (cell) { const det = cell.closest('details'); if (det) det.open = true; cell.scrollIntoView({ block: 'center' }); cell.focus({ preventScroll: true }); const tr = cell.closest('tr'); if (tr) { tr.classList.add('flash'); setTimeout(() => tr.classList.remove('flash'), 1600); } return; }
+  }
   const el = document.querySelector('[data-field="' + mod + '.' + id + '"]');
   if (el) {
     const det = el.closest('details'); if (det) det.open = true;
@@ -635,22 +648,35 @@ function testPicker() {
     edBox.appendChild(ed);
   }
   paintQs();
-  const chips = {};
-  const groups = []; shown.forEach(t => { if (groups.indexOf(t.group) < 0) groups.push(t.group); });
-  const chipRow = h('div', { class: 'tchips' }, groups.map(g => h('span', { class: 'tgroup', 'aria-label': g }, shown.filter(t => t.group === g).map(t => {
+  const chips = {}, defs = defaultTests();
+  // chips: the default tests, plus any other test that is on the page right now
+  const chipRow = h('div', { class: 'tchips' }, shown.filter(t => defs.indexOf(t.key) >= 0 || S.tests[t.key]).map(t => {
     const b = h('button', { type: 'button', class: 'tchip', 'data-test': t.key, 'aria-pressed': 'false', title: t.desc, text: SHORT[t.key] || t.name,
       onclick: () => { S.tests[t.key] = !S.tests[t.key]; render(); if (S.tests[t.key]) { const el = document.getElementById('sec-' + t.key); if (el && el.scrollIntoView) el.scrollIntoView({ block: 'start' }); } } });
     chips[t.key] = b; return b;
-  }))));
+  }));
+  // "Additional studies": every test, with a tick to put it on the page and a tick to make it a default chip
+  const more = h('details', { class: 'slim more-tests', 'data-more-tests': '1' }, [
+    h('summary', {}, [h('span', { class: 't', text: 'Additional studies' })]),
+    h('div', { class: 'mt-list' }, [
+      h('div', { class: 'mt-row mt-head' }, [h('span', { text: 'Test' }), h('span', { text: 'On page' }), h('span', { text: 'Default' })]),
+      shown.map(t => {
+        const onId = uid('mt'), dfId = uid('md');
+        const on = h('input', { type: 'checkbox', id: onId, 'data-test-on': t.key, checked: !!S.tests[t.key], onchange: (e) => { S.tests[t.key] = e.target.checked; render(); } });
+        const df = h('input', { type: 'checkbox', id: dfId, 'data-test-default': t.key, checked: defs.indexOf(t.key) >= 0, onchange: (e) => { const l = defaultTests().filter(k => k !== t.key); if (e.target.checked) l.push(t.key); saveDefaultTests(P.TESTS.filter(x => l.indexOf(x.key) >= 0).map(x => x.key)); render(); } });
+        return h('div', { class: 'mt-row' }, [h('label', { for: onId, text: t.name, title: t.desc }), on, df]);
+      })
+    ])
+  ]);
   const count = h('span', { class: 'fine count' });
   widgets.push(() => {
     let n = 0;
-    shown.forEach(t => { chips[t.key].setAttribute('aria-pressed', String(!!S.tests[t.key])); if (S.tests[t.key]) n++; });
+    shown.forEach(t => { if (chips[t.key]) chips[t.key].setAttribute('aria-pressed', String(!!S.tests[t.key])); if (S.tests[t.key]) n++; });
     count.textContent = n ? plural(n, 'test') + ' on the page' : '';
   });
   return h('div', { class: 'tests-row', 'data-tests': '1' }, [
-    h('div', { class: 'tests-head' }, [h('span', { class: 'lab', text: 'Tests' }), sel, count]),
-    chipRow, edBox
+    h('div', { class: 'tests-head' }, [h('span', { class: 'lab', text: 'Tests' }), chipRow, more, sel, count]),
+    edBox
   ]);
 }
 function methodNote() {
@@ -753,16 +779,17 @@ function testSection(key) {
   (m.columns || []).forEach(c => { ctx.colLabels[c[0]] = c[1]; });
   if (PRIOR_MAP[key] && priorShown()) ctx.priors = S.prior.list;
   if (key === 'spiro' && (S.tests.bd || P.bdEntered(S.bd))) ctx.bd = true;
+  ctx.noVals = true;   // the category chips are the entry; the values live in the comparison table when it is open
   const body = [];
   m.groups.forEach((g, gi) => {
     if (g.legacy) return;
     const isGrid = !!(m.columns && gi === 0 && !g.inline && !g.fold && !g.opt);
     const isRows = !isGrid && !g.inline && !g.fold && !g.opt && !g.when && g.fields.some(f => f.type === 'param' || (f.type === 'sel' && !f.ui));
     if (isGrid || isRows) {
-      const head = h('div', { class: 'grp-head' }, [h('h3', { text: g.title }), isGrid ? h('span', { class: 'grp-tools' }, [key === 'spiro' ? bdToggle() : null, PRIOR_MAP[key] ? priorTools(key) : null]) : null]);
+      const head = h('div', { class: 'grp-head' }, [h('h3', { text: g.title }), isGrid ? h('span', { class: 'grp-tools' }, [key === 'spiro' ? bdToggle() : null, PRIOR_MAP[key] ? priorTools(key) : null, valsToggle(key)]) : null]);
       const rows = g.fields.map(f => (f.type === 'param' || (f.type === 'sel' && !f.ui)) ? indexRow(key, f, isGrid ? ctx : { priors: ctx.priors }) : fieldEl(key, f));
       const moreRows = g.fields.filter(f => f.more);
-      body.push(h('section', { class: 'grp ixg' + (isGrid ? ' grid' : '') + (isGrid && gridCells(key, ctx) > 4 ? ' stack' : ''), 'data-grid': key }, [head, isGrid ? gridHead(key, ctx) : null, rows, moreToggle(key, moreRows)]));
+      body.push(h('section', { class: 'grp ixg' + (isGrid ? ' grid' : ''), 'data-grid': key }, [head, rows, moreToggle(key, moreRows), isGrid && (ctx.priors || ctx.bd || valsShown(key)) ? compareTable(key, ctx) : null]));
     } else {
       const el = groupEl(key, g, ctx); if (el) body.push(el);
     }
@@ -772,21 +799,45 @@ function testSection(key) {
   // the test-quality fold sits under the title as one slim line; the other folds stay at the foot
   const qFolds = allFolds.filter(x => /quality/i.test(x.getAttribute('data-group') || '')), folds = allFolds.filter(x => qFolds.indexOf(x) < 0);
   qFolds.forEach(q => { q.classList.add('qfold'); q.classList.remove('optgrp'); });
+  // the quality fold is opened from a link on the title line
+  const qLinks = qFolds.map(q => { const lbl = q.querySelector('summary .t'), tg = q.querySelector('summary .tag'); const b = h('button', { type: 'button', class: 'lnk tsec-q', 'data-quality': key, 'aria-expanded': String(!!q.open), onclick: (e) => { e.preventDefault(); e.stopPropagation(); q.open = !q.open; b.setAttribute('aria-expanded', String(q.open)); } }, [lbl ? lbl.textContent : 'Test quality', tg ? h('span', { class: 'tsec-qt' }) : null]); widgets.push(() => { const t = b.querySelector('.tsec-qt'); if (t && tg) { t.textContent = tg.hidden ? '' : ' · ' + tg.textContent; } }); return b; });
   const tag = h('span', { class: 'tag' });
   const det = h('details', { class: 'card tsec', id: 'sec-' + key, 'data-mod': key, open: secOpen[key] !== false, ontoggle: (e) => { secOpen[key] = e.target.open; } }, [
-    h('summary', { class: 'tsec-h' }, [h('h2', { text: m.title }), tag, h('span', { class: 'tsec-side' }, [info('test.' + key),
+    h('summary', { class: 'tsec-h' }, [h('h2', { text: m.title }), tag, qLinks, h('span', { class: 'tsec-side' }, [info('test.' + key),
       h('button', { type: 'button', class: 'lnk tsec-x', 'data-remove': key, title: 'Remove this test from the page', 'aria-label': 'Remove ' + m.title, text: 'remove', onclick: (e) => { e.preventDefault(); e.stopPropagation(); S.tests[key] = false; render(); } })])]),
     h('div', { class: 'tsec-b' }, [
       qFolds,
-      promptStrip(key),
       extra.filter(x => x.getAttribute('data-trend') !== '1' && x.getAttribute('data-es-fold') !== '1'),
-      mains, bd, h('div', { class: 'foot-row' }, [folds, PRIOR_MAP[key] && priorShown() ? priorFoot(key) : null]),
+      mains, bd, promptStrip(key), h('div', { class: 'foot-row' }, [folds, PRIOR_MAP[key] && priorShown() ? priorFoot(key) : null]),
       extra.filter(x => x.getAttribute('data-es-fold') === '1'),
       extra.filter(x => x.getAttribute('data-trend') === '1')
     ])
   ]);
   widgets.push(() => { const sec = secFor(key); const n = (sec && !sec.empty) ? 'entered' : ''; tag.textContent = n; tag.hidden = !n; });
   return det;
+}
+
+/* ------------------------------------------------- the value boxes of a grid section
+   Hidden by default: the category chips are the entry. "Values" opens the comparison table (z, value, % predicted) for
+   the times the numbers matter on their own (a z-score to set the grade, a hemoglobin for the DLCO correction); any
+   typed value keeps it open. Switching it off clears the typed numbers of that section (the categories stay). */
+const valsOpen = {};
+function gridFields(key) { const m = P.SCHEMA[key]; return (m && m.columns && m.groups[0]) ? m.groups[0].fields.filter(f => f.type === 'param' || (f.type === 'sel' && !f.ui)) : []; }
+function valsEntered(key) {
+  return gridFields(key).some(f => (f.type === 'param' && String(S[key][f.id].z || '') !== '') || (f.cols && Object.keys(f.cols).some(k => String(S[key][f.cols[k]] || '') !== '')));
+}
+function valsShown(key) { return !!valsOpen[key] || valsEntered(key); }
+function valsToggle(key) {
+  const id = uid('vl'), on = valsShown(key);
+  const cb = h('input', { type: 'checkbox', id: id, checked: on, 'data-vals-toggle': key, onchange: (e) => {
+    if (e.target.checked) { valsOpen[key] = true; }
+    else {
+      valsOpen[key] = false;
+      gridFields(key).forEach(f => { if (f.type === 'param') S[key][f.id].z = ''; if (f.cols) Object.keys(f.cols).forEach(k => { S[key][f.cols[k]] = ''; }); });
+    }
+    render();
+  } });
+  return h('span', { class: 'chk-inline' }, [cb, h('label', { for: id, text: 'Values', title: 'Show the value boxes (z-score, value, % predicted)' })]);
 }
 
 /* ------------------------------------------------- bronchodilator, inside the spirometry step */
@@ -838,6 +889,58 @@ function priorTools(key) {
   box.appendChild(h('span', { class: 'chk-inline' }, [cb, h('label', { for: id, text: 'Prior study' })]));
   if (shown && S.prior.list.length < P.MAX_PRIORS) box.appendChild(h('button', { type: 'button', class: 'lnk', 'data-prior-add': key, text: '+ older', onclick: () => { S.prior.list.push(P.blankPrior()); render(); } }));
   return box;
+}
+/* The comparison table of a grid section: this study's values (z, value, % predicted), the post-bronchodilator value with
+   its change, and one value column per prior study with the study's date in the column header. Shown only while
+   "Bronchodilator" or "Prior study" is on; otherwise the category chips are the whole entry. */
+function compareTable(key, ctx) {
+  const m = P.SCHEMA.spiro && P.SCHEMA[key], pr = PRIOR_MAP[key], priors = ctx.priors || [], bd = !!ctx.bd;
+  const grid = m.groups.filter((g, gi) => gi === 0)[0];
+  const rows = grid.fields.filter(f => (f.type === 'param' || (f.type === 'sel' && !f.ui)) && (f.cols || (pr && pr.fields[f.id])) && (!f.more || isFilled(key, f) || (f.cols && Object.keys(f.cols).some(k => String(S[key][f.cols[k]]) !== ''))));
+  const colKeys = (m.columns || []).map(c => c[0]);
+  const th = (text, attrs) => h('th', Object.assign({ scope: 'col', text: text }, attrs || {}));
+  const top = [h('th', { class: 'ct-corner' }), h('th', { scope: 'colgroup', colspan: String(colKeys.length), class: 'ct-grp cur' }, [h('span', { text: 'This study' }), h('span', { class: 'ct-date', text: S.ctx.date ? dateShort(S.ctx.date) : '' })])];
+  if (bd) top.push(h('th', { scope: 'colgroup', colspan: '2', class: 'ct-grp post', text: 'Post-bronchodilator' }));
+  priors.forEach((p, i) => {
+    const inp = h('input', { type: 'date', value: p.date, 'data-prior-date': String(i + 1), 'aria-label': 'Date of prior study ' + (i + 1), oninput: (e) => { p.date = e.target.value; sync(); } });
+    widgets.push(() => { if (document.activeElement !== inp && inp.value !== p.date) inp.value = p.date; });
+    top.push(h('th', { scope: 'colgroup', class: 'ct-grp pri', 'data-prior-hd': String(i + 1) }, [h('span', { class: 'ct-pl' }, [h('span', { text: priors.length > 1 ? 'Prior ' + (i + 1) : 'Prior' }),
+      h('button', { type: 'button', class: 'lnk', 'data-prior-remove': String(i + 1), title: 'Remove this prior study', 'aria-label': 'Remove prior study ' + (i + 1), text: '×', onclick: () => { S.prior.list.splice(i, 1); if (!S.prior.list.length) { S.prior.list.push(P.blankPrior()); priorAdded = false; } render(); } })]), inp]));
+  });
+  const sub = [h('th', { class: 'ct-corner' })].concat(colKeys.map(k => th(k === 'z' ? 'z' : (ctx.colLabels[k] || k))));
+  if (bd) { sub.push(th('Value')); sub.push(th('Δ')); }
+  priors.forEach(() => sub.push(th('Value')));
+  const trs = rows.map(f => {
+    const tds = [h('th', { scope: 'row', text: f.label })];
+    colKeys.forEach(k => {
+      if (k === 'z') { tds.push(h('td', {}, [f.type === 'param' ? zCell(key, f) : null])); return; }
+      const nid = f.cols && f.cols[k], nf = nid ? fieldDef(key, nid) : null;
+      tds.push(h('td', {}, [nf && nf.type === 'num' ? numCell(key, nf, { grid: true, ph: nf.ph || '' }) : null]));
+    });
+    if (bd) {
+      const bdf = { ratio: 'post_ratio_abs', fev1: 'fev1_post', fvc: 'fvc_post' }[f.id];
+      if (bdf) {
+        const nf = fieldDef('bd', bdf);
+        tds.push(h('td', {}, [numCell('bd', nf, { cls: 'post', grid: true, ph: f.id === 'ratio' ? '0.72' : '', aria: 'Post-bronchodilator ' + f.label + (nf.unit ? ' (' + nf.unit + ')' : '') })]));
+        const d = textCell('delta');
+        widgets.push(() => {
+          const b = R.facts.bd; let t = '';
+          if (f.id === 'fev1' || f.id === 'fvc') { const dpp = f.id === 'fev1' ? b.dF : b.dV, dml = f.id === 'fev1' ? b.dFmL : b.dVmL; if (isNum(dpp)) t = (dpp > 0 ? '+' : '') + dpp.toFixed(1) + '% pred'; else if (isNum(dml)) t = (dml > 0 ? '+' : '') + Math.round(dml) + ' mL'; }
+          else if (isNum(b.postRatioV) && isNum(R.facts.sp.ratioV)) { const dd = (b.postRatioV - R.facts.sp.ratioV) * 100; t = (dd > 0 ? '+' : '') + dd.toFixed(0) + ' pts'; }
+          d.textContent = t; d.classList.toggle('sig', /% pred/.test(t) && parseFloat(t) > 10);
+        });
+        tds.push(h('td', {}, [d]));
+      } else { tds.push(h('td')); tds.push(h('td')); }
+    }
+    priors.forEach(p => {
+      const defs = (pr && pr.fields[f.id]) || [];
+      if (!defs.length) { tds.push(h('td')); return; }
+      const d = defs[0], pf = P.PRIOR_FIELDS.filter(x => x.id === d[0])[0];
+      tds.push(h('td', {}, [numCell('prior', { id: d[0], label: 'Prior ' + (pf ? pf.label : d[0]), unit: d[1] === 'walk' || d[1] === 'dlco' ? '' : d[1], units: d[1] === 'walk' || d[1] === 'dlco' ? d[1] : null }, { get: () => p[d[0]], set: (v) => { p[d[0]] = v; }, cls: 'pri', grid: true })]));
+    });
+    return h('tr', { 'data-ct-row': key + '.' + f.id }, tds);
+  });
+  return h('div', { class: 'ct-wrap', 'data-prior-dates': key }, [h('table', { class: 'ct' }, [h('thead', {}, [h('tr', {}, top), h('tr', {}, sub)]), h('tbody', {}, trs)])]);
 }
 /* the header cell of a prior column: its date (with quick intervals) and a remove button */
 function priorHeadCell(p, i, n) {

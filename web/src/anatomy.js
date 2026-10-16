@@ -113,6 +113,125 @@ const TREE3D = {
   lll: { b: [42, -14, -56], r: 5 }, lb6: { b: [50, -38, -54], r: 3 }, lb78: { b: [40, 10, -98], r: 3 }, lb9: { b: [66, -6, -96], r: 3 }, lb10: { b: [48, -34, -102], r: 3.2 }
 };
 Object.keys(TREE3D).forEach(k => { const n = TREE3D[k]; if (!n.a) n.a = TREE3D[TREE[k].parent].b; });
+
+/* ------------------------------------------------------------------ structures around the airway
+   What lies against the wall at each level, drawn around the scope view as a schematic ring (an EBUS atlas page without
+   the photographs): h = clock position with anterior at 12 and the patient's right at 3, d = distance from the centre as a
+   multiple of the lumen radius, s = size as a fraction of the lumen radius. k: a artery · v vein · n node · e oesophagus
+   · o other. Positions are the usual ones at the mid-level of that airway, not measurements. */
+const LANDMARKS = {
+  trachea_upper: [
+    { k: 'a', h: 12.3, d: 1.42, s: 0.2, l: 'brachiocephalic a.', t: 'The innominate artery crosses the front of the upper trachea from left to right on its way to the right side of the neck.' },
+    { k: 'v', h: 11.0, d: 1.78, s: 0.28, w: 1.9, l: 'L brachiocephalic v.', t: 'The left innominate vein crosses in front of the arch vessels, above the arch; its lower border is the boundary between stations 2 and 4.' },
+    { k: 'v', h: 1.6, d: 1.5, s: 0.2, l: 'R brachiocephalic v.', t: 'Joins the left vein to form the SVC to the right of the trachea.' },
+    { k: 'a', h: 10.2, d: 1.42, s: 0.13, l: 'L common carotid a.', t: 'Anterolateral left of the upper trachea.' },
+    { k: 'a', h: 8.7, d: 1.42, s: 0.13, l: 'L subclavian a.', t: 'Posterolateral left of the upper trachea; the recurrent laryngeal nerve runs up behind it in the tracheo-oesophageal groove.' },
+    { k: 'e', h: 6.6, d: 1.35, s: 0.2, l: 'oesophagus', t: 'Behind the posterior membrane, a little to the left.' },
+    { k: 'n', h: 1.2, d: 1.17, s: 0.1, l: '2R', t: 'Upper right paratracheal: anterior-right wall of the upper trachea, above the innominate vein (2R extends across to the left tracheal border).' },
+    { k: 'n', h: 10.9, d: 1.17, s: 0.1, l: '2L', t: 'Upper left paratracheal: left lateral wall above the aortic arch.' },
+    { k: 'n', h: 5.6, d: 1.18, s: 0.1, l: '3p', t: 'Retrotracheal: behind the posterior membrane, in front of the oesophagus.' }
+  ],
+  trachea: [
+    { k: 'v', h: 1.7, d: 1.52, s: 0.22, l: 'SVC', t: 'Superior vena cava: anterolateral right of the lower trachea, lateral to station 4R.' },
+    { k: 'v', h: 3.4, d: 1.32, s: 0.13, l: 'azygos arch', t: 'Arches over the right main bronchus from behind to join the SVC; its lower border is the lower border of 4R.' },
+    { k: 'a', h: 9.6, d: 1.62, s: 0.3, l: 'aortic arch', t: 'Crosses the left side of the lower trachea and the left main bronchus; above station 4L.' },
+    { k: 'a', h: 11.2, d: 1.5, s: 0.22, l: 'ascending aorta', t: 'In front and to the left of the lower trachea.' },
+    { k: 'a', h: 12.5, d: 1.28, s: 0.2, l: 'main / right PA', t: 'Below the carina, in front of the main bronchi: fills the picture when the scope is too far down for 4R.' },
+    { k: 'a', h: 7.6, d: 1.5, s: 0.24, l: 'descending aorta', t: 'Behind and to the left, beside the oesophagus.' },
+    { k: 'e', h: 6.6, d: 1.35, s: 0.2, l: 'oesophagus', t: 'Behind the posterior membrane, a little to the left; 3p lies between.' },
+    { k: 'n', h: 2.2, d: 1.18, s: 0.1, l: '4R', t: 'Lower right paratracheal: anterior-right wall just above the carina, SVC lateral, azygos caudal — the workhorse station.' },
+    { k: 'n', h: 9.2, d: 1.2, s: 0.1, l: '4L', t: 'Lower left paratracheal: left lateral wall, under the arch, left PA beyond.' },
+    { k: 'n', h: 5.6, d: 1.18, s: 0.1, l: '3p', t: 'Retrotracheal: behind the posterior membrane, in front of the oesophagus.' },
+    { k: 'n', h: 5.4, d: 1.58, s: 0.1, l: '7', t: 'Subcarinal: below and behind the carina, between the main bronchi — sampled from the medial wall of a main bronchus, not from the trachea.' }
+  ],
+  rmb: [
+    { k: 'v', h: 1.0, d: 1.6, s: 0.22, l: 'SVC', t: 'Anterior and to the right of the proximal right main bronchus.' },
+    { k: 'v', h: 2.3, d: 1.32, s: 0.13, l: 'azygos arch', t: 'Crosses over the right main bronchus from behind; 10R lies below it, 4R above.' },
+    { k: 'a', h: 11.6, d: 1.3, s: 0.22, l: 'right PA', t: 'Runs in front of the right main bronchus and bronchus intermedius, below the SVC and the azygos.' },
+    { k: 'a', h: 10.2, d: 1.6, s: 0.24, l: 'ascending aorta', t: 'Anteromedial, beyond the pulmonary artery.' },
+    { k: 'e', h: 7.4, d: 1.35, s: 0.2, l: 'oesophagus', t: 'Posteromedial.' },
+    { k: 'n', h: 12.9, d: 1.17, s: 0.1, l: '4R', t: 'Anterior wall at the level of the azygos (its upper border is the lower rim of the azygos).' },
+    { k: 'n', h: 2.8, d: 1.17, s: 0.1, l: '10R', t: 'Lateral or anterior wall distal to the azygos vein, before the RUL takeoff.' },
+    { k: 'n', h: 9.0, d: 1.17, s: 0.1, l: '7', t: 'Medial wall at the level of the RUL takeoff; no vessel in the way.' },
+    { k: 'n', h: 4.4, d: 1.2, s: 0.1, l: '11Rs', t: 'Between the RUL bronchus and the bronchus intermedius, just beyond the RUL orifice.' }
+  ],
+  rul: [
+    { k: 'a', h: 12.0, d: 1.32, s: 0.18, l: 'truncus anterior (A1, A3)', t: 'The first branch of the right PA runs in front of the upper lobe bronchus.' },
+    { k: 'v', h: 10.6, d: 1.58, s: 0.2, l: 'R superior pulmonary v.', t: 'Anterior and inferior to the bronchus, in front of the artery.' },
+    { k: 'n', h: 3.0, d: 1.17, s: 0.1, l: '12R', t: 'Lobar nodes beside the upper lobe bronchus (12u).' },
+    { k: 'n', h: 7.4, d: 1.2, s: 0.1, l: '11Rs', t: 'Between this bronchus and the bronchus intermedius.' }
+  ],
+  bi: [
+    { k: 'a', h: 1.4, d: 1.32, s: 0.22, l: 'interlobar PA', t: 'The right PA continues anterolateral to the bronchus intermedius as the interlobar artery.' },
+    { k: 'v', h: 11.6, d: 1.62, s: 0.2, l: 'R superior pulmonary v.', t: 'In front of the artery and the bronchus.' },
+    { k: 'v', h: 6.8, d: 1.42, s: 0.2, l: 'R inferior pulmonary v.', t: 'Posteromedial and below, running to the left atrium.' },
+    { k: 'e', h: 8.3, d: 1.35, s: 0.2, l: 'oesophagus', t: 'Medial and behind; station 8 lies against it.' },
+    { k: 'n', h: 9.3, d: 1.17, s: 0.1, l: '7', t: 'Medial wall of the proximal bronchus intermedius.' },
+    { k: 'n', h: 3.2, d: 1.17, s: 0.1, l: '11Rs', t: 'Lateral wall just beyond the RUL orifice.' },
+    { k: 'n', h: 12.4, d: 1.17, s: 0.1, l: '11Ri', t: 'At the spur between the middle and lower lobe bronchi.' }
+  ],
+  rml: [
+    { k: 'a', h: 2.2, d: 1.32, s: 0.15, l: 'A4, A5', t: 'The middle lobe arteries run lateral to the middle lobe bronchus.' },
+    { k: 'v', h: 10.4, d: 1.35, s: 0.15, l: 'V4, V5', t: 'The middle lobe veins run medial and below, to the superior pulmonary vein.' },
+    { k: 'n', h: 3.6, d: 1.17, s: 0.1, l: '12R', t: 'Lobar nodes (12m) beside the middle lobe bronchus.' },
+    { k: 'n', h: 6.2, d: 1.2, s: 0.1, l: '11Ri', t: 'Behind, at the spur with the lower lobe bronchus.' }
+  ],
+  rll: [
+    { k: 'a', h: 1.6, d: 1.32, s: 0.2, l: 'basal trunk PA', t: 'The interlobar artery continues as the basal trunk, anterolateral to the lower lobe bronchus.' },
+    { k: 'v', h: 7.8, d: 1.45, s: 0.2, l: 'R inferior pulmonary v.', t: 'Posteromedial, in the pulmonary ligament (station 9 along it).' },
+    { k: 'e', h: 9.6, d: 1.4, s: 0.2, l: 'oesophagus', t: 'Medial; station 8 lies against it.' },
+    { k: 'n', h: 3.0, d: 1.17, s: 0.1, l: '12R', t: 'Lobar nodes (12l) beside the lower lobe bronchus.' },
+    { k: 'n', h: 12.0, d: 1.2, s: 0.1, l: '11Ri', t: 'In front, at the spur with the middle lobe bronchus.' },
+    { k: 'n', h: 8.6, d: 1.17, s: 0.1, l: '8', t: 'Paraoesophageal: medial, below the bronchus intermedius — an EUS station.' }
+  ],
+  lmb: [
+    { k: 'a', h: 10.4, d: 1.62, s: 0.3, l: 'aortic arch', t: 'Above and lateral to the proximal left main bronchus; 4L lies under it.' },
+    { k: 'a', h: 6.8, d: 1.5, s: 0.26, l: 'descending aorta', t: 'Behind and to the left of the distal left main bronchus.' },
+    { k: 'a', h: 12.4, d: 1.32, s: 0.24, l: 'left PA', t: 'In front of the left main bronchus, then arching over the upper lobe bronchus — behind 10L.' },
+    { k: 'v', h: 1.6, d: 1.65, s: 0.2, l: 'L superior pulmonary v.', t: 'Anterior and below at the hilum, in front of the artery.' },
+    { k: 'e', h: 5.2, d: 1.35, s: 0.2, l: 'oesophagus', t: 'Behind the posterior membrane, slightly medial.' },
+    { k: 'n', h: 10.0, d: 1.18, s: 0.1, l: '4L', t: 'Left lateral wall of the distal trachea and proximal LMB, under the arch.' },
+    { k: 'n', h: 11.4, d: 1.75, s: 0.1, l: '5', t: 'Subaortic (AP window): outside the airway beyond the ligamentum arteriosum — not an EBUS station.' },
+    { k: 'n', h: 3.0, d: 1.17, s: 0.1, l: '7', t: 'Medial wall of the left main bronchus.' },
+    { k: 'n', h: 9.0, d: 1.17, s: 0.1, l: '10L', t: 'Lateral wall of the distal LMB, the left PA immediately behind it.' },
+    { k: 'n', h: 7.4, d: 1.17, s: 0.1, l: '11L', t: 'At the secondary carina between the upper and lower lobe bronchi.' }
+  ],
+  lul: [
+    { k: 'a', h: 9.4, d: 1.32, s: 0.24, l: 'left PA', t: 'Arches over the upper lobe bronchus and descends behind and lateral to it.' },
+    { k: 'a', h: 1.2, d: 1.3, s: 0.14, l: 'lingular a. (A4+5)', t: 'Anterolateral, to the lingula.' },
+    { k: 'v', h: 12.0, d: 1.6, s: 0.2, l: 'L superior pulmonary v.', t: 'In front of the upper lobe bronchus.' },
+    { k: 'n', h: 6.0, d: 1.17, s: 0.1, l: '11L', t: 'Between the upper and lower lobe bronchi.' },
+    { k: 'n', h: 3.0, d: 1.17, s: 0.1, l: '12L', t: 'Lobar nodes (12u) beside the upper lobe bronchus.' },
+    { k: 'n', h: 8.0, d: 1.2, s: 0.1, l: '10L', t: 'Just proximal, on the distal left main bronchus.' }
+  ],
+  lll: [
+    { k: 'a', h: 9.6, d: 1.32, s: 0.2, l: 'basal trunk PA', t: 'The left PA descends posterolateral to the lower lobe bronchus and continues as the basal trunk.' },
+    { k: 'a', h: 6.4, d: 1.55, s: 0.26, l: 'descending aorta', t: 'Behind and medial.' },
+    { k: 'v', h: 5.0, d: 1.45, s: 0.2, l: 'L inferior pulmonary v.', t: 'Inferomedial, in the pulmonary ligament.' },
+    { k: 'e', h: 3.8, d: 1.35, s: 0.2, l: 'oesophagus', t: 'Medial; station 8 lies against it.' },
+    { k: 'n', h: 12.0, d: 1.2, s: 0.1, l: '11L', t: 'In front, at the secondary carina.' },
+    { k: 'n', h: 9.0, d: 1.17, s: 0.1, l: '12L', t: 'Lobar nodes (12l) beside the lower lobe bronchus.' },
+    { k: 'n', h: 3.0, d: 1.17, s: 0.1, l: '8', t: 'Paraoesophageal: medial, below the upper lobe bronchus — an EUS station.' }
+  ]
+};
+LANDMARKS.lud = LANDMARKS.lul.filter(x => /PA|pulmonary v|12L/.test(x.l));
+LANDMARKS.ling = [{ k: 'a', h: 2.0, d: 1.3, s: 0.14, l: 'lingular a. (A4+5)', t: 'Lateral to the lingular bronchus.' }, { k: 'v', h: 10.0, d: 1.35, s: 0.14, l: 'lingular v. (V4+5)', t: 'Medial and below, to the superior pulmonary vein.' }, { k: 'n', h: 6.0, d: 1.2, s: 0.1, l: '12L', t: 'Lobar nodes beside the lingular bronchus.' }];
+
+/* schematic EBUS picture per station: where the probe sits and which structures surround the node on the screen
+   (positions on the picture: L/R beside the node, D deep to it, DL/DR deep and to one side, SL/SR shallow and to one side) */
+const SONO = {
+  '2R': { probe: 'anterior-right wall of the upper trachea, tip flexed up', near: [['brachiocephalic a.', 'a', 'DL'], ['R brachiocephalic v. → SVC', 'v', 'DR']], note: 'The artery pulsates and shows arterial flow on Doppler; the vein is compressible and fills with colour on a sniff.' },
+  '2L': { probe: 'left lateral wall of the upper trachea, above the arch', near: [['L common carotid a.', 'a', 'DL'], ['L subclavian a.', 'a', 'DR']], note: 'Advance a little and the aortic arch fills the deep field.' },
+  '3p': { probe: 'posterior membrane of the trachea (an awkward angle)', near: [['oesophagus', 'e', 'D'], ['vertebral body (acoustic shadow)', 'o', 'DR']], note: 'Easier from the oesophagus (EUS-B).' },
+  '4R': { probe: 'anterior-right wall of the distal trachea, just above the carina', near: [['SVC', 'v', 'R'], ['azygos v.', 'v', 'DR'], ['ascending aorta', 'a', 'DL']], note: 'The right PA fills the deep field when the scope is too far down. Pretracheal nodes left of the midline are still 4R.' },
+  '4L': { probe: 'left lateral wall of the distal trachea / proximal left main bronchus', near: [['aortic arch', 'a', 'SL'], ['left PA', 'a', 'DR']], note: 'A 4L node and the left PA look alike in grey scale: colour Doppler before every pass.' },
+  '7': { probe: 'medial wall of the right main bronchus at the RUL level (or of the left main bronchus)', near: [['right PA', 'a', 'L'], ['left atrium', 'v', 'D'], ['oesophagus', 'e', 'DR']], note: 'No vessel between the wall and the node; the pulsating chamber deep to it is the left atrium.' },
+  '10R': { probe: 'lateral or anterior wall of the right main bronchus distal to the azygos', near: [['azygos v.', 'v', 'SR'], ['SVC', 'v', 'L'], ['right PA', 'a', 'DL']], note: 'The azygos arch is the upper border of 10R; above it the same node would be 4R.' },
+  '10L': { probe: 'lateral wall of the distal left main bronchus', near: [['left PA', 'a', 'D'], ['descending aorta', 'a', 'DR']], note: 'The left PA lies immediately behind the node — Doppler first.' },
+  '11R': { probe: '11Rs: lateral wall of the bronchus intermedius beyond the RUL; 11Ri: the spur between the middle and lower lobe bronchi', near: [['interlobar PA', 'a', 'R'], ['R superior pulmonary v.', 'v', 'DL']], note: 'Hilar nodes are small and sit between branching vessels; identify the artery before the needle.' },
+  '11L': { probe: 'the secondary carina, against the upper or lower lobe bronchus', near: [['left PA', 'a', 'DR'], ['L superior pulmonary v.', 'v', 'L']], note: '' },
+  '12–14': { probe: 'inside the lobar bronchus (12u, 12m, 12l)', near: [['lobar artery', 'a', 'R'], ['lobar vein', 'v', 'DL']], note: 'Only station 12 is reached with the convex probe; 13 and 14 need the radial probe or surgery.' }
+};
 const SEGMENTS = [
   ['Right upper', 'B1 apical · B2 posterior · B3 anterior', '3'],
   ['Right middle', 'B4 lateral · B5 medial', '2'],
@@ -221,7 +340,7 @@ T.airway = { title: 'Lungs, lobes and segments', kicker: 'The map the scope foll
 ] };
 
 T.tree = { title: 'Bronchial tree navigator', kicker: 'Walk the airway, name what you see', blocks: [
-  { p: 'Start at the larynx and advance into any opening; the map on the left shows where you are, the circle on the right shows what the scope sees from there, and the notes name the landmarks, the pitfalls and the EBUS stations that sit against that wall. Use the drill to practise finding a segment from the carina without looking.' },
+  { p: 'Start at the larynx and advance into any opening; the map on the left shows where you are, the circle on the right shows what the scope sees from there, and the notes name the landmarks, the pitfalls and the EBUS stations that sit against that wall. With the landmarks switched on, the ring around the scope view shows what lies against the wall at that level — arteries, veins, the oesophagus and the nodal stations in their usual clock positions, the way an EBUS atlas lays them out. Use the drill to practise finding a segment from the carina without looking.' },
   { widget: 'tree' },
   { h: 'The same tree in three dimensions', p: 'Orbit the whole tree, or stand inside the airway you have selected above and look at the openings ahead the way the scope does; the two views and the navigator share one position.' },
   { widget: 'tree3d' },
@@ -240,7 +359,7 @@ T.tree = { title: 'Bronchial tree navigator', kicker: 'Walk the airway, name wha
 ] };
 
 T.stations = { title: 'Mediastinal nodal stations', kicker: 'IASLC map · EBUS and EUS reach · N staging', blocks: [
-  { p: 'The IASLC lymph node map (2009) fixes each station by anatomic borders so that CT, EBUS and surgery describe the same node. Tap a station for its borders, its N category, which scope reaches it and where to put the transducer.' },
+  { p: 'The IASLC lymph node map (2009) fixes each station by anatomic borders so that CT, EBUS and surgery describe the same node. Tap a station for its borders, its N category, which scope reaches it, where to put the transducer and a schematic of the EBUS picture — the node and the vessels that sit around it on the screen.' },
   { widget: 'stations' },
   { h: 'N staging in one minute', ul: [
     'N1: stations 10–14 on the side of the tumour (hilar, interlobar, lobar, segmental, subsegmental) — inside the pleural reflection.',
@@ -516,6 +635,6 @@ const GROUPS = [
   { title: 'Bronchoscopy', ids: ['bronch_basics', 'bronch_prep', 'sedation', 'antithrombotic', 'bal', 'sampling', 'icu', 'ebus'] }
 ];
 
-root.PFT_ANAT = { topics: T, groups: GROUPS, TREE: TREE, TREE3D: TREE3D, STATIONS: STATIONS, SEGMENTS: SEGMENTS };
+root.PFT_ANAT = { topics: T, groups: GROUPS, TREE: TREE, TREE3D: TREE3D, STATIONS: STATIONS, SEGMENTS: SEGMENTS, LANDMARKS: LANDMARKS, SONO: SONO };
 if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_ANAT;
 })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this));

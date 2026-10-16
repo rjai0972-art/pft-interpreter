@@ -49,6 +49,17 @@ The 6MWT facts include the Enright & Sherrill 1998 predicted distance (`enrightS
 the MDCalc calculator): used when no predicted value was reported, LLN derived when the reported equation is Enright &
 Sherrill, never overriding a reported value; `six.predUse`, `six.llnUse`, `six.predSrc` and `six.llnSrc` say which.
 
+Interface notes (`src/ui_1_core.js`): spirometry, lung volumes and DLCO are the default tests (`pft.defaults.v1`,
+editable from the "Additional studies" list); the value boxes of a grid section are hidden until "Bronchodilator",
+"Prior study" or "Values" is on, when `compareTable` draws one table per section (this study's z / value / % predicted,
+the post-bronchodilator value and change, one column per prior study with the date in its header); `revealField` opens
+that table when a prompt asks for a number. The anatomy area (`src/ui_4b_anatomy.js`, data in `src/anatomy.js`):
+`LANDMARKS` lists the structures around each airway level by clock position (anterior 12, patient's right 3; the
+trachea has `trachea_upper` and `trachea`) and `landRing` draws them around the scope view, growing the picture to fit
+every label; `SONO` describes the EBUS picture of each reachable station and `sonoFig` draws it; `picsBlock` keeps the
+user's own photos per view or station in `localStorage` (`pft.anat.pics.v1`, scaled to about 900 px) — nothing is
+uploaded and no published atlas image is bundled.
+
 `catalog/` holds the handoff package: the phrase catalog (source of truth), its schema, the rules specification, the
 human-readable reference and the test vectors. `PFT_Rules_and_Integration.txt` is the rule specification the engine
 implements; the decisions that go beyond it are documented in comments where they are made (restriction severity by

@@ -1021,6 +1021,96 @@ canvas.an-3d:focus-visible { box-shadow: 0 0 0 2px var(--accent) inset; }
 .edu-links { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
 .edu-links li { font-size: 14px; line-height: 1.5; }
 .edu-links a { color: var(--accent); }
+/* ---- v7.3: chips are the entry; the comparison table opens with the toggles; defaults and additional studies */
+details.tsec > summary h2 { font-size: 15px; }
+details.tsec > summary .tsec-q { font-size: 12px; margin-left: 6px; }
+details.tsec > summary .tsec-qt { color: var(--accent); font-weight: 600; }
+details.qfold > summary { display: none; }
+details.qfold > .fields { padding: 6px 0 8px; border-top: 1px solid var(--line); margin-top: 4px; }
+.grp-tools { margin-left: 8px; }
+.tests-head { gap: 6px 12px; align-items: center; }
+.tests-head .tchips { gap: 4px 6px; }
+details.more-tests { position: relative; }
+details.more-tests > summary { font-size: 12.5px; color: var(--accent); }
+details.more-tests > summary::before { content: '＋'; font-size: 12px; }
+details.more-tests[open] > summary::before { content: '－'; }
+.mt-list { position: absolute; z-index: 12; left: 0; top: 100%; margin-top: 4px; min-width: 300px; padding: 8px 12px 10px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 10px; box-shadow: 0 10px 28px rgba(8, 20, 26, 0.18); display: grid; gap: 2px; }
+.mt-row { display: grid; grid-template-columns: minmax(0, 1fr) 64px 64px; gap: 8px; align-items: center; font-size: 13px; padding: 2px 0; }
+.mt-row.mt-head { font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); padding-bottom: 4px; margin-bottom: 2px; }
+.mt-row input { width: 15px; height: 15px; margin: 0 auto; accent-color: var(--accent); justify-self: center; }
+.mt-row label { cursor: pointer; }
+@media (max-width: 560px) { .mt-list { position: static; box-shadow: none; min-width: 0; } }
+.ct-wrap { overflow-x: auto; margin-top: 6px; }
+table.ct { border-collapse: collapse; font-size: 12px; }
+table.ct th, table.ct td { padding: 2px 4px; text-align: left; vertical-align: middle; white-space: nowrap; }
+table.ct thead th { font-size: 10px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
+table.ct th.ct-grp { border-bottom: 1px solid var(--line); text-align: center; }
+table.ct th.ct-grp.cur .ct-date { display: block; font-size: 9.5px; font-weight: 500; letter-spacing: 0; text-transform: none; }
+table.ct th.ct-grp.post, table.ct td .ix-c.post input.num { background: var(--surface-2); }
+table.ct th.ct-grp.pri { background: var(--surface-2); }
+table.ct th.ct-grp.pri .ct-pl { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+table.ct th.ct-grp.pri input[type=date] { display: block; width: 122px; padding: 1px 4px; font-size: 11.5px; font-weight: 400; letter-spacing: 0; text-transform: none; margin-top: 2px; }
+table.ct tbody th { font-weight: 600; color: var(--ink); font-size: 12.5px; padding-right: 8px; }
+table.ct tbody tr { border-top: 1px solid var(--line); }
+table.ct tbody tr.flash { outline-offset: -1px; background: var(--accent-soft); }
+table.ct .ix-c { width: var(--cw); }
+table.ct .ix-c:has(.u), table.ct .ix-c:has(.ubtn) { width: calc(var(--cw) + 22px); }
+table.ct .ix-c.zc { width: 42px; }
+table.ct .ix-c.txt { width: 64px; }
+.ix-head { display: none; }
+.grp-head { justify-content: flex-start; }
+.grp-tools { margin-left: 10px; }
+
+/* ---- v7.3: landmarks around the scope view, schematic EBUS pictures, own photos */
+:root { --lm-a: #D3534A; --lm-a-wall: #F0B2AC; --lm-v: #4B78CC; --lm-n: #8EA33E; --lm-n-ink: #2F3A0E; --lm-e: #B9B0A4; }
+.an-switches { display: grid; gap: 4px; }
+.an-land .an-lm circle, .an-land .an-lm ellipse { stroke-width: 1; }
+.an-land .an-lm.a ellipse { fill: var(--lm-a); stroke: #9E3028; }
+.an-land .an-lm.a .an-lm-wall { fill: none; stroke: var(--lm-a-wall); stroke-width: 1.2; opacity: 0.8; }
+.an-land .an-lm.v ellipse { fill: var(--lm-v); stroke: #2E4F92; }
+.an-land .an-lm.n circle { fill: var(--lm-n); stroke: #5E6E22; }
+.an-land .an-lm.e ellipse { fill: var(--lm-e); stroke: #8A8072; }
+.an-land .an-lm.e .an-lm-slit { fill: #7E7568; stroke: none; }
+.an-land .an-lm:hover circle, .an-land .an-lm:hover ellipse:first-of-type, .an-land .an-lm:focus-visible circle, .an-land .an-lm:focus-visible ellipse:first-of-type { stroke: var(--ink); stroke-width: 1.8; }
+.an-land .an-lm { cursor: help; }
+.an-land .an-lm:focus-visible { outline: none; }
+.an-lmt { font-size: 7.6px; fill: var(--ink); paint-order: stroke; stroke: var(--surface-2); stroke-width: 2.2px; stroke-linejoin: round; pointer-events: none; }
+.an-lmt.in { fill: #FFFFFF; font-weight: 600; stroke: rgba(0, 0, 0, 0.35); stroke-width: 1.6px; font-size: 7px; }
+.an-lm.n .an-lmt.in { fill: var(--lm-n-ink); stroke: none; font-size: 6.6px; }
+.an-lm.e .an-lmt { font-size: 7px; }
+.an-lgd { display: flex; flex-wrap: wrap; gap: 3px 10px; font-size: 11px; color: var(--muted); align-items: center; }
+.an-lgd .an-lg i { border: none; }
+.an-lgd .an-lg.a i { background: var(--lm-a); } .an-lgd .an-lg.v i { background: var(--lm-v); } .an-lgd .an-lg.n i { background: var(--lm-n); } .an-lgd .an-lg.e i { background: var(--lm-e); }
+/* the EBUS schematic */
+.an-sono-fig { max-width: 440px; }
+.an-fig svg.an-sono { background: #0B0E12; }
+.an-sono-bg { fill: #0B0E12; }
+.an-sono-wall { fill: #EDE6D4; opacity: 0.92; }
+.an-sono-node { fill: #262A2F; stroke: #8E939A; stroke-width: 1.4; }
+.an-sono-node-in { fill: #1C1F24; stroke: none; }
+.an-sono-v ellipse { fill: #04060A; stroke: #5E646C; stroke-width: 1; }
+.an-sono-v.a .an-sono-flow { fill: var(--lm-a); opacity: 0.72; stroke: none; }
+.an-sono-v.v .an-sono-flow { fill: var(--lm-v); opacity: 0.72; stroke: none; }
+.an-sono-v.e ellipse { fill: #2A2E33; stroke: #A39A8C; }
+.an-sono-v.e .an-sono-eso { fill: #C9BFAE; stroke: none; }
+.an-sono-bone { fill: none; stroke: #F2EBDD; stroke-width: 3; }
+.an-sono-shadow { fill: #04060A; opacity: 0.85; }
+.an-sono-needle { stroke: #F5E7B4; stroke-width: 1.6; stroke-dasharray: 4 3; }
+.an-sono-tick { stroke: #9AA0A8; stroke-width: 1; }
+.an-sono-t { font-size: 8px; fill: #E9E6DF; paint-order: stroke; stroke: rgba(0, 0, 0, 0.6); stroke-width: 2px; stroke-linejoin: round; }
+.an-sono-t.big { font-size: 9px; font-weight: 600; }
+.an-sono-t.dim { fill: #AEB4BC; font-size: 7.2px; }
+.an-sono-fig figcaption b { color: var(--ink); }
+/* own photos */
+.an-pics-own { display: grid; gap: 6px; }
+.an-pics-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.an-pic { margin: 0; width: 120px; display: grid; gap: 2px; }
+.an-pic.big { width: 100%; max-width: 640px; }
+.an-pic img { width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--line); cursor: zoom-in; display: block; }
+.an-pic.big img { cursor: zoom-out; }
+.an-pic figcaption { font-size: 11px; color: var(--muted); display: flex; justify-content: space-between; gap: 6px; }
+.an-pics-add { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.an-pics-add label.btn { cursor: pointer; }
 
 </style>
 </head>
@@ -5441,7 +5531,7 @@ function interpret(raw) {
 }
 
 const API = {
-  version: '7.2.0',
+  version: '7.3.0',
   catalogVersion: CATALOG.version,
   Z_LLN: Z_LLN, Z_ULN: Z_ULN, STYLES: STYLES,
   TESTS: TESTS, PRESETS: PRESETS, SCHEMA: SCHEMA, LOOPS: LOOPS, INDICATIONS: INDICATIONS, KIND_OPTS: KIND_OPTS, PRIOR_FIELDS: PRIOR_FIELDS, CUR_FIELDS: CUR_FIELDS, MAX_PRIORS: MAX_PRIORS, MAX_TREND: MAX_TREND,
@@ -6321,6 +6411,125 @@ const TREE3D = {
   lll: { b: [42, -14, -56], r: 5 }, lb6: { b: [50, -38, -54], r: 3 }, lb78: { b: [40, 10, -98], r: 3 }, lb9: { b: [66, -6, -96], r: 3 }, lb10: { b: [48, -34, -102], r: 3.2 }
 };
 Object.keys(TREE3D).forEach(k => { const n = TREE3D[k]; if (!n.a) n.a = TREE3D[TREE[k].parent].b; });
+
+/* ------------------------------------------------------------------ structures around the airway
+   What lies against the wall at each level, drawn around the scope view as a schematic ring (an EBUS atlas page without
+   the photographs): h = clock position with anterior at 12 and the patient's right at 3, d = distance from the centre as a
+   multiple of the lumen radius, s = size as a fraction of the lumen radius. k: a artery · v vein · n node · e oesophagus
+   · o other. Positions are the usual ones at the mid-level of that airway, not measurements. */
+const LANDMARKS = {
+  trachea_upper: [
+    { k: 'a', h: 12.3, d: 1.42, s: 0.2, l: 'brachiocephalic a.', t: 'The innominate artery crosses the front of the upper trachea from left to right on its way to the right side of the neck.' },
+    { k: 'v', h: 11.0, d: 1.78, s: 0.28, w: 1.9, l: 'L brachiocephalic v.', t: 'The left innominate vein crosses in front of the arch vessels, above the arch; its lower border is the boundary between stations 2 and 4.' },
+    { k: 'v', h: 1.6, d: 1.5, s: 0.2, l: 'R brachiocephalic v.', t: 'Joins the left vein to form the SVC to the right of the trachea.' },
+    { k: 'a', h: 10.2, d: 1.42, s: 0.13, l: 'L common carotid a.', t: 'Anterolateral left of the upper trachea.' },
+    { k: 'a', h: 8.7, d: 1.42, s: 0.13, l: 'L subclavian a.', t: 'Posterolateral left of the upper trachea; the recurrent laryngeal nerve runs up behind it in the tracheo-oesophageal groove.' },
+    { k: 'e', h: 6.6, d: 1.35, s: 0.2, l: 'oesophagus', t: 'Behind the posterior membrane, a little to the left.' },
+    { k: 'n', h: 1.2, d: 1.17, s: 0.1, l: '2R', t: 'Upper right paratracheal: anterior-right wall of the upper trachea, above the innominate vein (2R extends across to the left tracheal border).' },
+    { k: 'n', h: 10.9, d: 1.17, s: 0.1, l: '2L', t: 'Upper left paratracheal: left lateral wall above the aortic arch.' },
+    { k: 'n', h: 5.6, d: 1.18, s: 0.1, l: '3p', t: 'Retrotracheal: behind the posterior membrane, in front of the oesophagus.' }
+  ],
+  trachea: [
+    { k: 'v', h: 1.7, d: 1.52, s: 0.22, l: 'SVC', t: 'Superior vena cava: anterolateral right of the lower trachea, lateral to station 4R.' },
+    { k: 'v', h: 3.4, d: 1.32, s: 0.13, l: 'azygos arch', t: 'Arches over the right main bronchus from behind to join the SVC; its lower border is the lower border of 4R.' },
+    { k: 'a', h: 9.6, d: 1.62, s: 0.3, l: 'aortic arch', t: 'Crosses the left side of the lower trachea and the left main bronchus; above station 4L.' },
+    { k: 'a', h: 11.2, d: 1.5, s: 0.22, l: 'ascending aorta', t: 'In front and to the left of the lower trachea.' },
+    { k: 'a', h: 12.5, d: 1.28, s: 0.2, l: 'main / right PA', t: 'Below the carina, in front of the main bronchi: fills the picture when the scope is too far down for 4R.' },
+    { k: 'a', h: 7.6, d: 1.5, s: 0.24, l: 'descending aorta', t: 'Behind and to the left, beside the oesophagus.' },
+    { k: 'e', h: 6.6, d: 1.35, s: 0.2, l: 'oesophagus', t: 'Behind the posterior membrane, a little to the left; 3p lies between.' },
+    { k: 'n', h: 2.2, d: 1.18, s: 0.1, l: '4R', t: 'Lower right paratracheal: anterior-right wall just above the carina, SVC lateral, azygos caudal — the workhorse station.' },
+    { k: 'n', h: 9.2, d: 1.2, s: 0.1, l: '4L', t: 'Lower left paratracheal: left lateral wall, under the arch, left PA beyond.' },
+    { k: 'n', h: 5.6, d: 1.18, s: 0.1, l: '3p', t: 'Retrotracheal: behind the posterior membrane, in front of the oesophagus.' },
+    { k: 'n', h: 5.4, d: 1.58, s: 0.1, l: '7', t: 'Subcarinal: below and behind the carina, between the main bronchi — sampled from the medial wall of a main bronchus, not from the trachea.' }
+  ],
+  rmb: [
+    { k: 'v', h: 1.0, d: 1.6, s: 0.22, l: 'SVC', t: 'Anterior and to the right of the proximal right main bronchus.' },
+    { k: 'v', h: 2.3, d: 1.32, s: 0.13, l: 'azygos arch', t: 'Crosses over the right main bronchus from behind; 10R lies below it, 4R above.' },
+    { k: 'a', h: 11.6, d: 1.3, s: 0.22, l: 'right PA', t: 'Runs in front of the right main bronchus and bronchus intermedius, below the SVC and the azygos.' },
+    { k: 'a', h: 10.2, d: 1.6, s: 0.24, l: 'ascending aorta', t: 'Anteromedial, beyond the pulmonary artery.' },
+    { k: 'e', h: 7.4, d: 1.35, s: 0.2, l: 'oesophagus', t: 'Posteromedial.' },
+    { k: 'n', h: 12.9, d: 1.17, s: 0.1, l: '4R', t: 'Anterior wall at the level of the azygos (its upper border is the lower rim of the azygos).' },
+    { k: 'n', h: 2.8, d: 1.17, s: 0.1, l: '10R', t: 'Lateral or anterior wall distal to the azygos vein, before the RUL takeoff.' },
+    { k: 'n', h: 9.0, d: 1.17, s: 0.1, l: '7', t: 'Medial wall at the level of the RUL takeoff; no vessel in the way.' },
+    { k: 'n', h: 4.4, d: 1.2, s: 0.1, l: '11Rs', t: 'Between the RUL bronchus and the bronchus intermedius, just beyond the RUL orifice.' }
+  ],
+  rul: [
+    { k: 'a', h: 12.0, d: 1.32, s: 0.18, l: 'truncus anterior (A1, A3)', t: 'The first branch of the right PA runs in front of the upper lobe bronchus.' },
+    { k: 'v', h: 10.6, d: 1.58, s: 0.2, l: 'R superior pulmonary v.', t: 'Anterior and inferior to the bronchus, in front of the artery.' },
+    { k: 'n', h: 3.0, d: 1.17, s: 0.1, l: '12R', t: 'Lobar nodes beside the upper lobe bronchus (12u).' },
+    { k: 'n', h: 7.4, d: 1.2, s: 0.1, l: '11Rs', t: 'Between this bronchus and the bronchus intermedius.' }
+  ],
+  bi: [
+    { k: 'a', h: 1.4, d: 1.32, s: 0.22, l: 'interlobar PA', t: 'The right PA continues anterolateral to the bronchus intermedius as the interlobar artery.' },
+    { k: 'v', h: 11.6, d: 1.62, s: 0.2, l: 'R superior pulmonary v.', t: 'In front of the artery and the bronchus.' },
+    { k: 'v', h: 6.8, d: 1.42, s: 0.2, l: 'R inferior pulmonary v.', t: 'Posteromedial and below, running to the left atrium.' },
+    { k: 'e', h: 8.3, d: 1.35, s: 0.2, l: 'oesophagus', t: 'Medial and behind; station 8 lies against it.' },
+    { k: 'n', h: 9.3, d: 1.17, s: 0.1, l: '7', t: 'Medial wall of the proximal bronchus intermedius.' },
+    { k: 'n', h: 3.2, d: 1.17, s: 0.1, l: '11Rs', t: 'Lateral wall just beyond the RUL orifice.' },
+    { k: 'n', h: 12.4, d: 1.17, s: 0.1, l: '11Ri', t: 'At the spur between the middle and lower lobe bronchi.' }
+  ],
+  rml: [
+    { k: 'a', h: 2.2, d: 1.32, s: 0.15, l: 'A4, A5', t: 'The middle lobe arteries run lateral to the middle lobe bronchus.' },
+    { k: 'v', h: 10.4, d: 1.35, s: 0.15, l: 'V4, V5', t: 'The middle lobe veins run medial and below, to the superior pulmonary vein.' },
+    { k: 'n', h: 3.6, d: 1.17, s: 0.1, l: '12R', t: 'Lobar nodes (12m) beside the middle lobe bronchus.' },
+    { k: 'n', h: 6.2, d: 1.2, s: 0.1, l: '11Ri', t: 'Behind, at the spur with the lower lobe bronchus.' }
+  ],
+  rll: [
+    { k: 'a', h: 1.6, d: 1.32, s: 0.2, l: 'basal trunk PA', t: 'The interlobar artery continues as the basal trunk, anterolateral to the lower lobe bronchus.' },
+    { k: 'v', h: 7.8, d: 1.45, s: 0.2, l: 'R inferior pulmonary v.', t: 'Posteromedial, in the pulmonary ligament (station 9 along it).' },
+    { k: 'e', h: 9.6, d: 1.4, s: 0.2, l: 'oesophagus', t: 'Medial; station 8 lies against it.' },
+    { k: 'n', h: 3.0, d: 1.17, s: 0.1, l: '12R', t: 'Lobar nodes (12l) beside the lower lobe bronchus.' },
+    { k: 'n', h: 12.0, d: 1.2, s: 0.1, l: '11Ri', t: 'In front, at the spur with the middle lobe bronchus.' },
+    { k: 'n', h: 8.6, d: 1.17, s: 0.1, l: '8', t: 'Paraoesophageal: medial, below the bronchus intermedius — an EUS station.' }
+  ],
+  lmb: [
+    { k: 'a', h: 10.4, d: 1.62, s: 0.3, l: 'aortic arch', t: 'Above and lateral to the proximal left main bronchus; 4L lies under it.' },
+    { k: 'a', h: 6.8, d: 1.5, s: 0.26, l: 'descending aorta', t: 'Behind and to the left of the distal left main bronchus.' },
+    { k: 'a', h: 12.4, d: 1.32, s: 0.24, l: 'left PA', t: 'In front of the left main bronchus, then arching over the upper lobe bronchus — behind 10L.' },
+    { k: 'v', h: 1.6, d: 1.65, s: 0.2, l: 'L superior pulmonary v.', t: 'Anterior and below at the hilum, in front of the artery.' },
+    { k: 'e', h: 5.2, d: 1.35, s: 0.2, l: 'oesophagus', t: 'Behind the posterior membrane, slightly medial.' },
+    { k: 'n', h: 10.0, d: 1.18, s: 0.1, l: '4L', t: 'Left lateral wall of the distal trachea and proximal LMB, under the arch.' },
+    { k: 'n', h: 11.4, d: 1.75, s: 0.1, l: '5', t: 'Subaortic (AP window): outside the airway beyond the ligamentum arteriosum — not an EBUS station.' },
+    { k: 'n', h: 3.0, d: 1.17, s: 0.1, l: '7', t: 'Medial wall of the left main bronchus.' },
+    { k: 'n', h: 9.0, d: 1.17, s: 0.1, l: '10L', t: 'Lateral wall of the distal LMB, the left PA immediately behind it.' },
+    { k: 'n', h: 7.4, d: 1.17, s: 0.1, l: '11L', t: 'At the secondary carina between the upper and lower lobe bronchi.' }
+  ],
+  lul: [
+    { k: 'a', h: 9.4, d: 1.32, s: 0.24, l: 'left PA', t: 'Arches over the upper lobe bronchus and descends behind and lateral to it.' },
+    { k: 'a', h: 1.2, d: 1.3, s: 0.14, l: 'lingular a. (A4+5)', t: 'Anterolateral, to the lingula.' },
+    { k: 'v', h: 12.0, d: 1.6, s: 0.2, l: 'L superior pulmonary v.', t: 'In front of the upper lobe bronchus.' },
+    { k: 'n', h: 6.0, d: 1.17, s: 0.1, l: '11L', t: 'Between the upper and lower lobe bronchi.' },
+    { k: 'n', h: 3.0, d: 1.17, s: 0.1, l: '12L', t: 'Lobar nodes (12u) beside the upper lobe bronchus.' },
+    { k: 'n', h: 8.0, d: 1.2, s: 0.1, l: '10L', t: 'Just proximal, on the distal left main bronchus.' }
+  ],
+  lll: [
+    { k: 'a', h: 9.6, d: 1.32, s: 0.2, l: 'basal trunk PA', t: 'The left PA descends posterolateral to the lower lobe bronchus and continues as the basal trunk.' },
+    { k: 'a', h: 6.4, d: 1.55, s: 0.26, l: 'descending aorta', t: 'Behind and medial.' },
+    { k: 'v', h: 5.0, d: 1.45, s: 0.2, l: 'L inferior pulmonary v.', t: 'Inferomedial, in the pulmonary ligament.' },
+    { k: 'e', h: 3.8, d: 1.35, s: 0.2, l: 'oesophagus', t: 'Medial; station 8 lies against it.' },
+    { k: 'n', h: 12.0, d: 1.2, s: 0.1, l: '11L', t: 'In front, at the secondary carina.' },
+    { k: 'n', h: 9.0, d: 1.17, s: 0.1, l: '12L', t: 'Lobar nodes (12l) beside the lower lobe bronchus.' },
+    { k: 'n', h: 3.0, d: 1.17, s: 0.1, l: '8', t: 'Paraoesophageal: medial, below the upper lobe bronchus — an EUS station.' }
+  ]
+};
+LANDMARKS.lud = LANDMARKS.lul.filter(x => /PA|pulmonary v|12L/.test(x.l));
+LANDMARKS.ling = [{ k: 'a', h: 2.0, d: 1.3, s: 0.14, l: 'lingular a. (A4+5)', t: 'Lateral to the lingular bronchus.' }, { k: 'v', h: 10.0, d: 1.35, s: 0.14, l: 'lingular v. (V4+5)', t: 'Medial and below, to the superior pulmonary vein.' }, { k: 'n', h: 6.0, d: 1.2, s: 0.1, l: '12L', t: 'Lobar nodes beside the lingular bronchus.' }];
+
+/* schematic EBUS picture per station: where the probe sits and which structures surround the node on the screen
+   (positions on the picture: L/R beside the node, D deep to it, DL/DR deep and to one side, SL/SR shallow and to one side) */
+const SONO = {
+  '2R': { probe: 'anterior-right wall of the upper trachea, tip flexed up', near: [['brachiocephalic a.', 'a', 'DL'], ['R brachiocephalic v. → SVC', 'v', 'DR']], note: 'The artery pulsates and shows arterial flow on Doppler; the vein is compressible and fills with colour on a sniff.' },
+  '2L': { probe: 'left lateral wall of the upper trachea, above the arch', near: [['L common carotid a.', 'a', 'DL'], ['L subclavian a.', 'a', 'DR']], note: 'Advance a little and the aortic arch fills the deep field.' },
+  '3p': { probe: 'posterior membrane of the trachea (an awkward angle)', near: [['oesophagus', 'e', 'D'], ['vertebral body (acoustic shadow)', 'o', 'DR']], note: 'Easier from the oesophagus (EUS-B).' },
+  '4R': { probe: 'anterior-right wall of the distal trachea, just above the carina', near: [['SVC', 'v', 'R'], ['azygos v.', 'v', 'DR'], ['ascending aorta', 'a', 'DL']], note: 'The right PA fills the deep field when the scope is too far down. Pretracheal nodes left of the midline are still 4R.' },
+  '4L': { probe: 'left lateral wall of the distal trachea / proximal left main bronchus', near: [['aortic arch', 'a', 'SL'], ['left PA', 'a', 'DR']], note: 'A 4L node and the left PA look alike in grey scale: colour Doppler before every pass.' },
+  '7': { probe: 'medial wall of the right main bronchus at the RUL level (or of the left main bronchus)', near: [['right PA', 'a', 'L'], ['left atrium', 'v', 'D'], ['oesophagus', 'e', 'DR']], note: 'No vessel between the wall and the node; the pulsating chamber deep to it is the left atrium.' },
+  '10R': { probe: 'lateral or anterior wall of the right main bronchus distal to the azygos', near: [['azygos v.', 'v', 'SR'], ['SVC', 'v', 'L'], ['right PA', 'a', 'DL']], note: 'The azygos arch is the upper border of 10R; above it the same node would be 4R.' },
+  '10L': { probe: 'lateral wall of the distal left main bronchus', near: [['left PA', 'a', 'D'], ['descending aorta', 'a', 'DR']], note: 'The left PA lies immediately behind the node — Doppler first.' },
+  '11R': { probe: '11Rs: lateral wall of the bronchus intermedius beyond the RUL; 11Ri: the spur between the middle and lower lobe bronchi', near: [['interlobar PA', 'a', 'R'], ['R superior pulmonary v.', 'v', 'DL']], note: 'Hilar nodes are small and sit between branching vessels; identify the artery before the needle.' },
+  '11L': { probe: 'the secondary carina, against the upper or lower lobe bronchus', near: [['left PA', 'a', 'DR'], ['L superior pulmonary v.', 'v', 'L']], note: '' },
+  '12–14': { probe: 'inside the lobar bronchus (12u, 12m, 12l)', near: [['lobar artery', 'a', 'R'], ['lobar vein', 'v', 'DL']], note: 'Only station 12 is reached with the convex probe; 13 and 14 need the radial probe or surgery.' }
+};
 const SEGMENTS = [
   ['Right upper', 'B1 apical · B2 posterior · B3 anterior', '3'],
   ['Right middle', 'B4 lateral · B5 medial', '2'],
@@ -6429,7 +6638,7 @@ T.airway = { title: 'Lungs, lobes and segments', kicker: 'The map the scope foll
 ] };
 
 T.tree = { title: 'Bronchial tree navigator', kicker: 'Walk the airway, name what you see', blocks: [
-  { p: 'Start at the larynx and advance into any opening; the map on the left shows where you are, the circle on the right shows what the scope sees from there, and the notes name the landmarks, the pitfalls and the EBUS stations that sit against that wall. Use the drill to practise finding a segment from the carina without looking.' },
+  { p: 'Start at the larynx and advance into any opening; the map on the left shows where you are, the circle on the right shows what the scope sees from there, and the notes name the landmarks, the pitfalls and the EBUS stations that sit against that wall. With the landmarks switched on, the ring around the scope view shows what lies against the wall at that level — arteries, veins, the oesophagus and the nodal stations in their usual clock positions, the way an EBUS atlas lays them out. Use the drill to practise finding a segment from the carina without looking.' },
   { widget: 'tree' },
   { h: 'The same tree in three dimensions', p: 'Orbit the whole tree, or stand inside the airway you have selected above and look at the openings ahead the way the scope does; the two views and the navigator share one position.' },
   { widget: 'tree3d' },
@@ -6448,7 +6657,7 @@ T.tree = { title: 'Bronchial tree navigator', kicker: 'Walk the airway, name wha
 ] };
 
 T.stations = { title: 'Mediastinal nodal stations', kicker: 'IASLC map · EBUS and EUS reach · N staging', blocks: [
-  { p: 'The IASLC lymph node map (2009) fixes each station by anatomic borders so that CT, EBUS and surgery describe the same node. Tap a station for its borders, its N category, which scope reaches it and where to put the transducer.' },
+  { p: 'The IASLC lymph node map (2009) fixes each station by anatomic borders so that CT, EBUS and surgery describe the same node. Tap a station for its borders, its N category, which scope reaches it, where to put the transducer and a schematic of the EBUS picture — the node and the vessels that sit around it on the screen.' },
   { widget: 'stations' },
   { h: 'N staging in one minute', ul: [
     'N1: stations 10–14 on the side of the tumour (hilar, interlobar, lobar, segmental, subsegmental) — inside the pleural reflection.',
@@ -6724,7 +6933,7 @@ const GROUPS = [
   { title: 'Bronchoscopy', ids: ['bronch_basics', 'bronch_prep', 'sedation', 'antithrombotic', 'bal', 'sampling', 'icu', 'ebus'] }
 ];
 
-root.PFT_ANAT = { topics: T, groups: GROUPS, TREE: TREE, TREE3D: TREE3D, STATIONS: STATIONS, SEGMENTS: SEGMENTS };
+root.PFT_ANAT = { topics: T, groups: GROUPS, TREE: TREE, TREE3D: TREE3D, STATIONS: STATIONS, SEGMENTS: SEGMENTS, LANDMARKS: LANDMARKS, SONO: SONO };
 if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_ANAT;
 })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this));
 
@@ -6843,7 +7052,11 @@ const WORDING_KEY = 'pft.wording.v1';
 /* the wording level sets the phrase style and the copy form with it */
 function applyWording(st, w) { st.settings.wording = w; st.settings.style = { min: 'concise', std: 'standard', full: 'expanded' }[w]; st.settings.copy = w === 'full' ? 'full' : 'lean'; return st; }
 function wordingPref() { const w = prefGet(WORDING_KEY); return (w === 'min' || w === 'std' || w === 'full') ? w : 'min'; }
-function freshState() { const st = P.defaultState(); st.ctx.date = todayISO(); st.units = Object.assign(st.units, unitPrefs()); applyWording(st, wordingPref()); return st; }
+/* the tests a new case starts with (chips on the page); the rest wait in the "Additional studies" list */
+const DEFAULTS_KEY = 'pft.defaults.v1', DEFAULT_TESTS = ['spiro', 'vol', 'dlco'];
+function defaultTests() { const v = prefGet(DEFAULTS_KEY); return Array.isArray(v) ? v.filter(k => P.TESTS.some(t => t.key === k && !t.hidden)) : DEFAULT_TESTS.slice(); }
+function saveDefaultTests(list) { prefSet(DEFAULTS_KEY, list); }
+function freshState() { const st = P.defaultState(); st.ctx.date = todayISO(); st.units = Object.assign(st.units, unitPrefs()); applyWording(st, wordingPref()); defaultTests().forEach(k => { st.tests[k] = true; }); return st; }
 function shiftMonths(iso, m) {
   const d = /^\d{4}-\d{2}-\d{2}$/.test(iso || '') ? new Date(iso + 'T00:00:00') : new Date();
   if (isNaN(d.getTime())) return '';
@@ -7113,7 +7326,8 @@ function indexRow(mod, f, ctx) {
     else if (ctx.columns) cells.push(blankCell());
   });
   // prior studies: the same quantities for each earlier study
-  if (ctx.priors && ctx.priors.length) {
+  if (ctx.noVals) cells.length = 0;
+  if (ctx.priors && ctx.priors.length && !ctx.noVals) {
     const pr = PRIOR_MAP[mod], defs = (pr && pr.fields[f.id]) || [];
     ctx.priors.forEach(p => {
       defs.forEach(d => { const pf = P.PRIOR_FIELDS.filter(x => x.id === d[0])[0]; cells.push(numCell('prior', { id: d[0], label: 'Prior ' + (pf ? pf.label : d[0]), unit: d[1] === 'walk' || d[1] === 'dlco' ? '' : d[1], units: d[1] === 'walk' || d[1] === 'dlco' ? d[1] : null }, { get: () => p[d[0]], set: (v) => { p[d[0]] = v; }, cls: 'pri', grid: true })); });
@@ -7121,7 +7335,7 @@ function indexRow(mod, f, ctx) {
     });
   }
   // post-bronchodilator: the post value and the change as % of predicted
-  if (ctx.bd) {
+  if (ctx.bd && !ctx.noVals) {
     const bdf = { ratio: 'post_ratio_abs', fev1: 'fev1_post', fvc: 'fvc_post' }[f.id];
     if (bdf) {
       const nf = fieldDef('bd', bdf);
@@ -7394,6 +7608,14 @@ function revealField(mod, id) {
   if (id === 'bd') { S.tests.bd = true; render(); const el = document.querySelector('[data-cell="bd.fev1_post"] input'); if (el) el.focus(); return; }
   const f = fieldDef(mod, id);
   if (f && f.more) { moreOpen[mod] = true; sync(); }
+  // a prompt for a number (a hemoglobin, a % predicted): open the value boxes of the section and go to that box
+  const pt = ((R.prompts || []).filter(p => p.mod === mod && p.field === id)[0] || {}).text || '';
+  if (f && f.cols && gridFields(mod).indexOf(f) >= 0 && ((f.type === 'sel' && f.auto) || /% predicted/.test(pt))) {
+    if (!valsShown(mod)) { valsOpen[mod] = true; render(); }
+    const cid = f.cols.pct && /% predicted/.test(pt) ? f.cols.pct : (f.cols.val || f.cols.pct);
+    const cell = document.querySelector('[data-cell="' + mod + '.' + cid + '"] input');
+    if (cell) { const det = cell.closest('details'); if (det) det.open = true; cell.scrollIntoView({ block: 'center' }); cell.focus({ preventScroll: true }); const tr = cell.closest('tr'); if (tr) { tr.classList.add('flash'); setTimeout(() => tr.classList.remove('flash'), 1600); } return; }
+  }
   const el = document.querySelector('[data-field="' + mod + '.' + id + '"]');
   if (el) {
     const det = el.closest('details'); if (det) det.open = true;
@@ -7467,22 +7689,35 @@ function testPicker() {
     edBox.appendChild(ed);
   }
   paintQs();
-  const chips = {};
-  const groups = []; shown.forEach(t => { if (groups.indexOf(t.group) < 0) groups.push(t.group); });
-  const chipRow = h('div', { class: 'tchips' }, groups.map(g => h('span', { class: 'tgroup', 'aria-label': g }, shown.filter(t => t.group === g).map(t => {
+  const chips = {}, defs = defaultTests();
+  // chips: the default tests, plus any other test that is on the page right now
+  const chipRow = h('div', { class: 'tchips' }, shown.filter(t => defs.indexOf(t.key) >= 0 || S.tests[t.key]).map(t => {
     const b = h('button', { type: 'button', class: 'tchip', 'data-test': t.key, 'aria-pressed': 'false', title: t.desc, text: SHORT[t.key] || t.name,
       onclick: () => { S.tests[t.key] = !S.tests[t.key]; render(); if (S.tests[t.key]) { const el = document.getElementById('sec-' + t.key); if (el && el.scrollIntoView) el.scrollIntoView({ block: 'start' }); } } });
     chips[t.key] = b; return b;
-  }))));
+  }));
+  // "Additional studies": every test, with a tick to put it on the page and a tick to make it a default chip
+  const more = h('details', { class: 'slim more-tests', 'data-more-tests': '1' }, [
+    h('summary', {}, [h('span', { class: 't', text: 'Additional studies' })]),
+    h('div', { class: 'mt-list' }, [
+      h('div', { class: 'mt-row mt-head' }, [h('span', { text: 'Test' }), h('span', { text: 'On page' }), h('span', { text: 'Default' })]),
+      shown.map(t => {
+        const onId = uid('mt'), dfId = uid('md');
+        const on = h('input', { type: 'checkbox', id: onId, 'data-test-on': t.key, checked: !!S.tests[t.key], onchange: (e) => { S.tests[t.key] = e.target.checked; render(); } });
+        const df = h('input', { type: 'checkbox', id: dfId, 'data-test-default': t.key, checked: defs.indexOf(t.key) >= 0, onchange: (e) => { const l = defaultTests().filter(k => k !== t.key); if (e.target.checked) l.push(t.key); saveDefaultTests(P.TESTS.filter(x => l.indexOf(x.key) >= 0).map(x => x.key)); render(); } });
+        return h('div', { class: 'mt-row' }, [h('label', { for: onId, text: t.name, title: t.desc }), on, df]);
+      })
+    ])
+  ]);
   const count = h('span', { class: 'fine count' });
   widgets.push(() => {
     let n = 0;
-    shown.forEach(t => { chips[t.key].setAttribute('aria-pressed', String(!!S.tests[t.key])); if (S.tests[t.key]) n++; });
+    shown.forEach(t => { if (chips[t.key]) chips[t.key].setAttribute('aria-pressed', String(!!S.tests[t.key])); if (S.tests[t.key]) n++; });
     count.textContent = n ? plural(n, 'test') + ' on the page' : '';
   });
   return h('div', { class: 'tests-row', 'data-tests': '1' }, [
-    h('div', { class: 'tests-head' }, [h('span', { class: 'lab', text: 'Tests' }), sel, count]),
-    chipRow, edBox
+    h('div', { class: 'tests-head' }, [h('span', { class: 'lab', text: 'Tests' }), chipRow, more, sel, count]),
+    edBox
   ]);
 }
 function methodNote() {
@@ -7585,16 +7820,17 @@ function testSection(key) {
   (m.columns || []).forEach(c => { ctx.colLabels[c[0]] = c[1]; });
   if (PRIOR_MAP[key] && priorShown()) ctx.priors = S.prior.list;
   if (key === 'spiro' && (S.tests.bd || P.bdEntered(S.bd))) ctx.bd = true;
+  ctx.noVals = true;   // the category chips are the entry; the values live in the comparison table when it is open
   const body = [];
   m.groups.forEach((g, gi) => {
     if (g.legacy) return;
     const isGrid = !!(m.columns && gi === 0 && !g.inline && !g.fold && !g.opt);
     const isRows = !isGrid && !g.inline && !g.fold && !g.opt && !g.when && g.fields.some(f => f.type === 'param' || (f.type === 'sel' && !f.ui));
     if (isGrid || isRows) {
-      const head = h('div', { class: 'grp-head' }, [h('h3', { text: g.title }), isGrid ? h('span', { class: 'grp-tools' }, [key === 'spiro' ? bdToggle() : null, PRIOR_MAP[key] ? priorTools(key) : null]) : null]);
+      const head = h('div', { class: 'grp-head' }, [h('h3', { text: g.title }), isGrid ? h('span', { class: 'grp-tools' }, [key === 'spiro' ? bdToggle() : null, PRIOR_MAP[key] ? priorTools(key) : null, valsToggle(key)]) : null]);
       const rows = g.fields.map(f => (f.type === 'param' || (f.type === 'sel' && !f.ui)) ? indexRow(key, f, isGrid ? ctx : { priors: ctx.priors }) : fieldEl(key, f));
       const moreRows = g.fields.filter(f => f.more);
-      body.push(h('section', { class: 'grp ixg' + (isGrid ? ' grid' : '') + (isGrid && gridCells(key, ctx) > 4 ? ' stack' : ''), 'data-grid': key }, [head, isGrid ? gridHead(key, ctx) : null, rows, moreToggle(key, moreRows)]));
+      body.push(h('section', { class: 'grp ixg' + (isGrid ? ' grid' : ''), 'data-grid': key }, [head, rows, moreToggle(key, moreRows), isGrid && (ctx.priors || ctx.bd || valsShown(key)) ? compareTable(key, ctx) : null]));
     } else {
       const el = groupEl(key, g, ctx); if (el) body.push(el);
     }
@@ -7604,21 +7840,45 @@ function testSection(key) {
   // the test-quality fold sits under the title as one slim line; the other folds stay at the foot
   const qFolds = allFolds.filter(x => /quality/i.test(x.getAttribute('data-group') || '')), folds = allFolds.filter(x => qFolds.indexOf(x) < 0);
   qFolds.forEach(q => { q.classList.add('qfold'); q.classList.remove('optgrp'); });
+  // the quality fold is opened from a link on the title line
+  const qLinks = qFolds.map(q => { const lbl = q.querySelector('summary .t'), tg = q.querySelector('summary .tag'); const b = h('button', { type: 'button', class: 'lnk tsec-q', 'data-quality': key, 'aria-expanded': String(!!q.open), onclick: (e) => { e.preventDefault(); e.stopPropagation(); q.open = !q.open; b.setAttribute('aria-expanded', String(q.open)); } }, [lbl ? lbl.textContent : 'Test quality', tg ? h('span', { class: 'tsec-qt' }) : null]); widgets.push(() => { const t = b.querySelector('.tsec-qt'); if (t && tg) { t.textContent = tg.hidden ? '' : ' · ' + tg.textContent; } }); return b; });
   const tag = h('span', { class: 'tag' });
   const det = h('details', { class: 'card tsec', id: 'sec-' + key, 'data-mod': key, open: secOpen[key] !== false, ontoggle: (e) => { secOpen[key] = e.target.open; } }, [
-    h('summary', { class: 'tsec-h' }, [h('h2', { text: m.title }), tag, h('span', { class: 'tsec-side' }, [info('test.' + key),
+    h('summary', { class: 'tsec-h' }, [h('h2', { text: m.title }), tag, qLinks, h('span', { class: 'tsec-side' }, [info('test.' + key),
       h('button', { type: 'button', class: 'lnk tsec-x', 'data-remove': key, title: 'Remove this test from the page', 'aria-label': 'Remove ' + m.title, text: 'remove', onclick: (e) => { e.preventDefault(); e.stopPropagation(); S.tests[key] = false; render(); } })])]),
     h('div', { class: 'tsec-b' }, [
       qFolds,
-      promptStrip(key),
       extra.filter(x => x.getAttribute('data-trend') !== '1' && x.getAttribute('data-es-fold') !== '1'),
-      mains, bd, h('div', { class: 'foot-row' }, [folds, PRIOR_MAP[key] && priorShown() ? priorFoot(key) : null]),
+      mains, bd, promptStrip(key), h('div', { class: 'foot-row' }, [folds, PRIOR_MAP[key] && priorShown() ? priorFoot(key) : null]),
       extra.filter(x => x.getAttribute('data-es-fold') === '1'),
       extra.filter(x => x.getAttribute('data-trend') === '1')
     ])
   ]);
   widgets.push(() => { const sec = secFor(key); const n = (sec && !sec.empty) ? 'entered' : ''; tag.textContent = n; tag.hidden = !n; });
   return det;
+}
+
+/* ------------------------------------------------- the value boxes of a grid section
+   Hidden by default: the category chips are the entry. "Values" opens the comparison table (z, value, % predicted) for
+   the times the numbers matter on their own (a z-score to set the grade, a hemoglobin for the DLCO correction); any
+   typed value keeps it open. Switching it off clears the typed numbers of that section (the categories stay). */
+const valsOpen = {};
+function gridFields(key) { const m = P.SCHEMA[key]; return (m && m.columns && m.groups[0]) ? m.groups[0].fields.filter(f => f.type === 'param' || (f.type === 'sel' && !f.ui)) : []; }
+function valsEntered(key) {
+  return gridFields(key).some(f => (f.type === 'param' && String(S[key][f.id].z || '') !== '') || (f.cols && Object.keys(f.cols).some(k => String(S[key][f.cols[k]] || '') !== '')));
+}
+function valsShown(key) { return !!valsOpen[key] || valsEntered(key); }
+function valsToggle(key) {
+  const id = uid('vl'), on = valsShown(key);
+  const cb = h('input', { type: 'checkbox', id: id, checked: on, 'data-vals-toggle': key, onchange: (e) => {
+    if (e.target.checked) { valsOpen[key] = true; }
+    else {
+      valsOpen[key] = false;
+      gridFields(key).forEach(f => { if (f.type === 'param') S[key][f.id].z = ''; if (f.cols) Object.keys(f.cols).forEach(k => { S[key][f.cols[k]] = ''; }); });
+    }
+    render();
+  } });
+  return h('span', { class: 'chk-inline' }, [cb, h('label', { for: id, text: 'Values', title: 'Show the value boxes (z-score, value, % predicted)' })]);
 }
 
 /* ------------------------------------------------- bronchodilator, inside the spirometry step */
@@ -7670,6 +7930,58 @@ function priorTools(key) {
   box.appendChild(h('span', { class: 'chk-inline' }, [cb, h('label', { for: id, text: 'Prior study' })]));
   if (shown && S.prior.list.length < P.MAX_PRIORS) box.appendChild(h('button', { type: 'button', class: 'lnk', 'data-prior-add': key, text: '+ older', onclick: () => { S.prior.list.push(P.blankPrior()); render(); } }));
   return box;
+}
+/* The comparison table of a grid section: this study's values (z, value, % predicted), the post-bronchodilator value with
+   its change, and one value column per prior study with the study's date in the column header. Shown only while
+   "Bronchodilator" or "Prior study" is on; otherwise the category chips are the whole entry. */
+function compareTable(key, ctx) {
+  const m = P.SCHEMA.spiro && P.SCHEMA[key], pr = PRIOR_MAP[key], priors = ctx.priors || [], bd = !!ctx.bd;
+  const grid = m.groups.filter((g, gi) => gi === 0)[0];
+  const rows = grid.fields.filter(f => (f.type === 'param' || (f.type === 'sel' && !f.ui)) && (f.cols || (pr && pr.fields[f.id])) && (!f.more || isFilled(key, f) || (f.cols && Object.keys(f.cols).some(k => String(S[key][f.cols[k]]) !== ''))));
+  const colKeys = (m.columns || []).map(c => c[0]);
+  const th = (text, attrs) => h('th', Object.assign({ scope: 'col', text: text }, attrs || {}));
+  const top = [h('th', { class: 'ct-corner' }), h('th', { scope: 'colgroup', colspan: String(colKeys.length), class: 'ct-grp cur' }, [h('span', { text: 'This study' }), h('span', { class: 'ct-date', text: S.ctx.date ? dateShort(S.ctx.date) : '' })])];
+  if (bd) top.push(h('th', { scope: 'colgroup', colspan: '2', class: 'ct-grp post', text: 'Post-bronchodilator' }));
+  priors.forEach((p, i) => {
+    const inp = h('input', { type: 'date', value: p.date, 'data-prior-date': String(i + 1), 'aria-label': 'Date of prior study ' + (i + 1), oninput: (e) => { p.date = e.target.value; sync(); } });
+    widgets.push(() => { if (document.activeElement !== inp && inp.value !== p.date) inp.value = p.date; });
+    top.push(h('th', { scope: 'colgroup', class: 'ct-grp pri', 'data-prior-hd': String(i + 1) }, [h('span', { class: 'ct-pl' }, [h('span', { text: priors.length > 1 ? 'Prior ' + (i + 1) : 'Prior' }),
+      h('button', { type: 'button', class: 'lnk', 'data-prior-remove': String(i + 1), title: 'Remove this prior study', 'aria-label': 'Remove prior study ' + (i + 1), text: '×', onclick: () => { S.prior.list.splice(i, 1); if (!S.prior.list.length) { S.prior.list.push(P.blankPrior()); priorAdded = false; } render(); } })]), inp]));
+  });
+  const sub = [h('th', { class: 'ct-corner' })].concat(colKeys.map(k => th(k === 'z' ? 'z' : (ctx.colLabels[k] || k))));
+  if (bd) { sub.push(th('Value')); sub.push(th('Δ')); }
+  priors.forEach(() => sub.push(th('Value')));
+  const trs = rows.map(f => {
+    const tds = [h('th', { scope: 'row', text: f.label })];
+    colKeys.forEach(k => {
+      if (k === 'z') { tds.push(h('td', {}, [f.type === 'param' ? zCell(key, f) : null])); return; }
+      const nid = f.cols && f.cols[k], nf = nid ? fieldDef(key, nid) : null;
+      tds.push(h('td', {}, [nf && nf.type === 'num' ? numCell(key, nf, { grid: true, ph: nf.ph || '' }) : null]));
+    });
+    if (bd) {
+      const bdf = { ratio: 'post_ratio_abs', fev1: 'fev1_post', fvc: 'fvc_post' }[f.id];
+      if (bdf) {
+        const nf = fieldDef('bd', bdf);
+        tds.push(h('td', {}, [numCell('bd', nf, { cls: 'post', grid: true, ph: f.id === 'ratio' ? '0.72' : '', aria: 'Post-bronchodilator ' + f.label + (nf.unit ? ' (' + nf.unit + ')' : '') })]));
+        const d = textCell('delta');
+        widgets.push(() => {
+          const b = R.facts.bd; let t = '';
+          if (f.id === 'fev1' || f.id === 'fvc') { const dpp = f.id === 'fev1' ? b.dF : b.dV, dml = f.id === 'fev1' ? b.dFmL : b.dVmL; if (isNum(dpp)) t = (dpp > 0 ? '+' : '') + dpp.toFixed(1) + '% pred'; else if (isNum(dml)) t = (dml > 0 ? '+' : '') + Math.round(dml) + ' mL'; }
+          else if (isNum(b.postRatioV) && isNum(R.facts.sp.ratioV)) { const dd = (b.postRatioV - R.facts.sp.ratioV) * 100; t = (dd > 0 ? '+' : '') + dd.toFixed(0) + ' pts'; }
+          d.textContent = t; d.classList.toggle('sig', /% pred/.test(t) && parseFloat(t) > 10);
+        });
+        tds.push(h('td', {}, [d]));
+      } else { tds.push(h('td')); tds.push(h('td')); }
+    }
+    priors.forEach(p => {
+      const defs = (pr && pr.fields[f.id]) || [];
+      if (!defs.length) { tds.push(h('td')); return; }
+      const d = defs[0], pf = P.PRIOR_FIELDS.filter(x => x.id === d[0])[0];
+      tds.push(h('td', {}, [numCell('prior', { id: d[0], label: 'Prior ' + (pf ? pf.label : d[0]), unit: d[1] === 'walk' || d[1] === 'dlco' ? '' : d[1], units: d[1] === 'walk' || d[1] === 'dlco' ? d[1] : null }, { get: () => p[d[0]], set: (v) => { p[d[0]] = v; }, cls: 'pri', grid: true })]));
+    });
+    return h('tr', { 'data-ct-row': key + '.' + f.id }, tds);
+  });
+  return h('div', { class: 'ct-wrap', 'data-prior-dates': key }, [h('table', { class: 'ct' }, [h('thead', {}, [h('tr', {}, top), h('tr', {}, sub)]), h('tbody', {}, trs)])]);
 }
 /* the header cell of a prior column: its date (with quick intervals) and a remove button */
 function priorHeadCell(p, i, n) {
@@ -8357,8 +8669,11 @@ function trendBlock() {
    Interactive pictures for the anatomy topics (data in anatomy.js): the bronchial tree navigator with its scope view and
    drill, the nodal-station map with its quiz, the V/Q sandbox, the lidocaine dose calculator and two static figures. */
 const AN = window.PFT_ANAT || { topics: {}, groups: [], TREE: {}, STATIONS: [], SEGMENTS: [] };
-const MIRROR_KEY = 'pft.anat.mirror.v1';
-let treeAt = 'trachea', treeDrill = null, treeMirror = !!prefGet(MIRROR_KEY);
+const MIRROR_KEY = 'pft.anat.mirror.v1', LAND_KEY = 'pft.anat.land.v1';
+let treeAt = 'trachea', treeDrill = null, treeMirror = !!prefGet(MIRROR_KEY), treeLand = prefGet(LAND_KEY) !== false;
+/* the ring of structures around the scope view (vessels, nodes, oesophagus) is drawn when switched on, the level has
+   data, and no drill is hiding the labels */
+function landOn() { return treeLand && !!(AN.LANDMARKS && AN.LANDMARKS[treeAt]) && !(treeDrill && !treeDrill.done); }
 let stationSel = '4R', stationQuiz = null;
 
 function svt(x, y, text, a) { const t = sv('text', Object.assign({ x: x, y: y }, a || {})); t.textContent = text; return t; }
@@ -8407,8 +8722,11 @@ function treeMap() {
 }
 /* what the scope sees from the current node: the lumen, the posterior membrane, the openings ahead */
 function scopeView() {
-  const T = AN.TREE, n = T[treeAt], R = 86, cx = 100, cy = 100;
-  const svg = sv('svg', { viewBox: '0 0 200 200', class: 'an-scope', role: 'img', 'aria-label': 'Scope view from ' + n.name });
+  const T = AN.TREE, n = T[treeAt], land = landOn(), R = land ? 70 : 86, cx = 100, cy = 100;
+  const svg = sv('svg', { class: 'an-scope' + (land ? ' land' : ''), role: 'img', 'aria-label': 'Scope view from ' + n.name + (land ? ' with the structures around the airway' : '') });
+  let vb = { x0: 0, y0: 0, x1: 200, y1: 200 };
+  if (land) { const ring = landRing(cx, cy, R); svg.appendChild(ring.g); const b = ring.box; vb = { x0: Math.min(0, b.x0 - 4), y0: Math.min(0, b.y0 - 12), x1: Math.max(200, b.x1 + 4), y1: Math.max(200, b.y1 + 12) }; }
+  svg.setAttribute('viewBox', vb.x0 + ' ' + vb.y0 + ' ' + (vb.x1 - vb.x0) + ' ' + (vb.y1 - vb.y0));
   svg.appendChild(sv('circle', { cx: cx, cy: cy, r: R + 8, class: 'an-wall' }));
   svg.appendChild(sv('circle', { cx: cx, cy: cy, r: R, class: 'an-lumen' }));
   if (!n.free && treeAt !== 'larynx') {
@@ -8442,7 +8760,9 @@ function scopeView() {
       if (!(treeDrill && !treeDrill.done)) {
         const lab = T[k].b || T[k].name.replace(/ bronchus$/, '').replace('Bronchus intermedius', 'B. intermedius').replace(/^(Right|Left) /, '').replace('Upper division (LUL)', 'Upper division');
         const ly = p[1] + (pos[1] > 0.45 && pos[0] > 3 && pos[0] < 9 ? rr + 9 : -rr - 4);
-        openings.push(svt(p[0], ly, lab, { class: 'an-ol', 'text-anchor': 'middle' }));
+        // an opening far to one side carries its label toward that side, so two labels on one line do not collide
+        const dx = p[0] - cx, side = dx > R * 0.4 ? 'start' : (dx < -R * 0.4 ? 'end' : 'middle');
+        openings.push(svt(side === 'start' ? p[0] - rr * 0.9 : (side === 'end' ? p[0] + rr * 0.9 : p[0]), ly, lab, { class: 'an-ol', 'text-anchor': side }));
       }
     });
   } else {
@@ -8453,10 +8773,68 @@ function scopeView() {
   openings.forEach(g => svg.appendChild(g));
   // compass
   const L = treeMirror ? ['R', 'L'] : ['L', 'R'];
-  svg.appendChild(svt(100, 9, 'anterior', { class: 'an-cp', 'text-anchor': 'middle' }));
-  svg.appendChild(svt(100, 199, 'posterior', { class: 'an-cp', 'text-anchor': 'middle' }));
-  svg.appendChild(svt(4, 104, L[0], { class: 'an-cp' })); svg.appendChild(svt(196, 104, L[1], { class: 'an-cp', 'text-anchor': 'end' }));
+  svg.appendChild(svt(100, vb.y0 + 9, 'anterior', { class: 'an-cp', 'text-anchor': 'middle' }));
+  svg.appendChild(svt(100, vb.y1 - 1, 'posterior', { class: 'an-cp', 'text-anchor': 'middle' }));
+  svg.appendChild(svt(vb.x0 + 4, 104, L[0], { class: 'an-cp' })); svg.appendChild(svt(vb.x1 - 4, 104, L[1], { class: 'an-cp', 'text-anchor': 'end' }));
   return svg;
+}
+/* the structures around the airway at this level, in their usual clock positions outside the wall (schematic).
+   Returns the group and the box it needs, so the picture can grow around the lumen without clipping a label. */
+const LAND_KIND = { a: 'artery', v: 'vein', n: 'node', e: 'oesophagus', o: 'other' };
+let treeLevel = 'lower';   // the trachea has two rings: upper (arch vessels, 2R/2L) and lower (carina: 4R/4L/7)
+function landKey() { return treeAt === 'trachea' && treeLevel === 'upper' ? 'trachea_upper' : treeAt; }
+function landRing(cx, cy, R) {
+  const g = sv('g', { class: 'an-land', 'data-land': landKey() });
+  const box = { x0: cx - R - 8, y0: cy - R - 8, x1: cx + R + 8, y1: cy + R + 8 };
+  const grow = (x0, y0, x1, y1) => { box.x0 = Math.min(box.x0, x0); box.y0 = Math.min(box.y0, y0); box.x1 = Math.max(box.x1, x1); box.y1 = Math.max(box.y1, y1); };
+  const CW = 3.75;   // about one character of the 7.6px label
+  // a label of one or two lines; the box it takes is recorded
+  const label = (x, y, text, anchor, cls) => {
+    let lines = [text];
+    if (text.length > 14 && / /.test(text)) { const i = text.lastIndexOf(' ', Math.ceil(text.length / 2) + 2); if (i > 3) lines = [text.slice(0, i), text.slice(i + 1)]; }
+    const t = sv('text', { x: x, y: y, class: 'an-lmt' + (cls ? ' ' + cls : ''), 'text-anchor': anchor });
+    lines.forEach((ln, i) => { const ts = sv('tspan', { x: x, dy: i ? 8 : 0 }); ts.textContent = ln; t.appendChild(ts); });
+    const w = Math.max.apply(null, lines.map(l => l.length)) * CW, hgt = 8 * lines.length;
+    const x0 = anchor === 'start' ? x : (anchor === 'end' ? x - w : x - w / 2);
+    grow(x0 - 1, y - 7, x0 + w + 1, y - 7 + hgt + 1);
+    return t;
+  };
+  (AN.LANDMARKS[landKey()] || []).forEach(it => {
+    const p = clockXY(cx, cy, R, it.h, it.d), r = R * it.s;
+    const item = sv('g', { class: 'an-lm ' + it.k, 'data-lm': it.l, tabindex: '0' });
+    item.appendChild(sv('title', {})).textContent = it.l + ' — ' + LAND_KIND[it.k] + (it.t ? '. ' + it.t : '');
+    let rx, ry;
+    if (it.k === 'n') {
+      rx = ry = r;
+      item.appendChild(sv('circle', { cx: p[0], cy: p[1], r: r }));
+      item.appendChild(svt(p[0], p[1] + 2.4, it.l, { class: 'an-lmt in', 'text-anchor': 'middle' }));
+    } else if (it.k === 'e') {
+      rx = r * 1.5; ry = r * 0.55;
+      item.appendChild(sv('ellipse', { cx: p[0], cy: p[1], rx: rx, ry: ry }));
+      item.appendChild(sv('ellipse', { cx: p[0], cy: p[1], rx: r * 0.9, ry: r * 0.2, class: 'an-lm-slit' }));
+    } else {
+      rx = r * (it.w || 1.45); ry = r * 0.8;
+      item.appendChild(sv('ellipse', { cx: p[0], cy: p[1], rx: rx, ry: ry }));
+      if (it.k === 'a') item.appendChild(sv('ellipse', { cx: p[0], cy: p[1], rx: rx * 0.8, ry: ry * 0.72, class: 'an-lm-wall' }));
+    }
+    grow(p[0] - rx - 1, p[1] - ry - 1, p[0] + rx + 1, p[1] + ry + 1);
+    if (it.k !== 'n') {
+      if (it.l.length * 3.5 <= 2 * rx - 4) item.appendChild(svt(p[0], p[1] + 2.4, it.l, { class: 'an-lmt in', 'text-anchor': 'middle' }));
+      else {
+        // the label beyond the shape, on the ray from the centre of the lumen
+        const dx = p[0] - cx, dy = p[1] - cy, len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len;
+        const ext = rx * Math.abs(ux) + ry * Math.abs(uy) + 5;
+        const qx = p[0] + ux * ext, qy = p[1] + uy * ext;
+        const anchor = Math.abs(ux) < 0.3 ? 'middle' : (ux > 0 ? 'start' : 'end');
+        item.appendChild(label(qx, qy + (anchor === 'middle' ? (uy < 0 ? -1 : 7) : 2.6), it.l, anchor));
+      }
+    }
+    g.appendChild(item);
+  });
+  return { g: g, box: box };
+}
+function landLegend() {
+  return h('div', { class: 'an-lgd', 'data-land-legend': '1' }, [['a', 'artery'], ['v', 'vein'], ['n', 'nodal station'], ['e', 'oesophagus']].map(x => h('span', { class: 'an-lg ' + x[0] }, [h('i'), x[1]])).concat([h('span', { class: 'fine', text: 'usual positions at this level, drawn to teach, not to scale' })]));
 }
 const DRILL_TARGETS = Object.keys(AN.TREE).filter(k => AN.TREE[k].b || /^(rml|ling|lud|rul|lll|lul)$/.test(k));
 function startDrill() {
@@ -8472,8 +8850,11 @@ function treeNav() {
     n.parent ? h('button', { type: 'button', class: 'btn sm', 'data-tree-back': '1', text: '↑ Pull back to ' + T[n.parent].name.replace(/ bronchus$/, ''), onclick: () => treeGo(n.parent, true) }) : null,
     n.kids.length ? h('span', { class: 'an-adv' }, [h('span', { class: 'fine', text: 'Advance into:' }), n.kids.map(k => h('button', { type: 'button', class: 'btn sm quiet', 'data-tree-go': k, text: T[k].b ? T[k].b + ' ' + T[k].name.replace(/ \(.*\)$/, '') : T[k].name.replace(/ bronchus$/, ''), onclick: () => treeGo(k, true) }))]) : h('span', { class: 'fine', text: 'End of the navigable tree.' })
   ]);
-  const mirrorId = uid('mir');
-  const mirror = h('label', { class: 'an-mirror', for: mirrorId }, [h('input', { type: 'checkbox', id: mirrorId, checked: treeMirror, 'data-mirror': '1', onchange: (e) => { treeMirror = e.target.checked; prefSet(MIRROR_KEY, treeMirror); render(); } }), 'Mirror the picture (bronchoscopist at the head of the bed)']);
+  const mirrorId = uid('mir'), landId = uid('lnd');
+  const mirror = h('div', { class: 'an-switches' }, [
+    h('label', { class: 'an-mirror', for: landId }, [h('input', { type: 'checkbox', id: landId, checked: treeLand, 'data-landmarks': '1', onchange: (e) => { treeLand = e.target.checked; prefSet(LAND_KEY, treeLand); render(); } }), 'Landmarks around the airway (vessels, nodes, oesophagus)']),
+    h('label', { class: 'an-mirror', for: mirrorId }, [h('input', { type: 'checkbox', id: mirrorId, checked: treeMirror, 'data-mirror': '1', onchange: (e) => { treeMirror = e.target.checked; prefSet(MIRROR_KEY, treeMirror); render(); } }), 'Mirror the picture (bronchoscopist at the head of the bed)'])
+  ]);
   const notes = h('div', { class: 'an-notes' }, [
     h('h3', { text: 'Where you are' }),
     h('p', { class: 'an-name' }, [h('b', { text: n.name }), n.lobe ? h('span', { class: 'tf', text: n.lobe }) : null]),
@@ -8498,9 +8879,12 @@ function treeNav() {
   return h('div', { class: 'an-tree', 'data-at': treeAt }, [
     h('div', { class: 'an-pics' }, [
       h('figure', { class: 'an-fig' }, [treeMap(), h('figcaption', { text: 'Anterior view — tap any branch' })]),
-      h('figure', { class: 'an-fig' }, [scopeView(), h('figcaption', { text: 'Scope view from the ' + n.name.toLowerCase() + ' — tap an opening to advance' })])
+      h('figure', { class: 'an-fig' }, [scopeView(),
+        landOn() && treeAt === 'trachea' ? h('div', { class: 'seg an-level', role: 'radiogroup', 'aria-label': 'Level of the trachea' }, [['upper', 'Upper trachea'], ['lower', 'Lower trachea and carina']].map(o => h('button', { type: 'button', class: 'ch', role: 'radio', 'data-level': o[0], 'aria-checked': String(treeLevel === o[0]), text: o[1], onclick: () => { treeLevel = o[0]; render(); } }))) : null,
+        landOn() ? landLegend() : null,
+        h('figcaption', { text: 'Scope view from the ' + n.name.toLowerCase() + ' — tap an opening to advance' + (landOn() ? '; the ring shows what lies against the wall at this level (hover or tap a structure for its note)' : '') })])
     ]),
-    crumbs, moves, mirror, drill, notes
+    crumbs, moves, mirror, drill, notes, picsBlock('tree:' + treeAt, 'this view')
   ]);
 }
 
@@ -8562,7 +8946,9 @@ function stationMap() {
     h('p', {}, [h('span', { class: 'lbl', text: 'Upper border. ' }), s.upper]),
     s.lower ? h('p', {}, [h('span', { class: 'lbl', text: 'Lower border. ' }), s.lower]) : null,
     h('div', { class: 'an-reach' }, reach.map(r => h('span', { class: 'ch static ' + (r[1] ? 'yes' : 'no'), text: (r[1] ? '✓ ' : '✗ ') + r[0] })).concat(s.reach.other ? [h('span', { class: 'fine', text: s.reach.other })] : [])),
-    h('p', {}, [h('span', { class: 'lbl', text: 'From the airway. ' }), s.where])
+    h('p', {}, [h('span', { class: 'lbl', text: 'From the airway. ' }), s.where]),
+    sonoFig(s),
+    picsBlock('station:' + s.id, 'station ' + s.id)
   ] : [h('p', { class: 'fine', text: 'Tap a station on the map.' })]);
   const legend = h('div', { class: 'an-legend' }, Object.keys(ZONE_CLASS).map(z => h('span', { class: 'an-lg ' + ZONE_CLASS[z] }, [h('i'), z.replace(/ \(.*\)/, '')])));
   let quiz;
@@ -8576,6 +8962,108 @@ function stationMap() {
     ]);
   }
   return h('div', { class: 'an-stations' }, [h('figure', { class: 'an-fig wide' }, [stationSvg(), legend, h('figcaption', { text: 'IASLC 2009 map, anterior view (patient’s right on the left). Dashed = behind the trachea.' })]), quiz, card]);
+}
+
+/* ------------------------------------------------------------------ schematic EBUS picture of a station
+   The sector of a convex probe: the airway wall under the transducer, the node below it (hypoechoic, with a rim), the
+   vessels that sit beside or beyond it (anechoic, coloured by type here — on the screen colour follows the direction of
+   flow), the needle path. A drawing to learn the layout from, not an image. */
+const SONO_POS = { L: [96, 104, 20, 16], R: [204, 104, 20, 16], D: [150, 162, 34, 20], DL: [90, 152, 28, 18], DR: [210, 152, 28, 18], SL: [106, 58, 22, 13], SR: [194, 58, 22, 13] };
+function sonoFig(s) {
+  const spec = AN.SONO && AN.SONO[s.id];
+  if (!spec) return s.reach && s.reach.ebus ? null : h('p', { class: 'fine', 'data-sono': 'none', text: 'Not an EBUS station: no endobronchial picture to learn.' });
+  const W = 300, H = 212, ax = 150, ay = 6, rad = 200, half = 34 * Math.PI / 180;
+  const svg = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, class: 'an-sono', role: 'img', 'aria-label': 'Schematic EBUS picture of station ' + s.id });
+  const fid = uid('sp');
+  const defs = sv('defs', {});
+  const flt = sv('filter', { id: fid + 'n', x: '0', y: '0', width: '100%', height: '100%' });
+  flt.appendChild(sv('feTurbulence', { type: 'fractalNoise', baseFrequency: '0.9', numOctaves: '2', seed: '7', result: 'n' }));
+  flt.appendChild(sv('feColorMatrix', { in: 'n', type: 'matrix', values: '0 0 0 0 0.75  0 0 0 0 0.75  0 0 0 0 0.72  0 0 0 0.55 0' }));
+  defs.appendChild(flt);
+  const grad = sv('radialGradient', { id: fid + 'g', cx: '0.5', cy: '0', r: '1' });
+  grad.appendChild(sv('stop', { offset: '0', 'stop-color': '#5a5e63' })); grad.appendChild(sv('stop', { offset: '1', 'stop-color': '#17191d' }));
+  defs.appendChild(grad);
+  svg.appendChild(defs);
+  svg.appendChild(sv('rect', { x: 0, y: 0, width: W, height: H, class: 'an-sono-bg' }));
+  const px = (a, r) => [ax + r * Math.sin(a), ay + r * Math.cos(a)];
+  const e1 = px(-half, rad), e2 = px(half, rad);
+  const fan = 'M' + ax + ' ' + ay + ' L' + e1[0].toFixed(1) + ' ' + e1[1].toFixed(1) + ' A' + rad + ' ' + rad + ' 0 0 0 ' + e2[0].toFixed(1) + ' ' + e2[1].toFixed(1) + ' Z';
+  const clip = sv('clipPath', { id: fid + 'c' }); clip.appendChild(sv('path', { d: fan })); defs.appendChild(clip);
+  svg.appendChild(sv('path', { d: fan, fill: 'url(#' + fid + 'g)' }));
+  svg.appendChild(sv('path', { d: fan, filter: 'url(#' + fid + 'n)', opacity: '0.5' }));
+  const scene = sv('g', { 'clip-path': 'url(#' + fid + 'c)' }); svg.appendChild(scene);
+  // the airway wall under the transducer: a bright band
+  const w1 = px(-half, 16), w2 = px(half, 16), w3 = px(half, 26), w4 = px(-half, 26);
+  svg.appendChild(sv('path', { d: 'M' + w1[0] + ' ' + w1[1] + ' A16 16 0 0 0 ' + w2[0] + ' ' + w2[1] + ' L' + w3[0] + ' ' + w3[1] + ' A26 26 0 0 1 ' + w4[0] + ' ' + w4[1] + ' Z', class: 'an-sono-wall' }));
+  svg.appendChild(svt(ax + 72, 22, 'airway wall', { class: 'an-sono-t', 'text-anchor': 'start' }));
+  // neighbours
+  (spec.near || []).forEach(v => {
+    const q = SONO_POS[v[2]] || SONO_POS.D;
+    const g = sv('g', { class: 'an-sono-v ' + v[1], 'data-sono-v': v[0] });
+    g.appendChild(sv('title', {})).textContent = v[0];
+    if (v[1] === 'e') { g.appendChild(sv('ellipse', { cx: q[0], cy: q[1], rx: q[2], ry: q[3] })); g.appendChild(sv('ellipse', { cx: q[0], cy: q[1], rx: q[2] * 0.55, ry: q[3] * 0.4, class: 'an-sono-eso' })); }
+    else if (v[1] === 'o') { g.appendChild(sv('path', { d: 'M' + (q[0] - q[2]) + ' ' + q[1] + ' Q' + q[0] + ' ' + (q[1] - q[3]) + ' ' + (q[0] + q[2]) + ' ' + q[1], class: 'an-sono-bone' })); g.appendChild(sv('path', { d: 'M' + (q[0] - q[2] + 4) + ' ' + (q[1] + 1) + ' L' + (q[0] + q[2] - 4) + ' ' + (q[1] + 1) + ' L' + (q[0] + q[2] + 6) + ' ' + (H - 2) + ' L' + (q[0] - q[2] - 6) + ' ' + (H - 2) + ' Z', class: 'an-sono-shadow' })); }
+    else { g.appendChild(sv('ellipse', { cx: q[0], cy: q[1], rx: q[2], ry: q[3] })); g.appendChild(sv('ellipse', { cx: q[0], cy: q[1], rx: q[2] * 0.82, ry: q[3] * 0.78, class: 'an-sono-flow' })); }
+    scene.appendChild(g);
+    svg.appendChild(svt(q[0], q[1] + q[3] + 9, v[0], { class: 'an-sono-t', 'text-anchor': 'middle' }));
+  });
+  // the node: hypoechoic, oval, a thin brighter rim
+  scene.appendChild(sv('ellipse', { cx: 150, cy: 100, rx: 33, ry: 24, class: 'an-sono-node' }));
+  scene.appendChild(sv('ellipse', { cx: 150, cy: 100, rx: 28, ry: 19, class: 'an-sono-node-in' }));
+  svg.appendChild(svt(150, 98, 'node ' + s.id, { class: 'an-sono-t big', 'text-anchor': 'middle' }));
+  svg.appendChild(svt(150, 109, 'hypoechoic', { class: 'an-sono-t dim', 'text-anchor': 'middle' }));
+  // needle path, from the transducer at a shallow angle into the node
+  scene.appendChild(sv('line', { x1: 136, y1: 26, x2: 150, y2: 96, class: 'an-sono-needle' }));
+  svg.appendChild(svt(118, 44, 'needle', { class: 'an-sono-t', 'text-anchor': 'end' }));
+  // depth marks, 1 cm apart
+  for (let i = 1; i <= 4; i++) { const y = ay + i * 44; svg.appendChild(sv('line', { x1: W - 12, y1: y, x2: W - 4, y2: y, class: 'an-sono-tick' })); svg.appendChild(svt(W - 14, y + 3, i + ' cm', { class: 'an-sono-t dim', 'text-anchor': 'end' })); }
+  const legend = h('div', { class: 'an-lgd' }, [['a', 'artery'], ['v', 'vein'], ['n', 'node'], ['e', 'oesophagus']].map(x => h('span', { class: 'an-lg ' + x[0] }, [h('i'), x[1]])));
+  return h('figure', { class: 'an-fig an-sono-fig', 'data-sono': s.id }, [svg, legend,
+    h('figcaption', {}, [h('b', { text: 'Schematic EBUS picture, not a photograph. ' }), 'Probe on the ' + spec.probe + '. ' + (spec.near || []).map(v => v[0]).join(', ') + ' around the node' + (spec.note ? '. ' + spec.note : '.') + ' Vessels are coloured by type here; on the screen Doppler colour follows the direction of flow.'])]);
+}
+
+/* ------------------------------------------------------------------ your own pictures
+   A photo of your own (an atlas page you are allowed to copy, a frame from a procedure) pinned to an airway view or a
+   station. Kept in this browser only (localStorage, scaled down to about 900 px); nothing is uploaded anywhere. */
+const PICS_KEY = 'pft.anat.pics.v1';
+let picsCache = null, picsBig = null;
+function picsAll() { if (!picsCache) { const v = prefGet(PICS_KEY); picsCache = (v && typeof v === 'object' && !Array.isArray(v)) ? v : {}; } return picsCache; }
+function picsSave() { try { window.localStorage.setItem(PICS_KEY, JSON.stringify(picsAll())); return true; } catch (e) { return false; } }
+function picsAdd(key, file, done) {
+  const rd = new FileReader();
+  rd.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      const max = 900, sc = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement('canvas'); c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      let url; try { url = c.toDataURL('image/jpeg', 0.82); } catch (e) { url = rd.result; }
+      const all = picsAll(); (all[key] = all[key] || []).push({ src: url, name: (file.name || '').replace(/\.[^.]+$/, '').slice(0, 60), t: Date.now() });
+      if (!picsSave()) { all[key].pop(); done(false); return; }
+      done(true);
+    };
+    img.onerror = () => done(false);
+    img.src = rd.result;
+  };
+  rd.onerror = () => done(false);
+  rd.readAsDataURL(file);
+}
+function picsBlock(key, label) {
+  const list = picsAll()[key] || [];
+  const inId = uid('pic');
+  const input = h('input', { type: 'file', accept: 'image/*', id: inId, 'data-pic-add': key, hidden: true, onchange: (e) => {
+    const f = e.target.files && e.target.files[0]; if (!f) return;
+    picsAdd(key, f, (okk) => { if (okk) { toast('Photo kept on this device'); render(); } else toast('Could not keep that photo (storage full or not an image)'); });
+  } });
+  const thumbs = list.map((p, i) => h('figure', { class: 'an-pic' + (picsBig === key + ':' + i ? ' big' : ''), 'data-pic': key }, [
+    h('img', { src: p.src, alt: p.name || ('Photo ' + (i + 1) + ' for ' + label), loading: 'lazy', onclick: () => { picsBig = picsBig === key + ':' + i ? null : key + ':' + i; render(); } }),
+    h('figcaption', {}, [p.name ? h('span', { text: p.name }) : null, h('button', { type: 'button', class: 'lnk', 'data-pic-remove': String(i), text: 'remove', onclick: () => { picsAll()[key].splice(i, 1); if (!picsAll()[key].length) delete picsAll()[key]; picsSave(); picsBig = null; render(); } })])
+  ]));
+  return h('div', { class: 'an-pics-own', 'data-pics': key }, [
+    h('div', { class: 'an-pics-row' }, thumbs),
+    h('div', { class: 'an-pics-add' }, [input, h('label', { class: 'btn sm quiet', for: inId, text: (list.length ? 'Add another photo' : 'Add your own photo') + ' of ' + label }),
+      h('span', { class: 'fine', text: 'An atlas page you own or a frame from a case; it stays in this browser only. Published atlas photographs are copyrighted, so none are built in.' })])
+  ]);
 }
 
 /* ------------------------------------------------------------------ V/Q sandbox

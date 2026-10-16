@@ -9,7 +9,7 @@ const pick = (a) => a[Math.floor(rnd() * a.length)];
   await page.goto(FILE); await page.waitForSelector('#top');
   let leaks = 0, rounds = 3;
   for (let r = 0; r < rounds; r++) {
-    for (const k of await page.locator('.tchip[aria-pressed="false"]').evaluateAll(els => els.map(e => e.getAttribute('data-test')))) await page.locator('.tchip[data-test="' + k + '"]').click();
+    for (const k of await page.locator('[data-test-on]').evaluateAll(els => els.filter(e => !e.checked).map(e => e.getAttribute('data-test-on')))) { await page.locator('details.more-tests').evaluate(e => { e.open = true; }); await page.locator('[data-test-on="' + k + '"]').check(); }
     const ids = await page.locator('details.tsec').evaluateAll(els => els.map(e => e.getAttribute('data-mod')));
     if (r === 0 && rnd() < 0.5) { await page.locator('[data-prior-toggle]').first().check(); }
     // open every collapsed panel so typed inputs are exercised too

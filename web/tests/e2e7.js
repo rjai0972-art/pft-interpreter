@@ -52,9 +52,44 @@ const uniqN = (a) => a.filter((x, i) => a.indexOf(x) === i).length;
   ok(Math.abs((+before) + (+after) - 200) < 0.5 && (+before) > 100 && (+after) < 100, 'mirror flips the right main bronchus to the other side (' + before + ' → ' + after + ')');
   await page.locator('[data-mirror]').uncheck();
   ok(await page.evaluate(() => JSON.parse(localStorage.getItem('pft.anat.mirror.v1'))) === false, 'mirror preference stored');
+  // the ring of structures around the airway: on by default, flips with the mirror, two levels in the trachea
+  ok(await page.locator('[data-landmarks]').isChecked() && await page.locator('.an-scope .an-land[data-land="trachea"]').count() === 1, 'landmarks around the airway are shown by default');
+  const lm = await page.locator('.an-land .an-lm').evaluateAll(els => els.map(e => e.getAttribute('data-lm')));
+  ok(['SVC', 'azygos arch', 'aortic arch', 'oesophagus', '4R', '4L', '7'].every(x => lm.indexOf(x) >= 0), 'lower trachea: SVC, azygos, aortic arch, oesophagus, 4R, 4L and 7 around the lumen: ' + lm.join(', '));
+  ok(await page.locator('.an-land .an-lm.a').count() >= 3 && await page.locator('.an-land .an-lm.v').count() >= 2 && await page.locator('.an-land .an-lm.n').count() >= 4 && await page.locator('[data-land-legend]').count() === 1, 'arteries, veins and nodes are drawn in their own colours with a legend');
+  const svcX = async () => +(await page.locator('.an-land [data-lm="SVC"] ellipse').first().getAttribute('cx'));
+  const s1 = await svcX(); await page.locator('[data-mirror]').check(); await page.waitForTimeout(60); const s2 = await svcX(); await page.locator('[data-mirror]').uncheck(); await page.waitForTimeout(60);
+  ok(s1 > 100 && s2 < 100 && Math.abs(s1 + s2 - 200) < 0.5, 'the SVC sits on the patient\'s right and flips with the mirror (' + s1 + ' → ' + s2 + ')');
+  ok(/4R.*anterior-right wall/i.test(await page.locator('.an-land [data-lm="4R"] title').textContent()), 'each structure carries a note');
+  await page.locator('[data-level="upper"]').click(); await page.waitForTimeout(60);
+  const up = await page.locator('.an-land .an-lm').evaluateAll(els => els.map(e => e.getAttribute('data-lm')));
+  ok(await page.locator('.an-land[data-land="trachea_upper"]').count() === 1 && ['brachiocephalic a.', 'L brachiocephalic v.', 'L subclavian a.', '2R', '2L'].every(x => up.indexOf(x) >= 0) && up.indexOf('4R') < 0, 'upper trachea: arch vessels, 2R and 2L: ' + up.join(', '));
+  await page.locator('[data-level="lower"]').click(); await page.waitForTimeout(60);
+  const vb0 = await page.locator('.an-scope').getAttribute('viewBox');
+  await page.locator('[data-landmarks]').uncheck(); await page.waitForTimeout(60);
+  ok(await page.locator('.an-land').count() === 0 && await page.locator('.an-scope').getAttribute('viewBox') === '0 0 200 200' && vb0 !== '0 0 200 200' && await page.evaluate(() => JSON.parse(localStorage.getItem('pft.anat.land.v1'))) === false, 'landmarks switch off (the picture closes back in); preference stored');
+  await page.locator('[data-landmarks]').check(); await page.waitForTimeout(60);
+  await page.locator('.an-scope [data-open="rmb"]').click(); await page.waitForSelector('.an-tree[data-at="rmb"]');
+  const rm = await page.locator('.an-land .an-lm').evaluateAll(els => els.map(e => e.getAttribute('data-lm')));
+  ok(['SVC', 'azygos arch', 'right PA', '10R', '4R', '7', '11Rs'].every(x => rm.indexOf(x) >= 0), 'right main bronchus: SVC, azygos, right PA, 10R, 4R, 7, 11Rs: ' + rm.join(', '));
+  ok(await page.locator('.an-scope').evaluate(e => { const b = e.querySelectorAll('.an-lmt'); const vb = e.getAttribute('viewBox').split(' ').map(Number); return Array.from(b).every(t => { const r = t.getBBox(); return r.x >= vb[0] && r.y >= vb[1] && r.x + r.width <= vb[0] + vb[2] + 0.5 && r.y + r.height <= vb[1] + vb[3] + 0.5; }); }), 'every label of the ring lies inside the picture');
+  await page.locator('[data-tree-go="bi"]').click(); await page.waitForSelector('.an-tree[data-at="bi"]');
+  await page.locator('[data-tree-go="rml"]').click(); await page.waitForSelector('.an-tree[data-at="rml"]');
+  ok(/A4, A5/.test((await page.locator('.an-land .an-lm').evaluateAll(els => els.map(e => e.getAttribute('data-lm')))).join()), 'middle lobe: the segmental arteries A4 and A5');
+  await page.locator('[data-crumb="trachea"]').click(); await page.waitForSelector('.an-tree[data-at="trachea"]');
+  // a photo of your own pinned to a view: kept in this browser only
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAD0lEQVQIW2P4z8DwHwAFAAH/ij1KbwAAAABJRU5ErkJggg==', 'base64');
+  await page.locator('[data-pic-add="tree:trachea"]').setInputFiles({ name: 'my atlas page.png', mimeType: 'image/png', buffer: png }); await page.waitForTimeout(500);
+  ok(await page.locator('[data-pics="tree:trachea"] .an-pic img').count() === 1 && /my atlas page/.test(await txt('[data-pics="tree:trachea"]')), 'a photo of your own is pinned to the view');
+  ok((await page.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('pft.anat.pics.v1'))))).join() === 'tree:trachea', 'the photo is kept in this browser (localStorage)');
+  await page.locator('.an-scope [data-open="rmb"]').click(); await page.waitForSelector('.an-tree[data-at="rmb"]');
+  ok(await page.locator('[data-pics="tree:rmb"] .an-pic').count() === 0 && /copyrighted/.test(await txt('[data-pics="tree:rmb"]')), 'another view has no photo; the note says why none are built in');
+  await page.locator('[data-crumb="trachea"]').click(); await page.waitForSelector('.an-tree[data-at="trachea"]');
+  await page.locator('[data-pics="tree:trachea"] [data-pic-remove="0"]').click(); await page.waitForTimeout(80);
+  ok(await page.locator('[data-pics="tree:trachea"] .an-pic').count() === 0 && await page.evaluate(() => localStorage.getItem('pft.anat.pics.v1')) === '{}', 'the photo can be removed');
   // the drill: labels hidden, moves counted, shortest route recognised
   await page.locator('[data-drill-start]').click(); await page.waitForSelector('.an-drill[data-drill="on"]');
-  ok(await page.locator('.an-tree').getAttribute('data-at') === 'trachea' && await page.locator('.an-scope .an-ol').count() === 0 && await page.locator('.an-map .an-bl').count() === 0, 'drill starts at the trachea with the labels hidden');
+  ok(await page.locator('.an-tree').getAttribute('data-at') === 'trachea' && await page.locator('.an-scope .an-ol').count() === 0 && await page.locator('.an-map .an-bl').count() === 0 && await page.locator('.an-land').count() === 0, 'drill starts at the trachea with the labels and the landmark ring hidden');
   const target = await page.evaluate(() => { const t = document.querySelector('.an-drill b').textContent; return Object.keys(window.PFT_ANAT.TREE).filter(k => t.indexOf(window.PFT_ANAT.TREE[k].name) === 0)[0]; });
   const route = await page.evaluate((t) => { const T = window.PFT_ANAT.TREE, out = []; let k = t; while (k && k !== 'trachea') { out.unshift(k); k = T[k].parent; } return out; }, target);
   ok(!!target && route.length >= 2, 'drill names a target below the main bronchi: ' + target + ' via ' + route.join(' > '));
@@ -62,9 +97,10 @@ const uniqN = (a) => a.filter((x, i) => a.indexOf(x) === i).length;
   ok(await page.locator('.an-drill[data-drill="done"]').count() === 1 && /shortest route/.test(await txt('.an-found')), 'reaching the target by the shortest route is recognised: ' + await txt('.an-found'));
   await page.locator('[data-drill-stop]').click(); await page.waitForTimeout(60);
   ok(await page.locator('.an-scope .an-ol').count() >= 1, 'labels return when the drill stops');
+  await page.locator('[data-crumb="trachea"]').click(); await page.waitForSelector('.an-tree[data-at="trachea"]');
+  ok(await page.locator('.an-land').count() === 1, 'the landmark ring returns after the drill');
 
   // ---- the 3D airway: outside and inside views share the navigator's position
-  await page.locator('[data-crumb="trachea"]').click(); await page.waitForSelector('.an-tree[data-at="trachea"]');
   ok(await page.locator('.an-fig-3d').count() === 1 && await page.locator('canvas.an-3d').count() === 1, 'the 3D figure renders a WebGL canvas');
   ok(await page.evaluate(() => typeof THREE !== 'undefined' && THREE.REVISION === '147'), 'three.js r147 is inlined');
   await page.locator('[data-3d-mode="in"]').click(); await page.waitForTimeout(500);
@@ -87,8 +123,12 @@ const uniqN = (a) => a.filter((x, i) => a.indexOf(x) === i).length;
   await page.locator('.an-smap [data-station="7"]').click(); await page.waitForSelector('[data-station-card="7"]');
   const card = await txt('.an-stcard');
   ok(/Station 7 — Subcarinal/.test(card) && /bronchus intermedius on the right/.test(card) && /✓ EBUS-TBNA/.test(card) && /✓ EUS/.test(card), 'station 7 card: borders and reach');
+  ok(await page.locator('[data-station-card="7"] .an-sono-fig[data-sono="7"]').count() === 1 && await page.locator('[data-sono="7"] .an-sono-v').count() === 3 && /right PA/.test(await txt('[data-sono="7"] figcaption')) && /not a photograph/.test(await txt('[data-sono="7"] figcaption')), 'station 7 card draws a schematic EBUS picture: right PA, left atrium and oesophagus around the node');
+  ok(await page.locator('[data-station-card="7"] [data-pic-add="station:7"]').count() === 1, 'a photo of your own can be pinned to a station');
+  await page.locator('.an-smap [data-station="4L"]').click(); await page.waitForSelector('[data-station-card="4L"]');
+  ok(await page.locator('[data-sono="4L"] .an-sono-v.a').count() === 2 && /Doppler/.test(await txt('[data-sono="4L"] figcaption')), '4L: the arch and the left PA, Doppler before the pass');
   await page.locator('.an-smap [data-station="5"]').click(); await page.waitForSelector('[data-station-card="5"]');
-  ok(/✗ EBUS-TBNA/.test(await txt('.an-stcard')) && /Chamberlain/.test(await txt('.an-stcard')), 'station 5 is out of EBUS reach, Chamberlain or VATS');
+  ok(/✗ EBUS-TBNA/.test(await txt('.an-stcard')) && /Chamberlain/.test(await txt('.an-stcard')) && await page.locator('[data-station-card="5"] [data-sono="none"]').count() === 1 && await page.locator('[data-station-card="5"] .an-sono-fig').count() === 0, 'station 5 is out of EBUS reach, Chamberlain or VATS; no EBUS picture');
   ok(/N2a/.test(await txt('.learn-body')) && /N3 → N2 → N1/.test(await txt('.learn-body')), 'N staging and the sampling order are taught');
   await page.locator('[data-stq-start]').click(); await page.waitForSelector('.an-drill[data-stq="on"]');
   const q = await page.evaluate(() => { const t = document.querySelector('.an-drill b').textContent; return window.PFT_ANAT.STATIONS.filter(s => t.indexOf(s.name) === 0)[0].id; });
@@ -134,23 +174,37 @@ const uniqN = (a) => a.filter((x, i) => a.indexOf(x) === i).length;
     ok(re.test(await txt('.learn-body')), 'topic ' + t + ' present with its content');
   }
 
-  // ---- prior columns: one box per earlier study, dates as chips, clean with four priors
+  // ---- the comparison table: chips are the entry; the table opens with "Prior study" (or "Bronchodilator"), one value box
+  // per earlier study, the date in the column header
   await page.evaluate(() => { const b = document.getElementById('new-case'); b.click(); b.click(); }); await page.waitForSelector('#top');
-  await page.selectOption('#qs', { label: 'Full PFT' });
+  ok(await page.locator('.tchip[aria-pressed="true"]').count() === 3 && await page.locator('details.tsec').count() === 3, 'a new case starts with the three default tests on the page');
+  ok(await page.locator('[data-grid="spiro"] .ix .ix-vals').count() === 0 && await page.locator('[data-grid="spiro"] table.ct').count() === 0, 'no value boxes until a comparison is asked for');
   await page.locator('[data-field="ctx.date"] input').fill('2025-03-05');
-  await page.locator('[data-cell="spiro.fev1_abs"] input').fill('1.55');
   await page.locator('[data-prior-toggle="spiro"]').check();
-  ok(await page.locator('[data-cell="prior.fev1"]').count() === 1 && await page.locator('[data-cell="prior.fev1_pct"]').count() === 0 && await page.locator('[data-cell="prior.dlco_pct"]').count() === 0, 'one value box per prior study, no % predicted boxes');
-  ok(await page.locator('[data-prior-hd="1"]').count() >= 1 && /no date/.test(await txt('[data-prior-hd="1"]')), 'the column header carries the date slot');
-  await page.locator('[data-prior-dates="spiro"] .qd .lnk', { hasText: '1 yr' }).first().click();
-  ok(/3\/5\/2024/.test(await txt('[data-prior-hd="1"]')), 'the date appears in the column header');
+  ok(await page.locator('[data-grid="spiro"] table.ct').count() === 1 && await page.locator('[data-cell="prior.fev1"]').count() === 1 && await page.locator('[data-cell="prior.fev1_pct"]').count() === 0, 'the table shows one value box per prior study, no % predicted for priors');
+  ok(await page.locator('[data-cell="spiro.fev1_abs"]').count() === 1 && await page.locator('[data-cell="spiro.fev1.z"]').count() === 1, 'this study has its z, value and % boxes in the table');
+  await page.locator('[data-cell="spiro.fev1_abs"] input').fill('1.55');
+  await page.locator('[data-prior-date="1"]').first().fill('2024-03-05');
   await page.locator('[data-cell="prior.fev1"] input').first().fill('1.85');
   for (let i = 0; i < 3; i++) await page.locator('[data-prior-add="spiro"]').click();
-  ok(await page.locator('[data-cell="prior.fev1"]').count() === 4 && await page.locator('[data-prior-dates="spiro"] .pr-head').count() === 5, 'four prior columns');
-  ok(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1), 'no horizontal overflow with four priors');
-  const chipsTop = await page.locator('[data-prior-dates="spiro"] .pr-head').evaluateAll(els => els.map(e => Math.round(e.getBoundingClientRect().top)));
-  ok(uniqN(chipsTop) <= 3, 'the five date chips take at most three lines beside the report column at 1360 px (' + uniqN(chipsTop) + ')');
+  ok(await page.locator('[data-cell="prior.fev1"]').count() === 4 && await page.locator('[data-prior-dates="spiro"] [data-prior-hd]').count() === 4, 'four prior columns');
+  ok(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1), 'no horizontal overflow with four priors (the table scrolls on its own)');
   ok(/Since the prior study \(Mar 2024\), significant decline in FEV1 \(-16%\)/.test(await page.evaluate(() => window.__pft.result.text)), 'percent change and significance from the two absolute values, inside SPIROMETRY at the minimal level: ' + await page.evaluate(() => window.__pft.result.text));
+  // additional studies: tick a test on, make it a default
+  await page.locator('details.more-tests').evaluate(e => { e.open = true; });
+  await page.locator('[data-test-on="sixmw"]').check(); await page.waitForTimeout(80);
+  ok(await page.locator('details.tsec[data-mod="sixmw"]').count() === 1 && await page.locator('.tchip[data-test="sixmw"]').count() === 1, 'a ticked additional study appears as a section and a chip');
+  await page.locator('details.more-tests').evaluate(e => { e.open = true; });
+  await page.locator('[data-test-default="feno"]').check(); await page.waitForTimeout(80);
+  ok((await page.evaluate(() => JSON.parse(localStorage.getItem('pft.defaults.v1')))).join() === 'spiro,vol,dlco,feno' && await page.locator('.tchip[data-test="feno"]').count() === 1, 'a default test is remembered and shown as a chip');
+  await page.evaluate(() => { const b = document.getElementById('new-case'); b.click(); b.click(); }); await page.waitForSelector('#top');
+  ok(await page.locator('.tchip[aria-pressed="true"]').count() === 4, 'the next new case starts with the four defaults');
+  await page.locator('details.more-tests').evaluate(e => { e.open = true; });
+  await page.locator('[data-test-default="feno"]').uncheck(); await page.waitForTimeout(80);
+  await page.evaluate(() => { const b = document.getElementById('new-case'); b.click(); b.click(); }); await page.waitForSelector('#top');
+  await page.locator('[data-field="ctx.date"] input').fill('2025-03-05');
+  await page.locator('[data-prior-toggle="spiro"]').check();
+  await page.locator('[data-cell="spiro.fev1_abs"] input').fill('1.55'); await page.locator('[data-prior-date="1"]').first().fill('2024-03-05'); await page.locator('[data-cell="prior.fev1"] input').first().fill('1.85');
 
   // ---- minimal wording (the default): findings only, serial change inside the section, no numbers line
   await page.locator('[data-field="spiro.ratio"] .sg[data-v="low"]').click();

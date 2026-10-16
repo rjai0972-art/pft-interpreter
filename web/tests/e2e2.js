@@ -12,6 +12,8 @@ async function loadExample(page, i, tap) {
   await page.waitForSelector('#doc');
 }
 const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m); } };
+const tickTest = async (pg, key, on) => { const d = pg.locator('details.more-tests'); await d.evaluate(e => { e.open = true; }); const cb = pg.locator('[data-test-on="' + key + '"]'); if (on) await cb.check(); else await cb.uncheck(); await pg.waitForTimeout(60); };
+const tickAll = async (pg) => { const keys = await pg.locator('[data-test-on]').evaluateAll(els => els.filter(e => !e.checked).map(e => e.getAttribute('data-test-on'))); for (const k of keys) await tickTest(pg, k, true); };
 (async () => {
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, acceptDownloads: true });
@@ -26,7 +28,7 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
   /* ---------------- (i) pop-ups ---------------- */
   const pop = page.locator('#pop');
   ok(await pop.isHidden(), 'pop-up hidden at start');
-  await page.locator('.tchip[data-test="spiro"]').click();
+  // spirometry is on the page by default
   const ibTest = page.locator('details.tsec[data-mod="spiro"] > summary .ib').first();
   await ibTest.hover(); await page.waitForTimeout(350);
   ok(await pop.isVisible(), 'hover opens the pop-up');
@@ -66,7 +68,7 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
   await page.locator('[data-field="spiro.fvc"] .ib').first().click(); await page.waitForTimeout(100); await inView('FVC info'); await page.keyboard.press('Escape');
 
   // every (i) on every step maps to a glossary entry
-  for (const k of await page.locator('.tchip[aria-pressed="false"]').evaluateAll(els => els.map(e => e.getAttribute('data-test')))) await page.locator('.tchip[data-test="' + k + '"]').click();
+  await tickAll(page);
   const secs = await page.locator('details.tsec').evaluateAll(els => els.map(e => e.getAttribute('data-mod')));
   let totalIb = 0, perStep = {};
   const bad = await page.evaluate(() => Array.from(document.querySelectorAll('[data-gloss]')).filter(e => !window.PFT_GLOSS.terms[e.getAttribute('data-gloss')]).length);
@@ -285,7 +287,7 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
   await mp.goto(FILE); await mp.waitForSelector('#top');
   const ov = async (label) => { const o = await mp.evaluate(() => ({ sw: document.documentElement.scrollWidth, iw: window.innerWidth })); ok(o.sw <= o.iw + 1, 'no horizontal overflow at 400px: ' + label + ' (' + o.sw + ' vs ' + o.iw + ')'); };
   await ov('empty page');
-  await mp.locator('.tchip[data-test="spiro"]').tap();
+  // spirometry is on the page by default
   await mp.locator('[data-field="spiro.fvc"] .ib').first().tap(); await mp.waitForTimeout(200);
   const pb = await mp.locator('#pop').boundingBox();
   ok(pb && pb.x >= 0 && pb.x + pb.width <= 400.5, 'pop-up fits at 400px: ' + JSON.stringify(pb));
