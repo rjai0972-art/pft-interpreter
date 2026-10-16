@@ -81,7 +81,7 @@ and the single-file browser version (`PFT_Interpreter_standalone.html`) always w
 - Code signing is optional and not set up. For Windows add a signing certificate to the build; for Mac add an Apple Developer ID and notarization.
   Until then the first-launch steps above are needed.
 
-## How the reading is built (version 7.3)
+## How the reading is built (version 7.4)
 
 The rules layer computes every measurement state before any wording is chosen (ERS/ATS 2022 z-scores and the LLN;
 a reviewed adult phrase catalog anchored to the ERS/ATS 2022, ATS/ERS 2019, ERS/ATS 2023, ERS/ATS 2017, ERS 2019 and
@@ -124,7 +124,8 @@ page from the start; the other tests live in an "Additional studies" list, where
 page and a second tick to make it a default (remembered on the device). Then two slim lines for the indications and
 the settings. Each test is a collapsible section beneath, in test order, with the test-quality grading as a link on
 the title line, the (i) at the side, and the "Bronchodilator", "Prior study" and "Values" toggles on the group
-header. By default an index is one line: its label and its category chips; no value boxes. The boxes appear as one
+header. By default an index is one line: its label and its category chips — one chip size, in aligned columns (WNL,
+Near LLN, Mild or Low, Moderate, Severe, High) so the rows of a section line up; no value boxes. The boxes appear as one
 comparison table when a toggle asks for them — a row per index, a column group per study: this study (z-score, value,
 % predicted), post-bronchodilator (value and change), and one column per prior study with the study's date in the
 column header ("+ older" adds another); a typed z-score sets the category, and a typed value sets it where a threshold
@@ -141,9 +142,13 @@ anterior-view map and a scope view from wherever you are, with the landmarks, th
 that wall, and a ring of the structures that lie against the airway at that level — arteries, veins, the oesophagus
 and the nodal stations in their usual clock positions, the way an EBUS atlas lays them out, with two levels for the
 trachea; a drill that hides the labels and asks for a segment from the carina) with a navigable 3D model of the same
-tree (three.js, inlined, MIT): orbit the whole tree, or stand inside the selected airway where the openings ahead are
+tree (three.js, inlined, MIT): orbit the whole tree; stand inside the selected airway where the openings ahead are
 real holes in a wall built on the fly by marching cubes over the airway capsules, with cartilage rings in front and
-the flat membrane behind — a procedural model from standard dimensions, not a patient's CT — plus links to CT-derived
+the flat membrane behind, and move a centimetre at a time along airways of real length (trachea 11 cm, right main
+2.4 cm, left main 4.6 cm …) with a readout of the depth, the distance to the next carina and the distance from the
+vocal cords; or open the mediastinum, a third model with the great vessels, the oesophagus, the spine, the heart and
+the nodal stations around the tree, rotatable, with a ring marking where the scope is so the cross-section ring of the
+scope view can be read against it — a procedural model from standard dimensions, not a patient's CT — plus links to CT-derived
 models and a virtual-bronchoscopy simulator on their own sites; the IASLC nodal-station map (borders,
 N category, which of EBUS, EUS and mediastinoscopy reaches each station, where to put the transducer, a schematic of
 the EBUS picture — the node and the vessels around it on the screen, drawn, not photographed — and a tap-the-station

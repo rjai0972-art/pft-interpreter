@@ -1102,3 +1102,27 @@ table.ct .ix-c.txt { width: 64px; }
 .an-pic figcaption { font-size: 11px; color: var(--muted); display: flex; justify-content: space-between; gap: 6px; }
 .an-pics-add { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
 .an-pics-add label.btn { cursor: pointer; }
+
+/* ---- v7.4: the 3D mediastinum view and the scope's position at real lengths */
+.an-3d-nav { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.an-3d-depth { font-size: 12px; color: var(--ink-2); min-width: 0; }
+
+/* ---- v7.4: aligned chips — one label column per section, equal chip columns, severity left to right, High at the end */
+.tsec .ixg .ix, .tsec .ixg.stack .ix { grid-template-columns: var(--lw, 100px) minmax(0, 1fr); }
+.tsec .ixg.rows .ix { grid-template-columns: var(--lw, 100px) minmax(0, 1fr) auto; }
+.tsec .ix-seg { display: grid; grid-template-columns: repeat(6, 68px); grid-auto-flow: row dense; gap: 3px 4px; align-items: stretch; }
+.tsec .ix-seg[role="radiogroup"] { display: flex; flex-wrap: wrap; }
+.tsec .ix-seg[role="radiogroup"] .ch { width: auto; overflow: visible; }
+.tsec .ix-seg .sg, .tsec .ix-seg .ch { width: 100%; min-width: 0; padding-inline: 4px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tsec .ix-seg .sg[data-v="wnl"] { grid-column: 1; } .tsec .ix-seg .sg[data-v="bl"] { grid-column: 2; }
+.tsec .ix-seg .sg[data-v="mild"], .tsec .ix-seg .sg[data-v="low"] { grid-column: 3; }
+.tsec .ix-seg .sg[data-v="mod"] { grid-column: 4; } .tsec .ix-seg .sg[data-v="sev"] { grid-column: 5; } .tsec .ix-seg .sg[data-v="high"] { grid-column: 6; }
+.tsec .ix-l { align-self: center; }
+.tsec .ix-l .prm-lw { flex-wrap: wrap; gap: 0 4px; }
+.tsec .ix-l .prm-l { overflow-wrap: anywhere; }
+@media (max-width: 560px) {
+  .tsec .ixg .ix, .tsec .ixg.stack .ix, .tsec .ixg.rows .ix { grid-template-columns: var(--lw, 82px) minmax(0, 1fr); }
+  .tsec .ix-seg { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .tsec .ix-seg[role="radiogroup"] { display: flex; }
+  .tsec .ix-seg .sg[data-v] { grid-column: auto; }
+}

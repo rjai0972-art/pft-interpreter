@@ -2,8 +2,9 @@
    Topics use the same block types as education.js plus { widget: 'tree' | 'stations' | 'vq' | 'lido' | 'lobes' | 'zones' }.
    TREE, STATIONS and SEGMENTS are the data behind the interactive pictures in ui_4b_anatomy.js.
    Scope-view convention: anterior (cartilage rings) at 12 o'clock, posterior membrane at 6; the patient's right on the
-   right of the picture, as in the ATS boot-camp and Olympus atlases (the bronchoscopist facing the patient). From the
-   head of the bed the picture is mirrored left–right; the viewer has a switch for that. */
+   right of the picture — the monitor image with the bronchoscopist at the head of the bed and the scope's 12 o'clock to
+   the front (the ATS boot-camp and Olympus atlases). Facing the patient the picture is reversed; the viewer has a
+   mirror switch for that. */
 (function (root) {
 'use strict';
 
@@ -104,7 +105,7 @@ Object.keys(TREE).forEach(k => { TREE[k].id = k; TREE[k].kids.forEach(c => { TRE
 const TREE3D = {
   larynx: { a: [0, 2, 126], b: [0, 0, 110], r: 7.5, rings: false },
   trachea: { a: [0, 0, 110], b: [0, 0, 0], r: 9, rings: true },
-  rmb: { b: [-13, -3, -24], r: 7, rings: true }, rul: { b: [-34, -8, -18], r: 4.5 },
+  rmb: { b: [-12, -3, -21], r: 7, rings: true }, rul: { b: [-34, -8, -18], r: 4.5 },
   rb1: { b: [-42, -6, 6], r: 3 }, rb2: { b: [-54, -24, -14], r: 3 }, rb3: { b: [-54, 10, -26], r: 3 },
   bi: { b: [-18, -6, -48], r: 6 }, rml: { b: [-30, 16, -66], r: 4 }, rb4: { b: [-50, 22, -80], r: 2.8 }, rb5: { b: [-28, 30, -86], r: 2.8 },
   rll: { b: [-22, -12, -62], r: 5 }, rb6: { b: [-32, -34, -62], r: 3 }, rb7: { b: [-14, -6, -94], r: 2.5 }, rb8: { b: [-36, 14, -100], r: 3 }, rb9: { b: [-54, -6, -98], r: 3 }, rb10: { b: [-30, -30, -102], r: 3.2 },
@@ -113,6 +114,47 @@ const TREE3D = {
   lll: { b: [42, -14, -56], r: 5 }, lb6: { b: [50, -38, -54], r: 3 }, lb78: { b: [40, 10, -98], r: 3 }, lb9: { b: [66, -6, -96], r: 3 }, lb10: { b: [48, -34, -102], r: 3.2 }
 };
 Object.keys(TREE3D).forEach(k => { const n = TREE3D[k]; if (!n.a) n.a = TREE3D[TREE[k].parent].b; });
+/* what the next branching is called, for the distance readout of the inside view */
+const NEXT_BRANCH = { larynx: 'the subglottis', trachea: 'the carina', rmb: 'the RUL takeoff', bi: 'the RML / RLL origin', lmb: 'the secondary carina', rul: 'the segmental openings', rml: 'the segmental openings', rll: 'the basal openings', lul: 'the upper division / lingula split', lud: 'the segmental openings', ling: 'the segmental openings', lll: 'the basal openings' };
+
+/* ------------------------------------------------------------------ the mediastinum around the tree (3D)
+   Same frame and units as TREE3D (mm; x toward the patient's left, y anterior, z superior, carina at the origin).
+   Vessels are smooth tubes through the listed points; blobs are ellipsoids (centre, semi-axes); nodes are spheres.
+   Shapes and positions are the textbook ones at adult size, drawn to show relations, not a patient's CT. */
+const MEDIASTINUM = {
+  vessels: [
+    { id: 'svc', k: 'v', l: 'SVC', r: 8, pts: [[-24, 12, 82], [-24, 12, 50], [-25, 10, 20], [-26, 8, 0], [-26, 6, -14]], lp: 1 },
+    { id: 'rbcv', k: 'v', l: 'R brachiocephalic v.', nl: true, r: 6, pts: [[-32, 14, 106], [-28, 13, 92], [-24, 12, 82]], lp: 0 },
+    { id: 'lbcv', k: 'v', l: 'L brachiocephalic v.', sl: 'L brachioceph. v.', r: 6.5, pts: [[36, 16, 104], [14, 24, 92], [-8, 24, 86], [-24, 12, 82]], lp: 1 },
+    { id: 'azy', k: 'v', l: 'azygos v.', r: 4.5, pts: [[-12, -24, -70], [-12, -24, -20], [-12, -22, 8], [-16, -14, 16], [-21, -2, 18], [-25, 8, 14]], lp: 3 },
+    { id: 'aao', k: 'a', l: 'ascending aorta', sl: 'asc. aorta', r: 13, pts: [[14, 42, -30], [8, 40, -8], [0, 36, 14], [-2, 32, 28]], lp: 1 },
+    { id: 'arch', k: 'a', l: 'aortic arch', r: 12, pts: [[-2, 32, 28], [4, 28, 40], [14, 18, 40], [24, 4, 32], [30, -10, 18], [30, -18, 4]], lp: 2 },
+    { id: 'dao', k: 'a', l: 'descending aorta', sl: 'desc. aorta', r: 11, pts: [[30, -18, 4], [28, -24, -30], [24, -27, -80], [18, -28, -120]], lp: 2 },
+    { id: 'bca', k: 'a', l: 'brachiocephalic a.', sl: 'brachioceph. a.', r: 5.5, pts: [[0, 32, 38], [-8, 26, 60], [-16, 20, 84], [-22, 18, 108]], lp: 2 },
+    { id: 'lcc', k: 'a', l: 'L common carotid a.', nl: true, r: 4.5, pts: [[8, 28, 42], [10, 20, 70], [12, 14, 108]], lp: 2 },
+    { id: 'lsc', k: 'a', l: 'L subclavian a.', nl: true, r: 4.5, pts: [[18, 16, 40], [22, 4, 64], [28, -6, 92], [36, -8, 108]], lp: 2 },
+    { id: 'mpa', k: 'a', l: 'main PA', r: 13, pts: [[-2, 48, -34], [2, 40, -16], [6, 30, -4]], lp: 1 },
+    { id: 'rpa', k: 'a', l: 'right PA', r: 10, pts: [[6, 30, -4], [-10, 28, -8], [-26, 20, -18], [-30, 12, -34], [-34, 4, -54], [-34, -4, -74]], lp: 2 },
+    { id: 'lpa', k: 'a', l: 'left PA', r: 9, pts: [[6, 30, -4], [20, 18, -4], [36, 6, -12], [48, -12, -28], [48, -16, -44], [44, -18, -64], [40, -20, -84]], lp: 2 },
+    { id: 'rspv', k: 'v', l: 'R superior pulmonary v.', nl: true, r: 6, pts: [[-46, 22, -36], [-32, 20, -44], [-22, 16, -50]], lp: 0 },
+    { id: 'ripv', k: 'v', l: 'R inferior pulmonary v.', nl: true, r: 6, pts: [[-46, -2, -74], [-32, 8, -64], [-22, 12, -60]], lp: 0 },
+    { id: 'lspv', k: 'v', l: 'L superior pulmonary v.', nl: true, r: 6, pts: [[48, 14, -32], [32, 18, -40], [22, 16, -50]], lp: 0 },
+    { id: 'lipv', k: 'v', l: 'L inferior pulmonary v.', nl: true, r: 6, pts: [[46, -6, -72], [32, 8, -62], [22, 12, -60]], lp: 0 },
+    { id: 'eso', k: 'e', l: 'oesophagus', r: 7, pts: [[2, -18, 126], [0, -20, 60], [2, -22, 10], [4, -24, -30], [10, -24, -80], [18, -18, -124]], lp: 4 },
+    { id: 'spine', k: 'o', l: 'vertebral column', sl: 'spine', r: 15, pts: [[0, -46, 130], [0, -46, 0], [0, -46, -130]], lp: 2 }
+  ],
+  blobs: [
+    { id: 'la', k: 'v', l: 'left atrium', c: [0, 16, -56], s: [30, 15, 20] },
+    { id: 'heart', k: 'h', l: 'heart', c: [6, 40, -80], s: [46, 36, 52] }
+  ],
+  nodes: [
+    { id: '1R', p: [-26, 10, 112] }, { id: '1L', p: [26, 10, 112] },
+    { id: '2R', p: [-13, 9, 70] }, { id: '2L', p: [13, 6, 60] }, { id: '3a', p: [-10, 30, 56] }, { id: '3p', p: [0, -12, 36] },
+    { id: '4R', p: [-15, 6, 22] }, { id: '4L', p: [14, 3, 12] }, { id: '5', p: [26, 18, 20] }, { id: '6', p: [12, 40, 28] },
+    { id: '7', p: [0, -8, -24] }, { id: '8', p: [8, -14, -70] }, { id: '9R', p: [-26, -12, -98] }, { id: '9L', p: [36, -12, -98] },
+    { id: '10R', p: [-20, 3, -14] }, { id: '10L', p: [34, 1, -16] }, { id: '11Rs', p: [-26, -4, -30] }, { id: '11Ri', p: [-24, 6, -52] }, { id: '11L', p: [44, -2, -36] }
+  ]
+};
 
 /* ------------------------------------------------------------------ structures around the airway
    What lies against the wall at each level, drawn around the scope view as a schematic ring (an EBUS atlas page without
@@ -346,7 +388,7 @@ T.tree = { title: 'Bronchial tree navigator', kicker: 'Walk the airway, name wha
   { widget: 'tree3d' },
   { h: 'Orientation rules', ul: [
     'Find the posterior membrane. Cartilage rings are in front and at the sides; the flat wall with longitudinal folds is behind. Keep it at 6 o’clock and the picture is oriented.',
-    'The picture here puts the patient’s right on the right, as when the bronchoscopist faces the patient (the ATS and Olympus atlases). From the head of the bed the image is a mirror image — flip the switch to practise that way.',
+    'The picture here puts the patient’s right on the right with the posterior membrane at 6 o’clock: the monitor image with the bronchoscopist at the head of the bed and the scope’s 12 o’clock to the front (the ATS and Olympus atlases). Standing in front of a sitting patient the picture is reversed — flip the switch to practise with the patient’s right on the left.',
     'Right side: main bronchus → upper lobe laterally at 2 cm → bronchus intermedius → middle lobe in front, lower lobe behind, B6 opening backward just inside the lower lobe. Left side: long main bronchus → secondary carina → upper lobe (upper division plus lingula) in front and above, lower lobe behind.',
     'Count the openings. Two in front on the right means middle lobe (B4, B5); four or five behind means lower lobe. A single posterior opening at the lower lobe entrance is B6, not the basal trunk.',
     'Turn the scope on its axis to bring an orifice into the centre of the picture before flexing into it; forcing flexion against the wall is what damages scopes and mucosa.'] },
@@ -635,6 +677,6 @@ const GROUPS = [
   { title: 'Bronchoscopy', ids: ['bronch_basics', 'bronch_prep', 'sedation', 'antithrombotic', 'bal', 'sampling', 'icu', 'ebus'] }
 ];
 
-root.PFT_ANAT = { topics: T, groups: GROUPS, TREE: TREE, TREE3D: TREE3D, STATIONS: STATIONS, SEGMENTS: SEGMENTS, LANDMARKS: LANDMARKS, SONO: SONO };
+root.PFT_ANAT = { topics: T, groups: GROUPS, TREE: TREE, TREE3D: TREE3D, STATIONS: STATIONS, SEGMENTS: SEGMENTS, LANDMARKS: LANDMARKS, SONO: SONO, MEDIASTINUM: MEDIASTINUM, NEXT_BRANCH: NEXT_BRANCH };
 if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_ANAT;
 })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this));

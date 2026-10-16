@@ -187,7 +187,7 @@ function treeNav() {
   const mirrorId = uid('mir'), landId = uid('lnd');
   const mirror = h('div', { class: 'an-switches' }, [
     h('label', { class: 'an-mirror', for: landId }, [h('input', { type: 'checkbox', id: landId, checked: treeLand, 'data-landmarks': '1', onchange: (e) => { treeLand = e.target.checked; prefSet(LAND_KEY, treeLand); render(); } }), 'Landmarks around the airway (vessels, nodes, oesophagus)']),
-    h('label', { class: 'an-mirror', for: mirrorId }, [h('input', { type: 'checkbox', id: mirrorId, checked: treeMirror, 'data-mirror': '1', onchange: (e) => { treeMirror = e.target.checked; prefSet(MIRROR_KEY, treeMirror); render(); } }), 'Mirror the picture (bronchoscopist at the head of the bed)'])
+    h('label', { class: 'an-mirror', for: mirrorId }, [h('input', { type: 'checkbox', id: mirrorId, checked: treeMirror, 'data-mirror': '1', onchange: (e) => { treeMirror = e.target.checked; prefSet(MIRROR_KEY, treeMirror); render(); } }), 'Mirror the picture (patient’s right on the left, as seen facing the patient)'])
   ]);
   const notes = h('div', { class: 'an-notes' }, [
     h('h3', { text: 'Where you are' }),
@@ -214,7 +214,7 @@ function treeNav() {
     h('div', { class: 'an-pics' }, [
       h('figure', { class: 'an-fig' }, [treeMap(), h('figcaption', { text: 'Anterior view — tap any branch' })]),
       h('figure', { class: 'an-fig' }, [scopeView(),
-        landOn() && treeAt === 'trachea' ? h('div', { class: 'seg an-level', role: 'radiogroup', 'aria-label': 'Level of the trachea' }, [['upper', 'Upper trachea'], ['lower', 'Lower trachea and carina']].map(o => h('button', { type: 'button', class: 'ch', role: 'radio', 'data-level': o[0], 'aria-checked': String(treeLevel === o[0]), text: o[1], onclick: () => { treeLevel = o[0]; render(); } }))) : null,
+        landOn() && treeAt === 'trachea' ? h('div', { class: 'seg an-level', role: 'radiogroup', 'aria-label': 'Level of the trachea' }, [['upper', 'Upper trachea'], ['lower', 'Lower trachea and carina']].map(o => h('button', { type: 'button', class: 'ch', role: 'radio', 'data-level': o[0], 'aria-checked': String(treeLevel === o[0]), text: o[1], onclick: () => { treeLevel = o[0]; if (typeof THREE !== 'undefined') t3SetDepth(o[0] === 'upper' ? 30 : 95); render(); } }))) : null,
         landOn() ? landLegend() : null,
         h('figcaption', { text: 'Scope view from the ' + n.name.toLowerCase() + ' — tap an opening to advance' + (landOn() ? '; the ring shows what lies against the wall at this level (hover or tap a structure for its note)' : '') })])
     ]),

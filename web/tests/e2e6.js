@@ -239,8 +239,10 @@ let pageRef = null;
   await page.locator('#theme').click();
   ok(await page.evaluate(() => document.documentElement.getAttribute('data-theme')) === 'dark', 'dark theme applied');
   ok(/rgb\(31, 30, 27\)/.test(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)), 'charcoal background');
+  await page.waitForTimeout(300);   // let the storage service commit the preference before the page goes away
   await page.reload(); await page.waitForSelector('#top');
-  ok(await page.evaluate(() => document.documentElement.getAttribute('data-theme')) === 'dark', 'theme remembered');
+  const remembered = await page.waitForFunction(() => document.documentElement.getAttribute('data-theme') === 'dark', null, { timeout: 4000 }).then(() => true, () => false);   // the boot script applies the saved theme once it runs
+  ok(remembered, 'theme remembered');
   await page.locator('#theme').click();
   ok(/rgb\(243, 240, 234\)/.test(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)), 'linen background');
 

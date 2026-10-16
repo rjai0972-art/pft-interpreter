@@ -56,9 +56,14 @@ the post-bronchodilator value and change, one column per prior study with the da
 that table when a prompt asks for a number. The anatomy area (`src/ui_4b_anatomy.js`, data in `src/anatomy.js`):
 `LANDMARKS` lists the structures around each airway level by clock position (anterior 12, patient's right 3; the
 trachea has `trachea_upper` and `trachea`) and `landRing` draws them around the scope view, growing the picture to fit
-every label; `SONO` describes the EBUS picture of each reachable station and `sonoFig` draws it; `picsBlock` keeps the
+every label; `MEDIASTINUM` lists the vessels (tubes through points), blobs and stations around the tree for the 3D mediastinum view
+and `NEXT_BRANCH` names the next carina for the depth readout; `SONO` describes the EBUS picture of each reachable
+station and `sonoFig` draws it; `picsBlock` keeps the
 user's own photos per view or station in `localStorage` (`pft.anat.pics.v1`, scaled to about 900 px) — nothing is
-uploaded and no published atlas image is bundled.
+uploaded and no published atlas image is bundled. The 3D module (`src/ui_4c_tree3d.js`) maps the model frame (x toward
+the patient's left, y anterior, z superior) to the scene as (x, z, y) — a right-handed mapping; negating an axis would
+mirror the anatomy — and keeps the scope's depth along the current airway (`T3.depth`, millimetres; `t3Move`,
+`t3Enter`, `t3DepthText`), held a centimetre back from any carina so both openings stay in view.
 
 `catalog/` holds the handoff package: the phrase catalog (source of truth), its schema, the rules specification, the
 human-readable reference and the test vectors. `PFT_Rules_and_Integration.txt` is the rule specification the engine

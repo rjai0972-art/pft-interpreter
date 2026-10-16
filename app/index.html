@@ -1112,6 +1112,30 @@ table.ct .ix-c.txt { width: 64px; }
 .an-pics-add { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
 .an-pics-add label.btn { cursor: pointer; }
 
+/* ---- v7.4: the 3D mediastinum view and the scope's position at real lengths */
+.an-3d-nav { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.an-3d-depth { font-size: 12px; color: var(--ink-2); min-width: 0; }
+
+/* ---- v7.4: aligned chips — one label column per section, equal chip columns, severity left to right, High at the end */
+.tsec .ixg .ix, .tsec .ixg.stack .ix { grid-template-columns: var(--lw, 100px) minmax(0, 1fr); }
+.tsec .ixg.rows .ix { grid-template-columns: var(--lw, 100px) minmax(0, 1fr) auto; }
+.tsec .ix-seg { display: grid; grid-template-columns: repeat(6, 68px); grid-auto-flow: row dense; gap: 3px 4px; align-items: stretch; }
+.tsec .ix-seg[role="radiogroup"] { display: flex; flex-wrap: wrap; }
+.tsec .ix-seg[role="radiogroup"] .ch { width: auto; overflow: visible; }
+.tsec .ix-seg .sg, .tsec .ix-seg .ch { width: 100%; min-width: 0; padding-inline: 4px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tsec .ix-seg .sg[data-v="wnl"] { grid-column: 1; } .tsec .ix-seg .sg[data-v="bl"] { grid-column: 2; }
+.tsec .ix-seg .sg[data-v="mild"], .tsec .ix-seg .sg[data-v="low"] { grid-column: 3; }
+.tsec .ix-seg .sg[data-v="mod"] { grid-column: 4; } .tsec .ix-seg .sg[data-v="sev"] { grid-column: 5; } .tsec .ix-seg .sg[data-v="high"] { grid-column: 6; }
+.tsec .ix-l { align-self: center; }
+.tsec .ix-l .prm-lw { flex-wrap: wrap; gap: 0 4px; }
+.tsec .ix-l .prm-l { overflow-wrap: anywhere; }
+@media (max-width: 560px) {
+  .tsec .ixg .ix, .tsec .ixg.stack .ix, .tsec .ixg.rows .ix { grid-template-columns: var(--lw, 82px) minmax(0, 1fr); }
+  .tsec .ix-seg { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .tsec .ix-seg[role="radiogroup"] { display: flex; }
+  .tsec .ix-seg .sg[data-v] { grid-column: auto; }
+}
+
 </style>
 </head>
 <body>
@@ -5531,7 +5555,7 @@ function interpret(raw) {
 }
 
 const API = {
-  version: '7.3.0',
+  version: '7.4.0',
   catalogVersion: CATALOG.version,
   Z_LLN: Z_LLN, Z_ULN: Z_ULN, STYLES: STYLES,
   TESTS: TESTS, PRESETS: PRESETS, SCHEMA: SCHEMA, LOOPS: LOOPS, INDICATIONS: INDICATIONS, KIND_OPTS: KIND_OPTS, PRIOR_FIELDS: PRIOR_FIELDS, CUR_FIELDS: CUR_FIELDS, MAX_PRIORS: MAX_PRIORS, MAX_TREND: MAX_TREND,
@@ -6300,8 +6324,9 @@ if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_E
    Topics use the same block types as education.js plus { widget: 'tree' | 'stations' | 'vq' | 'lido' | 'lobes' | 'zones' }.
    TREE, STATIONS and SEGMENTS are the data behind the interactive pictures in ui_4b_anatomy.js.
    Scope-view convention: anterior (cartilage rings) at 12 o'clock, posterior membrane at 6; the patient's right on the
-   right of the picture, as in the ATS boot-camp and Olympus atlases (the bronchoscopist facing the patient). From the
-   head of the bed the picture is mirrored left–right; the viewer has a switch for that. */
+   right of the picture — the monitor image with the bronchoscopist at the head of the bed and the scope's 12 o'clock to
+   the front (the ATS boot-camp and Olympus atlases). Facing the patient the picture is reversed; the viewer has a
+   mirror switch for that. */
 (function (root) {
 'use strict';
 
@@ -6402,7 +6427,7 @@ Object.keys(TREE).forEach(k => { TREE[k].id = k; TREE[k].kids.forEach(c => { TRE
 const TREE3D = {
   larynx: { a: [0, 2, 126], b: [0, 0, 110], r: 7.5, rings: false },
   trachea: { a: [0, 0, 110], b: [0, 0, 0], r: 9, rings: true },
-  rmb: { b: [-13, -3, -24], r: 7, rings: true }, rul: { b: [-34, -8, -18], r: 4.5 },
+  rmb: { b: [-12, -3, -21], r: 7, rings: true }, rul: { b: [-34, -8, -18], r: 4.5 },
   rb1: { b: [-42, -6, 6], r: 3 }, rb2: { b: [-54, -24, -14], r: 3 }, rb3: { b: [-54, 10, -26], r: 3 },
   bi: { b: [-18, -6, -48], r: 6 }, rml: { b: [-30, 16, -66], r: 4 }, rb4: { b: [-50, 22, -80], r: 2.8 }, rb5: { b: [-28, 30, -86], r: 2.8 },
   rll: { b: [-22, -12, -62], r: 5 }, rb6: { b: [-32, -34, -62], r: 3 }, rb7: { b: [-14, -6, -94], r: 2.5 }, rb8: { b: [-36, 14, -100], r: 3 }, rb9: { b: [-54, -6, -98], r: 3 }, rb10: { b: [-30, -30, -102], r: 3.2 },
@@ -6411,6 +6436,47 @@ const TREE3D = {
   lll: { b: [42, -14, -56], r: 5 }, lb6: { b: [50, -38, -54], r: 3 }, lb78: { b: [40, 10, -98], r: 3 }, lb9: { b: [66, -6, -96], r: 3 }, lb10: { b: [48, -34, -102], r: 3.2 }
 };
 Object.keys(TREE3D).forEach(k => { const n = TREE3D[k]; if (!n.a) n.a = TREE3D[TREE[k].parent].b; });
+/* what the next branching is called, for the distance readout of the inside view */
+const NEXT_BRANCH = { larynx: 'the subglottis', trachea: 'the carina', rmb: 'the RUL takeoff', bi: 'the RML / RLL origin', lmb: 'the secondary carina', rul: 'the segmental openings', rml: 'the segmental openings', rll: 'the basal openings', lul: 'the upper division / lingula split', lud: 'the segmental openings', ling: 'the segmental openings', lll: 'the basal openings' };
+
+/* ------------------------------------------------------------------ the mediastinum around the tree (3D)
+   Same frame and units as TREE3D (mm; x toward the patient's left, y anterior, z superior, carina at the origin).
+   Vessels are smooth tubes through the listed points; blobs are ellipsoids (centre, semi-axes); nodes are spheres.
+   Shapes and positions are the textbook ones at adult size, drawn to show relations, not a patient's CT. */
+const MEDIASTINUM = {
+  vessels: [
+    { id: 'svc', k: 'v', l: 'SVC', r: 8, pts: [[-24, 12, 82], [-24, 12, 50], [-25, 10, 20], [-26, 8, 0], [-26, 6, -14]], lp: 1 },
+    { id: 'rbcv', k: 'v', l: 'R brachiocephalic v.', nl: true, r: 6, pts: [[-32, 14, 106], [-28, 13, 92], [-24, 12, 82]], lp: 0 },
+    { id: 'lbcv', k: 'v', l: 'L brachiocephalic v.', sl: 'L brachioceph. v.', r: 6.5, pts: [[36, 16, 104], [14, 24, 92], [-8, 24, 86], [-24, 12, 82]], lp: 1 },
+    { id: 'azy', k: 'v', l: 'azygos v.', r: 4.5, pts: [[-12, -24, -70], [-12, -24, -20], [-12, -22, 8], [-16, -14, 16], [-21, -2, 18], [-25, 8, 14]], lp: 3 },
+    { id: 'aao', k: 'a', l: 'ascending aorta', sl: 'asc. aorta', r: 13, pts: [[14, 42, -30], [8, 40, -8], [0, 36, 14], [-2, 32, 28]], lp: 1 },
+    { id: 'arch', k: 'a', l: 'aortic arch', r: 12, pts: [[-2, 32, 28], [4, 28, 40], [14, 18, 40], [24, 4, 32], [30, -10, 18], [30, -18, 4]], lp: 2 },
+    { id: 'dao', k: 'a', l: 'descending aorta', sl: 'desc. aorta', r: 11, pts: [[30, -18, 4], [28, -24, -30], [24, -27, -80], [18, -28, -120]], lp: 2 },
+    { id: 'bca', k: 'a', l: 'brachiocephalic a.', sl: 'brachioceph. a.', r: 5.5, pts: [[0, 32, 38], [-8, 26, 60], [-16, 20, 84], [-22, 18, 108]], lp: 2 },
+    { id: 'lcc', k: 'a', l: 'L common carotid a.', nl: true, r: 4.5, pts: [[8, 28, 42], [10, 20, 70], [12, 14, 108]], lp: 2 },
+    { id: 'lsc', k: 'a', l: 'L subclavian a.', nl: true, r: 4.5, pts: [[18, 16, 40], [22, 4, 64], [28, -6, 92], [36, -8, 108]], lp: 2 },
+    { id: 'mpa', k: 'a', l: 'main PA', r: 13, pts: [[-2, 48, -34], [2, 40, -16], [6, 30, -4]], lp: 1 },
+    { id: 'rpa', k: 'a', l: 'right PA', r: 10, pts: [[6, 30, -4], [-10, 28, -8], [-26, 20, -18], [-30, 12, -34], [-34, 4, -54], [-34, -4, -74]], lp: 2 },
+    { id: 'lpa', k: 'a', l: 'left PA', r: 9, pts: [[6, 30, -4], [20, 18, -4], [36, 6, -12], [48, -12, -28], [48, -16, -44], [44, -18, -64], [40, -20, -84]], lp: 2 },
+    { id: 'rspv', k: 'v', l: 'R superior pulmonary v.', nl: true, r: 6, pts: [[-46, 22, -36], [-32, 20, -44], [-22, 16, -50]], lp: 0 },
+    { id: 'ripv', k: 'v', l: 'R inferior pulmonary v.', nl: true, r: 6, pts: [[-46, -2, -74], [-32, 8, -64], [-22, 12, -60]], lp: 0 },
+    { id: 'lspv', k: 'v', l: 'L superior pulmonary v.', nl: true, r: 6, pts: [[48, 14, -32], [32, 18, -40], [22, 16, -50]], lp: 0 },
+    { id: 'lipv', k: 'v', l: 'L inferior pulmonary v.', nl: true, r: 6, pts: [[46, -6, -72], [32, 8, -62], [22, 12, -60]], lp: 0 },
+    { id: 'eso', k: 'e', l: 'oesophagus', r: 7, pts: [[2, -18, 126], [0, -20, 60], [2, -22, 10], [4, -24, -30], [10, -24, -80], [18, -18, -124]], lp: 4 },
+    { id: 'spine', k: 'o', l: 'vertebral column', sl: 'spine', r: 15, pts: [[0, -46, 130], [0, -46, 0], [0, -46, -130]], lp: 2 }
+  ],
+  blobs: [
+    { id: 'la', k: 'v', l: 'left atrium', c: [0, 16, -56], s: [30, 15, 20] },
+    { id: 'heart', k: 'h', l: 'heart', c: [6, 40, -80], s: [46, 36, 52] }
+  ],
+  nodes: [
+    { id: '1R', p: [-26, 10, 112] }, { id: '1L', p: [26, 10, 112] },
+    { id: '2R', p: [-13, 9, 70] }, { id: '2L', p: [13, 6, 60] }, { id: '3a', p: [-10, 30, 56] }, { id: '3p', p: [0, -12, 36] },
+    { id: '4R', p: [-15, 6, 22] }, { id: '4L', p: [14, 3, 12] }, { id: '5', p: [26, 18, 20] }, { id: '6', p: [12, 40, 28] },
+    { id: '7', p: [0, -8, -24] }, { id: '8', p: [8, -14, -70] }, { id: '9R', p: [-26, -12, -98] }, { id: '9L', p: [36, -12, -98] },
+    { id: '10R', p: [-20, 3, -14] }, { id: '10L', p: [34, 1, -16] }, { id: '11Rs', p: [-26, -4, -30] }, { id: '11Ri', p: [-24, 6, -52] }, { id: '11L', p: [44, -2, -36] }
+  ]
+};
 
 /* ------------------------------------------------------------------ structures around the airway
    What lies against the wall at each level, drawn around the scope view as a schematic ring (an EBUS atlas page without
@@ -6644,7 +6710,7 @@ T.tree = { title: 'Bronchial tree navigator', kicker: 'Walk the airway, name wha
   { widget: 'tree3d' },
   { h: 'Orientation rules', ul: [
     'Find the posterior membrane. Cartilage rings are in front and at the sides; the flat wall with longitudinal folds is behind. Keep it at 6 o’clock and the picture is oriented.',
-    'The picture here puts the patient’s right on the right, as when the bronchoscopist faces the patient (the ATS and Olympus atlases). From the head of the bed the image is a mirror image — flip the switch to practise that way.',
+    'The picture here puts the patient’s right on the right with the posterior membrane at 6 o’clock: the monitor image with the bronchoscopist at the head of the bed and the scope’s 12 o’clock to the front (the ATS and Olympus atlases). Standing in front of a sitting patient the picture is reversed — flip the switch to practise with the patient’s right on the left.',
     'Right side: main bronchus → upper lobe laterally at 2 cm → bronchus intermedius → middle lobe in front, lower lobe behind, B6 opening backward just inside the lower lobe. Left side: long main bronchus → secondary carina → upper lobe (upper division plus lingula) in front and above, lower lobe behind.',
     'Count the openings. Two in front on the right means middle lobe (B4, B5); four or five behind means lower lobe. A single posterior opening at the lower lobe entrance is B6, not the basal trunk.',
     'Turn the scope on its axis to bring an orifice into the centre of the picture before flexing into it; forcing flexion against the wall is what damages scopes and mucosa.'] },
@@ -6933,7 +6999,7 @@ const GROUPS = [
   { title: 'Bronchoscopy', ids: ['bronch_basics', 'bronch_prep', 'sedation', 'antithrombotic', 'bal', 'sampling', 'icu', 'ebus'] }
 ];
 
-root.PFT_ANAT = { topics: T, groups: GROUPS, TREE: TREE, TREE3D: TREE3D, STATIONS: STATIONS, SEGMENTS: SEGMENTS, LANDMARKS: LANDMARKS, SONO: SONO };
+root.PFT_ANAT = { topics: T, groups: GROUPS, TREE: TREE, TREE3D: TREE3D, STATIONS: STATIONS, SEGMENTS: SEGMENTS, LANDMARKS: LANDMARKS, SONO: SONO, MEDIASTINUM: MEDIASTINUM, NEXT_BRANCH: NEXT_BRANCH };
 if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_ANAT;
 })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this));
 
@@ -8853,7 +8919,7 @@ function treeNav() {
   const mirrorId = uid('mir'), landId = uid('lnd');
   const mirror = h('div', { class: 'an-switches' }, [
     h('label', { class: 'an-mirror', for: landId }, [h('input', { type: 'checkbox', id: landId, checked: treeLand, 'data-landmarks': '1', onchange: (e) => { treeLand = e.target.checked; prefSet(LAND_KEY, treeLand); render(); } }), 'Landmarks around the airway (vessels, nodes, oesophagus)']),
-    h('label', { class: 'an-mirror', for: mirrorId }, [h('input', { type: 'checkbox', id: mirrorId, checked: treeMirror, 'data-mirror': '1', onchange: (e) => { treeMirror = e.target.checked; prefSet(MIRROR_KEY, treeMirror); render(); } }), 'Mirror the picture (bronchoscopist at the head of the bed)'])
+    h('label', { class: 'an-mirror', for: mirrorId }, [h('input', { type: 'checkbox', id: mirrorId, checked: treeMirror, 'data-mirror': '1', onchange: (e) => { treeMirror = e.target.checked; prefSet(MIRROR_KEY, treeMirror); render(); } }), 'Mirror the picture (patient’s right on the left, as seen facing the patient)'])
   ]);
   const notes = h('div', { class: 'an-notes' }, [
     h('h3', { text: 'Where you are' }),
@@ -8880,7 +8946,7 @@ function treeNav() {
     h('div', { class: 'an-pics' }, [
       h('figure', { class: 'an-fig' }, [treeMap(), h('figcaption', { text: 'Anterior view — tap any branch' })]),
       h('figure', { class: 'an-fig' }, [scopeView(),
-        landOn() && treeAt === 'trachea' ? h('div', { class: 'seg an-level', role: 'radiogroup', 'aria-label': 'Level of the trachea' }, [['upper', 'Upper trachea'], ['lower', 'Lower trachea and carina']].map(o => h('button', { type: 'button', class: 'ch', role: 'radio', 'data-level': o[0], 'aria-checked': String(treeLevel === o[0]), text: o[1], onclick: () => { treeLevel = o[0]; render(); } }))) : null,
+        landOn() && treeAt === 'trachea' ? h('div', { class: 'seg an-level', role: 'radiogroup', 'aria-label': 'Level of the trachea' }, [['upper', 'Upper trachea'], ['lower', 'Lower trachea and carina']].map(o => h('button', { type: 'button', class: 'ch', role: 'radio', 'data-level': o[0], 'aria-checked': String(treeLevel === o[0]), text: o[1], onclick: () => { treeLevel = o[0]; if (typeof THREE !== 'undefined') t3SetDepth(o[0] === 'upper' ? 30 : 95); render(); } }))) : null,
         landOn() ? landLegend() : null,
         h('figcaption', { text: 'Scope view from the ' + n.name.toLowerCase() + ' — tap an opening to advance' + (landOn() ? '; the ring shows what lies against the wall at this level (hover or tap a structure for its note)' : '') })])
     ]),
@@ -9221,12 +9287,62 @@ function anatWidget(kind) {
    tap an opening to advance. A procedural model from standard dimensions, not a patient's CT. */
 const MC_EDGE = [0,265,515,778,1030,1295,1541,1804,2060,2309,2575,2822,3082,3331,3593,3840,400,153,915,666,1430,1183,1941,1692,2460,2197,2975,2710,3482,3219,3993,3728,560,825,51,314,1590,1855,1077,1340,2620,2869,2111,2358,3642,3891,3129,3376,928,681,419,170,1958,1711,1445,1196,2988,2725,2479,2214,4010,3747,3497,3232,1120,1385,1635,1898,102,367,613,876,3180,3429,3695,3942,2154,2403,2665,2912,1520,1273,2035,1786,502,255,1013,764,3580,3317,4095,3830,2554,2291,3065,2800,1616,1881,1107,1370,598,863,85,348,3676,3925,3167,3414,2650,2899,2137,2384,1984,1737,1475,1226,966,719,453,204,4044,3781,3535,3270,3018,2755,2505,2240,2240,2505,2755,3018,3270,3535,3781,4044,204,453,719,966,1226,1475,1737,1984,2384,2137,2899,2650,3414,3167,3925,3676,348,85,863,598,1370,1107,1881,1616,2800,3065,2291,2554,3830,4095,3317,3580,764,1013,255,502,1786,2035,1273,1520,2912,2665,2403,2154,3942,3695,3429,3180,876,613,367,102,1898,1635,1385,1120,3232,3497,3747,4010,2214,2479,2725,2988,1196,1445,1711,1958,170,419,681,928,3376,3129,3891,3642,2358,2111,2869,2620,1340,1077,1855,1590,314,51,825,560,3728,3993,3219,3482,2710,2975,2197,2460,1692,1941,1183,1430,666,915,153,400,3840,3593,3331,3082,2822,2575,2309,2060,1804,1541,1295,1030,778,515,265,0];
 const MC_TRI = [[],[0,8,3],[0,1,9],[1,8,3,9,8,1],[1,2,10],[0,8,3,1,2,10],[9,2,10,0,2,9],[2,8,3,2,10,8,10,9,8],[3,11,2],[0,11,2,8,11,0],[1,9,0,2,3,11],[1,11,2,1,9,11,9,8,11],[3,10,1,11,10,3],[0,10,1,0,8,10,8,11,10],[3,9,0,3,11,9,11,10,9],[9,8,10,10,8,11],[4,7,8],[4,3,0,7,3,4],[0,1,9,8,4,7],[4,1,9,4,7,1,7,3,1],[1,2,10,8,4,7],[3,4,7,3,0,4,1,2,10],[9,2,10,9,0,2,8,4,7],[2,10,9,2,9,7,2,7,3,7,9,4],[8,4,7,3,11,2],[11,4,7,11,2,4,2,0,4],[9,0,1,8,4,7,2,3,11],[4,7,11,9,4,11,9,11,2,9,2,1],[3,10,1,3,11,10,7,8,4],[1,11,10,1,4,11,1,0,4,7,11,4],[4,7,8,9,0,11,9,11,10,11,0,3],[4,7,11,4,11,9,9,11,10],[9,5,4],[9,5,4,0,8,3],[0,5,4,1,5,0],[8,5,4,8,3,5,3,1,5],[1,2,10,9,5,4],[3,0,8,1,2,10,4,9,5],[5,2,10,5,4,2,4,0,2],[2,10,5,3,2,5,3,5,4,3,4,8],[9,5,4,2,3,11],[0,11,2,0,8,11,4,9,5],[0,5,4,0,1,5,2,3,11],[2,1,5,2,5,8,2,8,11,4,8,5],[10,3,11,10,1,3,9,5,4],[4,9,5,0,8,1,8,10,1,8,11,10],[5,4,0,5,0,11,5,11,10,11,0,3],[5,4,8,5,8,10,10,8,11],[9,7,8,5,7,9],[9,3,0,9,5,3,5,7,3],[0,7,8,0,1,7,1,5,7],[1,5,3,3,5,7],[9,7,8,9,5,7,10,1,2],[10,1,2,9,5,0,5,3,0,5,7,3],[8,0,2,8,2,5,8,5,7,10,5,2],[2,10,5,2,5,3,3,5,7],[7,9,5,7,8,9,3,11,2],[9,5,7,9,7,2,9,2,0,2,7,11],[2,3,11,0,1,8,1,7,8,1,5,7],[11,2,1,11,1,7,7,1,5],[9,5,8,8,5,7,10,1,3,10,3,11],[5,7,0,5,0,9,7,11,0,1,0,10,11,10,0],[11,10,0,11,0,3,10,5,0,8,0,7,5,7,0],[11,10,5,7,11,5],[10,6,5],[0,8,3,5,10,6],[9,0,1,5,10,6],[1,8,3,1,9,8,5,10,6],[1,6,5,2,6,1],[1,6,5,1,2,6,3,0,8],[9,6,5,9,0,6,0,2,6],[5,9,8,5,8,2,5,2,6,3,2,8],[2,3,11,10,6,5],[11,0,8,11,2,0,10,6,5],[0,1,9,2,3,11,5,10,6],[5,10,6,1,9,2,9,11,2,9,8,11],[6,3,11,6,5,3,5,1,3],[0,8,11,0,11,5,0,5,1,5,11,6],[3,11,6,0,3,6,0,6,5,0,5,9],[6,5,9,6,9,11,11,9,8],[5,10,6,4,7,8],[4,3,0,4,7,3,6,5,10],[1,9,0,5,10,6,8,4,7],[10,6,5,1,9,7,1,7,3,7,9,4],[6,1,2,6,5,1,4,7,8],[1,2,5,5,2,6,3,0,4,3,4,7],[8,4,7,9,0,5,0,6,5,0,2,6],[7,3,9,7,9,4,3,2,9,5,9,6,2,6,9],[3,11,2,7,8,4,10,6,5],[5,10,6,4,7,2,4,2,0,2,7,11],[0,1,9,4,7,8,2,3,11,5,10,6],[9,2,1,9,11,2,9,4,11,7,11,4,5,10,6],[8,4,7,3,11,5,3,5,1,5,11,6],[5,1,11,5,11,6,1,0,11,7,11,4,0,4,11],[0,5,9,0,6,5,0,3,6,11,6,3,8,4,7],[6,5,9,6,9,11,4,7,9,7,11,9],[10,4,9,6,4,10],[4,10,6,4,9,10,0,8,3],[10,0,1,10,6,0,6,4,0],[8,3,1,8,1,6,8,6,4,6,1,10],[1,4,9,1,2,4,2,6,4],[3,0,8,1,2,9,2,4,9,2,6,4],[0,2,4,4,2,6],[8,3,2,8,2,4,4,2,6],[10,4,9,10,6,4,11,2,3],[0,8,2,2,8,11,4,9,10,4,10,6],[3,11,2,0,1,6,0,6,4,6,1,10],[6,4,1,6,1,10,4,8,1,2,1,11,8,11,1],[9,6,4,9,3,6,9,1,3,11,6,3],[8,11,1,8,1,0,11,6,1,9,1,4,6,4,1],[3,11,6,3,6,0,0,6,4],[6,4,8,11,6,8],[7,10,6,7,8,10,8,9,10],[0,7,3,0,10,7,0,9,10,6,7,10],[10,6,7,1,10,7,1,7,8,1,8,0],[10,6,7,10,7,1,1,7,3],[1,2,6,1,6,8,1,8,9,8,6,7],[2,6,9,2,9,1,6,7,9,0,9,3,7,3,9],[7,8,0,7,0,6,6,0,2],[7,3,2,6,7,2],[2,3,11,10,6,8,10,8,9,8,6,7],[2,0,7,2,7,11,0,9,7,6,7,10,9,10,7],[1,8,0,1,7,8,1,10,7,6,7,10,2,3,11],[11,2,1,11,1,7,10,6,1,6,7,1],[8,9,6,8,6,7,9,1,6,11,6,3,1,3,6],[0,9,1,11,6,7],[7,8,0,7,0,6,3,11,0,11,6,0],[7,11,6],[7,6,11],[3,0,8,11,7,6],[0,1,9,11,7,6],[8,1,9,8,3,1,11,7,6],[10,1,2,6,11,7],[1,2,10,3,0,8,6,11,7],[2,9,0,2,10,9,6,11,7],[6,11,7,2,10,3,10,8,3,10,9,8],[7,2,3,6,2,7],[7,0,8,7,6,0,6,2,0],[2,7,6,2,3,7,0,1,9],[1,6,2,1,8,6,1,9,8,8,7,6],[10,7,6,10,1,7,1,3,7],[10,7,6,1,7,10,1,8,7,1,0,8],[0,3,7,0,7,10,0,10,9,6,10,7],[7,6,10,7,10,8,8,10,9],[6,8,4,11,8,6],[3,6,11,3,0,6,0,4,6],[8,6,11,8,4,6,9,0,1],[9,4,6,9,6,3,9,3,1,11,3,6],[6,8,4,6,11,8,2,10,1],[1,2,10,3,0,11,0,6,11,0,4,6],[4,11,8,4,6,11,0,2,9,2,10,9],[10,9,3,10,3,2,9,4,3,11,3,6,4,6,3],[8,2,3,8,4,2,4,6,2],[0,4,2,4,6,2],[1,9,0,2,3,4,2,4,6,4,3,8],[1,9,4,1,4,2,2,4,6],[8,1,3,8,6,1,8,4,6,6,10,1],[10,1,0,10,0,6,6,0,4],[4,6,3,4,3,8,6,10,3,0,3,9,10,9,3],[10,9,4,6,10,4],[4,9,5,7,6,11],[0,8,3,4,9,5,11,7,6],[5,0,1,5,4,0,7,6,11],[11,7,6,8,3,4,3,5,4,3,1,5],[9,5,4,10,1,2,7,6,11],[6,11,7,1,2,10,0,8,3,4,9,5],[7,6,11,5,4,10,4,2,10,4,0,2],[3,4,8,3,5,4,3,2,5,10,5,2,11,7,6],[7,2,3,7,6,2,5,4,9],[9,5,4,0,8,6,0,6,2,6,8,7],[3,6,2,3,7,6,1,5,0,5,4,0],[6,2,8,6,8,7,2,1,8,4,8,5,1,5,8],[9,5,4,10,1,6,1,7,6,1,3,7],[1,6,10,1,7,6,1,0,7,8,7,0,9,5,4],[4,0,10,4,10,5,0,3,10,6,10,7,3,7,10],[7,6,10,7,10,8,5,4,10,4,8,10],[6,9,5,6,11,9,11,8,9],[3,6,11,0,6,3,0,5,6,0,9,5],[0,11,8,0,5,11,0,1,5,5,6,11],[6,11,3,6,3,5,5,3,1],[1,2,10,9,5,11,9,11,8,11,5,6],[0,11,3,0,6,11,0,9,6,5,6,9,1,2,10],[11,8,5,11,5,6,8,0,5,10,5,2,0,2,5],[6,11,3,6,3,5,2,10,3,10,5,3],[5,8,9,5,2,8,5,6,2,3,8,2],[9,5,6,9,6,0,0,6,2],[1,5,8,1,8,0,5,6,8,3,8,2,6,2,8],[1,5,6,2,1,6],[1,3,6,1,6,10,3,8,6,5,6,9,8,9,6],[10,1,0,10,0,6,9,5,0,5,6,0],[0,3,8,5,6,10],[10,5,6],[11,5,10,7,5,11],[11,5,10,11,7,5,8,3,0],[5,11,7,5,10,11,1,9,0],[10,7,5,10,11,7,9,8,1,8,3,1],[11,1,2,11,7,1,7,5,1],[0,8,3,1,2,7,1,7,5,7,2,11],[9,7,5,9,2,7,9,0,2,2,11,7],[7,5,2,7,2,11,5,9,2,3,2,8,9,8,2],[2,5,10,2,3,5,3,7,5],[8,2,0,8,5,2,8,7,5,10,2,5],[9,0,1,5,10,3,5,3,7,3,10,2],[9,8,2,9,2,1,8,7,2,10,2,5,7,5,2],[1,3,5,3,7,5],[0,8,7,0,7,1,1,7,5],[9,0,3,9,3,5,5,3,7],[9,8,7,5,9,7],[5,8,4,5,10,8,10,11,8],[5,0,4,5,11,0,5,10,11,11,3,0],[0,1,9,8,4,10,8,10,11,10,4,5],[10,11,4,10,4,5,11,3,4,9,4,1,3,1,4],[2,5,1,2,8,5,2,11,8,4,5,8],[0,4,11,0,11,3,4,5,11,2,11,1,5,1,11],[0,2,5,0,5,9,2,11,5,4,5,8,11,8,5],[9,4,5,2,11,3],[2,5,10,3,5,2,3,4,5,3,8,4],[5,10,2,5,2,4,4,2,0],[3,10,2,3,5,10,3,8,5,4,5,8,0,1,9],[5,10,2,5,2,4,1,9,2,9,4,2],[8,4,5,8,5,3,3,5,1],[0,4,5,1,0,5],[8,4,5,8,5,3,9,0,5,0,3,5],[9,4,5],[4,11,7,4,9,11,9,10,11],[0,8,3,4,9,7,9,11,7,9,10,11],[1,10,11,1,11,4,1,4,0,7,4,11],[3,1,4,3,4,8,1,10,4,7,4,11,10,11,4],[4,11,7,9,11,4,9,2,11,9,1,2],[9,7,4,9,11,7,9,1,11,2,11,1,0,8,3],[11,7,4,11,4,2,2,4,0],[11,7,4,11,4,2,8,3,4,3,2,4],[2,9,10,2,7,9,2,3,7,7,4,9],[9,10,7,9,7,4,10,2,7,8,7,0,2,0,7],[3,7,10,3,10,2,7,4,10,1,10,0,4,0,10],[1,10,2,8,7,4],[4,9,1,4,1,7,7,1,3],[4,9,1,4,1,7,0,8,1,8,7,1],[4,0,3,7,4,3],[4,8,7],[9,10,8,10,11,8],[3,0,9,3,9,11,11,9,10],[0,1,10,0,10,8,8,10,11],[3,1,10,11,3,10],[1,2,11,1,11,9,9,11,8],[3,0,9,3,9,11,1,2,9,2,11,9],[0,2,11,8,0,11],[3,2,11],[2,3,8,2,8,10,10,8,9],[9,10,2,0,9,2],[2,3,8,2,8,10,0,1,8,1,10,8],[1,10,2],[1,3,8,9,1,8],[0,9,1],[0,3,8],[]];
-const T3 = { mode: 'out', renderer: null, canvas: null, out: null, inn: null, innFor: '', raf: 0, size: [0, 0], drag: null, yaw: 0, pitch: 0, orbit: { th: 0.5, ph: 1.25, d: 330 }, tween: null };
+const T3 = { mode: 'out', renderer: null, canvas: null, out: null, med: null, inn: null, innFor: '', raf: 0, size: [0, 0], drag: null, yaw: 0, pitch: 0, orbit: { th: 0.5, ph: 1.25, d: 330 }, orbitMed: { th: 0.4, ph: 1.35, d: 430 }, tween: null, depth: 6, depthFor: '', labels: true };
+function t3Orbit() { return T3.mode === 'med' ? T3.orbitMed : T3.orbit; }
+/* ---- position along the current airway, in millimetres from its start (real lengths: trachea 11 cm, RMB 2.4 cm, LMB 4.6 cm …) */
+function t3Len(id) { const s = t3Seg(id); return s.a.distanceTo(s.b); }
+function t3Depth() { if (T3.depthFor !== treeAt) { T3.depthFor = treeAt; T3.depth = Math.min(6, t3Len(treeAt) * 0.4); } return T3.depth; }
+function t3MaxDepth(id) { const len = t3Len(id); return AN.TREE[id].kids.length > 1 ? Math.max(0, len - 10) : len; }   // the tip is held a centimetre back from a carina to see both openings
+function t3SetDepth(mm) {
+  T3.depthFor = treeAt; T3.depth = Math.max(0, Math.min(t3MaxDepth(treeAt), mm));
+  if (treeAt === 'trachea') treeLevel = T3.depth < 60 ? 'upper' : 'lower';   // the scope view's ring follows the level
+}
+/* advance or pull back by `mm`; past the end the openings must be chosen, before the start the scope is back in the parent */
+function t3Move(mm) {
+  const T = AN.TREE, n = T[treeAt], d = t3Depth(), len = t3Len(treeAt);
+  if (mm < 0 && d <= 10 && n.parent) { T3.refocus = true; t3Enter(n.parent, Math.max(0, t3MaxDepth(n.parent) - 4)); return; }
+  if (mm > 0 && d >= t3MaxDepth(treeAt) - 0.5 && n.kids.length === 1) { T3.refocus = true; t3Enter(n.kids[0], 4); return; }
+  t3SetDepth(d + mm); render();
+}
+/* go to another airway with the scope at a given depth in it (the depth is set before the page re-renders) */
+function t3Enter(id, mm) {
+  T3.depthFor = id; T3.depth = Math.max(0, Math.min(t3MaxDepth(id), mm));
+  if (id === 'trachea') treeLevel = T3.depth < 60 ? 'upper' : 'lower';
+  treeGo(id, true);
+}
+/* the distance readout: into this airway, to the next branching, and from the vocal cords along the whole path */
+function t3DepthText() {
+  const T = AN.TREE, n = T[treeAt], d = t3Depth(), len = t3Len(treeAt), path = treePath(treeAt);
+  if (treeAt === 'larynx') return 'At the larynx: the vocal cords are the start of the measured path.';
+  let fromCords = 0; path.forEach(k => { if (k !== 'larynx' && k !== treeAt) fromCords += t3Len(k); }); fromCords += d;
+  const cm = (v) => (v / 10).toFixed(1) + ' cm';
+  const next = AN.NEXT_BRANCH[treeAt] || (n.kids.length ? 'the next branching' : 'the end of the navigable airway');
+  const rest = len - d, atEnd = d >= t3MaxDepth(treeAt) - 0.5;
+  return cm(d) + ' into the ' + n.name.toLowerCase().replace(/ \(.*\)$/, '') + ' (' + cm(len) + ' long) · ' + (atEnd ? (n.kids.length > 1 ? cm(rest) + ' to ' + next + ', tip held back to see it: choose an opening' : (n.kids.length ? 'at ' + next : 'end of the navigable airway')) : cm(rest) + ' to ' + next) + ' · ' + cm(fromCords) + ' from the vocal cords';
+}
 function t3Available() { return typeof THREE !== 'undefined' && (function () { try { const c = document.createElement('canvas'); return !!(window.WebGLRenderingContext && (c.getContext('webgl') || c.getContext('experimental-webgl'))); } catch (e) { return false; } })(); }
 const V3 = (a) => new THREE.Vector3(a[0], a[1], a[2]);
-/* three.js is y-up; the model is z-up with y anterior: map (x, y, z) model → (x, z, −y) scene so anterior faces the viewer */
-const toScene = (a) => new THREE.Vector3(a[0], a[2], -a[1]);
+/* three.js is y-up and right-handed; the model is z-up with x toward the patient's left and y anterior: map (x, y, z) model →
+   (x, z, y) scene, so the scene's +z is anterior (facing the default camera) and the patient's left is the viewer's right,
+   the anterior view of a chest film. (Negating any one axis would mirror the anatomy.) */
+const toScene = (a) => new THREE.Vector3(a[0], a[2], a[1]);
 function t3Seg(id) { const n = AN.TREE3D[id]; return { a: toScene(n.a), b: toScene(n.b), r: n.r, rings: !!n.rings }; }
+/* a text label that always faces the camera (a sprite drawn on a small canvas), sized in millimetres */
+function t3Label(text, opts) {
+  opts = opts || {};
+  const px = 28, cv = document.createElement('canvas'), c0 = cv.getContext('2d');
+  c0.font = '600 ' + px + 'px system-ui, sans-serif';
+  const w = Math.ceil(c0.measureText(text).width) + 20, hh = px + 16;
+  cv.width = w; cv.height = hh;
+  const c = cv.getContext('2d');
+  c.font = '600 ' + px + 'px system-ui, sans-serif'; c.textBaseline = 'middle'; c.textAlign = 'center';
+  c.lineJoin = 'round'; c.lineWidth = 7; c.strokeStyle = opts.halo || 'rgba(255,255,255,0.92)'; c.strokeText(text, w / 2, hh / 2);
+  c.fillStyle = opts.color || '#2b2520'; c.fillText(text, w / 2, hh / 2);
+  const tex = new THREE.CanvasTexture(cv); tex.minFilter = THREE.LinearFilter;
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false, depthWrite: false }));
+  const hmm = opts.h || 7; sp.scale.set(hmm * w / hh, hmm, 1); sp.renderOrder = 10;
+  return sp;
+}
 /* ---- the outside scene: a capsule per airway */
 function t3BuildOut() {
   const scene = new THREE.Scene();
@@ -9247,14 +9363,57 @@ function t3BuildOut() {
   const cam = new THREE.PerspectiveCamera(38, 1, 1, 2000);
   return { scene: scene, camera: cam, meshes: meshes, group: group };
 }
-function t3PaintOut() {
-  const o = T3.out, path = treePath(treeAt);
+/* ---- the mediastinum: the same tree with the vessels, the oesophagus, the spine, the heart and the nodal stations around it */
+const MED_COL = { a: 0xd3534a, v: 0x4b78cc, e: 0xb9b0a4, o: 0xd9d2c6, n: 0x8ea33e, h: 0xe0a0a0 };
+function t3BuildMed() {
+  const v = t3BuildOut(), M = AN.MEDIASTINUM, grp = new THREE.Group(), labels = new THREE.Group();
+  const mat = (k, extra) => new THREE.MeshStandardMaterial(Object.assign({ color: MED_COL[k], roughness: 0.55, metalness: 0.02 }, extra || {}));
+  (M.vessels || []).forEach(x => {
+    const pts = x.pts.map(toScene), curve = new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.5);
+    const m = x.k === 'o' ? mat('o', { transparent: true, opacity: 0.55 }) : (x.k === 'e' ? mat('e', { transparent: true, opacity: 0.92 }) : mat(x.k));
+    const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, Math.max(12, pts.length * 10), x.r, 14, false), m);
+    tube.userData.lm = x.l; grp.add(tube);
+    [pts[0], pts[pts.length - 1]].forEach(p => { const cap = new THREE.Mesh(new THREE.SphereGeometry(x.r, 12, 10), m); cap.position.copy(p); cap.userData.lm = x.l; grp.add(cap); });
+    if (!x.nl) { const lp = pts[Math.min(pts.length - 1, x.lp || 0)], lab = t3Label(x.sl || x.l, { h: 9 }); lab.position.copy(lp).add(new THREE.Vector3(0, x.r + 6, x.r + 2)); labels.add(lab); }
+  });
+  (M.blobs || []).forEach(b => {
+    const ghost = b.k === 'h';
+    const m = mat(b.k, ghost ? { transparent: true, opacity: 0.13, depthWrite: false } : { transparent: true, opacity: 0.85 });
+    const e = new THREE.Mesh(new THREE.SphereGeometry(1, 28, 20), m);
+    e.position.copy(toScene(b.c)); e.scale.set(b.s[0], b.s[2], b.s[1]); e.userData.lm = b.l; if (ghost) e.renderOrder = -1; grp.add(e);
+    const lab = t3Label(b.l, { h: 9 }); lab.position.copy(toScene(b.c)).add(new THREE.Vector3(0, ghost ? -b.s[2] - 8 : 0, b.s[1] + 2)); labels.add(lab);
+  });
+  const nm = mat('n', { roughness: 0.6 });
+  (M.nodes || []).forEach(nd => {
+    const sph = new THREE.Mesh(new THREE.SphereGeometry(4, 14, 10), nm); sph.position.copy(toScene(nd.p)); sph.userData.lm = 'station ' + nd.id; sph.userData.station = nd.id; grp.add(sph);
+    const lab = t3Label(nd.id, { h: 6.5, color: '#2f3a0e', halo: 'rgba(240,244,220,0.95)' }); lab.position.copy(toScene(nd.p)).add(new THREE.Vector3(0, 6.5, 3)); labels.add(lab);
+  });
+  v.scene.add(grp); v.scene.add(labels); v.med = grp; v.labels = labels;
+  // the cross-section marker: a ring around the airway at the scope's position with a tick at 12 o'clock (anterior)
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(1, 0.11, 10, 48), new THREE.MeshStandardMaterial({ color: 0x2f6fbf, emissive: 0x1a4a8a, roughness: 0.35 }));
+  const disc = new THREE.Mesh(new THREE.CircleGeometry(1, 48), new THREE.MeshBasicMaterial({ color: 0x5f8fd0, transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false }));
+  const tick = new THREE.Mesh(new THREE.SphereGeometry(0.18, 10, 8), new THREE.MeshStandardMaterial({ color: 0xf2c14e, emissive: 0x8a5a00 }));
+  const mk = new THREE.Group(); mk.add(ring); mk.add(disc); mk.add(tick); v.scene.add(mk); v.marker = mk; v.tick = tick;
+  return v;
+}
+function t3Marker(v) {
+  const s = t3Seg(treeAt), dir = s.b.clone().sub(s.a).normalize(), len = s.a.distanceTo(s.b), d = Math.max(0, Math.min(len, t3Depth()));
+  const p = s.a.clone().add(dir.clone().multiplyScalar(d)), R = s.r * 2.4;
+  v.marker.position.copy(p); v.marker.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir); v.marker.scale.set(R, R, R);
+  // the anterior tick: the scene's +z projected onto the section plane
+  const ant = new THREE.Vector3(0, 0, 1).sub(dir.clone().multiplyScalar(dir.z)).normalize();
+  const local = ant.clone().applyQuaternion(v.marker.quaternion.clone().invert());
+  v.tick.position.copy(local.multiplyScalar(1));
+  v.labels.visible = !!T3.labels;
+}
+function t3PaintOut(view) {
+  const o = view || T3.out, path = treePath(treeAt);
   if (!T3.mats) T3.mats = { n: new THREE.MeshStandardMaterial({ color: 0xd9a49c, roughness: 0.55 }), on: new THREE.MeshStandardMaterial({ color: 0xa7c1d6, roughness: 0.55 }), cur: new THREE.MeshStandardMaterial({ color: 0x6f93b3, roughness: 0.5, emissive: 0x203040 }) };
   Object.keys(o.meshes).forEach(k => {
     const id = k.replace(/\.j$/, ''), m = id === treeAt ? T3.mats.cur : (path.indexOf(id) >= 0 ? T3.mats.on : T3.mats.n);
     if (o.meshes[k].material !== m) o.meshes[k].material = m;
   });
-  const ob = T3.orbit, c = o.camera, target = new THREE.Vector3(0, -5, 0);
+  const ob = o === T3.med ? T3.orbitMed : T3.orbit, c = o.camera, target = new THREE.Vector3(0, o === T3.med ? 2 : -5, 0);
   c.position.set(target.x + ob.d * Math.sin(ob.ph) * Math.sin(ob.th), target.y + ob.d * Math.cos(ob.ph), target.z + ob.d * Math.sin(ob.ph) * Math.cos(ob.th));
   c.lookAt(target);
 }
@@ -9334,10 +9493,10 @@ function t3BuildIn(id) {
   const lamp = new THREE.PointLight(0xfff1e6, 0.75, 220, 1.1); lamp.position.set(0, 0, -4); cam.add(lamp); scene.add(cam);
   return { scene: scene, camera: cam, mesh: mesh, caps: caps, id: id };
 }
-/* the camera sits at the proximal end of the current airway, looking down its axis; anterior up */
+/* the camera sits on the axis of the current airway at the scope's depth, looking down the axis; anterior up */
 function t3PoseIn(id) {
-  const s = t3Seg(id), dir = s.b.clone().sub(s.a).normalize();
-  const eye = s.a.clone().add(dir.clone().multiplyScalar(Math.min(10, s.a.distanceTo(s.b) * 0.25)));
+  const s = t3Seg(id), dir = s.b.clone().sub(s.a).normalize(), len = s.a.distanceTo(s.b);
+  const eye = s.a.clone().add(dir.clone().multiplyScalar(Math.max(0.5, Math.min(len - 0.5, t3Depth()))));
   return { eye: eye, dir: dir };
 }
 function t3LookIn(inn, pose) {
@@ -9367,22 +9526,23 @@ function t3Ensure() {
     const ids = Object.keys(d.pts);
     if (ids.length >= 2) {   // pinch: zoom the outside view
       const p0 = d.pts[ids[0]], p1 = d.pts[ids[1]], dist = Math.hypot(p0[0] - p1[0], p0[1] - p1[1]);
-      if (d.pinch && T3.mode === 'out') T3.orbit.d = Math.max(80, Math.min(700, T3.orbit.d * d.pinch / dist));
+      if (d.pinch && T3.mode !== 'in') t3Orbit().d = Math.max(80, Math.min(900, t3Orbit().d * d.pinch / dist));
       d.pinch = dist; d.moved = true; return;
     }
     const dx = e.clientX - d.x, dy = e.clientY - d.y;
     if (Math.abs(dx) + Math.abs(dy) > 3) d.moved = true;
-    if (T3.mode === 'out') { T3.orbit.th -= dx * 0.008; T3.orbit.ph = Math.max(0.15, Math.min(3.0, T3.orbit.ph - dy * 0.008)); }
+    if (T3.mode !== 'in') { const ob = t3Orbit(); ob.th -= dx * 0.008; ob.ph = Math.max(0.15, Math.min(3.0, ob.ph - dy * 0.008)); }
     else { T3.yaw = Math.max(-1.3, Math.min(1.3, T3.yaw - dx * 0.006)); T3.pitch = Math.max(-1.0, Math.min(1.0, T3.pitch + dy * 0.006)); }
     d.x = e.clientX; d.y = e.clientY;
   });
   const end = (e) => { const d = T3.drag; if (!d) return; delete d.pts[e.pointerId]; if (Object.keys(d.pts).length) return; T3.drag = null; if (!d.moved) t3Pick(e); };
   cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', () => { T3.drag = null; });
-  cv.addEventListener('wheel', (e) => { if (T3.mode !== 'out') return; e.preventDefault(); T3.orbit.d = Math.max(80, Math.min(700, T3.orbit.d * (1 + Math.sign(e.deltaY) * 0.08))); }, { passive: false });
+  cv.addEventListener('wheel', (e) => { if (T3.mode === 'in') return; e.preventDefault(); const ob = t3Orbit(); ob.d = Math.max(80, Math.min(900, ob.d * (1 + Math.sign(e.deltaY) * 0.08))); }, { passive: false });
   cv.addEventListener('keydown', (e) => {
     const T = AN.TREE, n = T[treeAt];
-    if (e.key === 'ArrowUp' || e.key === 'Backspace') { if (n.parent) { e.preventDefault(); T3.refocus = true; treeGo(n.parent, true); } }
-    else if (/^[1-9]$/.test(e.key)) { const k = n.kids[+e.key - 1]; if (k) { e.preventDefault(); T3.refocus = true; treeGo(k, true); } }
+    if (e.key === 'ArrowUp' || e.key === 'Backspace') { e.preventDefault(); T3.refocus = true; t3Move(-10); }
+    else if (e.key === 'ArrowDown' || e.key === 'w' || e.key === '+' || e.key === '=') { e.preventDefault(); T3.refocus = true; t3Move(10); }
+    else if (/^[1-9]$/.test(e.key)) { const k = n.kids[+e.key - 1]; if (k) { e.preventDefault(); T3.refocus = true; t3Enter(k, 4); } }
     else if (e.key === 'ArrowLeft') { T3.yaw += 0.15; } else if (e.key === 'ArrowRight') { T3.yaw -= 0.15; }
   });
   return true;
@@ -9391,10 +9551,15 @@ function t3Ensure() {
 function t3Pick(e) {
   const rect = T3.canvas.getBoundingClientRect(), x = ((e.clientX - rect.left) / rect.width) * 2 - 1, y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
   const rc = new THREE.Raycaster();
-  if (T3.mode === 'out') {
-    rc.setFromCamera(new THREE.Vector2(x, y), T3.out.camera);
-    const hit = rc.intersectObjects(T3.out.group.children, false)[0];
-    if (hit && hit.object.userData.id) treeGo(hit.object.userData.id, true);
+  if (T3.mode === 'out' || T3.mode === 'med') {
+    const v = T3.mode === 'med' ? T3.med : T3.out;
+    rc.setFromCamera(new THREE.Vector2(x, y), v.camera);
+    const hits = rc.intersectObjects(v.group.children.concat(v.med ? v.med.children : []), false);
+    const hit = hits.filter(hh => hh.object.userData.id || hh.object.userData.lm)[0];
+    if (!hit) return;
+    if (hit.object.userData.id) treeGo(hit.object.userData.id, true);
+    else if (hit.object.userData.station) { toast('Station ' + hit.object.userData.station + ' — open the station map for its borders and the EBUS picture'); }
+    else toast(hit.object.userData.lm);
   } else if (T3.inn) {
     rc.setFromCamera(new THREE.Vector2(x, y), T3.inn.camera);
     const ray = rc.ray, kids = AN.TREE[treeAt].kids;
@@ -9410,14 +9575,15 @@ function t3Resize(w) {
   const hgt = Math.round(Math.max(240, Math.min(440, w * 0.78)));
   if (T3.size[0] === w && T3.size[1] === hgt) return;
   T3.size = [w, hgt]; T3.renderer.setSize(w, hgt, false); T3.canvas.style.width = '100%'; T3.canvas.style.height = hgt + 'px';
-  [T3.out, T3.inn].forEach(v => { if (v) { v.camera.aspect = w / hgt; v.camera.updateProjectionMatrix(); } });
+  [T3.out, T3.med, T3.inn].forEach(v => { if (v) { v.camera.aspect = w / hgt; v.camera.updateProjectionMatrix(); } });
 }
 function t3Frame() {
   T3.raf = 0;
   if (!T3.canvas || !T3.canvas.isConnected) return;
   const w = Math.max(200, Math.floor(T3.canvas.parentElement.getBoundingClientRect().width));
   t3Resize(w);
-  if (T3.mode === 'out') { T3.renderer.setClearColor(0xefe9e1); t3PaintOut(); T3.renderer.render(T3.out.scene, T3.out.camera); }
+  if (T3.mode === 'out') { T3.renderer.setClearColor(0xefe9e1); t3PaintOut(T3.out); T3.renderer.render(T3.out.scene, T3.out.camera); }
+  else if (T3.mode === 'med' && T3.med) { T3.renderer.setClearColor(0xefe9e1); t3PaintOut(T3.med); t3Marker(T3.med); T3.renderer.render(T3.med.scene, T3.med.camera); }
   else if (T3.inn) {
     T3.renderer.setClearColor(0x2a1210);
     const pose = t3PoseIn(treeAt);
@@ -9429,8 +9595,11 @@ function t3Frame() {
 /* the figure on the tree topic */
 function tree3dFig() {
   if (!t3Ensure()) return h('figure', { class: 'an-fig' }, [h('div', { class: 'an-3d-none', text: '3D view needs WebGL, which this browser or view does not provide.' }), h('figcaption', { text: '3D airway model' })]);
-  const modes = h('div', { class: 'an-3d-modes' }, [[['out', 'Outside'], ['in', 'Inside (scope)']].map(m => h('button', { type: 'button', class: 'ch', role: 'radio', 'aria-checked': String(T3.mode === m[0]), 'data-3d-mode': m[0], text: m[1], onclick: () => { T3.mode = m[0]; render(); } })),
-    h('button', { type: 'button', class: 'lnk', text: 'Reset view', onclick: () => { T3.orbit = { th: 0.5, ph: 1.25, d: 330 }; T3.yaw = 0; T3.pitch = 0; } })]);
+  const labId = uid('l3');
+  const modes = h('div', { class: 'an-3d-modes' }, [[['out', 'Outside'], ['in', 'Inside (scope)'], ['med', 'Mediastinum']].map(m => h('button', { type: 'button', class: 'ch', role: 'radio', 'aria-checked': String(T3.mode === m[0]), 'data-3d-mode': m[0], text: m[1], onclick: () => { T3.mode = m[0]; render(); } })),
+    T3.mode === 'med' ? h('label', { class: 'chk-inline', for: labId }, [h('input', { type: 'checkbox', id: labId, checked: T3.labels, 'data-3d-labels': '1', onchange: (e) => { T3.labels = e.target.checked; } }), 'Labels']) : null,
+    h('button', { type: 'button', class: 'lnk', text: 'Reset view', onclick: () => { T3.orbit = { th: 0.5, ph: 1.25, d: 330 }; T3.orbitMed = { th: 0.4, ph: 1.35, d: 430 }; T3.yaw = 0; T3.pitch = 0; } })]);
+  if (T3.mode === 'med' && !T3.med) { T3.med = t3BuildMed(); T3.med.camera.aspect = T3.size[0] / (T3.size[1] || 1); T3.med.camera.updateProjectionMatrix(); }
   if (T3.mode === 'in') {
     if (!T3.inn || T3.inn.id !== treeAt) {
       const prevEye = T3.inn ? T3.inn.camera.position.clone() : null;
@@ -9441,8 +9610,16 @@ function tree3dFig() {
   }
   const wrap = h('div', { class: 'an-3d-wrap' }, [T3.canvas]);
   const n = AN.TREE[treeAt];
-  const cap = T3.mode === 'out' ? 'Outside: drag to orbit, wheel or pinch to zoom, tap a branch to go there (the current path is blue).' : 'Inside the ' + n.name.toLowerCase() + ': drag to look around, tap an opening to advance; keys 1–' + Math.max(1, n.kids.length) + ' advance, ↑ pulls back. Rings in front, the flat membrane behind.';
-  const fig = h('figure', { class: 'an-fig an-fig-3d' }, [modes, wrap, h('figcaption', { text: cap + ' Procedural model from standard dimensions, not a patient.' })]);
+  // the scope's position along the airway, at real lengths: a centimetre at a time
+  const nav = T3.mode === 'out' ? null : h('div', { class: 'an-3d-nav' }, [
+    h('button', { type: 'button', class: 'btn sm quiet', 'data-3d-back': '1', title: 'Pull back 1 cm (↑)', text: '◀ 1 cm', onclick: () => t3Move(-10) }),
+    h('button', { type: 'button', class: 'btn sm quiet', 'data-3d-fwd': '1', title: 'Advance 1 cm (↓)', text: '1 cm ▶', onclick: () => t3Move(10) }),
+    h('span', { class: 'an-3d-depth', 'data-3d-depth': '1', text: t3DepthText() })
+  ]);
+  const cap = T3.mode === 'out' ? 'Outside: drag to orbit, wheel or pinch to zoom, tap a branch to go there (the current path is blue).'
+    : (T3.mode === 'med' ? 'Mediastinum: the tree with the great vessels, the oesophagus, the spine behind, the heart (faint) and the nodal stations (olive). The blue ring is where the scope is, its yellow dot at 12 o’clock (anterior) — the scope view above shows that level in cross-section. Drag to orbit, tap a branch to go there, tap a structure for its name.'
+    : 'Inside the ' + n.name.toLowerCase() + ': drag to look around, tap an opening to advance; keys 1–' + Math.max(1, n.kids.length) + ' advance, ↓ a centimetre deeper, ↑ a centimetre back (and out to the parent). Rings in front, the flat membrane behind.');
+  const fig = h('figure', { class: 'an-fig an-fig-3d' }, [modes, wrap, nav, h('figcaption', { text: cap + ' Procedural model from standard dimensions, not a patient.' })]);
   if (!T3.raf) T3.raf = requestAnimationFrame(t3Frame);
   if (T3.refocus) { T3.refocus = false; setTimeout(() => { try { T3.canvas.focus({ preventScroll: true }); } catch (x) { /* ignore */ } }, 0); }   // keyboard navigation keeps the canvas focused across re-renders
   return fig;

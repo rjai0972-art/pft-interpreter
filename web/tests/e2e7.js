@@ -30,6 +30,15 @@ const uniqN = (a) => a.filter((x, i) => a.indexOf(x) === i).length;
   await page.waitForSelector('.learn-body[data-topic="loops"]');
   ok(await page.locator('.learn-body').getAttribute('data-cat') === 'pft' && await page.locator('#learn-cat').inputValue() === 'pft', 'openLearn picks the area of the topic');
 
+  // ---- the category chips: one size, aligned in columns across the rows of a section
+  await page.evaluate(() => window.__pft.setMode('interpret')); await page.waitForSelector('details.tsec[data-mod="spiro"]');
+  const chips = await page.locator('details.tsec[data-mod="spiro"] [data-grid="spiro"] .ix:visible .sg').evaluateAll(els => els.map(e => { const r = e.getBoundingClientRect(); return { v: e.getAttribute('data-v'), x: Math.round(r.x), w: Math.round(r.width), row: e.closest('.ix').getAttribute('data-field') }; }));
+  const widths = chips.map(c => c.w);
+  ok(chips.length === 15 && Math.max.apply(null, widths) - Math.min.apply(null, widths) <= 1, 'every category chip of spirometry has the same width: ' + widths.join(','));
+  const xs = (v) => chips.filter(c => c.v === v).map(c => c.x);
+  ok(xs('wnl').length === 3 && xs('wnl').every(x => x === xs('wnl')[0]) && xs('high').length === 2 && xs('high').every(x => x === xs('high')[0]) && xs('low')[0] === xs('mild')[0], 'WNL under WNL, Low under Mild, High under High: the columns line up across FEV1/FVC, FEV1 and FVC');
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'tree' }));
+
   // ---- bronchial tree navigator
   await page.evaluate(() => window.__pft.setMode('learn', { topic: 'tree' })); await page.waitForSelector('.an-tree');
   ok(await page.locator('.an-tree').getAttribute('data-at') === 'trachea', 'starts in the trachea');
@@ -112,6 +121,31 @@ const uniqN = (a) => a.filter((x, i) => a.indexOf(x) === i).length;
   ok(await page.locator('.an-tree').getAttribute('data-at') === 'trachea', '↑ on the canvas pulls back');
   await page.waitForTimeout(100); await page.keyboard.press('2'); await page.waitForTimeout(500);
   ok(await page.locator('.an-tree').getAttribute('data-at') === 'lmb', 'key 2 advances into the second opening (focus kept on the canvas)');
+  // the scope's position at real lengths: a centimetre at a time, with the distance readout
+  await page.evaluate(() => { document.querySelector('.an-node[data-node="trachea"]').dispatchEvent(new MouseEvent('click', { bubbles: true })); }); await page.waitForTimeout(400);
+  ok(/0\.6 cm into the trachea \(11\.0 cm long\) · 10\.4 cm to the carina · 0\.6 cm from the vocal cords/.test(await txt('[data-3d-depth]')), 'the readout gives the depth, the length and the distance to the carina: ' + await txt('[data-3d-depth]'));
+  for (let i = 0; i < 9; i++) await page.locator('[data-3d-fwd]').click();
+  await page.waitForTimeout(100);
+  ok(/9\.6 cm into the trachea/.test(await txt('[data-3d-depth]')) && /1\.4 cm to the carina/.test(await txt('[data-3d-depth]')), 'nine centimetres on: 9.6 cm in, 1.4 cm to the carina');
+  ok(await page.locator('[data-level="lower"]').getAttribute('aria-checked') === 'true', 'deep in the trachea the scope view shows the lower ring');
+  await page.locator('[data-3d-fwd]').click(); await page.locator('[data-3d-fwd]').click(); await page.waitForTimeout(100);
+  ok(/10\.0 cm into the trachea/.test(await txt('[data-3d-depth]')) && /tip held back/.test(await txt('[data-3d-depth]')) && await page.locator('.an-tree').getAttribute('data-at') === 'trachea', 'the tip stops a centimetre short of the carina to see both openings');
+  await page.locator('canvas.an-3d').focus(); await page.keyboard.press('1'); await page.waitForTimeout(400);
+  ok(await page.locator('.an-tree').getAttribute('data-at') === 'rmb' && /0\.4 cm into the right main bronchus \(2\.4 cm long\)/.test(await txt('[data-3d-depth]')), 'key 1 enters the right main bronchus (2.4 cm long): ' + await txt('[data-3d-depth]'));
+  ok(/11\.4 cm from the vocal cords/.test(await txt('[data-3d-depth]')), 'the running distance from the cords carries across the carina');
+  await page.locator('[data-3d-back]').click(); await page.waitForTimeout(400);
+  ok(await page.locator('.an-tree').getAttribute('data-at') === 'trachea' && /9\.6 cm into the trachea/.test(await txt('[data-3d-depth]')), 'pulling back from the start of a bronchus returns to the parent just above its carina: ' + await txt('[data-3d-depth]'));
+  for (let i = 0; i < 8; i++) await page.locator('[data-3d-back]').click();
+  await page.waitForTimeout(100);
+  ok(await page.locator('[data-level="upper"]').getAttribute('aria-checked') === 'true' && /1\.6 cm into the trachea/.test(await txt('[data-3d-depth]')), 'back in the upper trachea the scope view shows the upper ring: ' + await txt('[data-3d-depth]'));
+  await page.locator('[data-level="lower"]').click(); await page.waitForTimeout(200);
+  ok(/9\.5 cm into the trachea/.test(await txt('[data-3d-depth]')), 'the level buttons move the scope too');
+  // the mediastinum: the tree with the vessels, nodes and the section marker, rotatable
+  await page.locator('[data-3d-mode="med"]').click(); await page.waitForTimeout(600);
+  ok(await page.locator('[data-3d-mode="med"]').getAttribute('aria-checked') === 'true' && /Mediastinum: the tree with the great vessels/.test(await txt('.an-fig-3d figcaption')) && await page.locator('[data-3d-labels]').isChecked(), 'the mediastinum view with its labels');
+  ok(await page.locator('[data-3d-depth]').count() === 1 && await page.locator('[data-3d-fwd]').count() === 1, 'the position readout and the centimetre buttons stay in the mediastinum view');
+  ok(await page.evaluate(() => { const M = window.PFT_ANAT.MEDIASTINUM; return M.vessels.length >= 18 && M.nodes.length >= 18 && M.vessels.some(v => v.l === 'azygos v.') && M.vessels.some(v => v.l === 'left PA') && M.nodes.some(n => n.id === '4R'); }), 'vessels (SVC, azygos, aorta, PAs, pulmonary veins, oesophagus, spine) and every station are modelled');
+  await page.locator('[data-3d-labels]').uncheck(); await page.waitForTimeout(150); await page.locator('[data-3d-labels]').check();
   await page.locator('[data-3d-mode="out"]').click(); await page.waitForTimeout(300);
   ok(/Outside: drag to orbit/.test(await txt('.an-fig-3d figcaption')), 'back to the outside view');
   ok(await page.locator('.edu-links a[href*="utoronto"]').count() === 1 && await page.locator('.edu-links a[target="_blank"]').count() === 5, 'external models and the virtual bronchoscopy simulator are linked');
