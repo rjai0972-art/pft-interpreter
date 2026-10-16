@@ -152,7 +152,8 @@ const MEDIASTINUM = {
     { id: '2R', p: [-13, 9, 70] }, { id: '2L', p: [13, 6, 60] }, { id: '3a', p: [-10, 30, 56] }, { id: '3p', p: [0, -12, 36] },
     { id: '4R', p: [-15, 6, 22] }, { id: '4L', p: [14, 3, 12] }, { id: '5', p: [26, 18, 20] }, { id: '6', p: [12, 40, 28] },
     { id: '7', p: [0, -8, -24] }, { id: '8', p: [8, -14, -70] }, { id: '9R', p: [-26, -12, -98] }, { id: '9L', p: [36, -12, -98] },
-    { id: '10R', p: [-20, 3, -14] }, { id: '10L', p: [34, 1, -16] }, { id: '11Rs', p: [-26, -4, -30] }, { id: '11Ri', p: [-24, 6, -52] }, { id: '11L', p: [44, -2, -36] }
+    { id: '10R', p: [-20, 3, -14] }, { id: '10L', p: [34, 1, -16] }, { id: '11Rs', p: [-26, -4, -30] }, { id: '11Ri', p: [-24, 6, -52] }, { id: '11L', p: [44, -2, -36] },
+    { id: '12R', p: [-34, 4, -62] }, { id: '12L', p: [50, 0, -46] }
   ]
 };
 
@@ -258,6 +259,11 @@ const LANDMARKS = {
 };
 LANDMARKS.lud = LANDMARKS.lul.filter(x => /PA|pulmonary v|12L/.test(x.l));
 LANDMARKS.ling = [{ k: 'a', h: 2.0, d: 1.3, s: 0.14, l: 'lingular a. (A4+5)', t: 'Lateral to the lingular bronchus.' }, { k: 'v', h: 10.0, d: 1.35, s: 0.14, l: 'lingular v. (V4+5)', t: 'Medial and below, to the superior pulmonary vein.' }, { k: 'n', h: 6.0, d: 1.2, s: 0.1, l: '12L', t: 'Lobar nodes beside the lingular bronchus.' }];
+/* which 3D structure a ring item stands for (hovering one highlights the other): by label, with the two basal trunks by side */
+const LM_MED = { 'SVC': 'svc', 'azygos arch': 'azy', 'aortic arch': 'arch', 'ascending aorta': 'aao', 'descending aorta': 'dao', 'main / right PA': 'rpa', 'right PA': 'rpa', 'interlobar PA': 'rpa', 'left PA': 'lpa', 'oesophagus': 'eso',
+  'brachiocephalic a.': 'bca', 'L brachiocephalic v.': 'lbcv', 'R brachiocephalic v.': 'rbcv', 'L common carotid a.': 'lcc', 'L subclavian a.': 'lsc',
+  'R superior pulmonary v.': 'rspv', 'R inferior pulmonary v.': 'ripv', 'L superior pulmonary v.': 'lspv', 'L inferior pulmonary v.': 'lipv', 'truncus anterior (A1, A3)': 'rpa', 'lingular a. (A4+5)': 'lpa' };
+Object.keys(LANDMARKS).forEach(k => LANDMARKS[k].forEach(it => { if (it.k !== 'n' && !it.m) it.m = it.l === 'basal trunk PA' ? (/^l/.test(k) ? 'lpa' : 'rpa') : (LM_MED[it.l] || ''); }));
 
 /* schematic EBUS picture per station: where the probe sits and which structures surround the node on the screen
    (positions on the picture: L/R beside the node, D deep to it, DL/DR deep and to one side, SL/SR shallow and to one side) */
@@ -677,6 +683,6 @@ const GROUPS = [
   { title: 'Bronchoscopy', ids: ['bronch_basics', 'bronch_prep', 'sedation', 'antithrombotic', 'bal', 'sampling', 'icu', 'ebus'] }
 ];
 
-root.PFT_ANAT = { topics: T, groups: GROUPS, TREE: TREE, TREE3D: TREE3D, STATIONS: STATIONS, SEGMENTS: SEGMENTS, LANDMARKS: LANDMARKS, SONO: SONO, MEDIASTINUM: MEDIASTINUM, NEXT_BRANCH: NEXT_BRANCH };
+root.PFT_ANAT = { topics: T, groups: GROUPS, TREE: TREE, TREE3D: TREE3D, STATIONS: STATIONS, SEGMENTS: SEGMENTS, LANDMARKS: LANDMARKS, SONO: SONO, MEDIASTINUM: MEDIASTINUM, NEXT_BRANCH: NEXT_BRANCH, LM_MED: LM_MED };
 if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_ANAT;
 })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this));

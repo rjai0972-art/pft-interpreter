@@ -1126,3 +1126,71 @@ table.ct .ix-c.txt { width: 64px; }
   .tsec .ix-seg[role="radiogroup"] { display: flex; }
   .tsec .ix-seg .sg[data-v] { grid-column: auto; }
 }
+
+/* ---- v7.5: map layers, hover links, the corner map of the inside view */
+.an-layers { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.an-mv { pointer-events: stroke; cursor: help; }
+.an-mapv .an-art, .an-mapv .an-vein { opacity: 0.85; }
+.an-mapv .an-art.hl, .an-mapv .an-vein.hl, .an-mapv .an-eso.hl { stroke: var(--ink); opacity: 1; }
+.an-st.mini circle { r: 7.5; }
+.an-stl.tiny { font-size: 6.5px; }
+.an-st.hl circle { stroke: var(--ink); stroke-width: 2.6; }
+.an-land .an-lm.hl circle, .an-land .an-lm.hl ellipse:first-of-type { stroke: var(--ink); stroke-width: 2.2; }
+.an-3d-wrap { position: relative; }
+.an-3d-mini { position: absolute; top: 8px; left: 8px; width: 96px; height: 114px; padding: 3px; border-radius: 8px; background: rgba(243, 240, 234, 0.82); border: 1px solid rgba(0, 0, 0, 0.12); pointer-events: none; }
+.an-3d-mini svg { width: 100%; height: 100%; display: block; }
+.an-mini .an-br { stroke: #b9a9a2; }
+.an-mini .an-br.on { stroke: #3f6f9e; }
+.an-mini-halo { fill: #f2c14e; opacity: 0.35; }
+.an-mini-dot { fill: #f2c14e; stroke: #8a5a00; stroke-width: 1.5; }
+@media (max-width: 560px) { .an-3d-mini { width: 72px; height: 86px; } }
+
+/* ---- v7.5: conduction and the ECG */
+:root { --ecg-paper: #fff8f3; --ecg-g1: #f3d5cc; --ecg-g5: #e4a89a; --ecg-ink: #1f1a17; --ecg-rest: #f1dcd4; --ecg-active: #e4572e; --ecg-path: #d9822b; --ecg-blk: #b3261e; }
+.ecg-lab { display: grid; gap: 10px; }
+.ecg-ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; }
+.ecg-pick select, .ecg-ctl select { font-size: 13px; padding: 3px 6px; width: auto; max-width: 100%; }
+.ecg-slider { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 13px; }
+.ecg-slider input[type=range] { width: 180px; }
+.ecg-degv { color: var(--accent); font-weight: 600; }
+.ecg-scrub { flex: 1 1 160px; min-width: 120px; }
+.ecg-time { font-family: var(--font-mono); font-size: 12px; color: var(--ink-2); min-width: 120px; }
+.ecg-top { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 720px) { .ecg-top { grid-template-columns: minmax(0, 1.4fr) minmax(200px, 0.8fr); align-items: start; } }
+.ecg-side { display: grid; gap: 8px; }
+.ecg-dialfig { max-width: 260px; }
+.ecg-reads { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12.5px; color: var(--ink-2); }
+.ecg-read b { color: var(--ink); font-weight: 600; }
+.ecg-hull { fill: #f7e9e3; stroke: #c9988f; stroke-width: 1.5; }
+.ecg-reg { fill: var(--ecg-rest); stroke: #c48b82; stroke-width: 0.8; transition: fill 60ms linear; cursor: help; }
+.ecg-reg.front { stroke: #7a2a16; stroke-width: 1.4; }
+.ecg-path { fill: none; stroke: #8a6b5e; stroke-linecap: round; stroke-linejoin: round; opacity: 0.9; cursor: help; }
+.ecg-path.thin { opacity: 0.6; }
+.ecg-path.on { stroke: var(--ecg-path); filter: drop-shadow(0 0 2px rgba(217, 130, 43, 0.8)); }
+.ecg-path.blocked { stroke: var(--ecg-blk); stroke-dasharray: 4 4; opacity: 0.8; }
+.ecg-block line { stroke: var(--ecg-blk); stroke-width: 3; stroke-linecap: round; }
+.ecg-hl { font-size: 11px; fill: #6b4a40; font-weight: 600; pointer-events: none; }
+.ecg-hl.side { font-size: 9px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; fill: var(--muted); }
+.ecg-legend { display: flex; flex-wrap: wrap; gap: 3px 10px; font-size: 11px; color: var(--muted); }
+.ecg-lg { display: inline-flex; align-items: center; gap: 4px; }
+.ecg-lg i { width: 10px; height: 10px; border-radius: 3px; }
+.ecg-lg.rest i { background: var(--ecg-rest); border: 1px solid #c48b82; } .ecg-lg.act i { background: var(--ecg-active); } .ecg-lg.dep i { background: #c9806f; } .ecg-lg.path i { background: var(--ecg-path); } .ecg-lg.blk i { background: var(--ecg-blk); }
+.ecg-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--line); background: var(--ecg-paper); }
+.ecg-paper { display: block; }
+.ecg-bg { fill: var(--ecg-paper); }
+.ecg-g1 { fill: none; stroke: var(--ecg-g1); stroke-width: 0.6; }
+.ecg-g5 { fill: none; stroke: var(--ecg-g5); stroke-width: 0.9; }
+.ecg-tr { fill: none; stroke: var(--ecg-ink); stroke-width: 1.4; stroke-linejoin: round; stroke-linecap: round; }
+.ecg-cal { fill: none; stroke: var(--ecg-ink); stroke-width: 1.2; }
+.ecg-ll { font-size: 12px; font-weight: 700; fill: var(--ecg-ink); }
+.ecg-sep { stroke: var(--ecg-ink); stroke-width: 0.6; opacity: 0.35; }
+.ecg-cursor { stroke: #2f6fbf; stroke-width: 1.4; opacity: 0.85; }
+.ecg-dial-ring { fill: var(--surface); stroke: var(--line-strong); stroke-width: 1; }
+.ecg-dial-ax { stroke: var(--line); stroke-width: 1; }
+.ecg-dial-l { font-size: 9.5px; fill: var(--muted); } .ecg-dial-l.strong { fill: var(--ink); font-weight: 600; font-size: 11px; }
+.ecg-loop { fill: none; stroke: #9a8f88; stroke-width: 1.2; opacity: 0.8; }
+.ecg-axis { stroke: var(--ink); stroke-width: 1.2; stroke-dasharray: 4 3; }
+.ecg-vec { stroke: var(--ecg-path); stroke-width: 3; stroke-linecap: round; }
+.ecg-text { display: grid; gap: 6px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.ecg-text h3 { margin: 0; font-size: 14px; }
+.ecg-text p { margin: 0; }

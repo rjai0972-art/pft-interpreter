@@ -81,7 +81,7 @@ and the single-file browser version (`PFT_Interpreter_standalone.html`) always w
 - Code signing is optional and not set up. For Windows add a signing certificate to the build; for Mac add an Apple Developer ID and notarization.
   Until then the first-launch steps above are needed.
 
-## How the reading is built (version 7.4)
+## How the reading is built (version 7.5)
 
 The rules layer computes every measurement state before any wording is chosen (ERS/ATS 2022 z-scores and the LLN;
 a reviewed adult phrase catalog anchored to the ERS/ATS 2022, ATS/ERS 2019, ERS/ATS 2023, ERS/ATS 2017, ERS 2019 and
@@ -135,20 +135,22 @@ report builds on the right as values are entered (below the form on narrower scr
 optional wording, differentials, prompts and the heads-up list beneath it. Two themes, linen and charcoal, in neutral
 tones.
 
-Learn has two areas, chosen from a dropdown above the topic list. "PFT interpretation" is the reading-room curriculum
+Learn has three areas, chosen from a dropdown above the topic list. "PFT interpretation" is the reading-room curriculum
 (the logic, each test, reference equations, change over time, the phrase catalog and worked examples). "Anatomy &
 bronchoscopy" adds: lungs, lobes and segments with a lobe map and the Boyden numbering; a bronchial-tree navigator (an
-anterior-view map and a scope view from wherever you are, with the landmarks, the pitfalls and the EBUS stations on
-that wall, and a ring of the structures that lie against the airway at that level — arteries, veins, the oesophagus
-and the nodal stations in their usual clock positions, the way an EBUS atlas lays them out, with two levels for the
-trachea; a drill that hides the labels and asks for a segment from the carina) with a navigable 3D model of the same
-tree (three.js, inlined, MIT): orbit the whole tree; stand inside the selected airway where the openings ahead are
-real holes in a wall built on the fly by marching cubes over the airway capsules, with cartilage rings in front and
-the flat membrane behind, and move a centimetre at a time along airways of real length (trachea 11 cm, right main
-2.4 cm, left main 4.6 cm …) with a readout of the depth, the distance to the next carina and the distance from the
-vocal cords; or open the mediastinum, a third model with the great vessels, the oesophagus, the spine, the heart and
-the nodal stations around the tree, rotatable, with a ring marking where the scope is so the cross-section ring of the
-scope view can be read against it — a procedural model from standard dimensions, not a patient's CT — plus links to CT-derived
+anterior-view map with the great vessels and the nodal stations as layers that switch on and off, and a scope view
+from wherever you are, with the landmarks, the pitfalls and the EBUS stations on that wall, and a ring of the
+structures that lie against the airway at that level — arteries, veins, the oesophagus and the nodal stations in their
+usual clock positions, the way an EBUS atlas lays them out, with two levels for the trachea; hovering a station or a
+vessel in any picture lights it up in the others, the 3D model included; a drill that hides the labels and asks for a
+segment from the carina) with a navigable 3D model of the same tree (three.js, inlined, MIT): orbit the whole tree;
+stand inside the selected airway where the openings ahead are real holes in a wall built on the fly by marching cubes
+over the airway capsules, with cartilage rings in front and the flat membrane behind, and glide five millimetres at a
+time along airways of real length (trachea 11 cm, right main 2.4 cm, left main 4.6 cm …) with a corner map of where
+you are and a readout of the depth, the distance to the next carina and the distance from the vocal cords; or open
+the mediastinum, a third model with the great vessels, the oesophagus, the spine, the heart and the nodal stations
+around the tree, rotatable, with a ring marking where the scope is so the cross-section ring of the scope view can be
+read against it — a procedural model from standard dimensions, not a patient's CT — plus links to CT-derived
 models and a virtual-bronchoscopy simulator on their own sites; the IASLC nodal-station map (borders,
 N category, which of EBUS, EUS and mediastinoscopy reaches each station, where to put the transducer, a schematic of
 the EBUS picture — the node and the vessels around it on the screen, drawn, not photographed — and a tap-the-station
@@ -158,5 +160,11 @@ causes of hypoxaemia); and the bronchoscopy essentials distilled from the BTS 20
 statement, the 2017 antithrombotic review, the ATS 2012 BAL guideline and the local BAL protocol (indications and
 risk, the pre-procedure checklist, sedation and topical anaesthesia with a lidocaine running total, antiplatelets and
 anticoagulants, BAL technique and cell counts, biopsy numbers and bleeding management, infection and ICU bronchoscopy,
-EBUS-TBNA).
+EBUS-TBNA). "Cardiac conduction & ECG" is a lab: a heart drawn with its conduction system whose regions light up as
+the wavefront passes, the twelve leads written by the same wavefront (a dipole model of seven ventricular regions
+projected onto the lead directions), a frontal-plane dial with the QRS loop and the moving vector, and a scrubber with
+play; pick a scenario — normal, right or left bundle branch block, either fascicular block, pre-excitation, first-,
+second- (Wenckebach, Mobitz II) and third-degree AV block — and drag the degree of block from a conduction delay to a
+complete block to watch the complexes widen, the axis swing and the T waves turn, with the mechanism and the ECG
+criteria beside it. A teaching model for the shapes and the reasons, not a reader of real tracings.
 Source code and tests: `web/`; the catalog and its rule specification: `web/catalog/`.

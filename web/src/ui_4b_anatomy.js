@@ -8,6 +8,25 @@ let treeAt = 'trachea', treeDrill = null, treeMirror = !!prefGet(MIRROR_KEY), tr
 /* the ring of structures around the scope view (vessels, nodes, oesophagus) is drawn when switched on, the level has
    data, and no drill is hiding the labels */
 function landOn() { return treeLand && !!(AN.LANDMARKS && AN.LANDMARKS[treeAt]) && !(treeDrill && !treeDrill.done); }
+/* the layers of the tree map (vessels, nodal stations), remembered */
+const MAP_KEY = 'pft.anat.map.v1';
+let mapLayers = Object.assign({ vessels: true, nodes: true }, prefGet(MAP_KEY) || {});
+/* one structure highlighted everywhere at once: the ring, the tree map, the station map and the 3D mediastinum.
+   `station` is an IASLC id, `vessel` the id of a MEDIASTINUM vessel. */
+const anatHl = { station: '', vessel: '' };
+function anatHover(station, vessel) {
+  anatHl.station = station || ''; anatHl.vessel = vessel || '';
+  if (typeof T3 !== 'undefined') T3.hl = anatHl;
+  document.querySelectorAll('[data-station], [data-med]').forEach(el => {
+    const on = (anatHl.station && el.getAttribute('data-station') === anatHl.station) || (anatHl.vessel && el.getAttribute('data-med') === anatHl.vessel);
+    el.classList.toggle('hl', !!on);
+  });
+}
+function hoverable(el, station, vessel) {
+  const on = () => anatHover(station, vessel), off = () => { if (anatHl.station === (station || '') && anatHl.vessel === (vessel || '')) anatHover('', ''); };
+  el.addEventListener('mouseenter', on); el.addEventListener('mouseleave', off); el.addEventListener('focus', on); el.addEventListener('blur', off);
+  return el;
+}
 let stationSel = '4R', stationQuiz = null;
 
 function svt(x, y, text, a) { const t = sv('text', Object.assign({ x: x, y: y }, a || {})); t.textContent = text; return t; }
@@ -32,6 +51,7 @@ function treeMap() {
   svg.appendChild(sv('path', { class: 'an-lung', d: 'M228 60 C280 70 330 130 338 220 C344 290 320 350 282 362 C252 370 232 350 224 300 L220 120 Z' }));
   svg.appendChild(svt(72, 376, "Patient's right", { class: 'an-side' }));
   svg.appendChild(svt(328, 376, "Patient's left", { class: 'an-side', 'text-anchor': 'end' }));
+  if (mapLayers.vessels && !(treeDrill && !treeDrill.done)) svg.appendChild(mapVessels());
   const startOf = (k) => (T[k].line ? T[k].line[1] : T[k].xy);
   const w = (k) => T[k].big ? (T[k].parent && T[T[k].parent].big && !T[k].lobe ? 7 : 5) : 2.6;
   Object.keys(T).forEach(k => {
@@ -52,6 +72,58 @@ function treeMap() {
   });
   // segment numbers beside the nodes (outside the buttons so each button's hit area is its circle)
   if (!(treeDrill && !treeDrill.done)) Object.keys(T).forEach(k => { const n = T[k]; if (!n.b) return; const left = n.la ? n.la === 'end' : n.side === 'R'; svg.appendChild(svt(n.xy[0] + (left ? -8 : 8), n.xy[1] + 3, n.b, { class: 'an-bl', 'text-anchor': left ? 'end' : 'start' })); });
+  if (mapLayers.nodes && !(treeDrill && !treeDrill.done)) svg.appendChild(mapStations());
+  return svg;
+}
+/* the station map's coordinates on the tree map: the two airways are drawn to nearly the same scale */
+const mx = (x) => x - 10, my = (y) => 172 + (y - 190) * 0.9;
+/* the great vessels and the oesophagus on the tree map (the same courses as on the station map) */
+function mapVessels() {
+  const g = sv('g', { class: 'an-mapv', 'data-map-layer': 'vessels' });
+  const P = (x, y) => mx(x) + ' ' + my(y);
+  const add = (d, cls, id, label) => { const p = sv('path', { d: d, class: cls + ' an-mv', 'data-med': id }); p.appendChild(sv('title', {})).textContent = label; hoverable(p, '', id); g.appendChild(p); return p; };
+  g.appendChild(sv('line', { x1: mx(222), y1: my(60), x2: mx(226), y2: my(370), class: 'an-eso an-mv', 'data-med': 'eso' }));
+  add('M' + P(120, 48) + ' L' + P(160, 74) + ' L' + P(160, 182), 'an-vein', 'svc', 'SVC');
+  add('M' + P(296, 44) + ' L' + P(160, 74), 'an-vein', 'lbcv', 'left brachiocephalic (innominate) vein');
+  add('M' + P(160, 182) + ' Q' + P(172, 190) + ' ' + P(186, 184) + ' Q' + P(200, 178) + ' ' + P(206, 190), 'an-vein thin', 'azy', 'azygos arch');
+  add('M' + P(248, 250) + ' C' + P(250, 190) + ' ' + P(258, 150) + ' ' + P(290, 150) + ' C' + P(318, 150) + ' ' + P(318, 190) + ' ' + P(300, 212), 'an-art', 'arch', 'ascending aorta and arch');
+  add('M' + P(300, 212) + ' L' + P(292, 236) + ' L' + P(286, 300), 'an-art thin', 'dao', 'descending aorta');
+  add('M' + P(236, 258) + ' C' + P(240, 232) + ' ' + P(262, 222) + ' ' + P(288, 230), 'an-art pa', 'lpa', 'left pulmonary artery');
+  add('M' + P(236, 258) + ' C' + P(222, 246) + ' ' + P(196, 240) + ' ' + P(168, 246), 'an-art pa', 'rpa', 'right pulmonary artery');
+  [[146, 128, 'SVC'], [170, 203, 'azygos'], [306, 146, 'aortic arch'], [252, 226, 'left PA'], [160, 262, 'right PA'], [232, 366, 'oesophagus']].forEach(l => g.appendChild(svt(mx(l[0]), my(l[1]), l[2], { class: 'an-sl' })));
+  return g;
+}
+/* the nodal stations on the tree map: tap one to open it on the station map; hovering lights it up in the 3D mediastinum */
+function mapStations() {
+  const g = sv('g', { class: 'an-maps', 'data-map-layer': 'nodes' });
+  AN.STATIONS.forEach(st => st.xy.forEach((p, i) => {
+    const id = st.id, sid = st.xy.length > 1 && /^(1|9)$/.test(id) ? id + (i ? 'L' : 'R') : id;
+    const m = sv('g', { class: 'an-st mini ' + (ZONE_CLASS[st.zone] || '') + (st.dashed ? ' dashed' : ''), 'data-station': sid, tabindex: '0', role: 'button' });
+    m.appendChild(sv('title', {})).textContent = 'Station ' + id + ' — ' + st.name + ' (tap to open on the station map)';
+    m.appendChild(sv('circle', { cx: mx(p[0]), cy: my(p[1]), r: 7.5 }));
+    m.appendChild(svt(mx(p[0]), my(p[1]) + 2.6, id.length > 3 ? id.replace('–', '-') : id, { 'text-anchor': 'middle', class: 'an-stl tiny' }));
+    const go = () => { stationSel = id; setMode('learn', { topic: 'stations' }); };
+    m.addEventListener('click', go); m.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
+    hoverable(m, sid, '');
+    g.appendChild(m);
+  }));
+  return g;
+}
+/* a small copy of the tree map with a dot at the scope's position, for the corner of the inside view */
+function miniMap(depthFrac) {
+  const T = AN.TREE, path = treePath(treeAt), n = T[treeAt];
+  const svg = sv('svg', { viewBox: '40 0 320 380', class: 'an-mini', 'aria-label': 'Where the scope is' });
+  const startOf = (k) => (T[k].line ? T[k].line[1] : T[k].xy);
+  Object.keys(T).forEach(k => {
+    const x = T[k]; if (!x.parent) return;
+    const a = startOf(x.parent), b = x.xy, on = path.indexOf(k) >= 0;
+    if (x.line) svg.appendChild(sv('line', { x1: x.line[0][0], y1: x.line[0][1], x2: x.line[1][0], y2: x.line[1][1], class: 'an-br' + (on ? ' on' : ''), 'stroke-width': 7, 'stroke-linecap': 'round' }));
+    else svg.appendChild(sv('line', { x1: a[0], y1: a[1], x2: b[0], y2: b[1], class: 'an-br' + (on ? ' on' : ''), 'stroke-width': x.big ? 4 : 2, 'stroke-linecap': 'round' }));
+  });
+  const a = n.line ? n.line[0] : (n.parent ? startOf(n.parent) : n.xy), b = n.line ? n.line[1] : n.xy, f = Math.max(0, Math.min(1, depthFrac || 0));
+  const px = a[0] + (b[0] - a[0]) * f, py = a[1] + (b[1] - a[1]) * f;
+  svg.appendChild(sv('circle', { cx: px, cy: py, r: 11, class: 'an-mini-halo' }));
+  svg.appendChild(sv('circle', { cx: px, cy: py, r: 6, class: 'an-mini-dot' }));
   return svg;
 }
 /* what the scope sees from the current node: the lumen, the posterior membrane, the openings ahead */
@@ -136,6 +208,8 @@ function landRing(cx, cy, R) {
   (AN.LANDMARKS[landKey()] || []).forEach(it => {
     const p = clockXY(cx, cy, R, it.h, it.d), r = R * it.s;
     const item = sv('g', { class: 'an-lm ' + it.k, 'data-lm': it.l, tabindex: '0' });
+    if (it.k === 'n') item.setAttribute('data-station', it.l); else if (it.m) item.setAttribute('data-med', it.m);
+    hoverable(item, it.k === 'n' ? it.l : '', it.k === 'n' ? '' : it.m);
     item.appendChild(sv('title', {})).textContent = it.l + ' — ' + LAND_KIND[it.k] + (it.t ? '. ' + it.t : '');
     let rx, ry;
     if (it.k === 'n') {
@@ -212,7 +286,8 @@ function treeNav() {
   }
   return h('div', { class: 'an-tree', 'data-at': treeAt }, [
     h('div', { class: 'an-pics' }, [
-      h('figure', { class: 'an-fig' }, [treeMap(), h('figcaption', { text: 'Anterior view — tap any branch' })]),
+      h('figure', { class: 'an-fig' }, [treeMap(), h('div', { class: 'an-layers' }, [['vessels', 'Vessels'], ['nodes', 'Nodal stations']].map(l => { const id = uid('ly'); return h('label', { class: 'chk-inline', for: id }, [h('input', { type: 'checkbox', id: id, checked: !!mapLayers[l[0]], ['data-map-' + l[0]]: '1', onchange: (e) => { mapLayers[l[0]] = e.target.checked; prefSet(MAP_KEY, mapLayers); render(); } }), l[1]]); })),
+        h('figcaption', { text: 'Anterior view — tap any branch' + (mapLayers.nodes ? '; tap a station to open it on the station map' : '') })]),
       h('figure', { class: 'an-fig' }, [scopeView(),
         landOn() && treeAt === 'trachea' ? h('div', { class: 'seg an-level', role: 'radiogroup', 'aria-label': 'Level of the trachea' }, [['upper', 'Upper trachea'], ['lower', 'Lower trachea and carina']].map(o => h('button', { type: 'button', class: 'ch', role: 'radio', 'data-level': o[0], 'aria-checked': String(treeLevel === o[0]), text: o[1], onclick: () => { treeLevel = o[0]; if (typeof THREE !== 'undefined') t3SetDepth(o[0] === 'upper' ? 30 : 95); render(); } }))) : null,
         landOn() ? landLegend() : null,

@@ -1,7 +1,7 @@
 # PFT Interpreter — web source
 
 The app is one self-contained HTML page (`vendor/three.min.js`, three.js r147 under the MIT license, is inlined for the 3D airway model in Learn). `src/` holds the engine (four parts plus the generated phrase catalog), the
-interface, the glossary, the Learn text (`education.js` for the PFT area, `anatomy.js` for the anatomy and bronchoscopy area with the bronchial tree, its 3D skeleton, the nodal stations and the segment table behind `ui_4b_anatomy.js` and `ui_4c_tree3d.js`) and the worked examples; `build.js` assembles `dist/PFT_Interpreter_standalone.html`
+interface, the glossary, the Learn text (`education.js` for the PFT area, `anatomy.js` for the anatomy and bronchoscopy area with the bronchial tree, its 3D skeleton, the nodal stations and the segment table behind `ui_4b_anatomy.js` and `ui_4c_tree3d.js`, `ecg.js` for the conduction model and its scenarios behind `ui_4d_ecg.js`) and the worked examples; `build.js` assembles `dist/PFT_Interpreter_standalone.html`
 and `build_desktop.js` copies it to `../app/index.html`, which GitHub Pages serves and the desktop app loads.
 
 ```
@@ -64,6 +64,15 @@ uploaded and no published atlas image is bundled. The 3D module (`src/ui_4c_tree
 the patient's left, y anterior, z superior) to the scene as (x, z, y) — a right-handed mapping; negating an axis would
 mirror the anatomy — and keeps the scope's depth along the current airway (`T3.depth`, millimetres; `t3Move`,
 `t3Enter`, `t3DepthText`), held a centimetre back from any carina so both openings stay in view.
+
+The ECG lab (`src/ecg.js`, testable in node): `normalSegments()` lists the atrial and ventricular regions with their
+activation time, duration, mean wavefront direction (x left, y inferior, z anterior) and weight; a scenario's
+`apply(S, degree, R)` delays, slows, redirects or adds regions and sets the PR; `sequence()` returns the adjusted
+regions with the QRS duration and the frontal axis; `beats()` lays the P and QRS onsets over the strip (Wenckebach,
+Mobitz II and complete block live here); `voltageAt(lead, seq, beats, t)` sums the regions' dipoles projected onto
+the lead, with repolarisation concordant for muscle activated on time and discordant for muscle activated late;
+`stateAt()` tells the drawing which regions and paths are active. `ui_4d_ecg.js` draws the paper (25 mm/s,
+10 mm/mV), the heart with its paths and block marks, the vector dial and the player.
 
 `catalog/` holds the handoff package: the phrase catalog (source of truth), its schema, the rules specification, the
 human-readable reference and the test vectors. `PFT_Rules_and_Integration.txt` is the rule specification the engine

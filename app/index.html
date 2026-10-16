@@ -1136,6 +1136,74 @@ table.ct .ix-c.txt { width: 64px; }
   .tsec .ix-seg .sg[data-v] { grid-column: auto; }
 }
 
+/* ---- v7.5: map layers, hover links, the corner map of the inside view */
+.an-layers { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.an-mv { pointer-events: stroke; cursor: help; }
+.an-mapv .an-art, .an-mapv .an-vein { opacity: 0.85; }
+.an-mapv .an-art.hl, .an-mapv .an-vein.hl, .an-mapv .an-eso.hl { stroke: var(--ink); opacity: 1; }
+.an-st.mini circle { r: 7.5; }
+.an-stl.tiny { font-size: 6.5px; }
+.an-st.hl circle { stroke: var(--ink); stroke-width: 2.6; }
+.an-land .an-lm.hl circle, .an-land .an-lm.hl ellipse:first-of-type { stroke: var(--ink); stroke-width: 2.2; }
+.an-3d-wrap { position: relative; }
+.an-3d-mini { position: absolute; top: 8px; left: 8px; width: 96px; height: 114px; padding: 3px; border-radius: 8px; background: rgba(243, 240, 234, 0.82); border: 1px solid rgba(0, 0, 0, 0.12); pointer-events: none; }
+.an-3d-mini svg { width: 100%; height: 100%; display: block; }
+.an-mini .an-br { stroke: #b9a9a2; }
+.an-mini .an-br.on { stroke: #3f6f9e; }
+.an-mini-halo { fill: #f2c14e; opacity: 0.35; }
+.an-mini-dot { fill: #f2c14e; stroke: #8a5a00; stroke-width: 1.5; }
+@media (max-width: 560px) { .an-3d-mini { width: 72px; height: 86px; } }
+
+/* ---- v7.5: conduction and the ECG */
+:root { --ecg-paper: #fff8f3; --ecg-g1: #f3d5cc; --ecg-g5: #e4a89a; --ecg-ink: #1f1a17; --ecg-rest: #f1dcd4; --ecg-active: #e4572e; --ecg-path: #d9822b; --ecg-blk: #b3261e; }
+.ecg-lab { display: grid; gap: 10px; }
+.ecg-ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; }
+.ecg-pick select, .ecg-ctl select { font-size: 13px; padding: 3px 6px; width: auto; max-width: 100%; }
+.ecg-slider { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 13px; }
+.ecg-slider input[type=range] { width: 180px; }
+.ecg-degv { color: var(--accent); font-weight: 600; }
+.ecg-scrub { flex: 1 1 160px; min-width: 120px; }
+.ecg-time { font-family: var(--font-mono); font-size: 12px; color: var(--ink-2); min-width: 120px; }
+.ecg-top { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 720px) { .ecg-top { grid-template-columns: minmax(0, 1.4fr) minmax(200px, 0.8fr); align-items: start; } }
+.ecg-side { display: grid; gap: 8px; }
+.ecg-dialfig { max-width: 260px; }
+.ecg-reads { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12.5px; color: var(--ink-2); }
+.ecg-read b { color: var(--ink); font-weight: 600; }
+.ecg-hull { fill: #f7e9e3; stroke: #c9988f; stroke-width: 1.5; }
+.ecg-reg { fill: var(--ecg-rest); stroke: #c48b82; stroke-width: 0.8; transition: fill 60ms linear; cursor: help; }
+.ecg-reg.front { stroke: #7a2a16; stroke-width: 1.4; }
+.ecg-path { fill: none; stroke: #8a6b5e; stroke-linecap: round; stroke-linejoin: round; opacity: 0.9; cursor: help; }
+.ecg-path.thin { opacity: 0.6; }
+.ecg-path.on { stroke: var(--ecg-path); filter: drop-shadow(0 0 2px rgba(217, 130, 43, 0.8)); }
+.ecg-path.blocked { stroke: var(--ecg-blk); stroke-dasharray: 4 4; opacity: 0.8; }
+.ecg-block line { stroke: var(--ecg-blk); stroke-width: 3; stroke-linecap: round; }
+.ecg-hl { font-size: 11px; fill: #6b4a40; font-weight: 600; pointer-events: none; }
+.ecg-hl.side { font-size: 9px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; fill: var(--muted); }
+.ecg-legend { display: flex; flex-wrap: wrap; gap: 3px 10px; font-size: 11px; color: var(--muted); }
+.ecg-lg { display: inline-flex; align-items: center; gap: 4px; }
+.ecg-lg i { width: 10px; height: 10px; border-radius: 3px; }
+.ecg-lg.rest i { background: var(--ecg-rest); border: 1px solid #c48b82; } .ecg-lg.act i { background: var(--ecg-active); } .ecg-lg.dep i { background: #c9806f; } .ecg-lg.path i { background: var(--ecg-path); } .ecg-lg.blk i { background: var(--ecg-blk); }
+.ecg-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--line); background: var(--ecg-paper); }
+.ecg-paper { display: block; }
+.ecg-bg { fill: var(--ecg-paper); }
+.ecg-g1 { fill: none; stroke: var(--ecg-g1); stroke-width: 0.6; }
+.ecg-g5 { fill: none; stroke: var(--ecg-g5); stroke-width: 0.9; }
+.ecg-tr { fill: none; stroke: var(--ecg-ink); stroke-width: 1.4; stroke-linejoin: round; stroke-linecap: round; }
+.ecg-cal { fill: none; stroke: var(--ecg-ink); stroke-width: 1.2; }
+.ecg-ll { font-size: 12px; font-weight: 700; fill: var(--ecg-ink); }
+.ecg-sep { stroke: var(--ecg-ink); stroke-width: 0.6; opacity: 0.35; }
+.ecg-cursor { stroke: #2f6fbf; stroke-width: 1.4; opacity: 0.85; }
+.ecg-dial-ring { fill: var(--surface); stroke: var(--line-strong); stroke-width: 1; }
+.ecg-dial-ax { stroke: var(--line); stroke-width: 1; }
+.ecg-dial-l { font-size: 9.5px; fill: var(--muted); } .ecg-dial-l.strong { fill: var(--ink); font-weight: 600; font-size: 11px; }
+.ecg-loop { fill: none; stroke: #9a8f88; stroke-width: 1.2; opacity: 0.8; }
+.ecg-axis { stroke: var(--ink); stroke-width: 1.2; stroke-dasharray: 4 3; }
+.ecg-vec { stroke: var(--ecg-path); stroke-width: 3; stroke-linecap: round; }
+.ecg-text { display: grid; gap: 6px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.ecg-text h3 { margin: 0; font-size: 14px; }
+.ecg-text p { margin: 0; }
+
 </style>
 </head>
 <body>
@@ -5555,7 +5623,7 @@ function interpret(raw) {
 }
 
 const API = {
-  version: '7.4.0',
+  version: '7.5.0',
   catalogVersion: CATALOG.version,
   Z_LLN: Z_LLN, Z_ULN: Z_ULN, STYLES: STYLES,
   TESTS: TESTS, PRESETS: PRESETS, SCHEMA: SCHEMA, LOOPS: LOOPS, INDICATIONS: INDICATIONS, KIND_OPTS: KIND_OPTS, PRIOR_FIELDS: PRIOR_FIELDS, CUR_FIELDS: CUR_FIELDS, MAX_PRIORS: MAX_PRIORS, MAX_TREND: MAX_TREND,
@@ -6474,7 +6542,8 @@ const MEDIASTINUM = {
     { id: '2R', p: [-13, 9, 70] }, { id: '2L', p: [13, 6, 60] }, { id: '3a', p: [-10, 30, 56] }, { id: '3p', p: [0, -12, 36] },
     { id: '4R', p: [-15, 6, 22] }, { id: '4L', p: [14, 3, 12] }, { id: '5', p: [26, 18, 20] }, { id: '6', p: [12, 40, 28] },
     { id: '7', p: [0, -8, -24] }, { id: '8', p: [8, -14, -70] }, { id: '9R', p: [-26, -12, -98] }, { id: '9L', p: [36, -12, -98] },
-    { id: '10R', p: [-20, 3, -14] }, { id: '10L', p: [34, 1, -16] }, { id: '11Rs', p: [-26, -4, -30] }, { id: '11Ri', p: [-24, 6, -52] }, { id: '11L', p: [44, -2, -36] }
+    { id: '10R', p: [-20, 3, -14] }, { id: '10L', p: [34, 1, -16] }, { id: '11Rs', p: [-26, -4, -30] }, { id: '11Ri', p: [-24, 6, -52] }, { id: '11L', p: [44, -2, -36] },
+    { id: '12R', p: [-34, 4, -62] }, { id: '12L', p: [50, 0, -46] }
   ]
 };
 
@@ -6580,6 +6649,11 @@ const LANDMARKS = {
 };
 LANDMARKS.lud = LANDMARKS.lul.filter(x => /PA|pulmonary v|12L/.test(x.l));
 LANDMARKS.ling = [{ k: 'a', h: 2.0, d: 1.3, s: 0.14, l: 'lingular a. (A4+5)', t: 'Lateral to the lingular bronchus.' }, { k: 'v', h: 10.0, d: 1.35, s: 0.14, l: 'lingular v. (V4+5)', t: 'Medial and below, to the superior pulmonary vein.' }, { k: 'n', h: 6.0, d: 1.2, s: 0.1, l: '12L', t: 'Lobar nodes beside the lingular bronchus.' }];
+/* which 3D structure a ring item stands for (hovering one highlights the other): by label, with the two basal trunks by side */
+const LM_MED = { 'SVC': 'svc', 'azygos arch': 'azy', 'aortic arch': 'arch', 'ascending aorta': 'aao', 'descending aorta': 'dao', 'main / right PA': 'rpa', 'right PA': 'rpa', 'interlobar PA': 'rpa', 'left PA': 'lpa', 'oesophagus': 'eso',
+  'brachiocephalic a.': 'bca', 'L brachiocephalic v.': 'lbcv', 'R brachiocephalic v.': 'rbcv', 'L common carotid a.': 'lcc', 'L subclavian a.': 'lsc',
+  'R superior pulmonary v.': 'rspv', 'R inferior pulmonary v.': 'ripv', 'L superior pulmonary v.': 'lspv', 'L inferior pulmonary v.': 'lipv', 'truncus anterior (A1, A3)': 'rpa', 'lingular a. (A4+5)': 'lpa' };
+Object.keys(LANDMARKS).forEach(k => LANDMARKS[k].forEach(it => { if (it.k !== 'n' && !it.m) it.m = it.l === 'basal trunk PA' ? (/^l/.test(k) ? 'lpa' : 'rpa') : (LM_MED[it.l] || ''); }));
 
 /* schematic EBUS picture per station: where the probe sits and which structures surround the node on the screen
    (positions on the picture: L/R beside the node, D deep to it, DL/DR deep and to one side, SL/SR shallow and to one side) */
@@ -6999,8 +7073,196 @@ const GROUPS = [
   { title: 'Bronchoscopy', ids: ['bronch_basics', 'bronch_prep', 'sedation', 'antithrombotic', 'bal', 'sampling', 'icu', 'ebus'] }
 ];
 
-root.PFT_ANAT = { topics: T, groups: GROUPS, TREE: TREE, TREE3D: TREE3D, STATIONS: STATIONS, SEGMENTS: SEGMENTS, LANDMARKS: LANDMARKS, SONO: SONO, MEDIASTINUM: MEDIASTINUM, NEXT_BRANCH: NEXT_BRANCH };
+root.PFT_ANAT = { topics: T, groups: GROUPS, TREE: TREE, TREE3D: TREE3D, STATIONS: STATIONS, SEGMENTS: SEGMENTS, LANDMARKS: LANDMARKS, SONO: SONO, MEDIASTINUM: MEDIASTINUM, NEXT_BRANCH: NEXT_BRANCH, LM_MED: LM_MED };
 if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_ANAT;
+})(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this));
+
+/* PFT Interpreter — Learn: cardiac conduction and the ECG.
+   A teaching model of how the activation sequence writes the 12-lead ECG. The heart is a handful of regions, each
+   activated at a time, for a duration, with a mean wavefront direction and a weight; the signal in a lead is the sum of
+   the regions' dipoles projected onto the lead's direction. Conduction disorders change the timing and direction of the
+   regions (a blocked bundle branch delays and slows its ventricle; a blocked fascicle tilts the axis; an accessory
+   pathway starts a ventricle early), so the traces change for the reason they do in a patient. The shapes are the
+   textbook ones; the model is for understanding, not for reading real tracings.
+   Frame: x toward the patient's left, y inferior (down), z anterior. Times in ms, amplitudes in mV (roughly). */
+(function (root) {
+'use strict';
+const d2r = Math.PI / 180;
+const LEADS = [
+  ['I', [1, 0, 0]], ['II', [Math.cos(60 * d2r), Math.sin(60 * d2r), 0]], ['III', [Math.cos(120 * d2r), Math.sin(120 * d2r), 0]],
+  ['aVR', [Math.cos(-150 * d2r), Math.sin(-150 * d2r), 0]], ['aVL', [Math.cos(-30 * d2r), Math.sin(-30 * d2r), 0]], ['aVF', [0, 1, 0]],
+  ['V1', [-0.5, 0.05, 0.86]], ['V2', [-0.15, 0.08, 0.98]], ['V3', [0.3, 0.15, 0.94]], ['V4', [0.62, 0.22, 0.75]], ['V5', [0.86, 0.22, 0.45]], ['V6', [0.97, 0.18, 0.15]]
+];
+const LAYOUT = [['I', 'aVR', 'V1', 'V4'], ['II', 'aVL', 'V2', 'V5'], ['III', 'aVF', 'V3', 'V6']];
+
+/* the regions of the ventricles in order of normal activation (t0 after the start of the QRS) and the atria (after the
+   start of the P). `via` names the conduction path that brings the wavefront; `pic` the shape on the heart drawing. */
+function normalSegments() {
+  return {
+    atria: [
+      { id: 'ra', name: 'Right atrium', t0: 0, dur: 55, dir: [0.25, 0.8, 0.4], mag: 0.11, via: 'sa' },
+      { id: 'la', name: 'Left atrium', t0: 28, dur: 58, dir: [0.8, 0.5, -0.3], mag: 0.11, via: 'bach' }
+    ],
+    vent: [
+      { id: 'sep', name: 'Septum (left to right)', t0: 0, dur: 26, dir: [-0.55, -0.15, 0.65], mag: 0.42, via: 'lbb' },
+      { id: 'apex', name: 'Apex and anterior wall', t0: 12, dur: 30, dir: [0.3, 0.8, 0.45], mag: 0.7, via: 'lbb' },
+      { id: 'rv', name: 'Right ventricular free wall', t0: 16, dur: 30, dir: [-0.55, 0.25, 0.75], mag: 0.5, via: 'rbb' },
+      { id: 'lva', name: 'Anterolateral wall (anterior fascicle)', t0: 22, dur: 34, dir: [0.85, -0.2, -0.15], mag: 0.85, via: 'laf' },
+      { id: 'lvi', name: 'Inferoposterior wall (posterior fascicle)', t0: 24, dur: 34, dir: [0.3, 0.9, -0.3], mag: 0.85, via: 'lpf' },
+      { id: 'lvl', name: 'Lateral wall', t0: 30, dur: 32, dir: [0.95, 0.3, -0.1], mag: 0.8, via: 'lbb' },
+      { id: 'base', name: 'Posterobasal left ventricle', t0: 50, dur: 26, dir: [-0.3, -0.55, -0.75], mag: 0.4, via: 'lbb' }
+    ]
+  };
+}
+
+/* ------------------------------------------------------------ the scenarios
+   Each applies a degree (0–1) to the normal sequence and sets the rhythm: how the P waves and the QRS complexes fall
+   over a 10-second strip. `pr` is the P-onset-to-QRS-onset interval for conducted beats. */
+const SCENARIOS = [
+  { id: 'normal', name: 'Normal conduction', param: null,
+    mech: 'The sinus node fires; the atria depolarise right then left (P wave). The impulse waits in the AV node (PR segment), then runs down the His bundle and both bundle branches so that the septum goes first, left to right (the small septal q in V6, r in V1), then the apex, the right ventricle and the thick left ventricle almost together (the big R in V5–6, the deep S in V1), and the posterobasal wall last (the small terminal s in V6). Because the two ventricles are activated at the same time, the QRS is narrow.',
+    ecg: 'PR 120–200 ms; QRS under 100 ms (narrow) with a normal axis (−30° to +90°); T waves follow the QRS direction.' },
+  { id: 'rbbb', name: 'Right bundle branch block', param: { label: 'Degree of block in the right bundle', min: 0, max: 1, step: 0.05, value: 1, fmt: (v) => v < 0.35 ? 'conducting with delay (incomplete)' : (v < 0.7 ? 'incomplete block' : 'complete block') },
+    apply: (S, g) => { const rv = S.vent.filter(x => x.id === 'rv')[0]; rv.t0 += 54 * g; rv.dur += 54 * g; rv.mag *= 1 + 0.6 * g; rv.late = 54 * g; rv.blocked = g > 0.1; },
+    mech: 'The right bundle no longer carries the impulse, so the left ventricle is activated normally and on time through the left bundle, and the right ventricle is reached late, muscle to muscle, across the septum. Early forces are unchanged (normal septal q and R). The terminal forces are the late, slow right ventricular wavefront pointing right and forward, and nothing opposes them: a broad terminal R′ in V1 (rSR′, the M shape) and a broad slurred S in I, aVL and V5–6. The late-activated ventricle repolarises late, so the T wave turns away from the delayed forces (inverted in V1–V2). Drag the slider: a mild conduction delay only widens the terminal part (incomplete block, QRS 100–120 ms); a complete block gives a QRS of 120 ms or more.',
+    ecg: 'QRS ≥ 120 ms (complete) or 100–119 ms (incomplete); rSR′ in V1–V2; wide S in I and V6; secondary ST-T changes in V1–V3; axis usually normal.' },
+  { id: 'lbbb', name: 'Left bundle branch block', param: { label: 'Degree of block in the left bundle', min: 0, max: 1, step: 0.05, value: 1, fmt: (v) => v < 0.35 ? 'conduction delay' : (v < 0.7 ? 'incomplete block' : 'complete block') },
+    apply: (S, g) => {
+      const sep = S.vent.filter(x => x.id === 'sep')[0], rv = S.vent.filter(x => x.id === 'rv')[0];
+      sep.dir = [-0.55 + 1.15 * g, -0.15, 0.65 - 1.05 * g]; sep.mag *= 1 - 0.3 * g; sep.name = g > 0.5 ? 'Septum (right to left)' : sep.name; sep.via = g > 0.5 ? 'rbb' : 'lbb'; sep.dur += 10 * g;
+      rv.mag *= 1 - 0.5 * g;
+      S.vent.forEach(x => { if (/^(apex|lva|lvi|lvl|base)$/.test(x.id)) { x.t0 += (x.id === 'apex' ? 30 : 44) * g; x.dur += 40 * g; x.late = 44 * g; x.blocked = g > 0.1; x.via = g > 0.5 ? 'rbb' : x.via; } });
+    },
+    mech: 'With the left bundle blocked the whole sequence reverses: the impulse comes down the right bundle, activates the right ventricle, then crosses the septum from right to left (the normal septal q disappears — no q in I, aVL, V5–6) and spreads slowly through the left ventricular muscle. The left ventricle, the dominant mass, is activated late and slowly, so the broad leftward forces write a wide, notched or plateaued R in I, aVL and V5–6 and a deep QS or rS in V1–V2. Repolarisation is discordant: the T wave points away from the QRS in every lead. The slider shows how a delay in the left bundle thickens the R and removes the q before the block is complete.',
+    ecg: 'QRS ≥ 120 ms; broad notched R in I, aVL, V5–6 without q; QS or rS in V1–V3; discordant ST-T; an underlying infarct is hard to read.' },
+  { id: 'lafb', name: 'Left anterior fascicular block', param: { label: 'Block in the anterior fascicle', min: 0, max: 1, step: 0.05, value: 1, fmt: (v) => v < 0.5 ? 'partial' : 'complete' },
+    apply: (S, g) => { const a = S.vent.filter(x => x.id === 'lva')[0], i = S.vent.filter(x => x.id === 'lvi')[0], l = S.vent.filter(x => x.id === 'lvl')[0], ap = S.vent.filter(x => x.id === 'apex')[0];
+      a.t0 += 30 * g; a.dur += 12 * g; a.dir = [0.6, -0.2 - 1.0 * g, -0.15]; a.mag *= 1 + 0.5 * g; a.late = 30 * g; a.blocked = g > 0.1;
+      i.t0 -= 6 * g; i.mag *= 1 - 0.35 * g; l.dir = [0.95, 0.3 - 0.3 * g, -0.1]; ap.dir = [0.3, 0.8 - 0.3 * g, 0.45]; },
+    mech: 'The anterior fascicle supplies the anterosuperior wall of the left ventricle. When it is blocked that wall is reached late through the posterior fascicle, so activation starts inferiorly (a small r in II, III and aVF, a small q in I and aVL) and ends superiorly and to the left (a tall R in aVL and I, deep S in II, III, aVF). The mean QRS vector swings up and to the left: left axis deviation, with little widening because the delay is short.',
+    ecg: 'Axis −45° to −90°; qR in I and aVL, rS in II, III, aVF; QRS under 120 ms; no other cause of left axis (inferior infarct, LVH, WPW).' },
+  { id: 'lpfb', name: 'Left posterior fascicular block', param: { label: 'Block in the posterior fascicle', min: 0, max: 1, step: 0.05, value: 1, fmt: (v) => v < 0.5 ? 'partial' : 'complete' },
+    apply: (S, g) => { const a = S.vent.filter(x => x.id === 'lva')[0], i = S.vent.filter(x => x.id === 'lvi')[0], l = S.vent.filter(x => x.id === 'lvl')[0];
+      i.t0 += 30 * g; i.dur += 12 * g; i.dir = [0.3 - 1.0 * g, 0.9 + 0.2 * g, -0.3]; i.mag *= 1 + 0.5 * g; i.late = 30 * g; i.blocked = g > 0.1;
+      a.t0 -= 6 * g; a.mag *= 1 - 0.4 * g; l.dir = [0.95 - 0.5 * g, 0.3 + 0.4 * g, -0.1]; },
+    mech: 'The posterior fascicle supplies the inferoposterior wall. With it blocked, activation starts superiorly and to the left (small r in I and aVL, q in III) and ends inferiorly and to the right: right axis deviation. It is rare on its own because the fascicle is broad and well supplied, so a right axis is first explained by right ventricular disease, a tall thin chest or a lateral infarct.',
+    ecg: 'Axis +90° to +180°; rS in I and aVL, qR in III and aVF; QRS under 120 ms; a diagnosis of exclusion.' },
+  { id: 'wpw', name: 'Pre-excitation (WPW)', param: { label: 'Share of the ventricle reached through the accessory pathway', min: 0, max: 1, step: 0.05, value: 0.6, fmt: (v) => v < 0.3 ? 'subtle delta wave' : (v < 0.7 ? 'clear pre-excitation' : 'mostly pre-excited') },
+    apply: (S, g, R) => { S.vent.unshift({ id: 'pre', name: 'Pre-excited base (left lateral pathway)', t0: -45 * g, dur: 50, dir: [-0.35, 0.55, 0.55], mag: 0.55 * g, via: 'ap' }); S.vent.forEach(x => { if (x.id !== 'pre') { x.t0 += 6 * g; x.mag *= 1 - 0.3 * g; } }); R.pr = 160 - 45 * g; },
+    mech: 'An accessory pathway (a bundle of Kent) connects atrium to ventricle outside the AV node, here on the left lateral wall. It has no AV-nodal delay, so the ventricle beside it starts to depolarise before the normal wavefront arrives: the PR is short and the QRS begins with a slurred upstroke, the delta wave, whose direction is that of the pre-excited muscle (positive in V1 for a left-sided pathway). The rest of the ventricle is then reached through the normal system, so the QRS is a fusion of the two; the more muscle the pathway captures, the wider the QRS and the larger the delta. The pathway is also the re-entrant limb of the tachycardias these patients get.',
+    ecg: 'PR under 120 ms; delta wave; QRS over 110 ms; secondary ST-T changes; the delta polarity locates the pathway.' },
+  { id: 'avb1', name: 'First-degree AV block', param: { label: 'PR interval', min: 200, max: 360, step: 10, value: 260, unit: 'ms', fmt: (v) => v + ' ms' },
+    apply: (S, g, R) => { R.pr = g; },
+    mech: 'Every atrial impulse reaches the ventricles, but conduction through the AV node (occasionally the His–Purkinje system) is slow, so the gap between P and QRS lengthens. The QRS itself is unchanged. The slider sets the PR interval.',
+    ecg: 'PR > 200 ms, constant; every P followed by a QRS.' },
+  { id: 'mobitz1', name: 'Second-degree AV block, Mobitz I (Wenckebach)', param: null,
+    rhythm: 'wenck',
+    mech: 'The AV node tires with each beat: the PR lengthens from beat to beat (the increments shrinking) until one P is not conducted at all, then the cycle restarts with a short PR. The dropped beat makes a pause shorter than two P–P intervals. The block is in the node, so the QRS is narrow and the condition is usually benign.',
+    ecg: 'Progressive PR prolongation then a dropped QRS (here 4:3); grouped beating; narrow QRS.' },
+  { id: 'mobitz2', name: 'Second-degree AV block, Mobitz II', param: null,
+    rhythm: 'mobitz2',
+    mech: 'Conduction fails abruptly below the AV node, in the His–Purkinje system: the PR is constant on the conducted beats and then a P is simply dropped, without warning. Because the disease is infranodal the QRS is often wide (here with a right bundle branch block) and progression to complete block is likely: this pattern usually needs a pacemaker.',
+    ecg: 'Constant PR with intermittent non-conducted P waves (here 3:2); QRS often wide.' },
+  { id: 'chb', name: 'Third-degree (complete) AV block', param: null,
+    rhythm: 'chb',
+    mech: 'No atrial impulse reaches the ventricles. The atria keep the sinus rate; the ventricles are driven by an escape pacemaker below the block, slower and independent, so the P waves march through the QRS complexes without any relation (AV dissociation with a ventricular rate slower than the atrial rate). A junctional escape (block at the node) gives a narrow QRS at 40–60/min; a ventricular escape (block below the His) gives a wide QRS at 20–40/min, as drawn here.',
+    ecg: 'P and QRS independent; atrial rate faster than the ventricular rate; a regular escape rhythm, wide and slow when ventricular.' }
+];
+
+/* ------------------------------------------------------------ the beat
+   The dipole at time t (ms from the start of the QRS) and the ECG from it. A smooth bump sin²(πu) stands for the
+   activating wavefront; repolarisation is a wider, lower bump later, pointed the normal way (concordant) for muscle
+   activated on time and the opposite way for muscle activated late. */
+function bump(u) { return (u <= 0 || u >= 1) ? 0 : Math.pow(Math.sin(Math.PI * u), 2); }
+function dipole(S, t, opts) {
+  const v = [0, 0, 0];
+  const add = (dir, w) => { v[0] += dir[0] * w; v[1] += dir[1] * w; v[2] += dir[2] * w; };
+  S.vent.forEach(x => {
+    add(x.dir, x.mag * bump((t - x.t0) / x.dur));
+    // repolarisation: 240–360 ms after activation, concordant unless the region was reached late
+    const late = x.late || 0, conc = 1 - 1.9 * Math.min(1, late / 44);
+    add(x.dir, x.mag * 0.26 * conc * bump((t - (x.t0 + 220 + x.dur * 0.6)) / 170));
+  });
+  if (opts && opts.p !== undefined) S.atria.forEach(x => { add(x.dir, x.mag * bump((t - opts.p - x.t0) / x.dur)); add(x.dir, -x.mag * 0.25 * bump((t - opts.p - x.t0 - 60) / 90)); });   // atrial repolarisation, small and opposite
+  return v;
+}
+function dot(a, b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
+function leadVec(name) { return LEADS.filter(l => l[0] === name)[0][1]; }
+
+/* the sequence for a scenario at a degree: adjusted segments, PR and the measurements that follow from them */
+function sequence(scn, g) {
+  const S = normalSegments(), R = { pr: 160, rate: 72 };
+  if (scn && scn.apply) scn.apply(S, g, R);
+  const qrsEnd = Math.max.apply(null, S.vent.map(x => x.t0 + x.dur)), qrsStart = Math.min.apply(null, S.vent.map(x => x.t0));
+  // the mean QRS vector in the frontal plane: integrate the dipole over the QRS
+  let fx = 0, fy = 0; for (let t = qrsStart; t <= qrsEnd; t += 2) { const d = dipole(S, t); fx += d[0]; fy += d[1]; }
+  const axis = Math.round(Math.atan2(fy, fx) / d2r);
+  return { S: S, R: R, qrs: Math.round(qrsEnd - qrsStart), qrsStart: qrsStart, qrsEnd: qrsEnd, pr: Math.round(R.pr + qrsStart), axis: axis, pDur: 86 };
+}
+
+/* ------------------------------------------------------------ the strip
+   Beats over `secs` seconds: for each, the P onset and the QRS onset (null when the P is not conducted). */
+function beats(scn, seq, secs) {
+  const out = [], rate = seq.R.rate, pp = 60000 / rate, pr = seq.R.pr, rhythm = scn && scn.rhythm;
+  if (rhythm === 'chb') {
+    for (let t = 120; t < secs * 1000; t += pp) out.push({ p: t, q: null });
+    for (let t = 420; t < secs * 1000; t += 60000 / 34) out.push({ p: null, q: t, escape: true });
+    return out.sort((a, b) => (a.p !== null ? a.p : a.q) - (b.p !== null ? b.p : b.q));
+  }
+  let i = 0;
+  for (let t = 120; t < secs * 1000; t += pp, i++) {
+    if (rhythm === 'wenck') { const k = i % 4; out.push({ p: t, q: k === 3 ? null : t + [160, 240, 300][k] }); }
+    else if (rhythm === 'mobitz2') { out.push({ p: t, q: i % 3 === 2 ? null : t + pr }); }
+    else out.push({ p: t, q: t + pr });
+  }
+  return out;
+}
+/* the voltage of a lead at time T (ms into the strip) */
+function voltageAt(leadName, seq, bts, T) {
+  const L = leadVec(leadName); let v = 0;
+  for (let i = 0; i < bts.length; i++) {
+    const b = bts[i];
+    if (b.q !== null && T >= b.q - 80 && T < b.q + 520) v += dot(dipole(seq.S, T - b.q), L);
+    if (b.p !== null && T >= b.p - 10 && T < b.p + 260) { const S = seq.S; let w = 0; S.atria.forEach(x => { w += dot(x.dir, L) * x.mag * bump((T - b.p - x.t0) / x.dur); w += dot(x.dir, L) * -x.mag * 0.25 * bump((T - b.p - x.t0 - 60) / 90); }); v += w; }
+  }
+  return v;
+}
+/* which regions and paths are active at time T of the strip (for the heart drawing): 0 resting, 0–1 depolarising
+   (the front), 1 depolarised, 1–2 repolarising back to rest */
+function stateAt(seq, bts, T) {
+  const st = { regions: {}, paths: {}, phase: 'rest' };
+  const S = seq.S;
+  bts.forEach(b => {
+    if (b.p !== null) S.atria.forEach(x => { const u = (T - b.p - x.t0) / x.dur, r = (T - b.p - x.t0 - 60) / 90; if (u > 0 && u < 1) { st.regions[x.id] = Math.max(st.regions[x.id] || 0, u); st.paths[x.via] = 1; } else if (u >= 1 && r < 1) st.regions[x.id] = Math.max(st.regions[x.id] || 0, r > 0 ? 1 + r : 1); });
+    if (b.p !== null && b.q !== null && T > b.p + 60 && T < b.q) { st.paths.av = 1; st.phase = 'av'; }
+    if (b.p !== null && b.q === null && T > b.p + 60 && T < b.p + 260) { st.paths.avblock = 1; }
+    if (b.q !== null) S.vent.forEach(x => {
+      const u = (T - b.q - x.t0) / x.dur, r = (T - b.q - (x.t0 + 220 + x.dur * 0.6)) / 170;
+      if (u > 0 && u < 1) { st.regions[x.id] = Math.max(st.regions[x.id] || 0, u); st.paths[x.via] = 1; if (!b.escape) { st.paths.his = 1; } }
+      else if (u >= 1 && r < 1) st.regions[x.id] = Math.max(st.regions[x.id] || 0, r > 0 ? 1 + r : 1);
+    });
+  });
+  return st;
+}
+
+/* ------------------------------------------------------------ topics */
+const T = {};
+T.ecglab = { title: 'How conduction writes the ECG', kicker: 'Watch the wavefront, read the leads', blocks: [
+  { p: 'Pick a conduction disorder and play the beat. The heart on the left lights up region by region as the wavefront passes, the twelve leads on the right are written by the same wavefront — each lead sees the mean electrical vector projected onto its own direction — and the dial shows that vector swinging round in the frontal plane. Drag the slider to make a block partial or complete and watch the complexes change shape for the reason they do in a patient.' },
+  { widget: 'ecg' },
+  { h: 'The rule behind every trace', ul: [
+    'A wavefront moving toward a lead writes a positive deflection, away from it a negative one; the size follows the mass of muscle depolarising and how squarely it faces the lead.',
+    'The ventricles are activated in a fixed order through the His–Purkinje system in about 80 ms: septum (left to right), apex and anterior wall, right ventricle and left ventricle together, posterobasal wall last. That order is why V1 is rS and V6 is qR, and why the QRS is narrow.',
+    'Anything that takes a region out of the Purkinje system — a blocked bundle, a blocked fascicle, an accessory pathway, a ventricular focus — makes that region depolarise muscle to muscle: late, slow and unopposed. The QRS widens and gains a slurred or notched part pointing at the region that was left behind.',
+    'Muscle activated late also repolarises late, so the T wave turns away from the delayed forces (secondary ST-T changes, discordant to the terminal QRS). A T wave that stays concordant in a bundle branch block is itself abnormal.',
+    'The PR interval is AV-nodal time. First-degree block lengthens it; Wenckebach lengthens it progressively until a beat drops; Mobitz II drops beats with a constant PR because the failure is below the node; complete block divorces P from QRS.'] },
+  { h: 'Where the model stops', p: 'This is a dipole model with seven ventricular regions and the textbook lead directions: good for the shapes and the reasons, not for measuring a patient. Real hearts rotate, chests vary, infarcts remove muscle and drugs slow conduction; the criteria quoted beside each scenario are the ones to read a tracing by.' },
+  { src: ['Surawicz B, Childers R, Deal BJ, et al. AHA/ACCF/HRS recommendations for the standardization and interpretation of the electrocardiogram, part III: intraventricular conduction disturbances. Circulation 2009;119:e235–40.', 'Kusumoto FM, et al. 2018 ACC/AHA/HRS guideline on the evaluation and management of patients with bradycardia and cardiac conduction delay. Circulation 2019;140:e382–482.', 'Durrer D, et al. Total excitation of the isolated human heart. Circulation 1970;41:899–912 (the activation sequence).'] }
+] };
+
+const GROUPS = [{ title: 'Conduction and the ECG', ids: ['ecglab'] }];
+root.PFT_ECG = { topics: T, groups: GROUPS, LEADS: LEADS, LAYOUT: LAYOUT, SCENARIOS: SCENARIOS, normalSegments: normalSegments, sequence: sequence, beats: beats, voltageAt: voltageAt, stateAt: stateAt, dipole: dipole, leadVec: leadVec };
+if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_ECG;
 })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this));
 
 </script>
@@ -8740,6 +9002,25 @@ let treeAt = 'trachea', treeDrill = null, treeMirror = !!prefGet(MIRROR_KEY), tr
 /* the ring of structures around the scope view (vessels, nodes, oesophagus) is drawn when switched on, the level has
    data, and no drill is hiding the labels */
 function landOn() { return treeLand && !!(AN.LANDMARKS && AN.LANDMARKS[treeAt]) && !(treeDrill && !treeDrill.done); }
+/* the layers of the tree map (vessels, nodal stations), remembered */
+const MAP_KEY = 'pft.anat.map.v1';
+let mapLayers = Object.assign({ vessels: true, nodes: true }, prefGet(MAP_KEY) || {});
+/* one structure highlighted everywhere at once: the ring, the tree map, the station map and the 3D mediastinum.
+   `station` is an IASLC id, `vessel` the id of a MEDIASTINUM vessel. */
+const anatHl = { station: '', vessel: '' };
+function anatHover(station, vessel) {
+  anatHl.station = station || ''; anatHl.vessel = vessel || '';
+  if (typeof T3 !== 'undefined') T3.hl = anatHl;
+  document.querySelectorAll('[data-station], [data-med]').forEach(el => {
+    const on = (anatHl.station && el.getAttribute('data-station') === anatHl.station) || (anatHl.vessel && el.getAttribute('data-med') === anatHl.vessel);
+    el.classList.toggle('hl', !!on);
+  });
+}
+function hoverable(el, station, vessel) {
+  const on = () => anatHover(station, vessel), off = () => { if (anatHl.station === (station || '') && anatHl.vessel === (vessel || '')) anatHover('', ''); };
+  el.addEventListener('mouseenter', on); el.addEventListener('mouseleave', off); el.addEventListener('focus', on); el.addEventListener('blur', off);
+  return el;
+}
 let stationSel = '4R', stationQuiz = null;
 
 function svt(x, y, text, a) { const t = sv('text', Object.assign({ x: x, y: y }, a || {})); t.textContent = text; return t; }
@@ -8764,6 +9045,7 @@ function treeMap() {
   svg.appendChild(sv('path', { class: 'an-lung', d: 'M228 60 C280 70 330 130 338 220 C344 290 320 350 282 362 C252 370 232 350 224 300 L220 120 Z' }));
   svg.appendChild(svt(72, 376, "Patient's right", { class: 'an-side' }));
   svg.appendChild(svt(328, 376, "Patient's left", { class: 'an-side', 'text-anchor': 'end' }));
+  if (mapLayers.vessels && !(treeDrill && !treeDrill.done)) svg.appendChild(mapVessels());
   const startOf = (k) => (T[k].line ? T[k].line[1] : T[k].xy);
   const w = (k) => T[k].big ? (T[k].parent && T[T[k].parent].big && !T[k].lobe ? 7 : 5) : 2.6;
   Object.keys(T).forEach(k => {
@@ -8784,6 +9066,58 @@ function treeMap() {
   });
   // segment numbers beside the nodes (outside the buttons so each button's hit area is its circle)
   if (!(treeDrill && !treeDrill.done)) Object.keys(T).forEach(k => { const n = T[k]; if (!n.b) return; const left = n.la ? n.la === 'end' : n.side === 'R'; svg.appendChild(svt(n.xy[0] + (left ? -8 : 8), n.xy[1] + 3, n.b, { class: 'an-bl', 'text-anchor': left ? 'end' : 'start' })); });
+  if (mapLayers.nodes && !(treeDrill && !treeDrill.done)) svg.appendChild(mapStations());
+  return svg;
+}
+/* the station map's coordinates on the tree map: the two airways are drawn to nearly the same scale */
+const mx = (x) => x - 10, my = (y) => 172 + (y - 190) * 0.9;
+/* the great vessels and the oesophagus on the tree map (the same courses as on the station map) */
+function mapVessels() {
+  const g = sv('g', { class: 'an-mapv', 'data-map-layer': 'vessels' });
+  const P = (x, y) => mx(x) + ' ' + my(y);
+  const add = (d, cls, id, label) => { const p = sv('path', { d: d, class: cls + ' an-mv', 'data-med': id }); p.appendChild(sv('title', {})).textContent = label; hoverable(p, '', id); g.appendChild(p); return p; };
+  g.appendChild(sv('line', { x1: mx(222), y1: my(60), x2: mx(226), y2: my(370), class: 'an-eso an-mv', 'data-med': 'eso' }));
+  add('M' + P(120, 48) + ' L' + P(160, 74) + ' L' + P(160, 182), 'an-vein', 'svc', 'SVC');
+  add('M' + P(296, 44) + ' L' + P(160, 74), 'an-vein', 'lbcv', 'left brachiocephalic (innominate) vein');
+  add('M' + P(160, 182) + ' Q' + P(172, 190) + ' ' + P(186, 184) + ' Q' + P(200, 178) + ' ' + P(206, 190), 'an-vein thin', 'azy', 'azygos arch');
+  add('M' + P(248, 250) + ' C' + P(250, 190) + ' ' + P(258, 150) + ' ' + P(290, 150) + ' C' + P(318, 150) + ' ' + P(318, 190) + ' ' + P(300, 212), 'an-art', 'arch', 'ascending aorta and arch');
+  add('M' + P(300, 212) + ' L' + P(292, 236) + ' L' + P(286, 300), 'an-art thin', 'dao', 'descending aorta');
+  add('M' + P(236, 258) + ' C' + P(240, 232) + ' ' + P(262, 222) + ' ' + P(288, 230), 'an-art pa', 'lpa', 'left pulmonary artery');
+  add('M' + P(236, 258) + ' C' + P(222, 246) + ' ' + P(196, 240) + ' ' + P(168, 246), 'an-art pa', 'rpa', 'right pulmonary artery');
+  [[146, 128, 'SVC'], [170, 203, 'azygos'], [306, 146, 'aortic arch'], [252, 226, 'left PA'], [160, 262, 'right PA'], [232, 366, 'oesophagus']].forEach(l => g.appendChild(svt(mx(l[0]), my(l[1]), l[2], { class: 'an-sl' })));
+  return g;
+}
+/* the nodal stations on the tree map: tap one to open it on the station map; hovering lights it up in the 3D mediastinum */
+function mapStations() {
+  const g = sv('g', { class: 'an-maps', 'data-map-layer': 'nodes' });
+  AN.STATIONS.forEach(st => st.xy.forEach((p, i) => {
+    const id = st.id, sid = st.xy.length > 1 && /^(1|9)$/.test(id) ? id + (i ? 'L' : 'R') : id;
+    const m = sv('g', { class: 'an-st mini ' + (ZONE_CLASS[st.zone] || '') + (st.dashed ? ' dashed' : ''), 'data-station': sid, tabindex: '0', role: 'button' });
+    m.appendChild(sv('title', {})).textContent = 'Station ' + id + ' — ' + st.name + ' (tap to open on the station map)';
+    m.appendChild(sv('circle', { cx: mx(p[0]), cy: my(p[1]), r: 7.5 }));
+    m.appendChild(svt(mx(p[0]), my(p[1]) + 2.6, id.length > 3 ? id.replace('–', '-') : id, { 'text-anchor': 'middle', class: 'an-stl tiny' }));
+    const go = () => { stationSel = id; setMode('learn', { topic: 'stations' }); };
+    m.addEventListener('click', go); m.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
+    hoverable(m, sid, '');
+    g.appendChild(m);
+  }));
+  return g;
+}
+/* a small copy of the tree map with a dot at the scope's position, for the corner of the inside view */
+function miniMap(depthFrac) {
+  const T = AN.TREE, path = treePath(treeAt), n = T[treeAt];
+  const svg = sv('svg', { viewBox: '40 0 320 380', class: 'an-mini', 'aria-label': 'Where the scope is' });
+  const startOf = (k) => (T[k].line ? T[k].line[1] : T[k].xy);
+  Object.keys(T).forEach(k => {
+    const x = T[k]; if (!x.parent) return;
+    const a = startOf(x.parent), b = x.xy, on = path.indexOf(k) >= 0;
+    if (x.line) svg.appendChild(sv('line', { x1: x.line[0][0], y1: x.line[0][1], x2: x.line[1][0], y2: x.line[1][1], class: 'an-br' + (on ? ' on' : ''), 'stroke-width': 7, 'stroke-linecap': 'round' }));
+    else svg.appendChild(sv('line', { x1: a[0], y1: a[1], x2: b[0], y2: b[1], class: 'an-br' + (on ? ' on' : ''), 'stroke-width': x.big ? 4 : 2, 'stroke-linecap': 'round' }));
+  });
+  const a = n.line ? n.line[0] : (n.parent ? startOf(n.parent) : n.xy), b = n.line ? n.line[1] : n.xy, f = Math.max(0, Math.min(1, depthFrac || 0));
+  const px = a[0] + (b[0] - a[0]) * f, py = a[1] + (b[1] - a[1]) * f;
+  svg.appendChild(sv('circle', { cx: px, cy: py, r: 11, class: 'an-mini-halo' }));
+  svg.appendChild(sv('circle', { cx: px, cy: py, r: 6, class: 'an-mini-dot' }));
   return svg;
 }
 /* what the scope sees from the current node: the lumen, the posterior membrane, the openings ahead */
@@ -8868,6 +9202,8 @@ function landRing(cx, cy, R) {
   (AN.LANDMARKS[landKey()] || []).forEach(it => {
     const p = clockXY(cx, cy, R, it.h, it.d), r = R * it.s;
     const item = sv('g', { class: 'an-lm ' + it.k, 'data-lm': it.l, tabindex: '0' });
+    if (it.k === 'n') item.setAttribute('data-station', it.l); else if (it.m) item.setAttribute('data-med', it.m);
+    hoverable(item, it.k === 'n' ? it.l : '', it.k === 'n' ? '' : it.m);
     item.appendChild(sv('title', {})).textContent = it.l + ' — ' + LAND_KIND[it.k] + (it.t ? '. ' + it.t : '');
     let rx, ry;
     if (it.k === 'n') {
@@ -8944,7 +9280,8 @@ function treeNav() {
   }
   return h('div', { class: 'an-tree', 'data-at': treeAt }, [
     h('div', { class: 'an-pics' }, [
-      h('figure', { class: 'an-fig' }, [treeMap(), h('figcaption', { text: 'Anterior view — tap any branch' })]),
+      h('figure', { class: 'an-fig' }, [treeMap(), h('div', { class: 'an-layers' }, [['vessels', 'Vessels'], ['nodes', 'Nodal stations']].map(l => { const id = uid('ly'); return h('label', { class: 'chk-inline', for: id }, [h('input', { type: 'checkbox', id: id, checked: !!mapLayers[l[0]], ['data-map-' + l[0]]: '1', onchange: (e) => { mapLayers[l[0]] = e.target.checked; prefSet(MAP_KEY, mapLayers); render(); } }), l[1]]); })),
+        h('figcaption', { text: 'Anterior view — tap any branch' + (mapLayers.nodes ? '; tap a station to open it on the station map' : '') })]),
       h('figure', { class: 'an-fig' }, [scopeView(),
         landOn() && treeAt === 'trachea' ? h('div', { class: 'seg an-level', role: 'radiogroup', 'aria-label': 'Level of the trachea' }, [['upper', 'Upper trachea'], ['lower', 'Lower trachea and carina']].map(o => h('button', { type: 'button', class: 'ch', role: 'radio', 'data-level': o[0], 'aria-checked': String(treeLevel === o[0]), text: o[1], onclick: () => { treeLevel = o[0]; if (typeof THREE !== 'undefined') t3SetDepth(o[0] === 'upper' ? 30 : 95); render(); } }))) : null,
         landOn() ? landLegend() : null,
@@ -9291,18 +9628,28 @@ const T3 = { mode: 'out', renderer: null, canvas: null, out: null, med: null, in
 function t3Orbit() { return T3.mode === 'med' ? T3.orbitMed : T3.orbit; }
 /* ---- position along the current airway, in millimetres from its start (real lengths: trachea 11 cm, RMB 2.4 cm, LMB 4.6 cm …) */
 function t3Len(id) { const s = t3Seg(id); return s.a.distanceTo(s.b); }
-function t3Depth() { if (T3.depthFor !== treeAt) { T3.depthFor = treeAt; T3.depth = Math.min(6, t3Len(treeAt) * 0.4); } return T3.depth; }
+function t3Depth() { if (T3.depthFor !== treeAt) { T3.depthFor = treeAt; T3.depth = Math.min(4, t3Len(treeAt) * 0.4); } return T3.depth; }
 function t3MaxDepth(id) { const len = t3Len(id); return AN.TREE[id].kids.length > 1 ? Math.max(0, len - 10) : len; }   // the tip is held a centimetre back from a carina to see both openings
 function t3SetDepth(mm) {
   T3.depthFor = treeAt; T3.depth = Math.max(0, Math.min(t3MaxDepth(treeAt), mm));
   if (treeAt === 'trachea') treeLevel = T3.depth < 60 ? 'upper' : 'lower';   // the scope view's ring follows the level
+  if (T3.inn && T3.inn.id === treeAt) T3.tween = { from: T3.inn.camera.position.clone(), t0: performance.now(), dur: 280 };   // glide, don't jump
 }
+const T3_STEP = 5;   // millimetres per press: small steps read as a smooth advance
 /* advance or pull back by `mm`; past the end the openings must be chosen, before the start the scope is back in the parent */
 function t3Move(mm) {
-  const T = AN.TREE, n = T[treeAt], d = t3Depth(), len = t3Len(treeAt);
-  if (mm < 0 && d <= 10 && n.parent) { T3.refocus = true; t3Enter(n.parent, Math.max(0, t3MaxDepth(n.parent) - 4)); return; }
+  const T = AN.TREE, n = T[treeAt], d = t3Depth();
+  if (mm < 0 && d <= T3_STEP && n.parent) { T3.refocus = true; t3Enter(n.parent, Math.max(0, t3MaxDepth(n.parent) - 4)); return; }   // from the mouth of a bronchus, back out to the parent
   if (mm > 0 && d >= t3MaxDepth(treeAt) - 0.5 && n.kids.length === 1) { T3.refocus = true; t3Enter(n.kids[0], 4); return; }
-  t3SetDepth(d + mm); render();
+  const level = treeLevel;
+  t3SetDepth(d + mm);
+  if (treeAt === 'trachea' && treeLevel !== level) { render(); return; }   // the ring changes level: redraw the page
+  t3UpdateNav();
+}
+/* the readout and the corner map follow the scope without redrawing the page */
+function t3UpdateNav() {
+  const el = document.querySelector('[data-3d-depth]'); if (el) el.textContent = t3DepthText();
+  const mm = document.querySelector('.an-3d-mini'); if (mm) { mm.textContent = ''; mm.appendChild(miniMap(t3Depth() / (t3Len(treeAt) || 1))); }
 }
 /* go to another airway with the scope at a given depth in it (the depth is set before the page re-renders) */
 function t3Enter(id, mm) {
@@ -9372,20 +9719,20 @@ function t3BuildMed() {
     const pts = x.pts.map(toScene), curve = new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.5);
     const m = x.k === 'o' ? mat('o', { transparent: true, opacity: 0.55 }) : (x.k === 'e' ? mat('e', { transparent: true, opacity: 0.92 }) : mat(x.k));
     const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, Math.max(12, pts.length * 10), x.r, 14, false), m);
-    tube.userData.lm = x.l; grp.add(tube);
-    [pts[0], pts[pts.length - 1]].forEach(p => { const cap = new THREE.Mesh(new THREE.SphereGeometry(x.r, 12, 10), m); cap.position.copy(p); cap.userData.lm = x.l; grp.add(cap); });
+    tube.userData.lm = x.l; tube.userData.mid = x.id; tube.userData.k = x.k; grp.add(tube);
+    [pts[0], pts[pts.length - 1]].forEach(p => { const cap = new THREE.Mesh(new THREE.SphereGeometry(x.r, 12, 10), m); cap.position.copy(p); cap.userData.lm = x.l; cap.userData.mid = x.id; cap.userData.k = x.k; grp.add(cap); });
     if (!x.nl) { const lp = pts[Math.min(pts.length - 1, x.lp || 0)], lab = t3Label(x.sl || x.l, { h: 9 }); lab.position.copy(lp).add(new THREE.Vector3(0, x.r + 6, x.r + 2)); labels.add(lab); }
   });
   (M.blobs || []).forEach(b => {
     const ghost = b.k === 'h';
     const m = mat(b.k, ghost ? { transparent: true, opacity: 0.13, depthWrite: false } : { transparent: true, opacity: 0.85 });
     const e = new THREE.Mesh(new THREE.SphereGeometry(1, 28, 20), m);
-    e.position.copy(toScene(b.c)); e.scale.set(b.s[0], b.s[2], b.s[1]); e.userData.lm = b.l; if (ghost) e.renderOrder = -1; grp.add(e);
+    e.position.copy(toScene(b.c)); e.scale.set(b.s[0], b.s[2], b.s[1]); e.userData.lm = b.l; e.userData.mid = b.id; e.userData.k = b.k; if (ghost) e.renderOrder = -1; grp.add(e);
     const lab = t3Label(b.l, { h: 9 }); lab.position.copy(toScene(b.c)).add(new THREE.Vector3(0, ghost ? -b.s[2] - 8 : 0, b.s[1] + 2)); labels.add(lab);
   });
   const nm = mat('n', { roughness: 0.6 });
   (M.nodes || []).forEach(nd => {
-    const sph = new THREE.Mesh(new THREE.SphereGeometry(4, 14, 10), nm); sph.position.copy(toScene(nd.p)); sph.userData.lm = 'station ' + nd.id; sph.userData.station = nd.id; grp.add(sph);
+    const sph = new THREE.Mesh(new THREE.SphereGeometry(4, 14, 10), nm); sph.position.copy(toScene(nd.p)); sph.userData.lm = 'station ' + nd.id; sph.userData.station = nd.id; sph.userData.mid = nd.id; sph.userData.k = 'n'; grp.add(sph);
     const lab = t3Label(nd.id, { h: 6.5, color: '#2f3a0e', halo: 'rgba(240,244,220,0.95)' }); lab.position.copy(toScene(nd.p)).add(new THREE.Vector3(0, 6.5, 3)); labels.add(lab);
   });
   v.scene.add(grp); v.scene.add(labels); v.med = grp; v.labels = labels;
@@ -9396,7 +9743,19 @@ function t3BuildMed() {
   const mk = new THREE.Group(); mk.add(ring); mk.add(disc); mk.add(tick); v.scene.add(mk); v.marker = mk; v.tick = tick;
   return v;
 }
+/* the structure hovered in a 2D picture glows in the 3D one (a warm emissive copy of its material; nodes grow) */
+function t3Highlight(v) {
+  const hl = T3.hl || {}, want = {}; if (hl.station) want[hl.station] = 1; if (hl.vessel) want[hl.vessel] = 1;
+  v.med.children.forEach(m => {
+    const on = !!(m.userData.mid && want[m.userData.mid]);
+    if (on === !!m.userData.on) return;
+    m.userData.on = on;
+    if (on) { if (!m.userData.base) m.userData.base = m.material; const hm = m.material.clone(); hm.emissive = new THREE.Color(0xd08a2a); hm.emissiveIntensity = 0.75; hm.opacity = 1; hm.transparent = m.material.transparent; m.material = hm; if (m.userData.k === 'n') m.scale.setScalar(1.7); }
+    else { if (m.userData.base) m.material = m.userData.base; if (m.userData.k === 'n') m.scale.setScalar(1); }
+  });
+}
 function t3Marker(v) {
+  t3Highlight(v);
   const s = t3Seg(treeAt), dir = s.b.clone().sub(s.a).normalize(), len = s.a.distanceTo(s.b), d = Math.max(0, Math.min(len, t3Depth()));
   const p = s.a.clone().add(dir.clone().multiplyScalar(d)), R = s.r * 2.4;
   v.marker.position.copy(p); v.marker.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir); v.marker.scale.set(R, R, R);
@@ -9540,8 +9899,8 @@ function t3Ensure() {
   cv.addEventListener('wheel', (e) => { if (T3.mode === 'in') return; e.preventDefault(); const ob = t3Orbit(); ob.d = Math.max(80, Math.min(900, ob.d * (1 + Math.sign(e.deltaY) * 0.08))); }, { passive: false });
   cv.addEventListener('keydown', (e) => {
     const T = AN.TREE, n = T[treeAt];
-    if (e.key === 'ArrowUp' || e.key === 'Backspace') { e.preventDefault(); T3.refocus = true; t3Move(-10); }
-    else if (e.key === 'ArrowDown' || e.key === 'w' || e.key === '+' || e.key === '=') { e.preventDefault(); T3.refocus = true; t3Move(10); }
+    if (e.key === 'ArrowUp' || e.key === 'Backspace') { e.preventDefault(); T3.refocus = true; t3Move(-T3_STEP); }
+    else if (e.key === 'ArrowDown' || e.key === 'w' || e.key === '+' || e.key === '=') { e.preventDefault(); T3.refocus = true; t3Move(T3_STEP); }
     else if (/^[1-9]$/.test(e.key)) { const k = n.kids[+e.key - 1]; if (k) { e.preventDefault(); T3.refocus = true; t3Enter(k, 4); } }
     else if (e.key === 'ArrowLeft') { T3.yaw += 0.15; } else if (e.key === 'ArrowRight') { T3.yaw -= 0.15; }
   });
@@ -9587,7 +9946,7 @@ function t3Frame() {
   else if (T3.inn) {
     T3.renderer.setClearColor(0x2a1210);
     const pose = t3PoseIn(treeAt);
-    if (T3.tween) { const k = Math.min(1, (performance.now() - T3.tween.t0) / 650); const e = k * k * (3 - 2 * k); pose.eye = T3.tween.from.clone().lerp(pose.eye, e); if (k >= 1) T3.tween = null; }
+    if (T3.tween) { const k = Math.min(1, (performance.now() - T3.tween.t0) / (T3.tween.dur || 650)); const e = k * k * (3 - 2 * k); pose.eye = T3.tween.from.clone().lerp(pose.eye, e); if (k >= 1) T3.tween = null; }
     t3LookIn(T3.inn, pose); T3.renderer.render(T3.inn.scene, T3.inn.camera);
   }
   T3.raf = requestAnimationFrame(t3Frame);
@@ -9608,22 +9967,221 @@ function tree3dFig() {
       T3.inn.camera.aspect = T3.size[0] / (T3.size[1] || 1); T3.inn.camera.updateProjectionMatrix();
     }
   }
-  const wrap = h('div', { class: 'an-3d-wrap' }, [T3.canvas]);
+  const wrap = h('div', { class: 'an-3d-wrap' }, [T3.canvas, T3.mode === 'in' ? h('div', { class: 'an-3d-mini', title: 'Where the scope is' }, [miniMap(t3Depth() / (t3Len(treeAt) || 1))]) : null]);
   const n = AN.TREE[treeAt];
-  // the scope's position along the airway, at real lengths: a centimetre at a time
+  // the scope's position along the airway, at real lengths: five millimetres a press (hold the key to glide)
   const nav = T3.mode === 'out' ? null : h('div', { class: 'an-3d-nav' }, [
-    h('button', { type: 'button', class: 'btn sm quiet', 'data-3d-back': '1', title: 'Pull back 1 cm (↑)', text: '◀ 1 cm', onclick: () => t3Move(-10) }),
-    h('button', { type: 'button', class: 'btn sm quiet', 'data-3d-fwd': '1', title: 'Advance 1 cm (↓)', text: '1 cm ▶', onclick: () => t3Move(10) }),
+    h('button', { type: 'button', class: 'btn sm quiet', 'data-3d-back': '1', title: 'Pull back 5 mm (↑, hold to glide)', text: '◀ 5 mm', onclick: () => t3Move(-T3_STEP) }),
+    h('button', { type: 'button', class: 'btn sm quiet', 'data-3d-fwd': '1', title: 'Advance 5 mm (↓, hold to glide)', text: '5 mm ▶', onclick: () => t3Move(T3_STEP) }),
     h('span', { class: 'an-3d-depth', 'data-3d-depth': '1', text: t3DepthText() })
   ]);
   const cap = T3.mode === 'out' ? 'Outside: drag to orbit, wheel or pinch to zoom, tap a branch to go there (the current path is blue).'
     : (T3.mode === 'med' ? 'Mediastinum: the tree with the great vessels, the oesophagus, the spine behind, the heart (faint) and the nodal stations (olive). The blue ring is where the scope is, its yellow dot at 12 o’clock (anterior) — the scope view above shows that level in cross-section. Drag to orbit, tap a branch to go there, tap a structure for its name.'
-    : 'Inside the ' + n.name.toLowerCase() + ': drag to look around, tap an opening to advance; keys 1–' + Math.max(1, n.kids.length) + ' advance, ↓ a centimetre deeper, ↑ a centimetre back (and out to the parent). Rings in front, the flat membrane behind.');
+    : 'Inside the ' + n.name.toLowerCase() + ': drag to look around, tap an opening to advance; keys 1–' + Math.max(1, n.kids.length) + ' advance, ↓ 5 mm deeper, ↑ 5 mm back (and out to the parent); hold a key to glide. The corner map shows where you are. Rings in front, the flat membrane behind.');
   const fig = h('figure', { class: 'an-fig an-fig-3d' }, [modes, wrap, nav, h('figcaption', { text: cap + ' Procedural model from standard dimensions, not a patient.' })]);
   if (!T3.raf) T3.raf = requestAnimationFrame(t3Frame);
   if (T3.refocus) { T3.refocus = false; setTimeout(() => { try { T3.canvas.focus({ preventScroll: true }); } catch (x) { /* ignore */ } }, 0); }   // keyboard navigation keeps the canvas focused across re-renders
   return fig;
 }
+
+
+/* ========================================================================== Learn: conduction and the ECG
+   The lab: a heart drawing whose regions light up as the wavefront passes, the twelve leads written by the same
+   wavefront, a dial with the frontal-plane vector, a scrubber and a play button. Model and text in ecg.js. */
+const ECG = window.PFT_ECG || { topics: {}, groups: [], SCENARIOS: [], LEADS: [], LAYOUT: [] };
+const ECG_ST = { scn: 'normal', deg: {}, t: 0, playing: false, speed: 0.25, raf: 0, last: 0, strip: 10000, view: null, loop: true };
+const ECG_PX = 3;   // pixels per millimetre of paper (25 mm/s, 10 mm/mV)
+function ecgScenario() { return ECG.SCENARIOS.filter(s => s.id === ECG_ST.scn)[0] || ECG.SCENARIOS[0]; }
+function ecgDeg(scn) { const p = scn.param; if (!p) return 0; const v = ECG_ST.deg[scn.id]; return v === undefined ? p.value : v; }
+
+/* ---- the twelve leads on paper: 3 × 4 at 2.5 s a column, then a 10-second strip of lead II */
+function ecgPaper(seq, bts) {
+  const colW = 2.5 * 25 * ECG_PX, rowH = 32 * ECG_PX, left = 6, top = 6, W = left * 2 + 4 * colW, H = top * 2 + 4 * rowH;
+  const svg = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, class: 'ecg-paper', width: W, height: H, role: 'img', 'aria-label': 'Twelve-lead ECG written by the model' });
+  const pid = uid('eg');
+  const defs = sv('defs', {});
+  const small = sv('pattern', { id: pid + 's', width: ECG_PX, height: ECG_PX, patternUnits: 'userSpaceOnUse' });
+  small.appendChild(sv('path', { d: 'M ' + ECG_PX + ' 0 L 0 0 0 ' + ECG_PX, class: 'ecg-g1' })); defs.appendChild(small);
+  const big = sv('pattern', { id: pid + 'b', width: ECG_PX * 5, height: ECG_PX * 5, patternUnits: 'userSpaceOnUse' });
+  big.appendChild(sv('rect', { width: ECG_PX * 5, height: ECG_PX * 5, fill: 'url(#' + pid + 's)' })); big.appendChild(sv('path', { d: 'M ' + ECG_PX * 5 + ' 0 L 0 0 0 ' + ECG_PX * 5, class: 'ecg-g5' })); defs.appendChild(big);
+  svg.appendChild(defs);
+  svg.appendChild(sv('rect', { x: 0, y: 0, width: W, height: H, class: 'ecg-bg' }));
+  svg.appendChild(sv('rect', { x: left, y: top, width: 4 * colW, height: 4 * rowH, fill: 'url(#' + pid + 'b)' }));
+  const xOf = (ms) => left + ms / 1000 * 25 * ECG_PX;
+  const trace = (lead, t0, t1, baseY) => {
+    let d = ''; const step = 4;
+    for (let t = t0; t <= t1; t += step) { const v = ECG.voltageAt(lead, seq, bts, t); const x = xOf(t), y = baseY - v * 10 * ECG_PX; d += (d ? ' L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1); }
+    return sv('path', { d: d, class: 'ecg-tr', 'data-lead': lead });
+  };
+  ECG.LAYOUT.forEach((row, r) => {
+    const baseY = top + r * rowH + rowH * 0.62;
+    // calibration: 1 mV for 200 ms at the start of the row
+    svg.appendChild(sv('path', { d: 'M' + (left + 2) + ' ' + baseY + ' l0 -' + 10 * ECG_PX + ' l' + 5 * ECG_PX + ' 0 l0 ' + 10 * ECG_PX, class: 'ecg-cal' }));
+    row.forEach((lead, c) => {
+      const t0 = c * 2500 + (c === 0 ? 260 : 0), t1 = (c + 1) * 2500;
+      svg.appendChild(trace(lead, t0, t1, baseY));
+      svg.appendChild(svt(left + c * colW + 10 * ECG_PX, top + r * rowH + 14, lead, { class: 'ecg-ll' }));
+      if (c) svg.appendChild(sv('line', { x1: left + c * colW, y1: top + r * rowH + 6, x2: left + c * colW, y2: top + r * rowH + rowH - 6, class: 'ecg-sep' }));
+    });
+  });
+  const stripY = top + 3 * rowH + rowH * 0.62;
+  svg.appendChild(sv('path', { d: 'M' + (left + 2) + ' ' + stripY + ' l0 -' + 10 * ECG_PX + ' l' + 5 * ECG_PX + ' 0 l0 ' + 10 * ECG_PX, class: 'ecg-cal' }));
+  svg.appendChild(trace('II', 260, ECG_ST.strip, stripY));
+  svg.appendChild(svt(left + 10 * ECG_PX, top + 3 * rowH + 14, 'II (rhythm strip)', { class: 'ecg-ll' }));
+  const cur = sv('line', { x1: xOf(ECG_ST.t), y1: top, x2: xOf(ECG_ST.t), y2: top + 4 * rowH, class: 'ecg-cursor', 'data-ecg-cursor': '1' });
+  svg.appendChild(cur);
+  return { svg: svg, cursor: cur, xOf: xOf };
+}
+
+/* ---- the heart: an anterior view with the chambers, the conduction system and the regions of the model */
+const HEART_REGIONS = {
+  ra: 'M78 96 C62 70 86 46 116 52 C140 56 150 76 146 96 L146 150 C120 158 92 150 78 128 Z',
+  la: 'M206 92 C210 62 236 44 266 52 C296 60 306 90 294 116 L282 150 C258 160 226 158 206 148 Z',
+  rv: 'M80 150 C66 190 80 236 118 268 C136 284 154 292 170 300 L166 240 L148 150 Z',
+  sep: 'M148 150 L166 240 L170 300 C182 292 190 286 196 282 L192 236 L186 150 Z',
+  apex: 'M150 290 C168 312 190 322 212 318 C226 314 232 302 232 292 C218 300 200 304 184 296 C172 292 160 292 150 290 Z',
+  lva: 'M186 150 L192 236 L206 236 C232 236 256 220 266 196 C270 180 272 166 270 152 Z',
+  lvl: 'M206 236 L196 282 C214 290 232 294 240 288 C262 278 276 254 282 232 C272 240 240 240 206 236 Z',
+  lvi: 'M232 292 C256 294 280 278 290 252 C296 236 298 226 296 214 C292 236 282 258 268 270 C256 280 244 288 232 292 Z',
+  base: 'M270 152 C286 156 296 170 298 190 C300 204 298 214 296 214 C290 190 284 170 282 150 Z'
+};
+const HEART_PATHS = {
+  sa: { d: 'M118 64 C114 60 108 60 104 64', w: 6, name: 'Sinus node' },
+  bach: { d: 'M118 64 C160 56 200 54 236 64', w: 2, dash: '3 3', name: 'Bachmann’s bundle to the left atrium' },
+  internodal: { d: 'M118 64 C128 100 140 130 162 150', w: 2, dash: '3 3', name: 'Internodal pathways to the AV node' },
+  av: { d: 'M158 150 C162 144 170 144 174 150', w: 7, name: 'AV node (the delay)' },
+  his: { d: 'M168 152 L172 174', w: 4, name: 'Bundle of His' },
+  rbb: { d: 'M172 174 C170 210 168 250 172 290 C176 300 164 300 150 294', w: 3, name: 'Right bundle branch' },
+  lbb: { d: 'M172 174 C178 184 184 192 190 198', w: 4, name: 'Left bundle branch' },
+  laf: { d: 'M190 198 C214 196 240 186 262 170', w: 3, name: 'Left anterior fascicle' },
+  lpf: { d: 'M190 198 C210 228 240 256 270 266', w: 3, name: 'Left posterior fascicle' },
+  ap: { d: 'M282 150 C290 160 292 172 288 186', w: 4, name: 'Accessory pathway (bundle of Kent)', hidden: true }
+};
+const REGION_NAMES = { ra: 'Right atrium', la: 'Left atrium', rv: 'Right ventricle', sep: 'Septum', apex: 'Apex', lva: 'Anterolateral wall', lvl: 'Lateral wall', lvi: 'Inferoposterior wall', base: 'Posterobasal wall', pre: 'Pre-excited base' };
+function heartFig(seq) {
+  const svg = sv('svg', { viewBox: '40 30 290 310', class: 'ecg-heart', role: 'img', 'aria-label': 'The heart with its conduction system; regions light up as they depolarise' });
+  svg.appendChild(sv('path', { d: 'M64 96 C40 140 54 230 120 292 C150 318 190 332 222 318 C280 296 316 240 302 170 C298 140 300 90 272 54 C244 40 212 60 200 92 C176 60 130 40 100 56 C78 66 70 80 64 96 Z', class: 'ecg-hull' }));
+  const regions = {};
+  Object.keys(HEART_REGIONS).forEach(id => {
+    const p = sv('path', { d: HEART_REGIONS[id], class: 'ecg-reg', 'data-region': id }); p.appendChild(sv('title', {})).textContent = REGION_NAMES[id];
+    svg.appendChild(p); regions[id] = p;
+  });
+  // a left lateral pathway pre-excites the base: the pre region is drawn over the base
+  regions.pre = sv('path', { d: HEART_REGIONS.base, class: 'ecg-reg', 'data-region': 'pre', style: 'display:none' }); svg.appendChild(regions.pre);
+  const paths = {};
+  Object.keys(HEART_PATHS).forEach(id => {
+    const x = HEART_PATHS[id];
+    const p = sv('path', { d: x.d, class: 'ecg-path' + (x.dash ? ' thin' : ''), 'data-path': id, 'stroke-width': x.w, 'stroke-dasharray': x.dash || null, style: x.hidden ? 'display:none' : null });
+    p.appendChild(sv('title', {})).textContent = x.name;
+    svg.appendChild(p); paths[id] = p;
+  });
+  // block marks: a cross on the blocked path
+  const blocks = {};
+  const blockAt = { rbb: [170, 214], lbb: [181, 186], laf: [226, 190], lpf: [222, 240], av: [166, 148] };
+  Object.keys(blockAt).forEach(id => { const q = blockAt[id]; const g = sv('g', { class: 'ecg-block', 'data-block': id, style: 'display:none' }); g.appendChild(sv('line', { x1: q[0] - 6, y1: q[1] - 6, x2: q[0] + 6, y2: q[1] + 6 })); g.appendChild(sv('line', { x1: q[0] - 6, y1: q[1] + 6, x2: q[0] + 6, y2: q[1] - 6 })); svg.appendChild(g); blocks[id] = g; });
+  // labels
+  [[100, 92, 'RA'], [262, 88, 'LA'], [104, 214, 'RV'], [246, 214, 'LV'], [120, 58, 'SA'], [150, 140, 'AV'], [182, 316, 'apex'], [66, 318, "patient's right"]].forEach(l => svg.appendChild(svt(l[0], l[1], l[2], { class: 'ecg-hl' + (l[2].length > 5 ? ' side' : '') })));
+  return { svg: svg, regions: regions, paths: paths, blocks: blocks };
+}
+/* the frontal-plane dial: the lead axes, the QRS loop, the moving vector and the mean axis */
+function vectorDial(seq) {
+  const R = 64, cx = 80, cy = 80;
+  const svg = sv('svg', { viewBox: '0 0 160 160', class: 'ecg-dial', role: 'img', 'aria-label': 'Frontal-plane vector' });
+  svg.appendChild(sv('circle', { cx: cx, cy: cy, r: R, class: 'ecg-dial-ring' }));
+  [['I', 0], ['II', 60], ['III', 120], ['aVF', 90], ['aVL', -30], ['aVR', -150]].forEach(a => {
+    const th = a[1] * Math.PI / 180, x2 = cx + R * Math.cos(th), y2 = cy + R * Math.sin(th);
+    svg.appendChild(sv('line', { x1: cx - R * Math.cos(th) * 0.9, y1: cy - R * Math.sin(th) * 0.9, x2: x2, y2: y2, class: 'ecg-dial-ax' }));
+    svg.appendChild(svt(cx + (R + 10) * Math.cos(th), cy + (R + 10) * Math.sin(th) + 3, a[0], { class: 'ecg-dial-l', 'text-anchor': 'middle' }));
+  });
+  // the QRS loop
+  let d = ''; const sc = R / 2.4;
+  for (let t = seq.qrsStart; t <= seq.qrsEnd; t += 2) { const v = ECG.dipole(seq.S, t); d += (d ? ' L' : 'M') + (cx + v[0] * sc).toFixed(1) + ' ' + (cy + v[1] * sc).toFixed(1); }
+  svg.appendChild(sv('path', { d: d + ' Z', class: 'ecg-loop' }));
+  const th = seq.axis * Math.PI / 180;
+  svg.appendChild(sv('line', { x1: cx, y1: cy, x2: cx + R * 0.95 * Math.cos(th), y2: cy + R * 0.95 * Math.sin(th), class: 'ecg-axis' }));
+  const arrow = sv('line', { x1: cx, y1: cy, x2: cx, y2: cy, class: 'ecg-vec', 'data-ecg-vec': '1' }); svg.appendChild(arrow);
+  svg.appendChild(svt(4, 12, 'QRS axis ' + seq.axis + '°', { class: 'ecg-dial-l strong' }));
+  return { svg: svg, arrow: arrow, cx: cx, cy: cy, sc: sc };
+}
+
+/* the colour of a region between resting and depolarised */
+const ECG_REST = [241, 220, 212], ECG_ACT = [228, 87, 46], ECG_DEP = [201, 128, 111];
+/* 0–1: resting to the bright front; 1: depolarised (a calmer red); 1–2: back to resting as the region repolarises */
+function ecgMix(s) {
+  const a = s <= 1 ? ECG_REST : ECG_DEP, b = s <= 1 ? ECG_ACT : ECG_REST, k = s <= 1 ? s : s - 1;
+  const c = a.map((r, i) => Math.round(r + (b[i] - r) * k)); return 'rgb(' + c.join(',') + ')';
+}
+/* ---- the frame: cursor, heart state, vector; cheap enough for every animation frame */
+function ecgFrame() {
+  const v = ECG_ST.view; if (!v || !v.root.isConnected) { ECG_ST.raf = 0; ECG_ST.playing = false; return; }
+  const now = performance.now();
+  if (ECG_ST.playing) { const dt = Math.min(80, now - (ECG_ST.last || now)); ECG_ST.t += dt * ECG_ST.speed; if (ECG_ST.t >= ECG_ST.strip) ECG_ST.t = ECG_ST.loop ? 0 : ECG_ST.strip; }
+  ECG_ST.last = now;
+  const t = ECG_ST.t, x = v.paper.xOf(t);
+  v.paper.cursor.setAttribute('x1', x); v.paper.cursor.setAttribute('x2', x);
+  if (v.range && document.activeElement !== v.range) v.range.value = Math.round(t);
+  const st = ECG.stateAt(v.seq, v.bts, t);
+  Object.keys(v.heart.regions).forEach(id => {
+    const s = st.regions[id] || 0, el = v.heart.regions[id];
+    el.style.fill = s <= 0 ? '' : (s === 1 ? 'rgb(' + ECG_DEP.join(',') + ')' : ecgMix(Math.min(2, s)));
+    el.classList.toggle('front', s > 0 && s < 1);
+  });
+  Object.keys(v.heart.paths).forEach(id => v.heart.paths[id].classList.toggle('on', !!st.paths[id]));
+  if (v.heart.blocks.av) v.heart.blocks.av.style.display = st.paths.avblock ? '' : 'none';
+  const d = ECG.dipole(v.seq.S, t - (v.curBeat(t) || -1e9));
+  v.dial.arrow.setAttribute('x2', v.dial.cx + d[0] * v.dial.sc); v.dial.arrow.setAttribute('y2', v.dial.cy + d[1] * v.dial.sc);
+  v.timeEl.textContent = (t / 1000).toFixed(2) + ' s' + (st.paths.av ? ' · in the AV node' : (Object.keys(st.regions).some(k => st.regions[k] > 0 && st.regions[k] < 1) ? ' · depolarising' : ''));
+  if (v.playBtn) { v.playBtn.textContent = ECG_ST.playing ? '❚❚ Pause' : '▶ Play'; v.playBtn.setAttribute('aria-pressed', String(ECG_ST.playing)); }
+  ECG_ST.raf = requestAnimationFrame(ecgFrame);
+}
+function ecgPlay(on) { ECG_ST.playing = on; ECG_ST.last = performance.now(); if (!ECG_ST.raf) ECG_ST.raf = requestAnimationFrame(ecgFrame); }
+
+/* ---- the lab */
+function ecgLab() {
+  const scn = ecgScenario(), g = ecgDeg(scn), seq = ECG.sequence(scn, g), bts = ECG.beats(scn, seq, ECG_ST.strip / 1000);
+  const paper = ecgPaper(seq, bts), heart = heartFig(seq), dial = vectorDial(seq);
+  // blocked paths marked on the drawing
+  const blocked = {};
+  seq.S.vent.forEach(x => { if (x.blocked) { if (scn.id === 'rbbb') blocked.rbb = 1; if (scn.id === 'lbbb') blocked.lbb = 1; if (scn.id === 'lafb') blocked.laf = 1; if (scn.id === 'lpfb') blocked.lpf = 1; } });
+  Object.keys(heart.blocks).forEach(id => { if (id !== 'av') heart.blocks[id].style.display = blocked[id] ? '' : 'none'; });
+  Object.keys(blocked).forEach(id => heart.paths[id].classList.add('blocked'));
+  if (scn.id === 'wpw') { heart.paths.ap.style.display = ''; heart.regions.pre.style.display = ''; }
+  const sel = h('select', { id: 'ecg-scn', 'aria-label': 'Conduction scenario', onchange: (e) => { ECG_ST.scn = e.target.value; ECG_ST.t = 0; render(); } }, ECG.SCENARIOS.map(s => h('option', { value: s.id, selected: s.id === scn.id, text: s.name })));
+  let slider = null;
+  if (scn.param) {
+    const p = scn.param, out = h('span', { class: 'ecg-degv', text: p.fmt ? p.fmt(g) : String(g) });
+    const inp = h('input', { type: 'range', min: String(p.min), max: String(p.max), step: String(p.step), value: String(g), 'data-ecg-deg': '1', 'aria-label': p.label, oninput: (e) => { ECG_ST.deg[scn.id] = +e.target.value; out.textContent = p.fmt ? p.fmt(+e.target.value) : e.target.value; }, onchange: () => render() });
+    slider = h('label', { class: 'ecg-slider' }, [h('span', { class: 'lbl', text: p.label + ': ' }), out, inp]);
+  }
+  const playBtn = h('button', { type: 'button', class: 'btn sm', 'data-ecg-play': '1', 'aria-pressed': String(ECG_ST.playing), text: ECG_ST.playing ? '❚❚ Pause' : '▶ Play', onclick: () => ecgPlay(!ECG_ST.playing) });
+  const speed = h('select', { 'aria-label': 'Playback speed', 'data-ecg-speed': '1', onchange: (e) => { ECG_ST.speed = +e.target.value; } }, [[0.1, '1/10 speed'], [0.25, '1/4 speed'], [0.5, '1/2 speed'], [1, 'real time']].map(o => h('option', { value: String(o[0]), selected: ECG_ST.speed === o[0], text: o[1] })));
+  const range = h('input', { type: 'range', class: 'ecg-scrub', min: '0', max: String(ECG_ST.strip), step: '4', value: String(Math.round(ECG_ST.t)), 'data-ecg-t': '1', 'aria-label': 'Time on the strip', oninput: (e) => { ECG_ST.t = +e.target.value; if (!ECG_ST.raf) ECG_ST.raf = requestAnimationFrame(ecgFrame); } });
+  const timeEl = h('span', { class: 'ecg-time', 'data-ecg-time': '1' });
+  const reads = h('div', { class: 'ecg-reads' }, [
+    h('span', { class: 'ecg-read' }, [h('b', { text: 'PR ' }), (scn.rhythm === 'chb' ? '—' : (scn.rhythm === 'wenck' ? 'lengthening' : seq.pr + ' ms'))]),
+    h('span', { class: 'ecg-read', 'data-ecg-qrs': '1' }, [h('b', { text: 'QRS ' }), seq.qrs + ' ms']),
+    h('span', { class: 'ecg-read', 'data-ecg-axis': '1' }, [h('b', { text: 'Axis ' }), seq.axis + '°']),
+    h('span', { class: 'ecg-read' }, [h('b', { text: 'Rate ' }), (scn.rhythm === 'chb' ? 'atrial 72, ventricular 34' : (scn.rhythm ? 'sinus 72 (with dropped beats)' : '72')) + '/min'])
+  ]);
+  const legend = h('div', { class: 'ecg-legend' }, [h('span', { class: 'ecg-lg rest' }, [h('i'), 'resting']), h('span', { class: 'ecg-lg act' }, [h('i'), 'depolarising (the front)']), h('span', { class: 'ecg-lg dep' }, [h('i'), 'depolarised']), h('span', { class: 'ecg-lg path' }, [h('i'), 'conducting']), h('span', { class: 'ecg-lg blk' }, [h('i'), 'blocked'])]);
+  const root = h('div', { class: 'ecg-lab', 'data-ecg': scn.id }, [
+    h('div', { class: 'ecg-ctl' }, [h('label', { class: 'ecg-pick' }, [h('span', { class: 'lbl', text: 'Scenario ' }), sel]), slider]),
+    h('div', { class: 'ecg-ctl' }, [playBtn, speed, range, timeEl]),
+    h('div', { class: 'ecg-top' }, [
+      h('figure', { class: 'an-fig ecg-heartfig' }, [heart.svg, legend, h('figcaption', { text: 'Anterior view, the patient facing you: the sinus node, the AV node, the His bundle, both bundle branches and the two fascicles of the left bundle. Hover a region or a path for its name.' })]),
+      h('div', { class: 'ecg-side' }, [h('figure', { class: 'an-fig ecg-dialfig' }, [dial.svg, h('figcaption', { text: 'Frontal plane: the QRS loop (grey), the mean axis (dashed) and the vector at the cursor (orange).' })]), reads])
+    ]),
+    h('div', { class: 'ecg-wrap' }, [paper.svg]),
+    h('p', { class: 'fine', text: '25 mm/s, 10 mm/mV; the calibration pulse is 1 mV. Three rows of 2.5 s, then a 10-second rhythm strip of lead II. The cursor runs through all four rows at once because the rows are consecutive seconds of the same strip.' }),
+    h('div', { class: 'ecg-text' }, [h('h3', { text: scn.name }), h('p', {}, [h('span', { class: 'lbl', text: 'What happens. ' }), scn.mech]), h('p', {}, [h('span', { class: 'lbl', text: 'On the ECG. ' }), scn.ecg])])
+  ]);
+  // which beat the cursor belongs to (for the vector)
+  const curBeat = (t) => { let q = null; bts.forEach(b => { if (b.q !== null && b.q - 80 <= t && t < b.q + 520) q = b.q; }); return q; };
+  ECG_ST.view = { root: root, paper: paper, heart: heart, dial: dial, seq: seq, bts: bts, range: range, timeEl: timeEl, playBtn: playBtn, curBeat: curBeat };
+  if (!ECG_ST.raf) ECG_ST.raf = requestAnimationFrame(ecgFrame);
+  return root;
+}
+function ecgWidget(kind) { return kind === 'ecg' ? ecgLab() : null; }
 
 
 /* ========================================================================== Learn
@@ -9632,7 +10190,8 @@ const EDU = window.PFT_EDU || { topics: {}, groups: [] };
 /* Learn is organised in areas (a dropdown above the topic list); each area has its groups of topics. */
 const LEARN_CATS = [
   { id: 'pft', title: 'PFT interpretation', topics: EDU.topics, groups: EDU.groups },
-  { id: 'airway', title: 'Anatomy & bronchoscopy', topics: AN.topics, groups: AN.groups }
+  { id: 'airway', title: 'Anatomy & bronchoscopy', topics: AN.topics, groups: AN.groups },
+  { id: 'ecg', title: 'Cardiac conduction & ECG', topics: ECG.topics, groups: ECG.groups }
 ];
 function learnCatOf(topic) { return LEARN_CATS.filter(c => c.topics[topic])[0] || LEARN_CATS[0]; }
 
@@ -9715,7 +10274,7 @@ function eduBlocks(id, topic) {
     if (b.table) { out.push(eduTable(b.table)); }
     if (b.note) out.push(h('p', { class: 'fine', text: b.note }));
     if (b.fig) { const f = eduFig(b.fig); if (f) out.push(f); }
-    if (b.widget) { const w = anatWidget(b.widget); if (w) out.push(w); }
+    if (b.widget) { const w = anatWidget(b.widget) || ecgWidget(b.widget); if (w) out.push(w); }
     if (b.links) out.push(h('ul', { class: 'edu-links' }, b.links.map(l => h('li', {}, [h('a', { href: l[1], target: '_blank', rel: 'noopener noreferrer', text: l[0] }), l[2] ? h('span', { class: 'fine', text: ' — ' + l[2] }) : null]))));
   });
   return out;

@@ -16,7 +16,7 @@ const uniqN = (a) => a.filter((x, i) => a.indexOf(x) === i).length;
 
   // ---- areas
   await page.locator('.vw[data-view="learn"]').click(); await page.waitForSelector('.learn-body');
-  ok(await page.locator('#learn-cat option').count() === 2, 'Learn offers two areas');
+  ok(await page.locator('#learn-cat option').count() === 3, 'Learn offers three areas');
   ok(await page.locator('.learn-body').getAttribute('data-cat') === 'pft', 'PFT interpretation is the default area');
   const nPft = await page.locator('.ln-btn').count();
   ok(nPft >= 20, 'the PFT area keeps its topics (' + nPft + ')');
@@ -86,6 +86,21 @@ const uniqN = (a) => a.filter((x, i) => a.indexOf(x) === i).length;
   await page.locator('[data-tree-go="rml"]').click(); await page.waitForSelector('.an-tree[data-at="rml"]');
   ok(/A4, A5/.test((await page.locator('.an-land .an-lm').evaluateAll(els => els.map(e => e.getAttribute('data-lm')))).join()), 'middle lobe: the segmental arteries A4 and A5');
   await page.locator('[data-crumb="trachea"]').click(); await page.waitForSelector('.an-tree[data-at="trachea"]');
+  // the tree map carries the vessels and the stations as layers; hovering a station lights it up everywhere
+  ok(await page.locator('[data-map-vessels]').isChecked() && await page.locator('[data-map-nodes]').isChecked() && await page.locator('.an-map .an-mapv .an-mv').count() >= 7 && await page.locator('.an-map .an-maps .an-st').count() >= 19, 'the tree map shows the great vessels and every station by default');
+  await page.evaluate(() => { document.querySelector('.an-land [data-station="4R"]').dispatchEvent(new Event('mouseenter')); });
+  ok(await page.locator('.an-maps [data-station="4R"].hl').count() === 1 && await page.locator('.an-land [data-station="4R"].hl').count() === 1, 'hovering 4R on the ring highlights 4R on the tree map (and in the 3D mediastinum)');
+  await page.evaluate(() => { document.querySelector('.an-land [data-station="4R"]').dispatchEvent(new Event('mouseleave')); });
+  ok(await page.locator('.hl').count() === 0, 'leaving clears the highlight');
+  await page.evaluate(() => { document.querySelector('.an-land [data-med="svc"]').dispatchEvent(new Event('mouseenter')); });
+  ok(await page.locator('.an-mapv [data-med="svc"].hl').count() === 1, 'hovering the SVC on the ring highlights the SVC on the map');
+  await page.evaluate(() => { document.querySelector('.an-land [data-med="svc"]').dispatchEvent(new Event('mouseleave')); });
+  await page.locator('[data-map-vessels]').uncheck(); await page.waitForTimeout(60);
+  ok(await page.locator('.an-map .an-mapv').count() === 0 && await page.locator('.an-map .an-maps').count() === 1 && (await page.evaluate(() => JSON.parse(localStorage.getItem('pft.anat.map.v1')))).vessels === false, 'the vessel layer switches off on its own and is remembered');
+  await page.locator('[data-map-vessels]').check(); await page.waitForTimeout(60);
+  await page.locator('.an-maps [data-station="7"]').click(); await page.waitForSelector('[data-station-card="7"]');
+  ok(/Station 7 — Subcarinal/.test(await txt('.an-stcard')), 'tapping a station on the tree map opens it on the station map');
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'tree' })); await page.waitForSelector('.an-tree');
   // a photo of your own pinned to a view: kept in this browser only
   const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAD0lEQVQIW2P4z8DwHwAFAAH/ij1KbwAAAABJRU5ErkJggg==', 'base64');
   await page.locator('[data-pic-add="tree:trachea"]').setInputFiles({ name: 'my atlas page.png', mimeType: 'image/png', buffer: png }); await page.waitForTimeout(500);
@@ -123,19 +138,26 @@ const uniqN = (a) => a.filter((x, i) => a.indexOf(x) === i).length;
   ok(await page.locator('.an-tree').getAttribute('data-at') === 'lmb', 'key 2 advances into the second opening (focus kept on the canvas)');
   // the scope's position at real lengths: a centimetre at a time, with the distance readout
   await page.evaluate(() => { document.querySelector('.an-node[data-node="trachea"]').dispatchEvent(new MouseEvent('click', { bubbles: true })); }); await page.waitForTimeout(400);
-  ok(/0\.6 cm into the trachea \(11\.0 cm long\) · 10\.4 cm to the carina · 0\.6 cm from the vocal cords/.test(await txt('[data-3d-depth]')), 'the readout gives the depth, the length and the distance to the carina: ' + await txt('[data-3d-depth]'));
-  for (let i = 0; i < 9; i++) await page.locator('[data-3d-fwd]').click();
+  ok(/0\.4 cm into the trachea \(11\.0 cm long\) · 10\.6 cm to the carina · 0\.4 cm from the vocal cords/.test(await txt('[data-3d-depth]')), 'the readout gives the depth, the length and the distance to the carina: ' + await txt('[data-3d-depth]'));
+  await page.locator('[data-3d-fwd]').click(); await page.waitForTimeout(60);
+  ok(/0\.9 cm into the trachea/.test(await txt('[data-3d-depth]')), 'one press moves 5 mm: ' + await txt('[data-3d-depth]'));
+  ok(await page.locator('.an-3d-mini svg').count() === 1 && await page.locator('.an-3d-mini .an-mini-dot').count() === 1, 'the inside view carries a corner map with the scope\'s position');
+  const dotY = async () => +(await page.locator('.an-3d-mini .an-mini-dot').getAttribute('cy'));
+  const y1 = await dotY();
+  for (let i = 0; i < 17; i++) await page.locator('[data-3d-fwd]').click();
   await page.waitForTimeout(100);
-  ok(/9\.6 cm into the trachea/.test(await txt('[data-3d-depth]')) && /1\.4 cm to the carina/.test(await txt('[data-3d-depth]')), 'nine centimetres on: 9.6 cm in, 1.4 cm to the carina');
+  ok(/9\.4 cm into the trachea/.test(await txt('[data-3d-depth]')) && /1\.6 cm to the carina/.test(await txt('[data-3d-depth]')), 'eighteen presses on: 9.4 cm in, 1.6 cm to the carina');
+  ok((await dotY()) > y1 + 60, 'the dot on the corner map has moved down the trachea (' + y1 + ' → ' + await dotY() + ')');
   ok(await page.locator('[data-level="lower"]').getAttribute('aria-checked') === 'true', 'deep in the trachea the scope view shows the lower ring');
-  await page.locator('[data-3d-fwd]').click(); await page.locator('[data-3d-fwd]').click(); await page.waitForTimeout(100);
+  for (let i = 0; i < 3; i++) await page.locator('[data-3d-fwd]').click();
+  await page.waitForTimeout(100);
   ok(/10\.0 cm into the trachea/.test(await txt('[data-3d-depth]')) && /tip held back/.test(await txt('[data-3d-depth]')) && await page.locator('.an-tree').getAttribute('data-at') === 'trachea', 'the tip stops a centimetre short of the carina to see both openings');
   await page.locator('canvas.an-3d').focus(); await page.keyboard.press('1'); await page.waitForTimeout(400);
   ok(await page.locator('.an-tree').getAttribute('data-at') === 'rmb' && /0\.4 cm into the right main bronchus \(2\.4 cm long\)/.test(await txt('[data-3d-depth]')), 'key 1 enters the right main bronchus (2.4 cm long): ' + await txt('[data-3d-depth]'));
   ok(/11\.4 cm from the vocal cords/.test(await txt('[data-3d-depth]')), 'the running distance from the cords carries across the carina');
   await page.locator('[data-3d-back]').click(); await page.waitForTimeout(400);
-  ok(await page.locator('.an-tree').getAttribute('data-at') === 'trachea' && /9\.6 cm into the trachea/.test(await txt('[data-3d-depth]')), 'pulling back from the start of a bronchus returns to the parent just above its carina: ' + await txt('[data-3d-depth]'));
-  for (let i = 0; i < 8; i++) await page.locator('[data-3d-back]').click();
+  ok(await page.locator('.an-tree').getAttribute('data-at') === 'trachea' && /9\.6 cm into the trachea/.test(await txt('[data-3d-depth]')), 'pulling back from the mouth of a bronchus returns to the parent just above its carina: ' + await txt('[data-3d-depth]'));
+  for (let i = 0; i < 16; i++) await page.locator('[data-3d-back]').click();
   await page.waitForTimeout(100);
   ok(await page.locator('[data-level="upper"]').getAttribute('aria-checked') === 'true' && /1\.6 cm into the trachea/.test(await txt('[data-3d-depth]')), 'back in the upper trachea the scope view shows the upper ring: ' + await txt('[data-3d-depth]'));
   await page.locator('[data-level="lower"]').click(); await page.waitForTimeout(200);
@@ -171,6 +193,48 @@ const uniqN = (a) => a.filter((x, i) => a.indexOf(x) === i).length;
   ok(/That is station/.test(await txt('.an-drill')), 'a wrong tap is named');
   await page.locator('.an-smap [data-station="' + q + '"]').first().click(); await page.waitForSelector('.an-drill[data-stq="done"]');
   ok(/Correct — station/.test(await txt('.an-found')) && /score 1/.test(await txt('.an-drill')), 'the right station scores');
+
+  // ---- conduction and the ECG
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'ecglab' })); await page.waitForSelector('.ecg-lab[data-ecg="normal"]');
+  ok(await page.locator('#learn-cat').inputValue() === 'ecg' && (await page.locator('#learn-cat option').allInnerTexts()).some(t => /Cardiac conduction/.test(t)), 'a third Learn area: cardiac conduction & ECG');
+  ok(await page.locator('.ecg-paper .ecg-tr').count() === 13 && await page.locator('.ecg-paper .ecg-ll').count() === 13, 'twelve leads and a rhythm strip on paper');
+  ok(/PR 160 ms/.test(await txt('.ecg-reads')) && /QRS 76 ms/.test(await txt('.ecg-reads')) && /Axis 41°/.test(await txt('.ecg-reads')), 'normal conduction: PR 160, QRS 76 ms, axis +41°: ' + await txt('.ecg-reads'));
+  ok(await page.locator('.ecg-heart .ecg-reg').count() === 10 && await page.locator('.ecg-heart .ecg-path').count() === 10 && await page.locator('.ecg-block:visible').count() === 0, 'the heart drawing has its regions and conduction paths, nothing blocked');
+  const M = (fn) => page.evaluate(fn);
+  ok(await M(() => { const E = window.PFT_ECG, s = E.sequence(E.SCENARIOS[0], 0), b = [{ p: 0, q: 200 }]; let v1 = -9, v6q = 9; for (let t = 200; t < 300; t += 2) { v1 = Math.max(v1, E.voltageAt('V1', s, b, t)); } for (let t = 200; t < 220; t += 2) v6q = Math.min(v6q, E.voltageAt('V6', s, b, t)); return v1 > 0.2 && v6q < -0.1; }), 'normal: a small r in V1 and a septal q in V6');
+  // scrub into the first QRS: regions light up
+  await page.locator('[data-ecg-t]').fill('300'); await page.waitForTimeout(150);
+  ok(await page.locator('.ecg-heart .ecg-reg.front').count() >= 1, 'at the cursor inside the QRS the depolarising regions are marked');
+  // RBBB: wide QRS, rSR′ in V1, blocked right bundle on the drawing; the slider makes it incomplete
+  await page.selectOption('#ecg-scn', 'rbbb'); await page.waitForSelector('.ecg-lab[data-ecg="rbbb"]');
+  ok(/QRS 15\d ms/.test(await txt('.ecg-reads')) && await page.locator('[data-block="rbb"]:visible').count() === 1 && await page.locator('.ecg-path.blocked[data-path="rbb"]').count() === 1, 'complete RBBB: QRS about 150 ms, the right bundle crossed out');
+  ok(await M(() => { const E = window.PFT_ECG, scn = E.SCENARIOS.filter(x => x.id === 'rbbb')[0], s = E.sequence(scn, 1), b = [{ p: 0, q: 200 }]; let late = -9, early = 9; for (let t = 280; t < 340; t += 2) late = Math.max(late, E.voltageAt('V1', s, b, t)); for (let t = 230; t < 260; t += 2) early = Math.min(early, E.voltageAt('V1', s, b, t)); let s6 = 9; for (let t = 280; t < 340; t += 2) s6 = Math.min(s6, E.voltageAt('V6', s, b, t)); let t1 = 9; for (let t = 500; t < 640; t += 4) t1 = Math.min(t1, E.voltageAt('V1', s, b, t)); return late > 0.5 && early < -0.8 && s6 < -0.2 && t1 < -0.2; }), 'RBBB: rSR′ in V1 (late R′), broad S in V6, inverted T in V1');
+  await page.locator('[data-ecg-deg]').fill('0.5'); await page.locator('[data-ecg-deg]').dispatchEvent('change'); await page.waitForSelector('.ecg-lab[data-ecg="rbbb"]');
+  ok(/incomplete block/.test(await txt('.ecg-degv')) && /QRS (10\d|11\d) ms/.test(await txt('.ecg-reads')), 'half the block: incomplete RBBB with a QRS of 100–119 ms: ' + await txt('.ecg-reads'));
+  // LBBB, fascicular blocks, WPW, AV blocks
+  await page.selectOption('#ecg-scn', 'lbbb'); await page.waitForSelector('.ecg-lab[data-ecg="lbbb"]');
+  ok(/QRS 1[4-7]\d ms/.test(await txt('.ecg-reads')) && await M(() => { const E = window.PFT_ECG, scn = E.SCENARIOS.filter(x => x.id === 'lbbb')[0], s = E.sequence(scn, 1), b = [{ p: 0, q: 200 }]; let q6 = 9, r6 = -9, t6 = 9, t1 = -9; for (let t = 200; t < 226; t += 2) q6 = Math.min(q6, E.voltageAt('V6', s, b, t)); for (let t = 200; t < 380; t += 2) r6 = Math.max(r6, E.voltageAt('V6', s, b, t)); for (let t = 520; t < 680; t += 4) { t6 = Math.min(t6, E.voltageAt('V6', s, b, t)); t1 = Math.max(t1, E.voltageAt('V1', s, b, t)); } return q6 > -0.1 && r6 > 1.2 && t6 < -0.2 && t1 > 0.15; }), 'LBBB: no septal q, broad R in V6, discordant T waves');
+  await page.selectOption('#ecg-scn', 'lafb'); await page.waitForSelector('.ecg-lab[data-ecg="lafb"]');
+  ok(/Axis -[3-9]\d°/.test(await txt('.ecg-reads')) && /QRS (9\d|1[01]\d) ms/.test(await txt('.ecg-reads')) && await page.locator('[data-block="laf"]:visible').count() === 1, 'LAFB: left axis with a narrow-ish QRS: ' + await txt('.ecg-reads'));
+  await page.selectOption('#ecg-scn', 'lpfb'); await page.waitForSelector('.ecg-lab[data-ecg="lpfb"]');
+  ok(/Axis (9\d|1[0-7]\d)°/.test(await txt('.ecg-reads')), 'LPFB: right axis: ' + await txt('.ecg-reads'));
+  await page.selectOption('#ecg-scn', 'wpw'); await page.waitForSelector('.ecg-lab[data-ecg="wpw"]');
+  ok(/PR (9\d|1[01]\d) ms/.test(await txt('.ecg-reads')) && await page.locator('.ecg-path[data-path="ap"]:visible').count() === 1, 'WPW: short PR, the accessory pathway drawn: ' + await txt('.ecg-reads'));
+  await page.selectOption('#ecg-scn', 'avb1'); await page.waitForSelector('.ecg-lab[data-ecg="avb1"]');
+  await page.locator('[data-ecg-deg]').fill('300'); await page.locator('[data-ecg-deg]').dispatchEvent('change'); await page.waitForSelector('.ecg-lab[data-ecg="avb1"]');
+  ok(/PR 300 ms/.test(await txt('.ecg-reads')) && /QRS 76 ms/.test(await txt('.ecg-reads')), 'first-degree block: the slider sets the PR, the QRS is unchanged');
+  ok(await M(() => { const E = window.PFT_ECG, scn = E.SCENARIOS.filter(x => x.id === 'mobitz1')[0], s = E.sequence(scn, 0), b = E.beats(scn, s, 10); const prs = b.slice(0, 4).map(x => x.q === null ? null : Math.round(x.q - x.p)); return prs[0] === 160 && prs[1] === 240 && prs[2] === 300 && prs[3] === null; }), 'Wenckebach: PR 160, 240, 300 then a dropped beat');
+  ok(await M(() => { const E = window.PFT_ECG, scn = E.SCENARIOS.filter(x => x.id === 'chb')[0], s = E.sequence(scn, 0), b = E.beats(scn, s, 10); const ps = b.filter(x => x.p !== null).length, qs = b.filter(x => x.q !== null).length; return ps >= 11 && qs >= 5 && qs < ps && b.every(x => x.p === null || x.q === null); }), 'complete block: more P waves than QRS complexes and no P conducted');
+  await page.selectOption('#ecg-scn', 'chb'); await page.waitForSelector('.ecg-lab[data-ecg="chb"]');
+  ok(/atrial 72, ventricular 34/.test(await txt('.ecg-reads')), 'complete block readout names both rates');
+  // play moves the cursor
+  await page.selectOption('#ecg-scn', 'normal'); await page.waitForSelector('.ecg-lab[data-ecg="normal"]');
+  const cx0 = +(await page.locator('[data-ecg-cursor]').getAttribute('x1'));
+  await page.locator('[data-ecg-play]').click(); await page.waitForTimeout(500);
+  const cx1 = +(await page.locator('[data-ecg-cursor]').getAttribute('x1'));
+  await page.locator('[data-ecg-play]').click(); await page.waitForTimeout(100);
+  const cx2 = +(await page.locator('[data-ecg-cursor]').getAttribute('x1')); await page.waitForTimeout(200);
+  ok(cx1 > cx0 + 2 && Math.abs((+(await page.locator('[data-ecg-cursor]').getAttribute('x1'))) - cx2) < 1, 'play sweeps the cursor, pause holds it (' + cx0 + ' → ' + cx1 + ')');
 
   // ---- V/Q sandbox
   await page.evaluate(() => window.__pft.setMode('learn', { topic: 'vq' })); await page.waitForSelector('.an-vq');

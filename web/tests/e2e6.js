@@ -3,7 +3,11 @@
 // the whole report in the right-hand column. Also units, auto categories, prompts, DLCO wording, themes, copy, case codes.
 const { chromium } = require('/opt/npm-tools/node_modules/playwright');
 const path = require('path');
-const FILE = process.env.PFT_URL || ('file://' + path.join(__dirname, '..', 'dist', 'PFT_Interpreter_standalone.html'));
+const fs = require('fs'), http = require('http');
+// served over http: Chromium drops a file:// page's localStorage on reload now and then, which made the theme check flaky
+const HTML = fs.readFileSync(path.join(__dirname, '..', 'dist', 'PFT_Interpreter_standalone.html'));
+const server = http.createServer((req, res) => { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); res.end(HTML); });
+let FILE = process.env.PFT_URL || '';
 let fails = 0, passes = 0;
 const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m); } };
 async function loadExample(page, i) {
@@ -19,6 +23,7 @@ async function tickTest(key, on) {   // the Additional studies list: a tick puts
 }
 let pageRef = null;
 (async () => {
+  if (!FILE) { await new Promise(r => server.listen(0, '127.0.0.1', r)); FILE = 'http://127.0.0.1:' + server.address().port + '/'; }
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: 1380, height: 900 }, permissions: ['clipboard-read', 'clipboard-write'] });
   await ctx.addInitScript(() => { try { localStorage.setItem('pft.wording.v1', JSON.stringify('std')); } catch (e) {} });   // these checks read the standard wording
@@ -239,6 +244,7 @@ let pageRef = null;
   await page.locator('#theme').click();
   ok(await page.evaluate(() => document.documentElement.getAttribute('data-theme')) === 'dark', 'dark theme applied');
   ok(/rgb\(31, 30, 27\)/.test(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)), 'charcoal background');
+  ok(await page.evaluate(() => localStorage.getItem('pft.theme.v1')) === '"dark"', 'the theme is written to storage');
   await page.waitForTimeout(300);   // let the storage service commit the preference before the page goes away
   await page.reload(); await page.waitForSelector('#top');
   const remembered = await page.waitForFunction(() => document.documentElement.getAttribute('data-theme') === 'dark', null, { timeout: 4000 }).then(() => true, () => false);   // the boot script applies the saved theme once it runs
@@ -288,6 +294,6 @@ let pageRef = null;
   await m.close();
 
   console.log('e2e6 passed', passes, 'failed', fails);
-  await browser.close();
+  await browser.close(); server.close();
   process.exit(fails ? 1 : 0);
 })().catch(e => { console.error('E2E CRASH', e); process.exit(2); });
