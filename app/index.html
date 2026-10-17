@@ -1204,6 +1204,62 @@ table.ct .ix-c.txt { width: 64px; }
 .ecg-text h3 { margin: 0; font-size: 14px; }
 .ecg-text p { margin: 0; }
 
+/* ---- v7.6: the scope simulator — map beside the picture, vignette, labels on the picture, the steering pad */
+.an-sim { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 640px) { .an-sim { grid-template-columns: 180px minmax(0, 1fr); align-items: stretch; } }
+.an-sim-map { border-radius: 10px; background: var(--surface-2); padding: 6px; min-height: 120px; }
+.an-sim-map svg { width: 100%; height: 100%; max-height: 440px; display: block; }
+@media (max-width: 639px) { .an-sim-map { height: 150px; } .an-sim-map svg { max-height: 138px; } }
+.an-mini .an-br.on { stroke: #e08a2a; }
+.an-3d-wrap.scope { border-radius: 14px; background: #0a0506; }
+.an-3d-wrap.scope::after { content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: 14px; background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 52%, rgba(0, 0, 0, 0.45) 80%, rgba(0, 0, 0, 0.92) 100%); box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.55); }
+.an-vlabels { position: absolute; inset: 0; pointer-events: none; }
+.an-vlabel { position: absolute; transform: translate(-50%, -140%); pointer-events: auto; cursor: pointer; font-size: 11.5px; font-weight: 600; color: #fff; background: rgba(20, 10, 10, 0.62); border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 999px; padding: 1px 8px; white-space: nowrap; z-index: 2; }
+.an-vlabel::after { content: ''; position: absolute; left: 50%; top: 100%; width: 1px; height: 8px; background: rgba(255, 255, 255, 0.7); }
+.an-vlabel:hover { background: rgba(63, 111, 158, 0.85); }
+.an-hud { position: absolute; left: 10px; right: 10px; top: 8px; display: flex; justify-content: space-between; gap: 8px; pointer-events: none; z-index: 2; }
+.an-hud-name { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255, 255, 255, 0.85); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); }
+.an-hud-hint { font-size: 12px; color: #fff; background: rgba(224, 138, 42, 0.85); border-radius: 999px; padding: 2px 10px; }
+.an-drive { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.an-pad { position: relative; width: 84px; height: 84px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--line-strong); touch-action: none; cursor: grab; flex: none; }
+.an-pad::before, .an-pad::after { content: ''; position: absolute; background: var(--line); }
+.an-pad::before { left: 50%; top: 10%; bottom: 10%; width: 1px; } .an-pad::after { top: 50%; left: 10%; right: 10%; height: 1px; }
+.an-pad-knob { position: absolute; width: 26px; height: 26px; border-radius: 50%; background: var(--accent); transform: translate(-50%, -50%); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); }
+.an-pad.on { cursor: grabbing; }
+
+/* ---- v7.6: the nodule calculators and advisor */
+.nod-calc { display: grid; gap: 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.nod-calc h3 { margin: 0; font-size: 14px; }
+.nod-grid { display: grid; gap: 6px 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr)); align-items: end; }
+.nod-f { display: grid; gap: 2px; font-size: 12.5px; }
+.nod-l { font-weight: 600; color: var(--ink-2); }
+.nod-f input.num, .nod-f select { width: 100%; max-width: 100%; font-size: 13px; padding: 4px 6px; }
+.nod-flags { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.nod-out { display: grid; gap: 6px; }
+.nod-bar { display: grid; grid-template-columns: 150px minmax(0, 1fr) 52px; gap: 2px 8px; align-items: center; font-size: 13px; }
+.nod-bar .fine { grid-column: 2 / -1; margin-top: -2px; }
+.nod-bn { font-weight: 600; }
+.nod-bt { height: 10px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+.nod-bt i { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+.nod-bv { font-family: var(--font-mono); text-align: right; }
+.nod-band { margin: 0; font-size: 13px; }
+.nod-rec { display: grid; gap: 4px; padding: 8px 10px; border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 6px; }
+.nod-rec p { margin: 0; }
+.nod-cat { font-weight: 700; }
+.nod-rec[data-lungrads^="4"] { border-left-color: var(--c-sev); background: var(--c-sev-bg); }
+.nod-rec[data-lungrads="3"] { border-left-color: var(--c-mod); background: var(--c-mod-bg); }
+.nod-fig { max-width: 640px; }
+.nod-lung { fill: var(--surface); stroke: var(--line); }
+.nod-solid { fill: #8f8f93; stroke: #5a5a5e; stroke-width: 0.8; }
+.nod-ggo { fill: #b9b9bd; opacity: 0.45; stroke: none; }
+.nod-vessel { fill: none; stroke: #5a5a5e; stroke-width: 1.6; }
+.nod-spic { stroke: #5a5a5e; stroke-width: 1.2; }
+.nod-types .nod-calc { fill: #f2f2f2; stroke: #333; stroke-width: 0.6; }
+.nod-ring { fill: none; stroke: #f2f2f2; stroke-width: 1.4; }
+.nod-tl { font-size: 11px; font-weight: 600; fill: var(--ink); }
+.nod-ts { font-size: 9px; fill: var(--muted); }
+@media (max-width: 560px) { .nod-bar { grid-template-columns: 110px minmax(0, 1fr) 48px; } }
+
 </style>
 </head>
 <body>
@@ -5623,7 +5679,7 @@ function interpret(raw) {
 }
 
 const API = {
-  version: '7.5.0',
+  version: '7.6.0',
   catalogVersion: CATALOG.version,
   Z_LLN: Z_LLN, Z_ULN: Z_ULN, STYLES: STYLES,
   TESTS: TESTS, PRESETS: PRESETS, SCHEMA: SCHEMA, LOOPS: LOOPS, INDICATIONS: INDICATIONS, KIND_OPTS: KIND_OPTS, PRIOR_FIELDS: PRIOR_FIELDS, CUR_FIELDS: CUR_FIELDS, MAX_PRIORS: MAX_PRIORS, MAX_TREND: MAX_TREND,
@@ -7263,6 +7319,225 @@ T.ecglab = { title: 'How conduction writes the ECG', kicker: 'Watch the wavefron
 const GROUPS = [{ title: 'Conduction and the ECG', ids: ['ecglab'] }];
 root.PFT_ECG = { topics: T, groups: GROUPS, LEADS: LEADS, LAYOUT: LAYOUT, SCENARIOS: SCENARIOS, normalSegments: normalSegments, sequence: sequence, beats: beats, voltageAt: voltageAt, stateAt: stateAt, dipole: dipole, leadVec: leadVec };
 if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_ECG;
+})(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this));
+
+/* PFT Interpreter — Learn: lung nodules, abnormalities on chest imaging and lung cancer screening.
+   Content distilled from the Fleischner Society 2017 guideline (MacMahon), ACR Lung-RADS v2022, the CHEST 2013 nodule
+   guideline (Gould) and the CHEST 2021 screening guideline (Mazzone), the BTS 2015 nodule guideline (Callister), the
+   USPSTF 2021 and ACS 2023 screening recommendations, NLST and NELSON, the Choi/Mazzone 2018 review of probability
+   models, the 2023 AFP review (Langan), the 2021 ATS core curriculum (Ha and Holden; Patel and Baptiste), the VHA
+   screening demonstration project (Kinsinger 2017), CALGB 140503 (Altorki 2023) and the Fleischner 2020 position paper
+   on interstitial lung abnormalities. The calculators implement the published equations; the advisor applies the
+   published tables. Teaching material, not a substitute for the documents or for judgement. */
+(function (root) {
+'use strict';
+const lg = (x) => 1 / (1 + Math.exp(-x));
+
+/* ------------------------------------------------------------ probability of malignancy
+   Mayo (Swensen 1997): age, smoking (ever), extrathoracic cancer ≥5 years before, diameter (mm), spiculation, upper lobe.
+   VA (Gould 2007): smoking (ever), age, diameter, years since quitting. Brock / PanCan (McWilliams 2013, full model with
+   spiculation): age, sex, family history, emphysema, size, type, upper lobe, nodule count, spiculation. */
+function mayo(p) {
+  const x = -6.8272 + 0.0391 * p.age + 0.7917 * (p.smoker ? 1 : 0) + 1.3388 * (p.cancer ? 1 : 0) + 0.1274 * p.size + 1.0407 * (p.spic ? 1 : 0) + 0.7838 * (p.upper ? 1 : 0);
+  return lg(x);
+}
+function va(p) {
+  const x = -8.404 + 2.061 * (p.smoker ? 1 : 0) + 0.779 * (p.age / 10) + 0.112 * p.size - 0.567 * ((p.smoker && p.quitYears > 0 ? p.quitYears : 0) / 10);
+  return lg(x);
+}
+function brock(p) {
+  const type = p.type === 'part' ? 0.377 : (p.type === 'ggn' ? -0.1276 : 0);
+  const x = -6.7892 + 0.0287 * (p.age - 62) + 0.6011 * (p.female ? 1 : 0) + 0.2961 * (p.famhx ? 1 : 0) + 0.2953 * (p.emph ? 1 : 0)
+    - 5.3854 * (Math.pow(p.size / 10, -0.5) - 1.58113883) + type + 0.6581 * (p.upper ? 1 : 0) - 0.0824 * ((p.count || 1) - 4) + 0.7729 * (p.spic ? 1 : 0);
+  return lg(x);
+}
+/* volume doubling time from two diameters (mm) a number of days apart: VDT = t·ln2 / (3·ln(d2/d1)) */
+function vdt(d1, d2, days) { if (!(d1 > 0 && d2 > 0 && days > 0) || d2 === d1) return null; return days * Math.LN2 / (3 * Math.log(d2 / d1)); }
+
+/* ------------------------------------------------------------ the advisor: what the guideline tables say
+   q: { setting: 'incidental'|'screen', type: 'solid'|'part'|'ggn'|'peri', size (mean diameter, mm), solid (mm, part-solid),
+        multiple: bool, risk: 'low'|'high' (incidental), status: 'baseline'|'new'|'growing'|'stable' (screening),
+        benign: bool (benign calcification or fat) } */
+function fleischner(q) {
+  if (q.benign) return { rule: 'Benign pattern', text: 'A nodule with a benign pattern of calcification (central, laminated, diffuse, popcorn) or with fat needs no follow-up.' };
+  const sz = q.size, hi = q.risk === 'high', multi = !!q.multiple;
+  if (q.type === 'peri') return { rule: 'Perifissural nodule', text: sz < 10 ? 'A solid, smooth, oval, lentiform or triangular nodule under 10 mm on or near a fissure is an intrapulmonary lymph node: no follow-up is needed (Fleischner; Lung-RADS 2).' : 'Larger than the usual intrapulmonary lymph node: manage as a solid nodule of this size.' };
+  if (q.type === 'solid') {
+    if (!multi) {
+      if (sz < 6) return { rule: 'Single solid < 6 mm (< 100 mm³)', text: hi ? 'Optional CT at 12 months (high-risk patient, or suspicious morphology or upper-lobe location); otherwise no routine follow-up.' : 'No routine follow-up.' };
+      if (sz <= 8) return { rule: 'Single solid 6–8 mm (100–250 mm³)', text: hi ? 'CT at 6–12 months, then CT at 18–24 months.' : 'CT at 6–12 months, then consider CT at 18–24 months.' };
+      return { rule: 'Single solid > 8 mm (> 250 mm³)', text: 'Consider CT at 3 months, PET/CT, or tissue sampling — the choice follows the probability of cancer (CHEST: < 5% surveillance, 5–65% PET/CT then biopsy or surveillance, > 65% surgical diagnosis after staging; BTS: Brock < 10% surveillance, ≥ 10% PET/CT and Herder).' };
+    }
+    if (sz < 6) return { rule: 'Multiple solid < 6 mm', text: hi ? 'Optional CT at 12 months.' : 'No routine follow-up.' };
+    if (sz <= 8) return { rule: 'Multiple solid 6–8 mm', text: hi ? 'CT at 3–6 months, then CT at 18–24 months.' : 'CT at 3–6 months, then consider CT at 18–24 months.' };
+    return { rule: 'Multiple solid > 8 mm', text: 'CT at 3–6 months, then consider CT at 18–24 months; manage by the most suspicious nodule, and think of metastases and of infection (more than six new nodules in a short interval favours an infectious or inflammatory cause).' };
+  }
+  // subsolid
+  if (multi) {
+    if (sz < 6) return { rule: 'Multiple subsolid < 6 mm', text: 'CT at 3–6 months; if stable, consider CT at 2 and 4 years.' };
+    return { rule: 'Multiple subsolid ≥ 6 mm', text: 'CT at 3–6 months; subsequent management by the most suspicious nodule(s). Multiple ground-glass nodules are often multifocal adenocarcinoma spectrum (AAH, AIS) and are followed, not all resected.' };
+  }
+  if (q.type === 'ggn') {
+    if (sz < 6) return { rule: 'Single ground-glass < 6 mm', text: 'No routine follow-up (consider CT at 2 and 4 years when the morphology is suspicious or the patient is at high risk).' };
+    return { rule: 'Single ground-glass ≥ 6 mm', text: 'CT at 6–12 months to confirm persistence, then CT every 2 years until 5 years. Growth or a new solid component changes the plan; PET/CT is unreliable for pure ground-glass nodules.' };
+  }
+  if (sz < 6) return { rule: 'Single part-solid < 6 mm', text: 'No routine follow-up.' };
+  if (q.solid >= 6) return { rule: 'Single part-solid ≥ 6 mm with a solid component ≥ 6 mm', text: 'Highly suspicious: CT at 3–6 months to confirm persistence is reasonable, then PET/CT, biopsy or resection; a persistent solid component of 6 mm or more is treated as an invasive adenocarcinoma until proven otherwise.' };
+  return { rule: 'Single part-solid ≥ 6 mm, solid component < 6 mm', text: 'CT at 3–6 months to confirm persistence; if unchanged and the solid component stays under 6 mm, annual CT for 5 years.' };
+}
+function lungRads(q) {
+  const sz = q.size, st = q.status || 'baseline', solid = q.solid || 0, N = st === 'new', G = st === 'growing';
+  const cat = (c, f, m) => ({ cat: c, finding: f, mgmt: m });
+  const M = { 1: '12-month screening LDCT', 2: '12-month screening LDCT', 3: '6-month LDCT', '4A': '3-month LDCT; PET/CT may be considered when there is a solid nodule or solid component ≥ 8 mm', '4B': 'Diagnostic chest CT with or without contrast; PET/CT may be considered when there is a solid component ≥ 8 mm; tissue sampling and/or referral for further clinical evaluation — management follows the probability of malignancy (Brock), comorbidity and preference' };
+  if (q.benign) return cat('1', 'Nodule with benign features: complete, central, popcorn or concentric calcification, or fat', M[1]);
+  if (q.type === 'peri') return sz < 10 ? cat('2', 'Juxtapleural nodule < 10 mm mean diameter, solid, smooth, oval, lentiform or triangular', M[2]) : lungRads(Object.assign({}, q, { type: 'solid' }));
+  if (q.type === 'ggn') {
+    if (sz >= 30 && (st === 'baseline' || N)) return cat('3', 'Non-solid (ground-glass) nodule ≥ 30 mm at baseline or new', M[3]);
+    return cat('2', 'Non-solid (ground-glass) nodule < 30 mm, or ≥ 30 mm and stable or slow-growing', M[2]);
+  }
+  if (q.type === 'part') {
+    if (st === 'baseline') {
+      if (sz < 6) return cat('2', 'Part-solid nodule < 6 mm total mean diameter at baseline', M[2]);
+      if (solid < 6) return cat('3', 'Part-solid nodule ≥ 6 mm with a solid component < 6 mm at baseline', M[3]);
+      if (solid < 8) return cat('4A', 'Part-solid nodule ≥ 6 mm with a solid component 6 to < 8 mm at baseline', M['4A']);
+      return cat('4B', 'Part-solid nodule with a solid component ≥ 8 mm at baseline', M['4B']);
+    }
+    if (N && sz < 6) return cat('3', 'New part-solid nodule < 6 mm total mean diameter', M[3]);
+    if (solid < 4) return cat('4A', 'New or growing part-solid nodule with a solid component < 4 mm', M['4A']);
+    return cat('4B', 'New or growing solid component ≥ 4 mm', M['4B']);
+  }
+  // solid
+  if (st === 'baseline' || st === 'stable') {
+    if (sz < 6) return cat('2', 'Solid nodule < 6 mm at baseline', M[2]);
+    if (sz < 8) return cat('3', 'Solid nodule 6 to < 8 mm at baseline', M[3]);
+    if (sz < 15) return cat('4A', 'Solid nodule 8 to < 15 mm at baseline', M['4A']);
+    return cat('4B', 'Solid nodule ≥ 15 mm at baseline', M['4B']);
+  }
+  if (N) {
+    if (sz < 4) return cat('2', 'New solid nodule < 4 mm', M[2]);
+    if (sz < 6) return cat('3', 'New solid nodule 4 to < 6 mm', M[3]);
+    if (sz < 8) return cat('4A', 'New solid nodule 6 to < 8 mm', M['4A']);
+    return cat('4B', 'New solid nodule ≥ 8 mm', M['4B']);
+  }
+  if (sz < 8) return cat('4A', 'Growing solid nodule < 8 mm (growth = > 1.5 mm in mean diameter within 12 months)', M['4A']);
+  return cat('4B', 'Growing solid nodule ≥ 8 mm', M['4B']);
+}
+
+/* ------------------------------------------------------------ topics */
+const T = {};
+T.nodules = { title: 'Lung nodules: evaluation and management', kicker: 'Fleischner 2017 · CHEST 2013 · BTS 2015 · Lung-RADS 2022', blocks: [
+  { p: 'A pulmonary nodule is a rounded opacity up to 3 cm across, surrounded by lung; larger than that it is a mass and is presumed malignant until proven otherwise. About 1.5 million nodules are found incidentally in the United States each year and roughly 5% are cancer; in a screening programme about a quarter of scans show a nodule and about 1% of people screened have lung cancer. The job is to find the few cancers early without harming the many with benign nodules, and the whole approach runs on one number: the probability that this nodule, in this patient, is malignant.' },
+  { h: 'Describe the nodule first', ul: [
+    'Attenuation: solid; part-solid (a ground-glass nodule with a solid component); non-solid or pure ground-glass (a hazy opacity through which vessels and bronchi are still seen). Subsolid nodules are more often malignant than solid ones but grow slowly — the adenocarcinoma spectrum of atypical adenomatous hyperplasia, adenocarcinoma in situ, minimally invasive and invasive adenocarcinoma.',
+    'Size: the mean of the long and short axis on the same image (Fleischner, to the nearest millimetre; Lung-RADS to 0.1 mm), or a volume from software. Thin-section CT (≤ 1.5 mm) with lung windows; a chest radiograph cannot size or characterise a nodule, so an indeterminate nodule on a film gets a CT.',
+    'Margin: smooth and well defined (favours benign); lobulated; spiculated (the corona radiata of a carcinoma, the single strongest morphologic predictor of cancer); irregular.',
+    'Calcification: central, laminated (concentric), diffuse and popcorn patterns are benign (granuloma; popcorn in a hamartoma). Eccentric, stippled or amorphous calcification does not exclude cancer. Intranodular fat means hamartoma.',
+    'Location: upper lobes carry more cancers (and tuberculosis); a solid, smooth, oval or triangular nodule under 10 mm on a fissure or against the pleura is an intrapulmonary lymph node and needs nothing.',
+    'Other features: cavitation with a thick (> 15 mm) irregular wall suggests cancer, a thin (< 4 mm) wall a benign cause; air bronchograms or bubble-like lucencies within a subsolid nodule favour adenocarcinoma; a feeding artery and draining vein mean an arteriovenous malformation; a nodule next to a bronchus with mucus plugging may be an endobronchial lesion.',
+    'Number: a dominant nodule among several is managed on its own merits; many small nodules without a dominant one are more often granulomatous (old infection, sarcoidosis) or, in a patient with a known cancer, metastatic.'] },
+  { widget: 'nodtypes' },
+  { h: 'Growth is the behaviour that decides', ul: [
+    'Volume doubling time (VDT) of most solid cancers is 20–400 days; subsolid cancers double in 400–800 days or longer. A VDT under 20–30 days points to infection or inflammation, over 400 days (solid) to a benign nodule — but slow-growing adenocarcinomas are the exception, which is why ground-glass nodules are followed for years.',
+    'A 2-mm increase in diameter is a 73% increase in volume for a 6-mm nodule: growth is easier to see in volume. Fleischner counts growth as ≥ 2 mm in diameter (measurement error is about 1.5 mm); Lung-RADS as > 1.5 mm in mean diameter within 12 months; BTS as ≥ 25% in volume.',
+    'Stability of a solid nodule for 2 years (Fleischner: 18–24 months for 6–8 mm; CHEST) is accepted as benign; subsolid nodules need 5 years. Decrease in size or resolution ends the follow-up.',
+    'Significant growth is presumptive evidence of malignancy: it moves the nodule to PET/CT, biopsy or resection regardless of the starting probability.'] },
+  { widget: 'nodvdt' },
+  { h: 'The probability of malignancy', p: 'Every guideline asks for a pretest probability before deciding between surveillance, PET/CT, biopsy and resection. It can be a clinician’s estimate or a validated model; the models combine age, smoking, cancer history, nodule size, spiculation, upper-lobe location and, in the screening model, sex, family history, emphysema, nodule type and count. CHEST uses three bands — low (< 5%), intermediate (5–65%) and high (> 65%); BTS uses the Brock model with 10% as the line for PET/CT and then the Herder model (Brock plus FDG uptake) with 10% and 70% as the lines for biopsy and for excision.' },
+  { table: { head: ['Model', 'Built from', 'Variables', 'AUC', 'Use it for'], rows: [
+    ['Mayo (Swensen 1997)', '629 incidental nodules on chest radiographs, 4–30 mm, 23% malignant', 'Age, ever-smoking, extrathoracic cancer ≥ 5 years before, diameter, spiculation, upper lobe', '0.80 (0.83 derivation)', 'Incidental nodules in low-to-moderate-risk populations; the most externally validated'],
+    ['VA (Gould 2007)', '375 veterans, 7–30 mm, 54% malignant', 'Age, ever-smoking, years since quitting, diameter', '0.79', 'Male smokers; accuracy lower than Mayo and Brock in comparisons'],
+    ['Herder (2005)', '106 nodules referred for FDG-PET, 57% malignant', 'Mayo probability plus FDG uptake (none, faint, moderate, intense)', '0.92', 'When a PET result is available (BTS second step)'],
+    ['Brock / PanCan (McWilliams 2013)', '1,871 screening participants (PanCan), 5.5% malignant, validated in BCCA', 'Age, sex, family history, emphysema, size, type, upper lobe, nodule count, spiculation', '0.94 (0.90 for > 4 mm in validation)', 'Screen-detected nodules (BTS, Lung-RADS 4B), and it holds up for incidental nodules too'],
+    ['PKUPH (2012)', '371 resected nodules, China, 9–28 mm', 'Age, diameter, border, calcification, spiculation, family history', '0.87', 'High-prevalence surgical populations; needs validation elsewhere'],
+    ['TREAT (2014) · BIMC (2015)', 'Surgical referrals · mixed with PET and growth', 'Add FEV1, BMI, hemoptysis, growth, PET avidity, contrast enhancement', '0.87–0.89', 'Pre-surgical evaluation; less widely validated']
+  ] }, note: 'Accuracy depends on how like the derivation cohort the patient is: Mayo under-calls in high-prevalence surgical series, Brock holds up across settings. All of them beat chance; in head-to-head studies they are at best modestly better than an experienced clinician, and none replaces judgement about growth, prior imaging or an exposure history.' },
+  { widget: 'nodrisk' },
+  { h: 'Incidental solid nodules (Fleischner 2017)', p: 'For adults of 35 and over who are not immunocompromised and have no known cancer. "High risk" means an estimated probability above about 5%: older age, heavy smoking, emphysema or fibrosis, family history, a larger nodule, spiculation or an upper-lobe location; "low risk" is a young never-smoker with a small smooth nodule away from the apices. Sizes are mean diameters (volumes in brackets).' },
+  { table: { head: ['Nodule', 'Low risk', 'High risk'], rows: [
+    ['Single solid < 6 mm (< 100 mm³)', 'No routine follow-up', 'Optional CT at 12 months'],
+    ['Single solid 6–8 mm (100–250 mm³)', 'CT at 6–12 months, then consider CT at 18–24 months', 'CT at 6–12 months, then CT at 18–24 months'],
+    ['Single solid > 8 mm (> 250 mm³)', 'Consider CT at 3 months, PET/CT or tissue sampling', 'Consider CT at 3 months, PET/CT or tissue sampling'],
+    ['Multiple solid < 6 mm', 'No routine follow-up', 'Optional CT at 12 months'],
+    ['Multiple solid 6–8 mm', 'CT at 3–6 months, then consider CT at 18–24 months', 'CT at 3–6 months, then CT at 18–24 months'],
+    ['Multiple solid > 8 mm', 'CT at 3–6 months, then consider CT at 18–24 months', 'CT at 3–6 months, then consider CT at 18–24 months']
+  ] }, note: 'CHEST 2013 differs at the edges: ≤ 4 mm with no risk factors needs no follow-up, 4–6 mm a CT at 12 months, 6–8 mm CTs at 6–12 and 18–24 months (3–6, 9–12 and 24 months with risk factors); above 8 mm it manages by probability. BTS 2015 uses 5 mm or 80 mm³ as the floor, CT at 12 months for 5–6 mm, CT at 3 months then VDT for 6–8 mm, and Brock at 8 mm or 300 mm³.' },
+  { h: 'Incidental subsolid nodules (Fleischner 2017)', table: { head: ['Nodule', 'Management'], rows: [
+    ['Single ground-glass < 6 mm', 'No routine follow-up (consider CT at 2 and 4 years if suspicious or high risk)'],
+    ['Single ground-glass ≥ 6 mm', 'CT at 6–12 months to confirm persistence, then every 2 years until 5 years'],
+    ['Single part-solid < 6 mm', 'No routine follow-up'],
+    ['Single part-solid ≥ 6 mm, solid part < 6 mm', 'CT at 3–6 months to confirm persistence; if unchanged, annual CT for 5 years'],
+    ['Single part-solid, solid part ≥ 6 mm', 'Highly suspicious: PET/CT, biopsy or resection once persistence is confirmed'],
+    ['Multiple subsolid < 6 mm', 'CT at 3–6 months; if stable, consider CT at 2 and 4 years'],
+    ['Multiple subsolid ≥ 6 mm', 'CT at 3–6 months; then by the most suspicious nodule']
+  ] }, note: 'Many subsolid opacities are transient (infection, haemorrhage, focal fibrosis), hence the first CT to confirm persistence. A persistent ground-glass nodule that grows or develops a solid component is adenocarcinoma until proven otherwise; the solid component is the invasive part and predicts behaviour. PET/CT is unreliable below 8 mm and in pure ground-glass lesions, and needle biopsy of a ground-glass nodule is low-yield, so these are diagnosed by resection — sublobar resection is adequate for small peripheral lesions (CALGB 140503, JCOG0802).' },
+  { h: 'Screen-detected nodules: Lung-RADS v2022', p: 'Lung-RADS codes each screening CT by its most suspicious finding and fixes the next step; the interval is counted from the scan being read. Growth means > 1.5 mm in mean diameter within 12 months. A category 3 nodule that is stable at 6 months becomes category 2; a 4A nodule stable at 3 months becomes 3; nodules that resolve are reclassified by the next finding.' },
+  { table: { head: ['Category', 'Findings', 'Management'], rows: [
+    ['0 Incomplete', 'Prior CT awaited; lungs not fully evaluated; findings suggesting infection or inflammation', 'Compare with the prior; additional imaging; 1–3-month LDCT'],
+    ['1 Negative', 'No nodules, or benign calcification or fat', '12-month screening LDCT'],
+    ['2 Benign', 'Juxtapleural nodule < 10 mm (solid, smooth, oval/lentiform/triangular); solid < 6 mm at baseline or new < 4 mm; part-solid < 6 mm; ground-glass < 30 mm (any) or ≥ 30 mm stable or slow-growing; subsegmental airway nodule; a category 3 stable at 6 months or 4A stable at 3 months', '12-month screening LDCT'],
+    ['3 Probably benign', 'Solid 6 to < 8 mm at baseline or new 4 to < 6 mm; part-solid ≥ 6 mm with solid part < 6 mm, or new < 6 mm; ground-glass ≥ 30 mm at baseline or new; growing thick-walled cyst', '6-month LDCT'],
+    ['4A Suspicious', 'Solid 8 to < 15 mm at baseline, growing < 8 mm, or new 6 to < 8 mm; part-solid ≥ 6 mm with solid part 6 to < 8 mm, or new/growing solid part < 4 mm; segmental or more proximal airway nodule; thick-walled or multilocular cyst', '3-month LDCT; PET/CT may be considered for a solid component ≥ 8 mm'],
+    ['4B Very suspicious', 'Solid ≥ 15 mm at baseline, or new/growing ≥ 8 mm; solid part ≥ 8 mm, or new/growing ≥ 4 mm; airway nodule stable or growing at 3 months; cyst with growing wall or nodularity; slow-growing solid or part-solid nodule over several rounds', 'Diagnostic chest CT ± contrast; PET/CT for a solid part ≥ 8 mm; tissue sampling and/or referral — by probability (Brock), comorbidity and preference'],
+    ['4X', 'A category 3 or 4 nodule with features that raise suspicion: spiculation, lymphadenopathy, metastases, a ground-glass nodule doubling in a year', 'As 4B'],
+    ['S', 'Modifier for a clinically significant finding unrelated to lung cancer (coronary calcification, aneurysm, emphysema, interstitial abnormality, other organs)', 'Per the ACR incidental-findings guidance']
+  ] }, note: 'Categories 1–2 are a negative screen (about 84% of exams), 3 and 4 a positive one (about 15%). About 1% of 4B/4X nodules are cancer in the first round in some series and far more in others; the tool is designed so that fewer than one in ten positive screens leads to an invasive procedure.' },
+  { widget: 'nodadvisor' },
+  { h: 'Solid nodules above 8 mm: the three roads', ul: [
+    'Low probability (< 5%; BTS Brock < 10%): CT surveillance (CHEST: 3–6, 9–12 and 18–24 months), because biopsy of a nodule that is almost certainly benign does harm for no gain.',
+    'Intermediate probability (5–65%): FDG PET/CT to refine the probability and stage at the same time. Sensitivity is about 89% and specificity 75%; false positives in infection, granulomatous disease and sarcoidosis, false negatives in nodules under 8 mm, ground-glass lesions, carcinoid and mucinous adenocarcinoma. A non-avid solid nodule over 8–10 mm is followed, not dismissed. Non-surgical biopsy when the probability and the imaging disagree, when the probability is 10–60%, when a benign diagnosis that needs specific treatment is suspected (tuberculosis, fungus) or when the patient wants proof before surgery.',
+    'High probability (> 65%; BTS > 70%): surgical diagnosis and treatment after staging (PET/CT, mediastinal staging when indicated) in a patient fit for resection; VATS wedge with frozen section proceeding to lobectomy or, for peripheral tumours ≤ 2 cm, segmentectomy. Stereotactic radiotherapy or ablation when the operative risk is prohibitive, with or without a tissue diagnosis.',
+    'Choosing the biopsy: CT-guided transthoracic needle biopsy for peripheral nodules (yield about 90%; pneumothorax in 15–25%, a chest tube in about 5%); bronchoscopy for central lesions and lesions with a bronchus sign — radial EBUS, electromagnetic or robotic navigation reach peripheral nodules with yields of 70–80% and pneumothorax under 3%. EBUS-TBNA stages the mediastinum in the same session.'] },
+  { h: 'When to refer, and what to tell the patient', ul: [
+    'Refer (pulmonology, interventional radiology or thoracic surgery) for a solid nodule ≥ 15 mm, a new or growing nodule ≥ 8 mm, a part-solid nodule with a solid component ≥ 8 mm (or ≥ 4 mm and new or growing), any mass, any nodule in a patient with a known cancer or who is immunocompromised, and when the picture is not clear.',
+    'Most nodules are not cancer. Say what was found, what it probably is, that a follow-up CT is the test that answers the question, when it is due, and that a nodule that does not grow over the surveillance period is benign. Write the plan into the record and into the radiology report; only about half of nodules outside screening programmes get guideline-concordant care, and tracking systems, templated reports and direct communication are what close the gap.',
+    'Keep the whole picture in view: a person with a 6-mm nodule and a 20-pack-year history belongs in a screening programme, which will follow the nodule as part of annual LDCT; smoking cessation is the single most useful intervention at any of these visits.'] },
+  { src: ['MacMahon H, Naidich DP, Goo JM, et al. Guidelines for management of incidental pulmonary nodules detected on CT images: from the Fleischner Society 2017. Radiology 2017;284:228–43.', 'American College of Radiology. Lung-RADS v2022 assessment categories (November 2022).', 'Gould MK, Donington J, Lynch WR, et al. Evaluation of individuals with pulmonary nodules: when is it lung cancer? CHEST guideline, 3rd ed. Chest 2013;143(5 Suppl):e93S–e120S.', 'Callister MEJ, Baldwin DR, Akram AR, et al. BTS guidelines for the investigation and management of pulmonary nodules. Thorax 2015;70(Suppl 2):ii1–ii54.', 'Choi HK, Ghobrial M, Mazzone PJ. Models to estimate the probability of malignancy in patients with pulmonary nodules. Ann Am Thorac Soc 2018;15:1117–26.', 'Mazzone PJ, Lam L. Evaluating the patient with a pulmonary nodule: a review. JAMA 2022;327:264–73.', 'Langan RC, Goodbred AJ. Pulmonary nodules: common questions and answers. Am Fam Physician 2023;107:282–91.', 'Ha N-T, Holden VK. Current approach to lung nodules. In: ATS core curriculum 2021 — lung cancer. ATS Scholar 2021.', 'Swensen SJ, et al. The probability of malignancy in solitary pulmonary nodules. Arch Intern Med 1997;157:849–55. Gould MK, et al. Chest 2007;131:383–8. McWilliams A, et al. N Engl J Med 2013;369:910–9. Herder GJ, et al. Chest 2005;128:2490–6.', 'Altorki N, et al. Lobar or sublobar resection for peripheral stage IA non–small-cell lung cancer. N Engl J Med 2023;388:489–98.'] }
+] };
+
+T.screening = { title: 'Lung cancer screening', kicker: 'USPSTF 2021 · ACS 2023 · NCCN · CMS · the VA programme', blocks: [
+  { p: 'Lung cancer kills more people than any other cancer because it is usually found late; stage I disease is cured in 70–90% of cases, all-stage survival is under 20%. Annual low-dose CT in people at high risk finds it earlier and lowers lung-cancer death — the only screening test for lung cancer that does. The work is in choosing the right people, handling the many nodules it finds without harm, and keeping people coming back every year.' },
+  { h: 'The evidence', ul: [
+    'NLST (2011): 53,454 current or former heavy smokers aged 55–74 (≥ 30 pack-years, quit within 15 years) randomised to three annual LDCTs or chest radiographs; after 6.5 years lung-cancer mortality fell by 20% and all-cause mortality by 6.7%. About 320 people had to be screened to prevent one lung-cancer death. 24% of LDCTs were positive and 96% of those were false positives, most resolved by follow-up imaging.',
+    'NELSON (2020): 15,792 people in the Netherlands and Belgium, volume-based nodule management with doubling times; at 10 years lung-cancer mortality was 24% lower in men and 33% lower in women, with a far lower false-positive rate (positive screens about 2% with the volume protocol).',
+    'A meta-analysis of 96,000 participants puts the absolute reduction in lung-cancer death at about 0.4% over 5–10 years, with no proven change in all-cause mortality. Harms: false positives, invasive procedures for benign disease (about 1–2% of those screened), overdiagnosis (perhaps 10% of screen-detected cancers, more for indolent adenocarcinomas), incidental findings in up to 40%, radiation (about 1.5 mSv per LDCT, 6 mSv for a diagnostic chest CT, 20+ mSv for PET/CT), and the anxiety of a positive screen.'] },
+  { h: 'Who to screen', table: { head: ['Guideline', 'Age', 'Smoking', 'Years since quitting', 'Notes'], rows: [
+    ['USPSTF 2021 (grade B)', '50–80', '≥ 20 pack-years', '≤ 15', 'Annual LDCT. Stop once the person has not smoked for 15 years, or develops a condition that substantially limits life expectancy or the ability or willingness to have curative treatment'],
+    ['CMS 2022 (Medicare)', '50–77', '≥ 20 pack-years', '≤ 15', 'Asymptomatic; a shared decision-making visit before the first scan; counselling on smoking cessation'],
+    ['American Cancer Society 2023', '50–80', '≥ 20 pack-years', 'Any', 'Current or former smokers regardless of how long ago they quit; reasonably good health'],
+    ['NCCN', '≥ 50', '≥ 20 pack-years', 'Any', 'No upper age; also offers risk-model eligibility (PLCOm2012 6-year risk ≥ 1.3%); accounts for radon, occupational exposures, cancer history, family history, COPD and fibrosis'],
+    ['CHEST 2021', '50–80', '≥ 20 pack-years', '≤ 15', 'Also 55–77 with ≥ 30 pack-years as in NLST; suggests not screening when comorbidity limits life expectancy or the acceptance of treatment'],
+    ['NLST (trial entry)', '55–74', '≥ 30 pack-years', '≤ 15', 'The population in which the mortality benefit was shown']
+  ] }, note: 'The 2021 lowering of the thresholds to 50 years and 20 pack-years roughly doubled the eligible population and brought in more women and Black Americans, who develop lung cancer with less exposure. Risk models (PLCOm2012, Bach, LCRAT) select a higher-risk group than the age-and-pack-year rules; the NCCN accepts them. Screening is for people who would accept and tolerate treatment of a cancer found: it is a conversation, not a tick box.' },
+  { h: 'Running a programme', ul: [
+    'Shared decision-making before the first scan: the benefit (a 20% lower chance of dying of lung cancer), the chance of a positive scan (about one in seven in the first round with Lung-RADS, mostly benign), the plan for follow-up, radiation, incidental findings and overdiagnosis, and that annual screening continues until the stopping rules apply. Cessation counselling at every visit — screening is the best teachable moment there is.',
+    'The scan: low-dose (about 1.5 mSv), thin-section, read by a radiologist using Lung-RADS, with the category and the next step in the report; a registry (ACR) and a tracking system so that no positive scan is lost. The nodule page gives the Lung-RADS categories and the advisor.',
+    'Adherence is the weak point: in practice only about half of people return for the next annual scan, and far fewer than half of the eligible are screened at all. Navigators, reminders, and keeping the first conversation honest about what follow-up means all help.',
+    'The Veterans Health Administration demonstration project (eight academic VA hospitals, 2013–2015): of 93,033 primary-care patients assessed, 4,246 met NLST-era criteria, 57.7% agreed and 2,106 were screened. 59.7% had a nodule and 56.2% needed tracking; 2.0% needed further evaluation for findings that were not cancer; 1.5% had lung cancer (most early stage); 40.7% had incidental findings — emphysema, other lung abnormalities, coronary calcification. Nearly 900,000 of 6.7 million VHA patients were estimated to be eligible: the lesson was that screening needs coordinators, tracking databases and the time to handle what it finds, not just a scanner.'] },
+  { h: 'What a positive screen means for the patient', p: 'A Lung-RADS 3 or 4 scan is not a diagnosis of cancer: most are benign and most are settled by a repeat LDCT at 3 or 6 months. The conversation that follows should name the category, the probability, the plan and the date. Once a cancer is diagnosed the person leaves the screening pathway for staging (PET/CT, mediastinal staging, brain imaging where indicated) and treatment; after curative treatment, surveillance CT continues, and the screening eligibility of the other lung does not go away.' },
+  { src: ['US Preventive Services Task Force. Screening for lung cancer: recommendation statement. JAMA 2021;325:962–70.', 'Wolf AMD, et al. Screening for lung cancer: 2023 guideline update from the American Cancer Society. CA Cancer J Clin 2024;74:50–81.', 'Mazzone PJ, et al. Screening for lung cancer: CHEST guideline and expert panel report. Chest 2021;160:e427–94.', 'National Lung Screening Trial Research Team. Reduced lung-cancer mortality with low-dose CT screening. N Engl J Med 2011;365:395–409.', 'de Koning HJ, et al. Reduced lung-cancer mortality with volume CT screening in a randomized trial (NELSON). N Engl J Med 2020;382:503–13.', 'Kinsinger LS, Anderson C, Kim J, et al. Implementation of lung cancer screening in the Veterans Health Administration. JAMA Intern Med 2017;177:399–406.', 'Patel S, Baptiste JV. Lung cancer screening. In: ATS core curriculum 2021 — lung cancer. ATS Scholar 2021.', 'American Thoracic Society patient education: lung cancer screening and what a nodule means.'] }
+] };
+
+T.incidentals = { title: 'Other abnormalities on chest CT', kicker: 'What else the scan shows, and what to do with it', blocks: [
+  { p: 'Four in ten screening CTs and a good share of all chest CTs show something other than a nodule that needs a decision. Most of it needs nothing or a note; a few findings change management, and some are the reason the person was imaged in the first place. Lung-RADS flags them with an S modifier and defers to the ACR incidental-findings guidance; this page keeps the ones a pulmonologist is asked about.' },
+  { h: 'Lung', ul: [
+    'Interstitial lung abnormalities (Fleischner 2020): incidental ground-glass, reticulation, traction bronchiectasis or honeycombing involving at least 5% of a lung zone in a person without known interstitial lung disease, found in 4–9% of smokers and 2–7% of non-smokers. Non-subpleural and non-fibrotic patterns are usually followed by CT in 12–24 months; subpleural fibrotic ILA (reticulation with traction bronchiectasis or honeycombing in the lower zones) progresses in about half within 2–3 years and carries a higher mortality — pulmonary function with DLCO, a history for exposures and connective tissue disease, and referral to an interstitial lung disease clinic. Dependent atelectasis and centrilobular nodularity of smoking are not ILA.',
+    'Emphysema: present on about a third of screening scans; it is a risk factor for lung cancer (and a Brock variable), and a reason for spirometry and smoking cessation even when the person has no diagnosis of COPD. Paraseptal blebs and bullae are noted; a giant bulla is a surgical question.',
+    'Bronchiectasis, tree-in-bud opacities and mucus plugging suggest infection — non-tuberculous mycobacteria in the middle lobe and lingula of older women, aspiration in the dependent segments; cultures and a CT in 1–3 months rather than a nodule pathway. Segmental or lobar consolidation and clusters of new nodules (more than six) are managed as infection first (Lung-RADS 0, repeat LDCT in 1–3 months).',
+    'Cysts: a thin-walled (< 2 mm) unilocular cyst is benign and not followed; a thick-walled, multilocular or growing cyst, or a cyst with a nodule, is handled as a lung cancer risk (Lung-RADS atypical cyst, 3–4B). Many cysts raise the question of lymphangioleiomyomatosis, Langerhans cell histiocytosis or Birt–Hogg–Dubé.',
+    'An airway nodule that is segmental or more proximal is Lung-RADS 4A and, if it persists at 3 months, 4B with bronchoscopy; subsegmental and tubular airway opacities are secretions.',
+    'Pleura: plaques (asbestos exposure; no follow-up needed, but a history and spirometry); an effusion or nodular pleural thickening needs an explanation; a pneumothorax is reported urgently.'] },
+  { h: 'Mediastinum, heart and the rest', ul: [
+    'Mediastinal or hilar lymph nodes over 10 mm in short axis: in a smoker with a nodule they are the staging question (EBUS-TBNA); bilateral symmetric hilar nodes point to sarcoidosis; calcified nodes to old granulomatous disease. The nodal station map and the EBUS pages cover the sampling.',
+    'Coronary artery calcification: predicts cardiovascular events independently of risk scores and is the commonest S-modifier finding; report it, estimate ASCVD risk and discuss a statin; extensive calcification or a mass-like density in the heart goes to cardiology. Aortic aneurysm (ascending > 4.5 cm, descending > 4 cm) and valve calcification are reported.',
+    'Thyroid nodules (ACR: 1.5 cm or more, or 1 cm with suspicious features, gets an ultrasound), adrenal nodules (under 4 cm with an attenuation under 10 HU are adenomas), liver and renal lesions, breast masses and, on the bones, lytic or sclerotic lesions all follow the ACR white papers; a vertebral compression fracture is an osteoporosis diagnosis.',
+    'The oesophagus (a dilated oesophagus, a hiatal hernia), the chest wall and the thyroid are the usual incidental soft-tissue findings.'] },
+  { h: 'Keeping it proportionate', p: 'The point of an incidental finding is the next step, not the list. Note what matters to the patient (cardiac risk, a treatable lung disease, a cancer elsewhere), hand off what belongs to another service, and avoid a second cascade of tests for findings that are benign by their imaging features. Document the plan in the same note as the nodule plan so the two are not lost separately.' },
+  { src: ['Hatabu H, Hunninghake GM, Richeldi L, et al. Interstitial lung abnormalities detected incidentally on CT: a position paper from the Fleischner Society. Lancet Respir Med 2020;8:726–37.', 'American College of Radiology. Lung-RADS v2022; ACR Lung Cancer Screening CT Incidental Findings Quick Reference Guide; ACR Incidental Findings white papers.', 'Kinsinger LS, et al. Implementation of lung cancer screening in the Veterans Health Administration. JAMA Intern Med 2017;177:399–406.'] }
+] };
+
+const GROUPS = [{ title: 'Nodules and screening', ids: ['nodules', 'screening', 'incidentals'] }];
+root.PFT_NOD = { topics: T, groups: GROUPS, mayo: mayo, va: va, brock: brock, vdt: vdt, fleischner: fleischner, lungRads: lungRads };
+if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_NOD;
 })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this));
 
 </script>
@@ -9624,7 +9899,7 @@ function anatWidget(kind) {
    tap an opening to advance. A procedural model from standard dimensions, not a patient's CT. */
 const MC_EDGE = [0,265,515,778,1030,1295,1541,1804,2060,2309,2575,2822,3082,3331,3593,3840,400,153,915,666,1430,1183,1941,1692,2460,2197,2975,2710,3482,3219,3993,3728,560,825,51,314,1590,1855,1077,1340,2620,2869,2111,2358,3642,3891,3129,3376,928,681,419,170,1958,1711,1445,1196,2988,2725,2479,2214,4010,3747,3497,3232,1120,1385,1635,1898,102,367,613,876,3180,3429,3695,3942,2154,2403,2665,2912,1520,1273,2035,1786,502,255,1013,764,3580,3317,4095,3830,2554,2291,3065,2800,1616,1881,1107,1370,598,863,85,348,3676,3925,3167,3414,2650,2899,2137,2384,1984,1737,1475,1226,966,719,453,204,4044,3781,3535,3270,3018,2755,2505,2240,2240,2505,2755,3018,3270,3535,3781,4044,204,453,719,966,1226,1475,1737,1984,2384,2137,2899,2650,3414,3167,3925,3676,348,85,863,598,1370,1107,1881,1616,2800,3065,2291,2554,3830,4095,3317,3580,764,1013,255,502,1786,2035,1273,1520,2912,2665,2403,2154,3942,3695,3429,3180,876,613,367,102,1898,1635,1385,1120,3232,3497,3747,4010,2214,2479,2725,2988,1196,1445,1711,1958,170,419,681,928,3376,3129,3891,3642,2358,2111,2869,2620,1340,1077,1855,1590,314,51,825,560,3728,3993,3219,3482,2710,2975,2197,2460,1692,1941,1183,1430,666,915,153,400,3840,3593,3331,3082,2822,2575,2309,2060,1804,1541,1295,1030,778,515,265,0];
 const MC_TRI = [[],[0,8,3],[0,1,9],[1,8,3,9,8,1],[1,2,10],[0,8,3,1,2,10],[9,2,10,0,2,9],[2,8,3,2,10,8,10,9,8],[3,11,2],[0,11,2,8,11,0],[1,9,0,2,3,11],[1,11,2,1,9,11,9,8,11],[3,10,1,11,10,3],[0,10,1,0,8,10,8,11,10],[3,9,0,3,11,9,11,10,9],[9,8,10,10,8,11],[4,7,8],[4,3,0,7,3,4],[0,1,9,8,4,7],[4,1,9,4,7,1,7,3,1],[1,2,10,8,4,7],[3,4,7,3,0,4,1,2,10],[9,2,10,9,0,2,8,4,7],[2,10,9,2,9,7,2,7,3,7,9,4],[8,4,7,3,11,2],[11,4,7,11,2,4,2,0,4],[9,0,1,8,4,7,2,3,11],[4,7,11,9,4,11,9,11,2,9,2,1],[3,10,1,3,11,10,7,8,4],[1,11,10,1,4,11,1,0,4,7,11,4],[4,7,8,9,0,11,9,11,10,11,0,3],[4,7,11,4,11,9,9,11,10],[9,5,4],[9,5,4,0,8,3],[0,5,4,1,5,0],[8,5,4,8,3,5,3,1,5],[1,2,10,9,5,4],[3,0,8,1,2,10,4,9,5],[5,2,10,5,4,2,4,0,2],[2,10,5,3,2,5,3,5,4,3,4,8],[9,5,4,2,3,11],[0,11,2,0,8,11,4,9,5],[0,5,4,0,1,5,2,3,11],[2,1,5,2,5,8,2,8,11,4,8,5],[10,3,11,10,1,3,9,5,4],[4,9,5,0,8,1,8,10,1,8,11,10],[5,4,0,5,0,11,5,11,10,11,0,3],[5,4,8,5,8,10,10,8,11],[9,7,8,5,7,9],[9,3,0,9,5,3,5,7,3],[0,7,8,0,1,7,1,5,7],[1,5,3,3,5,7],[9,7,8,9,5,7,10,1,2],[10,1,2,9,5,0,5,3,0,5,7,3],[8,0,2,8,2,5,8,5,7,10,5,2],[2,10,5,2,5,3,3,5,7],[7,9,5,7,8,9,3,11,2],[9,5,7,9,7,2,9,2,0,2,7,11],[2,3,11,0,1,8,1,7,8,1,5,7],[11,2,1,11,1,7,7,1,5],[9,5,8,8,5,7,10,1,3,10,3,11],[5,7,0,5,0,9,7,11,0,1,0,10,11,10,0],[11,10,0,11,0,3,10,5,0,8,0,7,5,7,0],[11,10,5,7,11,5],[10,6,5],[0,8,3,5,10,6],[9,0,1,5,10,6],[1,8,3,1,9,8,5,10,6],[1,6,5,2,6,1],[1,6,5,1,2,6,3,0,8],[9,6,5,9,0,6,0,2,6],[5,9,8,5,8,2,5,2,6,3,2,8],[2,3,11,10,6,5],[11,0,8,11,2,0,10,6,5],[0,1,9,2,3,11,5,10,6],[5,10,6,1,9,2,9,11,2,9,8,11],[6,3,11,6,5,3,5,1,3],[0,8,11,0,11,5,0,5,1,5,11,6],[3,11,6,0,3,6,0,6,5,0,5,9],[6,5,9,6,9,11,11,9,8],[5,10,6,4,7,8],[4,3,0,4,7,3,6,5,10],[1,9,0,5,10,6,8,4,7],[10,6,5,1,9,7,1,7,3,7,9,4],[6,1,2,6,5,1,4,7,8],[1,2,5,5,2,6,3,0,4,3,4,7],[8,4,7,9,0,5,0,6,5,0,2,6],[7,3,9,7,9,4,3,2,9,5,9,6,2,6,9],[3,11,2,7,8,4,10,6,5],[5,10,6,4,7,2,4,2,0,2,7,11],[0,1,9,4,7,8,2,3,11,5,10,6],[9,2,1,9,11,2,9,4,11,7,11,4,5,10,6],[8,4,7,3,11,5,3,5,1,5,11,6],[5,1,11,5,11,6,1,0,11,7,11,4,0,4,11],[0,5,9,0,6,5,0,3,6,11,6,3,8,4,7],[6,5,9,6,9,11,4,7,9,7,11,9],[10,4,9,6,4,10],[4,10,6,4,9,10,0,8,3],[10,0,1,10,6,0,6,4,0],[8,3,1,8,1,6,8,6,4,6,1,10],[1,4,9,1,2,4,2,6,4],[3,0,8,1,2,9,2,4,9,2,6,4],[0,2,4,4,2,6],[8,3,2,8,2,4,4,2,6],[10,4,9,10,6,4,11,2,3],[0,8,2,2,8,11,4,9,10,4,10,6],[3,11,2,0,1,6,0,6,4,6,1,10],[6,4,1,6,1,10,4,8,1,2,1,11,8,11,1],[9,6,4,9,3,6,9,1,3,11,6,3],[8,11,1,8,1,0,11,6,1,9,1,4,6,4,1],[3,11,6,3,6,0,0,6,4],[6,4,8,11,6,8],[7,10,6,7,8,10,8,9,10],[0,7,3,0,10,7,0,9,10,6,7,10],[10,6,7,1,10,7,1,7,8,1,8,0],[10,6,7,10,7,1,1,7,3],[1,2,6,1,6,8,1,8,9,8,6,7],[2,6,9,2,9,1,6,7,9,0,9,3,7,3,9],[7,8,0,7,0,6,6,0,2],[7,3,2,6,7,2],[2,3,11,10,6,8,10,8,9,8,6,7],[2,0,7,2,7,11,0,9,7,6,7,10,9,10,7],[1,8,0,1,7,8,1,10,7,6,7,10,2,3,11],[11,2,1,11,1,7,10,6,1,6,7,1],[8,9,6,8,6,7,9,1,6,11,6,3,1,3,6],[0,9,1,11,6,7],[7,8,0,7,0,6,3,11,0,11,6,0],[7,11,6],[7,6,11],[3,0,8,11,7,6],[0,1,9,11,7,6],[8,1,9,8,3,1,11,7,6],[10,1,2,6,11,7],[1,2,10,3,0,8,6,11,7],[2,9,0,2,10,9,6,11,7],[6,11,7,2,10,3,10,8,3,10,9,8],[7,2,3,6,2,7],[7,0,8,7,6,0,6,2,0],[2,7,6,2,3,7,0,1,9],[1,6,2,1,8,6,1,9,8,8,7,6],[10,7,6,10,1,7,1,3,7],[10,7,6,1,7,10,1,8,7,1,0,8],[0,3,7,0,7,10,0,10,9,6,10,7],[7,6,10,7,10,8,8,10,9],[6,8,4,11,8,6],[3,6,11,3,0,6,0,4,6],[8,6,11,8,4,6,9,0,1],[9,4,6,9,6,3,9,3,1,11,3,6],[6,8,4,6,11,8,2,10,1],[1,2,10,3,0,11,0,6,11,0,4,6],[4,11,8,4,6,11,0,2,9,2,10,9],[10,9,3,10,3,2,9,4,3,11,3,6,4,6,3],[8,2,3,8,4,2,4,6,2],[0,4,2,4,6,2],[1,9,0,2,3,4,2,4,6,4,3,8],[1,9,4,1,4,2,2,4,6],[8,1,3,8,6,1,8,4,6,6,10,1],[10,1,0,10,0,6,6,0,4],[4,6,3,4,3,8,6,10,3,0,3,9,10,9,3],[10,9,4,6,10,4],[4,9,5,7,6,11],[0,8,3,4,9,5,11,7,6],[5,0,1,5,4,0,7,6,11],[11,7,6,8,3,4,3,5,4,3,1,5],[9,5,4,10,1,2,7,6,11],[6,11,7,1,2,10,0,8,3,4,9,5],[7,6,11,5,4,10,4,2,10,4,0,2],[3,4,8,3,5,4,3,2,5,10,5,2,11,7,6],[7,2,3,7,6,2,5,4,9],[9,5,4,0,8,6,0,6,2,6,8,7],[3,6,2,3,7,6,1,5,0,5,4,0],[6,2,8,6,8,7,2,1,8,4,8,5,1,5,8],[9,5,4,10,1,6,1,7,6,1,3,7],[1,6,10,1,7,6,1,0,7,8,7,0,9,5,4],[4,0,10,4,10,5,0,3,10,6,10,7,3,7,10],[7,6,10,7,10,8,5,4,10,4,8,10],[6,9,5,6,11,9,11,8,9],[3,6,11,0,6,3,0,5,6,0,9,5],[0,11,8,0,5,11,0,1,5,5,6,11],[6,11,3,6,3,5,5,3,1],[1,2,10,9,5,11,9,11,8,11,5,6],[0,11,3,0,6,11,0,9,6,5,6,9,1,2,10],[11,8,5,11,5,6,8,0,5,10,5,2,0,2,5],[6,11,3,6,3,5,2,10,3,10,5,3],[5,8,9,5,2,8,5,6,2,3,8,2],[9,5,6,9,6,0,0,6,2],[1,5,8,1,8,0,5,6,8,3,8,2,6,2,8],[1,5,6,2,1,6],[1,3,6,1,6,10,3,8,6,5,6,9,8,9,6],[10,1,0,10,0,6,9,5,0,5,6,0],[0,3,8,5,6,10],[10,5,6],[11,5,10,7,5,11],[11,5,10,11,7,5,8,3,0],[5,11,7,5,10,11,1,9,0],[10,7,5,10,11,7,9,8,1,8,3,1],[11,1,2,11,7,1,7,5,1],[0,8,3,1,2,7,1,7,5,7,2,11],[9,7,5,9,2,7,9,0,2,2,11,7],[7,5,2,7,2,11,5,9,2,3,2,8,9,8,2],[2,5,10,2,3,5,3,7,5],[8,2,0,8,5,2,8,7,5,10,2,5],[9,0,1,5,10,3,5,3,7,3,10,2],[9,8,2,9,2,1,8,7,2,10,2,5,7,5,2],[1,3,5,3,7,5],[0,8,7,0,7,1,1,7,5],[9,0,3,9,3,5,5,3,7],[9,8,7,5,9,7],[5,8,4,5,10,8,10,11,8],[5,0,4,5,11,0,5,10,11,11,3,0],[0,1,9,8,4,10,8,10,11,10,4,5],[10,11,4,10,4,5,11,3,4,9,4,1,3,1,4],[2,5,1,2,8,5,2,11,8,4,5,8],[0,4,11,0,11,3,4,5,11,2,11,1,5,1,11],[0,2,5,0,5,9,2,11,5,4,5,8,11,8,5],[9,4,5,2,11,3],[2,5,10,3,5,2,3,4,5,3,8,4],[5,10,2,5,2,4,4,2,0],[3,10,2,3,5,10,3,8,5,4,5,8,0,1,9],[5,10,2,5,2,4,1,9,2,9,4,2],[8,4,5,8,5,3,3,5,1],[0,4,5,1,0,5],[8,4,5,8,5,3,9,0,5,0,3,5],[9,4,5],[4,11,7,4,9,11,9,10,11],[0,8,3,4,9,7,9,11,7,9,10,11],[1,10,11,1,11,4,1,4,0,7,4,11],[3,1,4,3,4,8,1,10,4,7,4,11,10,11,4],[4,11,7,9,11,4,9,2,11,9,1,2],[9,7,4,9,11,7,9,1,11,2,11,1,0,8,3],[11,7,4,11,4,2,2,4,0],[11,7,4,11,4,2,8,3,4,3,2,4],[2,9,10,2,7,9,2,3,7,7,4,9],[9,10,7,9,7,4,10,2,7,8,7,0,2,0,7],[3,7,10,3,10,2,7,4,10,1,10,0,4,0,10],[1,10,2,8,7,4],[4,9,1,4,1,7,7,1,3],[4,9,1,4,1,7,0,8,1,8,7,1],[4,0,3,7,4,3],[4,8,7],[9,10,8,10,11,8],[3,0,9,3,9,11,11,9,10],[0,1,10,0,10,8,8,10,11],[3,1,10,11,3,10],[1,2,11,1,11,9,9,11,8],[3,0,9,3,9,11,1,2,9,2,11,9],[0,2,11,8,0,11],[3,2,11],[2,3,8,2,8,10,10,8,9],[9,10,2,0,9,2],[2,3,8,2,8,10,0,1,8,1,10,8],[1,10,2],[1,3,8,9,1,8],[0,9,1],[0,3,8],[]];
-const T3 = { mode: 'out', renderer: null, canvas: null, out: null, med: null, inn: null, innFor: '', raf: 0, size: [0, 0], drag: null, yaw: 0, pitch: 0, orbit: { th: 0.5, ph: 1.25, d: 330 }, orbitMed: { th: 0.4, ph: 1.35, d: 430 }, tween: null, depth: 6, depthFor: '', labels: true };
+const T3 = { mode: 'out', renderer: null, canvas: null, out: null, med: null, inn: null, innFor: '', raf: 0, size: [0, 0], drag: null, yaw: 0, pitch: 0, orbit: { th: 0.5, ph: 1.25, d: 330 }, orbitMed: { th: 0.4, ph: 1.35, d: 430 }, tween: null, depth: 6, depthFor: '', labels: true, overlay: true, level: true, roll: 0, vlabels: true, hint: '' };
 function t3Orbit() { return T3.mode === 'med' ? T3.orbitMed : T3.orbit; }
 /* ---- position along the current airway, in millimetres from its start (real lengths: trachea 11 cm, RMB 2.4 cm, LMB 4.6 cm …) */
 function t3Len(id) { const s = t3Seg(id); return s.a.distanceTo(s.b); }
@@ -9649,7 +9924,7 @@ function t3Move(mm) {
 /* the readout and the corner map follow the scope without redrawing the page */
 function t3UpdateNav() {
   const el = document.querySelector('[data-3d-depth]'); if (el) el.textContent = t3DepthText();
-  const mm = document.querySelector('.an-3d-mini'); if (mm) { mm.textContent = ''; mm.appendChild(miniMap(t3Depth() / (t3Len(treeAt) || 1))); }
+  const mm = document.querySelector('.an-sim-map'); if (mm) { mm.textContent = ''; mm.appendChild(miniMap(t3Depth() / (t3Len(treeAt) || 1))); }
 }
 /* go to another airway with the scope at a given depth in it (the depth is set before the page re-renders) */
 function t3Enter(id, mm) {
@@ -9710,30 +9985,43 @@ function t3BuildOut() {
   const cam = new THREE.PerspectiveCamera(38, 1, 1, 2000);
   return { scene: scene, camera: cam, meshes: meshes, group: group };
 }
-/* ---- the mediastinum: the same tree with the vessels, the oesophagus, the spine, the heart and the nodal stations around it */
+/* ---- the mediastinum: the same tree with the vessels, the oesophagus, the spine, the heart and the nodal stations around it.
+   The parts (geometries, sample points, labels) are built once and shared by the mediastinum view and the see-through
+   overlay of the scope view. */
 const MED_COL = { a: 0xd3534a, v: 0x4b78cc, e: 0xb9b0a4, o: 0xd9d2c6, n: 0x8ea33e, h: 0xe0a0a0 };
-function t3BuildMed() {
-  const v = t3BuildOut(), M = AN.MEDIASTINUM, grp = new THREE.Group(), labels = new THREE.Group();
-  const mat = (k, extra) => new THREE.MeshStandardMaterial(Object.assign({ color: MED_COL[k], roughness: 0.55, metalness: 0.02 }, extra || {}));
+function t3MedParts() {
+  if (T3.parts) return T3.parts;
+  const M = AN.MEDIASTINUM, parts = [];
   (M.vessels || []).forEach(x => {
     const pts = x.pts.map(toScene), curve = new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.5);
-    const m = x.k === 'o' ? mat('o', { transparent: true, opacity: 0.55 }) : (x.k === 'e' ? mat('e', { transparent: true, opacity: 0.92 }) : mat(x.k));
-    const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, Math.max(12, pts.length * 10), x.r, 14, false), m);
-    tube.userData.lm = x.l; tube.userData.mid = x.id; tube.userData.k = x.k; grp.add(tube);
-    [pts[0], pts[pts.length - 1]].forEach(p => { const cap = new THREE.Mesh(new THREE.SphereGeometry(x.r, 12, 10), m); cap.position.copy(p); cap.userData.lm = x.l; cap.userData.mid = x.id; cap.userData.k = x.k; grp.add(cap); });
-    if (!x.nl) { const lp = pts[Math.min(pts.length - 1, x.lp || 0)], lab = t3Label(x.sl || x.l, { h: 9 }); lab.position.copy(lp).add(new THREE.Vector3(0, x.r + 6, x.r + 2)); labels.add(lab); }
+    parts.push({ id: x.id, k: x.k, l: x.l, sl: x.sl || x.l, nl: !!x.nl, r: x.r, geo: new THREE.TubeGeometry(curve, Math.max(12, pts.length * 10), x.r, 14, false), caps: [pts[0], pts[pts.length - 1]], samples: curve.getPoints(24), lp: pts[Math.min(pts.length - 1, x.lp || 0)] });
   });
   (M.blobs || []).forEach(b => {
-    const ghost = b.k === 'h';
-    const m = mat(b.k, ghost ? { transparent: true, opacity: 0.13, depthWrite: false } : { transparent: true, opacity: 0.85 });
-    const e = new THREE.Mesh(new THREE.SphereGeometry(1, 28, 20), m);
-    e.position.copy(toScene(b.c)); e.scale.set(b.s[0], b.s[2], b.s[1]); e.userData.lm = b.l; e.userData.mid = b.id; e.userData.k = b.k; if (ghost) e.renderOrder = -1; grp.add(e);
-    const lab = t3Label(b.l, { h: 9 }); lab.position.copy(toScene(b.c)).add(new THREE.Vector3(0, ghost ? -b.s[2] - 8 : 0, b.s[1] + 2)); labels.add(lab);
+    const c = toScene(b.c);
+    parts.push({ id: b.id, k: b.k, l: b.l, sl: b.l, nl: false, r: Math.min(b.s[0], b.s[1], b.s[2]), geo: new THREE.SphereGeometry(1, 28, 20), pos: c, scale: [b.s[0], b.s[2], b.s[1]], samples: [c], lp: c, ghost: b.k === 'h' });
   });
-  const nm = mat('n', { roughness: 0.6 });
   (M.nodes || []).forEach(nd => {
-    const sph = new THREE.Mesh(new THREE.SphereGeometry(4, 14, 10), nm); sph.position.copy(toScene(nd.p)); sph.userData.lm = 'station ' + nd.id; sph.userData.station = nd.id; sph.userData.mid = nd.id; sph.userData.k = 'n'; grp.add(sph);
-    const lab = t3Label(nd.id, { h: 6.5, color: '#2f3a0e', halo: 'rgba(240,244,220,0.95)' }); lab.position.copy(toScene(nd.p)).add(new THREE.Vector3(0, 6.5, 3)); labels.add(lab);
+    const c = toScene(nd.p);
+    parts.push({ id: nd.id, k: 'n', l: 'station ' + nd.id, sl: nd.id, nl: false, r: 4, geo: new THREE.SphereGeometry(4, 14, 10), pos: c, samples: [c], lp: c, station: nd.id });
+  });
+  T3.parts = parts;
+  return parts;
+}
+function t3BuildMed() {
+  const v = t3BuildOut(), grp = new THREE.Group(), labels = new THREE.Group();
+  const mat = (k, extra) => new THREE.MeshStandardMaterial(Object.assign({ color: MED_COL[k], roughness: 0.55, metalness: 0.02 }, extra || {}));
+  t3MedParts().forEach(x => {
+    const m = x.ghost ? mat('h', { transparent: true, opacity: 0.13, depthWrite: false }) : (x.k === 'o' ? mat('o', { transparent: true, opacity: 0.55 }) : (x.k === 'e' ? mat('e', { transparent: true, opacity: 0.92 }) : (x.pos && x.k === 'v' ? mat('v', { transparent: true, opacity: 0.85 }) : mat(x.k, x.k === 'n' ? { roughness: 0.6 } : {}))));
+    const mesh = new THREE.Mesh(x.geo, m);
+    if (x.pos) { mesh.position.copy(x.pos); if (x.scale) mesh.scale.set(x.scale[0], x.scale[1], x.scale[2]); }
+    mesh.userData.lm = x.l; mesh.userData.mid = x.id; mesh.userData.k = x.k; if (x.station) mesh.userData.station = x.station; if (x.ghost) mesh.renderOrder = -1;
+    grp.add(mesh);
+    (x.caps || []).forEach(p => { const cap = new THREE.Mesh(new THREE.SphereGeometry(x.r, 12, 10), m); cap.position.copy(p); cap.userData.lm = x.l; cap.userData.mid = x.id; cap.userData.k = x.k; grp.add(cap); });
+    if (!x.nl) {
+      const lab = x.k === 'n' ? t3Label(x.sl, { h: 6.5, color: '#2f3a0e', halo: 'rgba(240,244,220,0.95)' }) : t3Label(x.sl, { h: 9 });
+      lab.position.copy(x.lp).add(x.k === 'n' ? new THREE.Vector3(0, 6.5, 3) : (x.pos ? new THREE.Vector3(0, x.ghost ? -x.scale[1] - 8 : 0, (x.scale ? x.scale[2] : x.r) + 2) : new THREE.Vector3(0, x.r + 6, x.r + 2)));
+      labels.add(lab);
+    }
   });
   v.scene.add(grp); v.scene.add(labels); v.med = grp; v.labels = labels;
   // the cross-section marker: a ring around the airway at the scope's position with a tick at 12 o'clock (anterior)
@@ -9843,14 +10131,53 @@ function t3BuildIn(id) {
   const n = [Math.ceil(ext.x / cell), Math.ceil(ext.y / cell), Math.ceil(ext.z / cell)];
   const pre = caps.map(capPrep);
   const geo = marchingCubes((x, y, z) => { let d = Infinity; for (let i = 0; i < pre.length; i++) { const v = capSdf(x, y, z, pre[i]); if (v < d) d = v; } return d; }, lo, hi, n);
+  // the mucosa: a wet pink with a faint mottle and vessel-like streaks, written into the vertex colours
+  const pa = geo.getAttribute('position'), col = new Float32Array(pa.count * 3);
+  for (let i = 0; i < pa.count; i++) {
+    const x = pa.getX(i), y = pa.getY(i), z = pa.getZ(i);
+    const n1 = 0.5 + 0.5 * Math.sin(0.33 * x + 1.7 * Math.sin(0.19 * z + 0.4)) * Math.sin(0.41 * y + 1.1 * Math.sin(0.23 * x));
+    const st = Math.abs(Math.sin(0.9 * (0.7 * x + 0.5 * y + 0.3 * z) + 2.2 * Math.sin(0.13 * z + 0.11 * y)));
+    const streak = st > 0.93 ? (st - 0.93) / 0.07 : 0;
+    const base = [0.85, 0.64, 0.61], red = [0.76, 0.42, 0.42], k = 0.92 + 0.08 * n1;
+    col[i * 3] = (base[0] * (1 - 0.6 * streak) + red[0] * 0.6 * streak) * k; col[i * 3 + 1] = (base[1] * (1 - 0.6 * streak) + red[1] * 0.6 * streak) * k; col[i * 3 + 2] = (base[2] * (1 - 0.6 * streak) + red[2] * 0.6 * streak) * k;
+  }
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
   const scene = new THREE.Scene();
   scene.fog = new THREE.Fog(0x2a1210, 30, 170);
   scene.add(new THREE.AmbientLight(0xffe4dc, 0.35));
-  const mat = new THREE.MeshStandardMaterial({ color: 0xd9a49c, roughness: 0.4, metalness: 0.0, side: THREE.DoubleSide });
+  const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, vertexColors: true, roughness: 0.32, metalness: 0.0, side: THREE.DoubleSide });
   const mesh = new THREE.Mesh(geo, mat); scene.add(mesh);
   const cam = new THREE.PerspectiveCamera(80, 1, 0.5, 400);
   const lamp = new THREE.PointLight(0xfff1e6, 0.75, 220, 1.1); lamp.position.set(0, 0, -4); cam.add(lamp); scene.add(cam);
-  return { scene: scene, camera: cam, mesh: mesh, caps: caps, id: id };
+  // the see-through overlay: the vessels, the oesophagus, the left atrium and the nodal stations drawn over the wall,
+  // translucent, fading with distance, labelled — the atlas picture of what lies against the airway being crossed
+  const ov = new THREE.Group(), ovParts = [];
+  t3MedParts().forEach(x => {
+    if (x.k === 'o' || x.ghost) return;
+    const m = new THREE.MeshStandardMaterial({ color: MED_COL[x.k], emissive: MED_COL[x.k], emissiveIntensity: 0.35, transparent: true, opacity: 0, depthTest: false, depthWrite: false, roughness: 0.6 });
+    const mesh = new THREE.Mesh(x.geo, m);
+    if (x.pos) { mesh.position.copy(x.pos); if (x.scale) mesh.scale.set(x.scale[0], x.scale[1], x.scale[2]); }
+    mesh.renderOrder = 5; mesh.visible = false; ov.add(mesh);
+    const lab = x.k === 'n' ? t3Label(x.sl, { h: 3.2, color: '#2f3a0e', halo: 'rgba(240,244,220,0.95)' }) : t3Label(x.sl, { h: 3.6, color: '#ffffff', halo: 'rgba(0,0,0,0.55)' });
+    lab.visible = false; lab.renderOrder = 11; ov.add(lab);
+    ovParts.push({ part: x, mesh: mesh, lab: lab, mat: m });
+  });
+  scene.add(ov);
+  return { scene: scene, camera: cam, mesh: mesh, caps: caps, id: id, ov: ov, ovParts: ovParts };
+}
+/* the overlay fades in as the scope approaches a structure: full within 20 mm of its surface, gone beyond 55 mm */
+function t3Overlay(inn, eye, look) {
+  const on = !!T3.overlay;
+  inn.ov.visible = on; if (!on) return;
+  const maxOp = { a: 0.34, v: 0.34, e: 0.26, n: 0.55 };
+  inn.ovParts.forEach(o => {
+    let best = Infinity, bp = null;
+    o.part.samples.forEach(sp => { const rel = sp.clone().sub(eye); if (rel.dot(look) < -8) return; const d = rel.length() - o.part.r; if (d < best) { best = d; bp = sp; } });
+    const k = best === Infinity ? 0 : Math.max(0, Math.min(1, (46 - best) / 30));
+    const op = (maxOp[o.part.k] || 0.4) * k;
+    o.mat.opacity = op; o.mesh.visible = op > 0.02;
+    o.lab.visible = op > 0.12 && !!T3.vlabels; if (o.lab.visible) o.lab.position.copy(bp);
+  });
 }
 /* the camera sits on the axis of the current airway at the scope's depth, looking down the axis; anterior up */
 function t3PoseIn(id) {
@@ -9862,11 +10189,39 @@ function t3LookIn(inn, pose) {
   const c = inn.camera, dir = pose.dir.clone();
   const up0 = new THREE.Vector3(0, 0, 1);   // anterior
   const right = dir.clone().cross(up0).normalize(); if (right.lengthSq() < 1e-6) right.set(1, 0, 0);
-  const up = right.clone().cross(dir).normalize();
+  let up = right.clone().cross(dir).normalize();
   const look = dir.clone().multiplyScalar(Math.cos(T3.pitch)).add(up.clone().multiplyScalar(Math.sin(T3.pitch)));
   const q = new THREE.Quaternion().setFromAxisAngle(up, -T3.yaw); look.applyQuaternion(q);
+  if (!T3.level && T3.roll) up = up.clone().applyQuaternion(new THREE.Quaternion().setFromAxisAngle(look.clone().normalize(), T3.roll));   // the scope turned on its axis: the picture rolls
   c.position.copy(pose.eye); c.up.copy(up); c.lookAt(pose.eye.clone().add(look));
+  inn.look = look.clone().normalize(); inn.eye = pose.eye.clone();
 }
+/* the direction the scope is looking, and the opening it is aimed at (within 40°) when it sits at a carina */
+function t3AimedKid() {
+  const inn = T3.inn; if (!inn || !inn.look) return null;
+  const kids = AN.TREE[treeAt].kids; let best = null;
+  const s0 = t3Seg(treeAt), axis = s0.b.clone().sub(s0.a).normalize();
+  // driving straight at a carina bumps into the keel: the scope has to be turned toward one side first
+  if (kids.length > 1 && Math.acos(Math.max(-1, Math.min(1, axis.dot(inn.look)))) < 0.12) return null;
+  kids.forEach(k => {
+    const s = t3Seg(k), p = s.a.clone().lerp(s.b, Math.min(0.5, 10 / Math.max(1, s.a.distanceTo(s.b))));
+    const v = p.sub(inn.eye).normalize(), ang = Math.acos(Math.max(-1, Math.min(1, v.dot(inn.look))));
+    if (ang < 0.6 && (!best || ang < best.ang)) best = { id: k, ang: ang };
+  });
+  return best ? best.id : null;
+}
+/* drive: along the airway, and into whichever opening the scope is aimed at when it reaches a carina */
+function t3Advance() {
+  const n = AN.TREE[treeAt], d = t3Depth();
+  if (d >= t3MaxDepth(treeAt) - 0.5) {
+    if (!n.kids.length) { t3Hint('End of the navigable airway — pull back.'); return; }
+    const k = n.kids.length === 1 ? n.kids[0] : t3AimedKid();
+    if (k) { T3.refocus = true; T3.yaw *= 0.3; T3.pitch *= 0.3; t3Enter(k, 4); return; }
+    t3Hint('Steer into an opening (← → or the pad), then advance.'); return;
+  }
+  t3Move(T3_STEP);
+}
+function t3Hint(text) { T3.hint = text; const el = document.querySelector('[data-3d-hint]'); if (el) { el.textContent = text; el.hidden = !text; } clearTimeout(T3.hintTimer); T3.hintTimer = setTimeout(() => { T3.hint = ''; const e2 = document.querySelector('[data-3d-hint]'); if (e2) e2.hidden = true; }, 2200); }
 /* ---- the canvas, shared by both views */
 function t3Ensure() {
   if (T3.renderer) return true;
@@ -9891,7 +10246,7 @@ function t3Ensure() {
     const dx = e.clientX - d.x, dy = e.clientY - d.y;
     if (Math.abs(dx) + Math.abs(dy) > 3) d.moved = true;
     if (T3.mode !== 'in') { const ob = t3Orbit(); ob.th -= dx * 0.008; ob.ph = Math.max(0.15, Math.min(3.0, ob.ph - dy * 0.008)); }
-    else { T3.yaw = Math.max(-1.3, Math.min(1.3, T3.yaw - dx * 0.006)); T3.pitch = Math.max(-1.0, Math.min(1.0, T3.pitch + dy * 0.006)); }
+    else { T3.yaw = Math.max(-1.3, Math.min(1.3, T3.yaw - dx * 0.006)); T3.pitch = Math.max(-1.0, Math.min(1.0, T3.pitch + dy * 0.006)); t3PadSync(); }
     d.x = e.clientX; d.y = e.clientY;
   });
   const end = (e) => { const d = T3.drag; if (!d) return; delete d.pts[e.pointerId]; if (Object.keys(d.pts).length) return; T3.drag = null; if (!d.moved) t3Pick(e); };
@@ -9899,10 +10254,18 @@ function t3Ensure() {
   cv.addEventListener('wheel', (e) => { if (T3.mode === 'in') return; e.preventDefault(); const ob = t3Orbit(); ob.d = Math.max(80, Math.min(900, ob.d * (1 + Math.sign(e.deltaY) * 0.08))); }, { passive: false });
   cv.addEventListener('keydown', (e) => {
     const T = AN.TREE, n = T[treeAt];
-    if (e.key === 'ArrowUp' || e.key === 'Backspace') { e.preventDefault(); T3.refocus = true; t3Move(-T3_STEP); }
-    else if (e.key === 'ArrowDown' || e.key === 'w' || e.key === '+' || e.key === '=') { e.preventDefault(); T3.refocus = true; t3Move(T3_STEP); }
-    else if (/^[1-9]$/.test(e.key)) { const k = n.kids[+e.key - 1]; if (k) { e.preventDefault(); T3.refocus = true; t3Enter(k, 4); } }
-    else if (e.key === 'ArrowLeft') { T3.yaw += 0.15; } else if (e.key === 'ArrowRight') { T3.yaw -= 0.15; }
+    const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    if (T3.mode === 'in' && (key === 'ArrowUp' || key === 'w')) { e.preventDefault(); T3.refocus = true; t3Advance(); }
+    else if (key === 'ArrowDown' || key === 's') { e.preventDefault(); T3.refocus = true; t3Move(-T3_STEP); }
+    else if (key === 'ArrowUp') { e.preventDefault(); T3.refocus = true; t3Move(T3_STEP); }
+    else if (key === 'Backspace') { e.preventDefault(); if (n.parent) { T3.refocus = true; t3Enter(n.parent, Math.max(0, t3MaxDepth(n.parent) - 4)); } }
+    else if (/^[1-9]$/.test(key)) { const k = n.kids[+key - 1]; if (k) { e.preventDefault(); T3.refocus = true; t3Enter(k, 4); } }
+    else if (key === 'ArrowLeft' || key === 'a') { e.preventDefault(); T3.yaw = Math.max(-1.3, T3.yaw - 0.12); t3PadSync(); }   // yaw > 0 looks to the screen's right (the patient's right)
+    else if (key === 'ArrowRight' || key === 'd') { e.preventDefault(); T3.yaw = Math.min(1.3, T3.yaw + 0.12); t3PadSync(); }
+    else if (key === 'q') { T3.pitch = Math.min(1.0, T3.pitch + 0.12); t3PadSync(); } else if (key === 'e') { T3.pitch = Math.max(-1.0, T3.pitch - 0.12); t3PadSync(); }
+    else if (key === 'r') { T3.roll += 0.15; } else if (key === 'f') { T3.roll -= 0.15; }
+    else if (key === 'Home') { e.preventDefault(); T3.refocus = true; T3.yaw = 0; T3.pitch = 0; T3.roll = 0; t3Enter('trachea', 4); }
+    else if (key === 'c') { T3.yaw = 0; T3.pitch = 0; T3.roll = 0; t3PadSync(); }
   });
   return true;
 }
@@ -9947,38 +10310,83 @@ function t3Frame() {
     T3.renderer.setClearColor(0x2a1210);
     const pose = t3PoseIn(treeAt);
     if (T3.tween) { const k = Math.min(1, (performance.now() - T3.tween.t0) / (T3.tween.dur || 650)); const e = k * k * (3 - 2 * k); pose.eye = T3.tween.from.clone().lerp(pose.eye, e); if (k >= 1) T3.tween = null; }
-    t3LookIn(T3.inn, pose); T3.renderer.render(T3.inn.scene, T3.inn.camera);
+    t3LookIn(T3.inn, pose); t3Overlay(T3.inn, pose.eye, T3.inn.look); T3.renderer.render(T3.inn.scene, T3.inn.camera); t3ViewLabels();
   }
   T3.raf = requestAnimationFrame(t3Frame);
 }
 /* the figure on the tree topic */
+/* labels on the picture: the name of each opening ahead, placed where it projects on the screen */
+function t3ViewLabels() {
+  const box = T3.labelBox; if (!box || !T3.inn || !box.isConnected) return;
+  const cam = T3.inn.camera, W = box.clientWidth, H = box.clientHeight;
+  box.querySelectorAll('.an-vlabel').forEach(el => {
+    const k = el.getAttribute('data-open'); const s = t3Seg(k);
+    const p = s.a.clone().lerp(s.b, Math.min(0.5, 8 / Math.max(1, s.a.distanceTo(s.b)))).project(cam);
+    const vis = T3.vlabels && p.z < 1 && Math.abs(p.x) < 1.1 && Math.abs(p.y) < 1.1;
+    el.hidden = !vis;
+    if (vis) { el.style.left = ((p.x + 1) / 2 * W).toFixed(0) + 'px'; el.style.top = ((1 - p.y) / 2 * H).toFixed(0) + 'px'; }
+  });
+}
+function t3PadSync() { const pd = document.querySelector('[data-3d-pad]'); if (pd && pd.sync) pd.sync(); }
+/* the steering pad: drag the knob to aim the scope (left/right and up/down); it stays where it is left */
+function t3Pad() {
+  const pad = h('div', { class: 'an-pad', 'data-3d-pad': '1', title: 'Steer: drag the knob' }), knob = h('div', { class: 'an-pad-knob' });
+  pad.appendChild(knob);
+  const place = () => { knob.style.left = (50 + T3.yaw / 1.3 * 42) + '%'; knob.style.top = (50 - T3.pitch / 1.0 * 42) + '%'; };
+  place();
+  const move = (e) => { const r = pad.getBoundingClientRect(); const x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5; T3.yaw = Math.max(-1.3, Math.min(1.3, x / 0.42 * 1.3)); T3.pitch = Math.max(-1, Math.min(1, -y / 0.42)); place(); };
+  pad.addEventListener('pointerdown', (e) => { e.preventDefault(); pad.setPointerCapture(e.pointerId); pad.classList.add('on'); move(e); });
+  pad.addEventListener('pointermove', (e) => { if (pad.classList.contains('on')) move(e); });
+  const end = () => pad.classList.remove('on');
+  pad.addEventListener('pointerup', end); pad.addEventListener('pointercancel', end);
+  pad.sync = place;
+  return pad;
+}
 function tree3dFig() {
   if (!t3Ensure()) return h('figure', { class: 'an-fig' }, [h('div', { class: 'an-3d-none', text: '3D view needs WebGL, which this browser or view does not provide.' }), h('figcaption', { text: '3D airway model' })]);
-  const labId = uid('l3');
-  const modes = h('div', { class: 'an-3d-modes' }, [[['out', 'Outside'], ['in', 'Inside (scope)'], ['med', 'Mediastinum']].map(m => h('button', { type: 'button', class: 'ch', role: 'radio', 'aria-checked': String(T3.mode === m[0]), 'data-3d-mode': m[0], text: m[1], onclick: () => { T3.mode = m[0]; render(); } })),
-    T3.mode === 'med' ? h('label', { class: 'chk-inline', for: labId }, [h('input', { type: 'checkbox', id: labId, checked: T3.labels, 'data-3d-labels': '1', onchange: (e) => { T3.labels = e.target.checked; } }), 'Labels']) : null,
-    h('button', { type: 'button', class: 'lnk', text: 'Reset view', onclick: () => { T3.orbit = { th: 0.5, ph: 1.25, d: 330 }; T3.orbitMed = { th: 0.4, ph: 1.35, d: 430 }; T3.yaw = 0; T3.pitch = 0; } })]);
+  const labId = uid('l3'), ovId = uid('ov'), lvId = uid('lv'), vlId = uid('vl');
+  const chk = (id, key, text, attr, title) => h('label', { class: 'chk-inline', for: id, title: title || null }, [h('input', { type: 'checkbox', id: id, checked: !!T3[key], [attr]: '1', onchange: (e) => { T3[key] = e.target.checked; if (key === 'level') { T3.roll = 0; } } }), text]);
+  const modes = h('div', { class: 'an-3d-modes' }, [[['out', 'Outside'], ['in', 'Scope (simulator)'], ['med', 'Mediastinum']].map(m => h('button', { type: 'button', class: 'ch', role: 'radio', 'aria-checked': String(T3.mode === m[0]), 'data-3d-mode': m[0], text: m[1], onclick: () => { T3.mode = m[0]; render(); } })),
+    T3.mode === 'med' ? chk(labId, 'labels', 'Labels', 'data-3d-labels') : null,
+    T3.mode === 'in' ? chk(ovId, 'overlay', 'Overlay vessels & nodes', 'data-3d-overlay', 'See the structures against the wall through it, as in an EBUS atlas') : null,
+    T3.mode === 'in' ? chk(vlId, 'vlabels', 'Labels', 'data-3d-vlabels') : null,
+    T3.mode === 'in' ? chk(lvId, 'level', 'Keep anterior up', 'data-3d-level', 'Off: R and F turn the scope on its axis and the picture rolls, as on a real monitor') : null,
+    h('button', { type: 'button', class: 'lnk', text: 'Reset view', onclick: () => { T3.orbit = { th: 0.5, ph: 1.25, d: 330 }; T3.orbitMed = { th: 0.4, ph: 1.35, d: 430 }; T3.yaw = 0; T3.pitch = 0; T3.roll = 0; const pd = document.querySelector('[data-3d-pad]'); if (pd && pd.sync) pd.sync(); } })]);
   if (T3.mode === 'med' && !T3.med) { T3.med = t3BuildMed(); T3.med.camera.aspect = T3.size[0] / (T3.size[1] || 1); T3.med.camera.updateProjectionMatrix(); }
   if (T3.mode === 'in') {
     if (!T3.inn || T3.inn.id !== treeAt) {
       const prevEye = T3.inn ? T3.inn.camera.position.clone() : null;
-      T3.inn = t3BuildIn(treeAt); T3.yaw = 0; T3.pitch = 0;
+      T3.inn = t3BuildIn(treeAt);
       if (prevEye) T3.tween = { from: prevEye, t0: performance.now() };
       T3.inn.camera.aspect = T3.size[0] / (T3.size[1] || 1); T3.inn.camera.updateProjectionMatrix();
     }
   }
-  const wrap = h('div', { class: 'an-3d-wrap' }, [T3.canvas, T3.mode === 'in' ? h('div', { class: 'an-3d-mini', title: 'Where the scope is' }, [miniMap(t3Depth() / (t3Len(treeAt) || 1))]) : null]);
   const n = AN.TREE[treeAt];
-  // the scope's position along the airway, at real lengths: five millimetres a press (hold the key to glide)
+  // labels for the openings ahead, laid over the picture
+  const SHORT3D = { rmb: 'R main', lmb: 'L main', bi: 'B. intermedius', rul: 'RUL', rml: 'RML', rll: 'RLL', lul: 'LUL', lud: 'Upper division', ling: 'Lingula', lll: 'LLL', trachea: 'Trachea' };
+  const labelBox = T3.mode === 'in' ? h('div', { class: 'an-vlabels' }, n.kids.map(k => h('span', { class: 'an-vlabel', 'data-open': k, hidden: true, text: AN.TREE[k].b || SHORT3D[k] || AN.TREE[k].name, onclick: () => { T3.refocus = true; t3Enter(k, 4); } }))) : null;
+  T3.labelBox = labelBox;
+  const hud = T3.mode === 'in' ? h('div', { class: 'an-hud' }, [h('span', { class: 'an-hud-name', text: n.name }), h('span', { class: 'an-hud-hint', 'data-3d-hint': '1', hidden: !T3.hint, text: T3.hint || '' })]) : null;
+  const wrap = h('div', { class: 'an-3d-wrap' + (T3.mode === 'in' ? ' scope' : '') }, [T3.canvas, labelBox, hud]);
+  // the simulator: the navigational map beside the picture, the pad and the drive buttons beneath
+  let panel = wrap;
+  if (T3.mode === 'in') {
+    const map = h('div', { class: 'an-sim-map', title: 'Bronchial tree navigational map: the path travelled and the scope' }, [miniMap(t3Depth() / (t3Len(treeAt) || 1))]);
+    panel = h('div', { class: 'an-sim' }, [map, wrap]);
+  }
   const nav = T3.mode === 'out' ? null : h('div', { class: 'an-3d-nav' }, [
-    h('button', { type: 'button', class: 'btn sm quiet', 'data-3d-back': '1', title: 'Pull back 5 mm (↑, hold to glide)', text: '◀ 5 mm', onclick: () => t3Move(-T3_STEP) }),
-    h('button', { type: 'button', class: 'btn sm quiet', 'data-3d-fwd': '1', title: 'Advance 5 mm (↓, hold to glide)', text: '5 mm ▶', onclick: () => t3Move(T3_STEP) }),
+    T3.mode === 'in' ? t3Pad() : null,
+    h('div', { class: 'an-drive' }, [
+      h('button', { type: 'button', class: 'btn sm', 'data-3d-fwd': '1', title: 'Advance (↑ or W; hold to glide). At a carina the scope enters the opening it is aimed at.', text: '▲ Advance', onclick: () => (T3.mode === 'in' ? t3Advance() : t3Move(T3_STEP)) }),
+      h('button', { type: 'button', class: 'btn sm quiet', 'data-3d-back': '1', title: 'Withdraw (↓ or S; hold to glide)', text: '▼ Withdraw', onclick: () => t3Move(-T3_STEP) }),
+      T3.mode === 'in' ? h('button', { type: 'button', class: 'btn sm quiet', 'data-3d-restart': '1', title: 'Home', text: 'Restart at the trachea', onclick: () => { T3.yaw = 0; T3.pitch = 0; T3.roll = 0; T3.refocus = true; t3Enter('trachea', 4); } }) : null
+    ]),
     h('span', { class: 'an-3d-depth', 'data-3d-depth': '1', text: t3DepthText() })
   ]);
   const cap = T3.mode === 'out' ? 'Outside: drag to orbit, wheel or pinch to zoom, tap a branch to go there (the current path is blue).'
     : (T3.mode === 'med' ? 'Mediastinum: the tree with the great vessels, the oesophagus, the spine behind, the heart (faint) and the nodal stations (olive). The blue ring is where the scope is, its yellow dot at 12 o’clock (anterior) — the scope view above shows that level in cross-section. Drag to orbit, tap a branch to go there, tap a structure for its name.'
-    : 'Inside the ' + n.name.toLowerCase() + ': drag to look around, tap an opening to advance; keys 1–' + Math.max(1, n.kids.length) + ' advance, ↓ 5 mm deeper, ↑ 5 mm back (and out to the parent); hold a key to glide. The corner map shows where you are. Rings in front, the flat membrane behind.');
-  const fig = h('figure', { class: 'an-fig an-fig-3d' }, [modes, wrap, nav, h('figcaption', { text: cap + ' Procedural model from standard dimensions, not a patient.' })]);
+    : 'Scope: steer with the pad, ← → (or A D) and Q E, drive with ▲ ▼ (or W S, ↑ ↓; hold to glide). At a carina the scope enters the opening it is aimed at; tap a label or press 1–' + Math.max(1, n.kids.length) + ' to pick one; Backspace backs out; C centres the view; Home restarts. The overlay shows the vessels and nodes against the wall as you pass them, fading with distance. Rings in front, the flat membrane behind.');
+  const fig = h('figure', { class: 'an-fig an-fig-3d' }, [modes, panel, nav, h('figcaption', { text: cap + ' Procedural model from standard dimensions, not a patient.' })]);
   if (!T3.raf) T3.raf = requestAnimationFrame(t3Frame);
   if (T3.refocus) { T3.refocus = false; setTimeout(() => { try { T3.canvas.focus({ preventScroll: true }); } catch (x) { /* ignore */ } }, 0); }   // keyboard navigation keeps the canvas focused across re-renders
   return fig;
@@ -10184,6 +10592,129 @@ function ecgLab() {
 function ecgWidget(kind) { return kind === 'ecg' ? ecgLab() : null; }
 
 
+/* ========================================================================== Learn: lung nodules — the calculators
+   The probability models (Mayo, VA, Brock), the volume-doubling-time calculator, the management advisor (Fleischner
+   2017 for incidental nodules, Lung-RADS v2022 for screening) and a schematic of nodule types. Data and equations in
+   nodules.js. Each widget keeps its own inputs and recomputes in place. */
+const NOD = window.PFT_NOD || { topics: {}, groups: [] };
+const NOD_ST = { risk: { age: 64, female: false, smoker: true, quitYears: 0, cancer: false, famhx: false, emph: false, size: 9, type: 'solid', spic: false, upper: true, count: 1 },
+  adv: { setting: 'incidental', type: 'solid', size: 7, solid: 3, status: 'baseline', multiple: false, risk: 'high', benign: false }, vdt: { d1: 6, d2: 8, days: 180 } };
+
+function nodField(label, input, hint) { return h('label', { class: 'nod-f' }, [h('span', { class: 'nod-l', text: label }), input, hint ? h('span', { class: 'fine', text: hint }) : null]); }
+function nodNum(st, key, opts, onChange) { return h('input', Object.assign({ type: 'number', class: 'num', inputmode: 'decimal', value: String(st[key]), oninput: (e) => { st[key] = e.target.value === '' ? 0 : +e.target.value; onChange(); } }, opts || {})); }
+function nodChk(st, key, text, onChange, attr) { const id = uid('nc'); return h('label', { class: 'chk-inline', for: id }, [h('input', Object.assign({ type: 'checkbox', id: id, checked: !!st[key], onchange: (e) => { st[key] = e.target.checked; onChange(); } }, attr || {})), text]); }
+function nodSel(st, key, opts, onChange, attr) { return h('select', Object.assign({ onchange: (e) => { st[key] = e.target.value; onChange(); } }, attr || {}), opts.map(o => h('option', { value: o[0], selected: st[key] === o[0], text: o[1] }))); }
+function pct(p) { return p < 0.01 ? '< 1%' : (p > 0.99 ? '> 99%' : Math.round(p * 100) + '%'); }
+function chestBand(p) { return p < 0.05 ? 'low (< 5%): CT surveillance' : (p <= 0.65 ? 'intermediate (5–65%): PET/CT, then biopsy or surveillance by the result' : 'high (> 65%): surgical diagnosis after staging'); }
+
+/* ---- the three probability models side by side */
+function nodRisk() {
+  const st = NOD_ST.risk, out = h('div', { class: 'nod-out', 'data-nod-risk-out': '1' });
+  const bar = (name, p, note) => h('div', { class: 'nod-bar' }, [h('span', { class: 'nod-bn', text: name }), h('span', { class: 'nod-bt' }, [h('i', { style: 'width:' + Math.round(Math.max(1, Math.min(100, p * 100))) + '%' })]), h('b', { class: 'nod-bv', 'data-model': name.split(' ')[0].toLowerCase(), text: pct(p) }), h('span', { class: 'fine', text: note })]);
+  const update = () => {
+    out.textContent = '';
+    const pm = NOD.mayo(st), pv = NOD.va(st), pb = NOD.brock(st);
+    const vaNote = st.female ? 'derived in male veterans' : 'veterans, 7–30 mm';
+    out.appendChild(bar('Mayo (incidental)', pm, 'incidental nodule on a film or CT'));
+    out.appendChild(bar('VA', pv, vaNote));
+    out.appendChild(bar('Brock (screening)', pb, 'screen-detected; the BTS and Lung-RADS 4B model'));
+    out.appendChild(h('p', { class: 'nod-band' }, [h('span', { class: 'lbl', text: 'CHEST band by the Mayo estimate: ' }), chestBand(pm), '. ', h('span', { class: 'lbl', text: 'BTS: ' }), pb < 0.1 ? 'Brock under 10%: CT surveillance.' : 'Brock 10% or more: PET/CT, then the Herder model (Mayo plus FDG uptake — faint, moderate or intense raises the probability steeply) with 10% and 70% as the lines for biopsy and for excision.']));
+    if (st.size < 4 || st.size > 30) out.appendChild(h('p', { class: 'fine', text: 'The models were built from nodules of roughly 4–30 mm (Brock 1–86 mm); outside that range read the estimate loosely.' }));
+    if (st.type !== 'solid') out.appendChild(h('p', { class: 'fine', text: 'Mayo and VA were derived from solid nodules; for a subsolid nodule only Brock carries the attenuation.' }));
+  };
+  const grid = h('div', { class: 'nod-grid' }, [
+    nodField('Age', nodNum(st, 'age', { min: '18', max: '100', step: '1', 'data-nod': 'age' }, update)),
+    nodField('Nodule size (mm)', nodNum(st, 'size', { min: '1', max: '80', step: '0.5', 'data-nod': 'size' }, update), 'mean of long and short axis'),
+    nodField('Attenuation', nodSel(st, 'type', [['solid', 'Solid'], ['part', 'Part-solid'], ['ggn', 'Ground-glass']], update, { 'data-nod': 'type' })),
+    nodField('Nodules on the scan', nodNum(st, 'count', { min: '1', max: '20', step: '1' }, update), 'Brock: more nodules, less risk each'),
+    nodField('Years since quitting', nodNum(st, 'quitYears', { min: '0', max: '60', step: '1', 'data-nod': 'quit' }, update), '0 if smoking or never smoked (VA)')
+  ]);
+  const flags = h('div', { class: 'nod-flags' }, [
+    nodChk(st, 'smoker', 'Ever smoked', update, { 'data-nod': 'smoker' }), nodChk(st, 'female', 'Female', update, { 'data-nod': 'female' }), nodChk(st, 'spic', 'Spiculated', update, { 'data-nod': 'spic' }), nodChk(st, 'upper', 'Upper lobe', update, { 'data-nod': 'upper' }),
+    nodChk(st, 'cancer', 'Extrathoracic cancer ≥ 5 years ago', update), nodChk(st, 'famhx', 'Family history of lung cancer', update), nodChk(st, 'emph', 'Emphysema on the CT', update)
+  ]);
+  update();
+  return h('div', { class: 'nod-calc', 'data-nod-risk': '1' }, [h('h3', { text: 'Probability of malignancy — the three models' }), grid, flags, out,
+    h('p', { class: 'fine', text: 'Mayo: Swensen 1997 (x = −6.8272 + 0.0391·age + 0.7917·smoker + 1.3388·cancer + 0.1274·diameter + 1.0407·spiculation + 0.7838·upper lobe). VA: Gould 2007. Brock: McWilliams 2013, full model with spiculation. Probability = eˣ / (1 + eˣ). Teaching calculators: the published equations, applied as published.' })]);
+}
+
+/* ---- volume doubling time */
+function nodVdt() {
+  const st = NOD_ST.vdt, out = h('p', { class: 'nod-band', 'data-nod-vdt-out': '1' });
+  const update = () => {
+    const v = NOD.vdt(st.d1, st.d2, st.days);
+    out.textContent = '';
+    if (v === null) { out.textContent = 'Enter two different diameters and the days between the scans.'; return; }
+    if (v < 0) { out.appendChild(h('span', { text: 'The nodule is shrinking (volume halving time about ' + Math.round(-v) + ' days): resolving infection, inflammation or haemorrhage — not a cancer pattern.' })); return; }
+    const growth = Math.pow(st.d2 / st.d1, 3) - 1;
+    let read;
+    if (v < 20) read = 'Faster than cancer usually grows: infection, inflammation or haemorrhage first.';
+    else if (v <= 400) read = 'In the range of a solid lung cancer (20–400 days): presumptive evidence of malignancy — PET/CT, biopsy or resection, not another interval.';
+    else if (v <= 800) read = 'Slow: typical of an adenocarcinoma spectrum lesion (subsolid cancers double in 400–800 days), or a benign nodule — keep following.';
+    else read = 'Very slow (> 800 days): usually benign; a persistent subsolid nodule can still be an indolent adenocarcinoma, so subsolid nodules are followed to 5 years.';
+    out.appendChild(h('span', {}, [h('b', { text: 'VDT ' + Math.round(v) + ' days' }), ' (volume +' + Math.round(growth * 100) + '%, diameter +' + (st.d2 - st.d1).toFixed(1) + ' mm' + ((st.d2 - st.d1) < 1.5 ? ', within measurement error' : '') + '). ' + read]));
+  };
+  const grid = h('div', { class: 'nod-grid' }, [
+    nodField('Diameter then (mm)', nodNum(st, 'd1', { min: '1', max: '60', step: '0.1', 'data-nod': 'd1' }, update)),
+    nodField('Diameter now (mm)', nodNum(st, 'd2', { min: '1', max: '60', step: '0.1', 'data-nod': 'd2' }, update)),
+    nodField('Days between', nodNum(st, 'days', { min: '1', max: '3650', step: '1', 'data-nod': 'days' }, update))
+  ]);
+  update();
+  return h('div', { class: 'nod-calc', 'data-nod-vdt': '1' }, [h('h3', { text: 'Volume doubling time' }), grid, out, h('p', { class: 'fine', text: 'VDT = t · ln 2 / (3 · ln(d₂/d₁)) for a spherical nodule measured in the same way on both scans. A change under 1.5–2 mm is within the error of measurement; software volumes are better than diameters for small nodules.' })]);
+}
+
+/* ---- the advisor: Fleischner for an incidental nodule, Lung-RADS for a screening nodule */
+function nodAdvisor() {
+  const st = NOD_ST.adv, out = h('div', { class: 'nod-out', 'data-nod-adv-out': '1' });
+  let grid;
+  const update = () => {
+    out.textContent = '';
+    const q = Object.assign({}, st, { size: +st.size, solid: +st.solid });
+    if (st.setting === 'screen') {
+      const r = NOD.lungRads(q);
+      out.appendChild(h('div', { class: 'nod-rec', 'data-lungrads': r.cat }, [h('span', { class: 'nod-cat', text: 'Lung-RADS ' + r.cat }), h('p', {}, [h('span', { class: 'lbl', text: 'Finding. ' }), r.finding]), h('p', {}, [h('span', { class: 'lbl', text: 'Management. ' }), r.mgmt])]));
+      if (/^4/.test(r.cat)) out.appendChild(h('p', { class: 'fine', text: 'Spiculation, lymphadenopathy, metastases or a ground-glass nodule that doubles in a year make it 4X. For a 4B nodule the Brock probability (calculator above), comorbidity and the patient’s preference decide between PET/CT, biopsy and surgery.' }));
+    } else {
+      const r = NOD.fleischner(q);
+      out.appendChild(h('div', { class: 'nod-rec', 'data-fleischner': '1' }, [h('span', { class: 'nod-cat', text: r.rule }), h('p', {}, [h('span', { class: 'lbl', text: 'Fleischner 2017. ' }), r.text])]));
+      if (st.type === 'solid' && +st.size > 8 && !st.multiple && !st.benign) out.appendChild(h('p', { class: 'fine', text: 'Use the probability calculator above: CHEST follows a solid nodule with a probability under 5% (CT at 3–6, 9–12 and 18–24 months), takes 5–65% to PET/CT, and above 65% to surgical diagnosis after staging.' }));
+      out.appendChild(h('p', { class: 'fine', text: 'Fleischner applies to adults of 35 and over who are not immunocompromised and have no known cancer; a nodule in a patient with a cancer or immunosuppression, or any mass, is referred.' }));
+    }
+    grid.querySelectorAll('[data-only]').forEach(el => { const w = el.getAttribute('data-only'); el.hidden = (w === 'part' && st.type !== 'part') || (w === 'screen' && st.setting !== 'screen') || (w === 'incidental' && st.setting !== 'incidental'); });
+  };
+  grid = h('div', { class: 'nod-grid' }, [
+    nodField('Setting', nodSel(st, 'setting', [['incidental', 'Incidental (Fleischner 2017)'], ['screen', 'Screening LDCT (Lung-RADS 2022)']], update, { 'data-nod': 'setting' })),
+    nodField('Nodule', nodSel(st, 'type', [['solid', 'Solid'], ['part', 'Part-solid'], ['ggn', 'Ground-glass (non-solid)'], ['peri', 'Perifissural / juxtapleural, smooth']], update, { 'data-nod': 'advtype' })),
+    nodField('Mean diameter (mm)', nodNum(st, 'size', { min: '1', max: '60', step: '0.5', 'data-nod': 'advsize' }, update)),
+    h('div', { 'data-only': 'part' }, [nodField('Solid component (mm)', nodNum(st, 'solid', { min: '0', max: '40', step: '0.5', 'data-nod': 'advsolid' }, update))]),
+    h('div', { 'data-only': 'screen' }, [nodField('On this scan', nodSel(st, 'status', [['baseline', 'Baseline (first seen)'], ['stable', 'Stable from the prior'], ['new', 'New since the prior'], ['growing', 'Growing (> 1.5 mm / 12 months)']], update, { 'data-nod': 'status' }))]),
+    h('div', { 'data-only': 'incidental' }, [nodField('Patient risk', nodSel(st, 'risk', [['low', 'Low (young, never-smoker, smooth, not apical)'], ['high', 'High (age, smoking, emphysema, family history, spiculation, upper lobe)']], update, { 'data-nod': 'risk' }))])
+  ]);
+  const flags = h('div', { class: 'nod-flags' }, [nodChk(st, 'multiple', 'Multiple nodules', update, { 'data-nod': 'multiple' }), nodChk(st, 'benign', 'Benign calcification or fat', update, { 'data-nod': 'benign' })]);
+  update();
+  return h('div', { class: 'nod-calc', 'data-nod-adv': '1' }, [h('h3', { text: 'What the guideline says for this nodule' }), grid, flags, out]);
+}
+
+/* ---- the schematic: nodule types and the calcification patterns */
+function nodTypes() {
+  const svg = sv('svg', { viewBox: '0 0 560 150', class: 'nod-types', role: 'img', 'aria-label': 'Nodule types and calcification patterns' });
+  const tile = (x, label, sub, draw) => { const g = sv('g', { transform: 'translate(' + x + ' 0)' }); g.appendChild(sv('rect', { x: 6, y: 6, width: 96, height: 96, rx: 8, class: 'nod-lung' })); draw(g); g.appendChild(svt(54, 122, label, { class: 'nod-tl', 'text-anchor': 'middle' })); if (sub) g.appendChild(svt(54, 136, sub, { class: 'nod-ts', 'text-anchor': 'middle' })); svg.appendChild(g); };
+  tile(0, 'Solid', 'obscures vessels', g => g.appendChild(sv('circle', { cx: 54, cy: 54, r: 18, class: 'nod-solid' })));
+  tile(112, 'Part-solid', 'solid part is what matters', g => { g.appendChild(sv('circle', { cx: 54, cy: 54, r: 24, class: 'nod-ggo' })); g.appendChild(sv('circle', { cx: 58, cy: 56, r: 9, class: 'nod-solid' })); });
+  tile(224, 'Ground-glass', 'vessels seen through it', g => { g.appendChild(sv('circle', { cx: 54, cy: 54, r: 24, class: 'nod-ggo' })); g.appendChild(sv('path', { d: 'M30 60 C40 50 60 58 78 46', class: 'nod-vessel' })); });
+  tile(336, 'Spiculated', 'corona radiata', g => { g.appendChild(sv('circle', { cx: 54, cy: 54, r: 15, class: 'nod-solid' })); for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2, r1 = 15, r2 = 24 + (i % 3) * 4; g.appendChild(sv('line', { x1: 54 + r1 * Math.cos(a), y1: 54 + r1 * Math.sin(a), x2: 54 + r2 * Math.cos(a), y2: 54 + r2 * Math.sin(a), class: 'nod-spic' })); } });
+  tile(448, 'Benign calcification', 'central · laminated · popcorn', g => { g.appendChild(sv('circle', { cx: 32, cy: 36, r: 12, class: 'nod-solid' })); g.appendChild(sv('circle', { cx: 32, cy: 36, r: 4, class: 'nod-calc' })); g.appendChild(sv('circle', { cx: 74, cy: 36, r: 12, class: 'nod-solid' })); g.appendChild(sv('circle', { cx: 74, cy: 36, r: 8, class: 'nod-ring' })); g.appendChild(sv('circle', { cx: 74, cy: 36, r: 4, class: 'nod-ring' })); g.appendChild(sv('circle', { cx: 32, cy: 74, r: 12, class: 'nod-solid' })); [[-4, -3], [3, -5], [5, 3], [-3, 4], [0, 0]].forEach(d => g.appendChild(sv('circle', { cx: 32 + d[0], cy: 74 + d[1], r: 2.6, class: 'nod-calc' }))); g.appendChild(sv('circle', { cx: 74, cy: 74, r: 12, class: 'nod-calc' })); });
+  return h('figure', { class: 'an-fig nod-fig' }, [svg, h('figcaption', { text: 'Attenuation, margin and calcification: the three things a report must say. Eccentric or stippled calcification does not make a nodule benign; fat does (hamartoma).' })]);
+}
+function nodWidget(kind) {
+  if (kind === 'nodrisk') return nodRisk();
+  if (kind === 'nodvdt') return nodVdt();
+  if (kind === 'nodadvisor') return nodAdvisor();
+  if (kind === 'nodtypes') return nodTypes();
+  return null;
+}
+
+
 /* ========================================================================== Learn
    A reading section: topics from window.PFT_EDU, each ending with the glossary entries that belong to it. */
 const EDU = window.PFT_EDU || { topics: {}, groups: [] };
@@ -10191,7 +10722,8 @@ const EDU = window.PFT_EDU || { topics: {}, groups: [] };
 const LEARN_CATS = [
   { id: 'pft', title: 'PFT interpretation', topics: EDU.topics, groups: EDU.groups },
   { id: 'airway', title: 'Anatomy & bronchoscopy', topics: AN.topics, groups: AN.groups },
-  { id: 'ecg', title: 'Cardiac conduction & ECG', topics: ECG.topics, groups: ECG.groups }
+  { id: 'ecg', title: 'Cardiac conduction & ECG', topics: ECG.topics, groups: ECG.groups },
+  { id: 'cancer', title: 'Lung nodules & cancer screening', topics: NOD.topics, groups: NOD.groups }
 ];
 function learnCatOf(topic) { return LEARN_CATS.filter(c => c.topics[topic])[0] || LEARN_CATS[0]; }
 
@@ -10274,7 +10806,7 @@ function eduBlocks(id, topic) {
     if (b.table) { out.push(eduTable(b.table)); }
     if (b.note) out.push(h('p', { class: 'fine', text: b.note }));
     if (b.fig) { const f = eduFig(b.fig); if (f) out.push(f); }
-    if (b.widget) { const w = anatWidget(b.widget) || ecgWidget(b.widget); if (w) out.push(w); }
+    if (b.widget) { const w = anatWidget(b.widget) || ecgWidget(b.widget) || nodWidget(b.widget); if (w) out.push(w); }
     if (b.links) out.push(h('ul', { class: 'edu-links' }, b.links.map(l => h('li', {}, [h('a', { href: l[1], target: '_blank', rel: 'noopener noreferrer', text: l[0] }), l[2] ? h('span', { class: 'fine', text: ' — ' + l[2] }) : null]))));
   });
   return out;

@@ -1,7 +1,7 @@
 # PFT Interpreter — web source
 
 The app is one self-contained HTML page (`vendor/three.min.js`, three.js r147 under the MIT license, is inlined for the 3D airway model in Learn). `src/` holds the engine (four parts plus the generated phrase catalog), the
-interface, the glossary, the Learn text (`education.js` for the PFT area, `anatomy.js` for the anatomy and bronchoscopy area with the bronchial tree, its 3D skeleton, the nodal stations and the segment table behind `ui_4b_anatomy.js` and `ui_4c_tree3d.js`, `ecg.js` for the conduction model and its scenarios behind `ui_4d_ecg.js`) and the worked examples; `build.js` assembles `dist/PFT_Interpreter_standalone.html`
+interface, the glossary, the Learn text (`education.js` for the PFT area, `anatomy.js` for the anatomy and bronchoscopy area with the bronchial tree, its 3D skeleton, the nodal stations and the segment table behind `ui_4b_anatomy.js` and `ui_4c_tree3d.js`, `ecg.js` for the conduction model and its scenarios behind `ui_4d_ecg.js`, `nodules.js` for the nodule guidelines, the probability models and the advisor behind `ui_4e_nodules.js`) and the worked examples; `build.js` assembles `dist/PFT_Interpreter_standalone.html`
 and `build_desktop.js` copies it to `../app/index.html`, which GitHub Pages serves and the desktop app loads.
 
 ```
@@ -73,6 +73,16 @@ Mobitz II and complete block live here); `voltageAt(lead, seq, beats, t)` sums t
 the lead, with repolarisation concordant for muscle activated on time and discordant for muscle activated late;
 `stateAt()` tells the drawing which regions and paths are active. `ui_4d_ecg.js` draws the paper (25 mm/s,
 10 mm/mV), the heart with its paths and block marks, the vector dial and the player.
+
+The scope simulator (`src/ui_4c_tree3d.js`, inside mode): `t3MedParts()` builds the mediastinal geometries once for the
+mediastinum view and for the see-through overlay (`t3Overlay`: opacity by distance from the scope tip to each part's
+sample points, labels as sprites); `t3Advance` drives along the airway and, at a carina, into the opening the scope is
+aimed at (`t3AimedKid`: within 0.6 rad of an opening, but a look within 0.12 rad of the axis bumps into the keel);
+`t3Pad` is the steering pad, `t3ViewLabels` projects the openings' names onto the picture; keys W/S or ↑/↓ drive,
+← →/A D and Q E aim, R F roll when "Keep anterior up" is off, 1–9 pick an opening, Backspace backs out, Home restarts.
+The nodule module (`src/nodules.js`, testable in node): `mayo`, `va`, `brock` are the published equations; `vdt` the
+doubling time; `fleischner(q)` and `lungRads(q)` return the guideline's step for a nodule described by setting, type,
+mean diameter, solid component, status (baseline / new / growing / stable), multiplicity and patient risk.
 
 `catalog/` holds the handoff package: the phrase catalog (source of truth), its schema, the rules specification, the
 human-readable reference and the test vectors. `PFT_Rules_and_Integration.txt` is the rule specification the engine

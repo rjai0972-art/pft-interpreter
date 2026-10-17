@@ -1194,3 +1194,59 @@ table.ct .ix-c.txt { width: 64px; }
 .ecg-text { display: grid; gap: 6px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
 .ecg-text h3 { margin: 0; font-size: 14px; }
 .ecg-text p { margin: 0; }
+
+/* ---- v7.6: the scope simulator — map beside the picture, vignette, labels on the picture, the steering pad */
+.an-sim { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 640px) { .an-sim { grid-template-columns: 180px minmax(0, 1fr); align-items: stretch; } }
+.an-sim-map { border-radius: 10px; background: var(--surface-2); padding: 6px; min-height: 120px; }
+.an-sim-map svg { width: 100%; height: 100%; max-height: 440px; display: block; }
+@media (max-width: 639px) { .an-sim-map { height: 150px; } .an-sim-map svg { max-height: 138px; } }
+.an-mini .an-br.on { stroke: #e08a2a; }
+.an-3d-wrap.scope { border-radius: 14px; background: #0a0506; }
+.an-3d-wrap.scope::after { content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: 14px; background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 52%, rgba(0, 0, 0, 0.45) 80%, rgba(0, 0, 0, 0.92) 100%); box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.55); }
+.an-vlabels { position: absolute; inset: 0; pointer-events: none; }
+.an-vlabel { position: absolute; transform: translate(-50%, -140%); pointer-events: auto; cursor: pointer; font-size: 11.5px; font-weight: 600; color: #fff; background: rgba(20, 10, 10, 0.62); border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 999px; padding: 1px 8px; white-space: nowrap; z-index: 2; }
+.an-vlabel::after { content: ''; position: absolute; left: 50%; top: 100%; width: 1px; height: 8px; background: rgba(255, 255, 255, 0.7); }
+.an-vlabel:hover { background: rgba(63, 111, 158, 0.85); }
+.an-hud { position: absolute; left: 10px; right: 10px; top: 8px; display: flex; justify-content: space-between; gap: 8px; pointer-events: none; z-index: 2; }
+.an-hud-name { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255, 255, 255, 0.85); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); }
+.an-hud-hint { font-size: 12px; color: #fff; background: rgba(224, 138, 42, 0.85); border-radius: 999px; padding: 2px 10px; }
+.an-drive { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.an-pad { position: relative; width: 84px; height: 84px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--line-strong); touch-action: none; cursor: grab; flex: none; }
+.an-pad::before, .an-pad::after { content: ''; position: absolute; background: var(--line); }
+.an-pad::before { left: 50%; top: 10%; bottom: 10%; width: 1px; } .an-pad::after { top: 50%; left: 10%; right: 10%; height: 1px; }
+.an-pad-knob { position: absolute; width: 26px; height: 26px; border-radius: 50%; background: var(--accent); transform: translate(-50%, -50%); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); }
+.an-pad.on { cursor: grabbing; }
+
+/* ---- v7.6: the nodule calculators and advisor */
+.nod-calc { display: grid; gap: 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.nod-calc h3 { margin: 0; font-size: 14px; }
+.nod-grid { display: grid; gap: 6px 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr)); align-items: end; }
+.nod-f { display: grid; gap: 2px; font-size: 12.5px; }
+.nod-l { font-weight: 600; color: var(--ink-2); }
+.nod-f input.num, .nod-f select { width: 100%; max-width: 100%; font-size: 13px; padding: 4px 6px; }
+.nod-flags { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.nod-out { display: grid; gap: 6px; }
+.nod-bar { display: grid; grid-template-columns: 150px minmax(0, 1fr) 52px; gap: 2px 8px; align-items: center; font-size: 13px; }
+.nod-bar .fine { grid-column: 2 / -1; margin-top: -2px; }
+.nod-bn { font-weight: 600; }
+.nod-bt { height: 10px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+.nod-bt i { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+.nod-bv { font-family: var(--font-mono); text-align: right; }
+.nod-band { margin: 0; font-size: 13px; }
+.nod-rec { display: grid; gap: 4px; padding: 8px 10px; border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 6px; }
+.nod-rec p { margin: 0; }
+.nod-cat { font-weight: 700; }
+.nod-rec[data-lungrads^="4"] { border-left-color: var(--c-sev); background: var(--c-sev-bg); }
+.nod-rec[data-lungrads="3"] { border-left-color: var(--c-mod); background: var(--c-mod-bg); }
+.nod-fig { max-width: 640px; }
+.nod-lung { fill: var(--surface); stroke: var(--line); }
+.nod-solid { fill: #8f8f93; stroke: #5a5a5e; stroke-width: 0.8; }
+.nod-ggo { fill: #b9b9bd; opacity: 0.45; stroke: none; }
+.nod-vessel { fill: none; stroke: #5a5a5e; stroke-width: 1.6; }
+.nod-spic { stroke: #5a5a5e; stroke-width: 1.2; }
+.nod-types .nod-calc { fill: #f2f2f2; stroke: #333; stroke-width: 0.6; }
+.nod-ring { fill: none; stroke: #f2f2f2; stroke-width: 1.4; }
+.nod-tl { font-size: 11px; font-weight: 600; fill: var(--ink); }
+.nod-ts { font-size: 9px; fill: var(--muted); }
+@media (max-width: 560px) { .nod-bar { grid-template-columns: 110px minmax(0, 1fr) 48px; } }

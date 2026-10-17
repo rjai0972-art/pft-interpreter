@@ -81,7 +81,7 @@ and the single-file browser version (`PFT_Interpreter_standalone.html`) always w
 - Code signing is optional and not set up. For Windows add a signing certificate to the build; for Mac add an Apple Developer ID and notarization.
   Until then the first-launch steps above are needed.
 
-## How the reading is built (version 7.5)
+## How the reading is built (version 7.6)
 
 The rules layer computes every measurement state before any wording is chosen (ERS/ATS 2022 z-scores and the LLN;
 a reviewed adult phrase catalog anchored to the ERS/ATS 2022, ATS/ERS 2019, ERS/ATS 2023, ERS/ATS 2017, ERS 2019 and
@@ -135,7 +135,7 @@ report builds on the right as values are entered (below the form on narrower scr
 optional wording, differentials, prompts and the heads-up list beneath it. Two themes, linen and charcoal, in neutral
 tones.
 
-Learn has three areas, chosen from a dropdown above the topic list. "PFT interpretation" is the reading-room curriculum
+Learn has four areas, chosen from a dropdown above the topic list. "PFT interpretation" is the reading-room curriculum
 (the logic, each test, reference equations, change over time, the phrase catalog and worked examples). "Anatomy &
 bronchoscopy" adds: lungs, lobes and segments with a lobe map and the Boyden numbering; a bronchial-tree navigator (an
 anterior-view map with the great vessels and the nodal stations as layers that switch on and off, and a scope view
@@ -144,10 +144,13 @@ structures that lie against the airway at that level — arteries, veins, the oe
 usual clock positions, the way an EBUS atlas lays them out, with two levels for the trachea; hovering a station or a
 vessel in any picture lights it up in the others, the 3D model included; a drill that hides the labels and asks for a
 segment from the carina) with a navigable 3D model of the same tree (three.js, inlined, MIT): orbit the whole tree;
-stand inside the selected airway where the openings ahead are real holes in a wall built on the fly by marching cubes
-over the airway capsules, with cartilage rings in front and the flat membrane behind, and glide five millimetres at a
-time along airways of real length (trachea 11 cm, right main 2.4 cm, left main 4.6 cm …) with a corner map of where
-you are and a readout of the depth, the distance to the next carina and the distance from the vocal cords; or open
+drive the scope simulator — a navigational map beside the endoscopic picture (vignetted, the mucosa mottled with
+vessels), a steering pad and keys to aim, advance and withdraw along airways of real length (trachea 11 cm, right
+main 2.4 cm, left main 4.6 cm …), the openings labelled on the picture, the scope entering whichever opening it is
+aimed at and bumping into a carina when driven straight, and a see-through overlay of the vessels, the oesophagus and
+the nodal stations against the wall being crossed, translucent and labelled, fading with distance, in the clock
+positions of an EBUS atlas, with a readout of the depth, the distance to the next carina and the distance from the
+vocal cords; or open
 the mediastinum, a third model with the great vessels, the oesophagus, the spine, the heart and the nodal stations
 around the tree, rotatable, with a ring marking where the scope is so the cross-section ring of the scope view can be
 read against it — a procedural model from standard dimensions, not a patient's CT — plus links to CT-derived
@@ -166,5 +169,13 @@ projected onto the lead directions), a frontal-plane dial with the QRS loop and 
 play; pick a scenario — normal, right or left bundle branch block, either fascicular block, pre-excitation, first-,
 second- (Wenckebach, Mobitz II) and third-degree AV block — and drag the degree of block from a conduction delay to a
 complete block to watch the complexes widen, the axis swing and the T waves turn, with the mechanism and the ECG
-criteria beside it. A teaching model for the shapes and the reasons, not a reader of real tracings.
+criteria beside it. A teaching model for the shapes and the reasons, not a reader of real tracings. "Lung nodules &
+cancer screening" is three guideline pages: lung nodules (description and measurement, growth and doubling time, the
+probability models — Mayo, VA, Herder, Brock, PKUPH, TREAT, BIMC — with working Mayo, VA and Brock calculators, the
+Fleischner 2017 tables for incidental solid and subsolid nodules with the CHEST 2013 and BTS 2015 differences, the
+Lung-RADS v2022 table, an advisor that returns the guideline's step for a given nodule in either setting, the three
+roads for a solid nodule over 8 mm, biopsy choice, referral and communication); lung cancer screening (NLST, NELSON,
+the USPSTF 2021, CMS, ACS 2023, NCCN and CHEST 2021 criteria side by side, running a programme and the VHA
+demonstration project); and other abnormalities on chest CT (interstitial lung abnormalities per Fleischner 2020,
+emphysema, airway and pleural findings, cysts, nodes, coronary calcification and the ACR incidental-findings guidance).
 Source code and tests: `web/`; the catalog and its rule specification: `web/catalog/`.

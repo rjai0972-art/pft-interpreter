@@ -16,7 +16,7 @@ const uniqN = (a) => a.filter((x, i) => a.indexOf(x) === i).length;
 
   // ---- areas
   await page.locator('.vw[data-view="learn"]').click(); await page.waitForSelector('.learn-body');
-  ok(await page.locator('#learn-cat option').count() === 3, 'Learn offers three areas');
+  ok(await page.locator('#learn-cat option').count() === 4, 'Learn offers four areas');
   ok(await page.locator('.learn-body').getAttribute('data-cat') === 'pft', 'PFT interpretation is the default area');
   const nPft = await page.locator('.ln-btn').count();
   ok(nPft >= 20, 'the PFT area keeps its topics (' + nPft + ')');
@@ -128,12 +128,12 @@ const uniqN = (a) => a.filter((x, i) => a.indexOf(x) === i).length;
   ok(await page.locator('.an-fig-3d').count() === 1 && await page.locator('canvas.an-3d').count() === 1, 'the 3D figure renders a WebGL canvas');
   ok(await page.evaluate(() => typeof THREE !== 'undefined' && THREE.REVISION === '147'), 'three.js r147 is inlined');
   await page.locator('[data-3d-mode="in"]').click(); await page.waitForTimeout(500);
-  ok(await page.locator('[data-3d-mode="in"]').getAttribute('aria-checked') === 'true' && /Inside the trachea/.test(await txt('.an-fig-3d figcaption')), 'inside view from the trachea');
+  ok(await page.locator('[data-3d-mode="in"]').getAttribute('aria-checked') === 'true' && await txt('.an-hud-name') === 'Trachea', 'inside view from the trachea');
   await page.locator('.an-scope [data-open="rmb"]').click(); await page.waitForTimeout(700);
-  ok(/Inside the right main bronchus/.test(await txt('.an-fig-3d figcaption')), 'the inside view follows the navigator');
+  ok(await txt('.an-hud-name') === 'Right main bronchus', 'the inside view follows the navigator');
   ok(await page.evaluate(() => { const c = document.querySelector('canvas.an-3d'); return c.width > 100 && c.height > 100; }), 'the canvas has a size');
-  await page.locator('canvas.an-3d').focus(); await page.keyboard.press('ArrowUp'); await page.waitForTimeout(500);
-  ok(await page.locator('.an-tree').getAttribute('data-at') === 'trachea', '↑ on the canvas pulls back');
+  await page.locator('canvas.an-3d').focus(); await page.keyboard.press('ArrowDown'); await page.waitForTimeout(500);
+  ok(await page.locator('.an-tree').getAttribute('data-at') === 'trachea', '↓ on the canvas withdraws (out of the mouth of the bronchus into the trachea)');
   await page.waitForTimeout(100); await page.keyboard.press('2'); await page.waitForTimeout(500);
   ok(await page.locator('.an-tree').getAttribute('data-at') === 'lmb', 'key 2 advances into the second opening (focus kept on the canvas)');
   // the scope's position at real lengths: a centimetre at a time, with the distance readout
@@ -141,13 +141,17 @@ const uniqN = (a) => a.filter((x, i) => a.indexOf(x) === i).length;
   ok(/0\.4 cm into the trachea \(11\.0 cm long\) · 10\.6 cm to the carina · 0\.4 cm from the vocal cords/.test(await txt('[data-3d-depth]')), 'the readout gives the depth, the length and the distance to the carina: ' + await txt('[data-3d-depth]'));
   await page.locator('[data-3d-fwd]').click(); await page.waitForTimeout(60);
   ok(/0\.9 cm into the trachea/.test(await txt('[data-3d-depth]')), 'one press moves 5 mm: ' + await txt('[data-3d-depth]'));
-  ok(await page.locator('.an-3d-mini svg').count() === 1 && await page.locator('.an-3d-mini .an-mini-dot').count() === 1, 'the inside view carries a corner map with the scope\'s position');
-  const dotY = async () => +(await page.locator('.an-3d-mini .an-mini-dot').getAttribute('cy'));
+  ok(await page.locator('.an-sim-map svg').count() === 1 && await page.locator('.an-sim-map .an-mini-dot').count() === 1 && await page.locator('[data-3d-pad]').count() === 1 && await page.locator('.an-3d-wrap.scope').count() === 1, 'the simulator: a navigational map beside the picture, the steering pad, the vignette');
+  const dotY = async () => +(await page.locator('.an-sim-map .an-mini-dot').getAttribute('cy'));
   const y1 = await dotY();
   for (let i = 0; i < 17; i++) await page.locator('[data-3d-fwd]').click();
   await page.waitForTimeout(100);
   ok(/9\.4 cm into the trachea/.test(await txt('[data-3d-depth]')) && /1\.6 cm to the carina/.test(await txt('[data-3d-depth]')), 'eighteen presses on: 9.4 cm in, 1.6 cm to the carina');
-  ok((await dotY()) > y1 + 60, 'the dot on the corner map has moved down the trachea (' + y1 + ' → ' + await dotY() + ')');
+  ok((await dotY()) > y1 + 60, 'the dot on the map has moved down the trachea (' + y1 + ' → ' + await dotY() + ')');
+  // the see-through overlay: vessels and nodes against the wall, fading with distance; the labels on the openings
+  ok(await page.locator('[data-3d-overlay]').isChecked() && await page.evaluate(() => { const T = window.__pft; return !!document.querySelector('[data-3d-overlay]'); }), 'the overlay of vessels and nodes is on by default');
+  await page.waitForTimeout(300);
+  ok(await page.locator('.an-vlabel:not([hidden])').count() === 2 && (await page.locator('.an-vlabel:not([hidden])').allInnerTexts()).join() === 'R main,L main', 'the two main bronchi are labelled on the picture at the carina: ' + (await page.locator('.an-vlabel:not([hidden])').allInnerTexts()).join());
   ok(await page.locator('[data-level="lower"]').getAttribute('aria-checked') === 'true', 'deep in the trachea the scope view shows the lower ring');
   for (let i = 0; i < 3; i++) await page.locator('[data-3d-fwd]').click();
   await page.waitForTimeout(100);
@@ -162,6 +166,17 @@ const uniqN = (a) => a.filter((x, i) => a.indexOf(x) === i).length;
   ok(await page.locator('[data-level="upper"]').getAttribute('aria-checked') === 'true' && /1\.6 cm into the trachea/.test(await txt('[data-3d-depth]')), 'back in the upper trachea the scope view shows the upper ring: ' + await txt('[data-3d-depth]'));
   await page.locator('[data-level="lower"]').click(); await page.waitForTimeout(200);
   ok(/9\.5 cm into the trachea/.test(await txt('[data-3d-depth]')), 'the level buttons move the scope too');
+  // drive like a scope: at the carina, advancing without aiming does nothing but hint; aim right and advance enters the right main bronchus
+  await page.locator('[data-3d-fwd]').click(); await page.waitForTimeout(100);
+  await page.locator('[data-3d-fwd]').click(); await page.waitForTimeout(100);
+  ok(await page.locator('.an-tree').getAttribute('data-at') === 'trachea' && /Steer into an opening/.test(await page.locator('[data-3d-hint]').evaluate(e => e.textContent)), 'at the carina the scope must be aimed at an opening: ' + await page.locator('[data-3d-hint]').evaluate(e => e.textContent));
+  await page.locator('canvas.an-3d').focus();
+  for (let i = 0; i < 5; i++) await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('ArrowUp'); await page.waitForTimeout(700);
+  ok(await page.locator('.an-tree').getAttribute('data-at') === 'rmb', 'aimed to the right (patient’s right) and advanced: into the right main bronchus');
+  await page.keyboard.press('Home'); await page.waitForTimeout(500);
+  ok(await page.locator('.an-tree').getAttribute('data-at') === 'trachea' && /0\.4 cm into the trachea/.test(await txt('[data-3d-depth]')), 'Home restarts at the top of the trachea');
+  await page.locator('[data-3d-restart]').click(); await page.waitForTimeout(300);
   // the mediastinum: the tree with the vessels, nodes and the section marker, rotatable
   await page.locator('[data-3d-mode="med"]').click(); await page.waitForTimeout(600);
   ok(await page.locator('[data-3d-mode="med"]').getAttribute('aria-checked') === 'true' && /Mediastinum: the tree with the great vessels/.test(await txt('.an-fig-3d figcaption')) && await page.locator('[data-3d-labels]').isChecked(), 'the mediastinum view with its labels');
@@ -235,6 +250,34 @@ const uniqN = (a) => a.filter((x, i) => a.indexOf(x) === i).length;
   await page.locator('[data-ecg-play]').click(); await page.waitForTimeout(100);
   const cx2 = +(await page.locator('[data-ecg-cursor]').getAttribute('x1')); await page.waitForTimeout(200);
   ok(cx1 > cx0 + 2 && Math.abs((+(await page.locator('[data-ecg-cursor]').getAttribute('x1'))) - cx2) < 1, 'play sweeps the cursor, pause holds it (' + cx0 + ' → ' + cx1 + ')');
+
+  // ---- lung nodules and screening
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'nodules' })); await page.waitForSelector('[data-nod-risk]');
+  ok(await page.locator('#learn-cat').inputValue() === 'cancer' && await page.locator('#learn-cat option').count() === 4, 'a fourth Learn area: lung nodules & cancer screening');
+  ok(/Fleischner/.test(await txt('.learn-body')) && /Lung-RADS/.test(await txt('.learn-body')) && /Brock/.test(await txt('.learn-body')) && await page.locator('.learn-body table').count() >= 4, 'the nodule page carries the Fleischner, Lung-RADS and model tables');
+  ok(await page.locator('[data-nod-risk] [data-model]').count() === 3 && /17%/.test(await txt('[data-nod-risk] [data-model="mayo"]')), 'three probability models computed for the default case (Mayo 17%): ' + await txt('[data-nod-risk-out]'));
+  await page.locator('[data-nod-risk] [data-nod="size"]').fill('20'); await page.locator('[data-nod-risk] [data-nod="spic"]').check(); await page.waitForTimeout(80);
+  ok(await page.evaluate(() => { const N = window.PFT_NOD; return Math.abs(N.mayo({ age: 65, smoker: 1, cancer: 0, size: 12, spic: 1, upper: 1 }) - 0.465) < 0.01 && Math.abs(N.brock({ age: 62, female: 0, famhx: 0, emph: 0, size: 8, type: 'solid', upper: 1, count: 1, spic: 0 }) - 0.0326) < 0.002 && Math.abs(N.va({ age: 65, smoker: 1, size: 12, quitYears: 5 }) - 0.445) < 0.01; }), 'the published equations: Mayo 46.5%, Brock 3.3%, VA 44.5% for the reference cases');
+  ok(/high \(> 65%\)/.test(await txt('[data-nod-risk-out]')) || /intermediate/.test(await txt('[data-nod-risk-out]')), 'a 20-mm spiculated nodule moves the CHEST band up: ' + await txt('[data-nod-risk-out] .nod-band'));
+  await page.locator('[data-nod-vdt] [data-nod="d2"]').fill('9'); await page.waitForTimeout(80);
+  ok(/VDT 10\d days/.test(await txt('[data-nod-vdt-out]')) && /solid lung cancer/.test(await txt('[data-nod-vdt-out]')), '6 to 9 mm in 180 days: VDT about 103 days, in the cancer range: ' + await txt('[data-nod-vdt-out]'));
+  ok(/CT at 6–12 months, then CT at 18–24 months/.test(await txt('[data-nod-adv-out]')), 'advisor: a 7-mm solid incidental nodule in a high-risk patient — Fleischner CT at 6–12 then 18–24 months');
+  await page.selectOption('[data-nod="risk"]', 'low'); await page.waitForTimeout(60);
+  ok(/then consider CT at 18–24 months/.test(await txt('[data-nod-adv-out]')), 'low risk: the second CT is optional');
+  await page.selectOption('[data-nod="advtype"]', 'part'); await page.locator('[data-nod="advsize"]').fill('10'); await page.locator('[data-nod="advsolid"]').fill('7'); await page.waitForTimeout(60);
+  ok(/Highly suspicious/.test(await txt('[data-nod-adv-out]')), 'a part-solid nodule with a 7-mm solid component is highly suspicious');
+  await page.selectOption('[data-nod="setting"]', 'screen'); await page.waitForTimeout(60);
+  ok(/Lung-RADS 4A/.test(await txt('[data-nod-adv-out]')) && /3-month LDCT/.test(await txt('[data-nod-adv-out]')), 'the same nodule on a screening CT: Lung-RADS 4A, 3-month LDCT');
+  await page.selectOption('[data-nod="advtype"]', 'solid'); await page.locator('[data-nod="advsize"]').fill('16'); await page.waitForTimeout(60);
+  ok(/Lung-RADS 4B/.test(await txt('[data-nod-adv-out]')) && /Diagnostic chest CT/.test(await txt('[data-nod-adv-out]')), 'a 16-mm solid nodule at baseline: 4B');
+  await page.selectOption('[data-nod="status"]', 'new'); await page.locator('[data-nod="advsize"]').fill('5'); await page.waitForTimeout(60);
+  ok(/Lung-RADS 3/.test(await txt('[data-nod-adv-out]')), 'a new 5-mm solid nodule: 3');
+  await page.locator('[data-nod="benign"]').check(); await page.waitForTimeout(60);
+  ok(/Lung-RADS 1/.test(await txt('[data-nod-adv-out]')), 'benign calcification: 1');
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'screening' })); await page.waitForSelector('.learn-body[data-topic="screening"]');
+  ok(/USPSTF 2021/.test(await txt('.learn-body')) && /20 pack-years/.test(await txt('.learn-body')) && /Veterans Health Administration/.test(await txt('.learn-body')) && /NELSON/.test(await txt('.learn-body')), 'the screening page: USPSTF, the trials and the VA programme');
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'incidentals' })); await page.waitForSelector('.learn-body[data-topic="incidentals"]');
+  ok(/Interstitial lung abnormalities/.test(await txt('.learn-body')) && /Coronary artery calcification/.test(await txt('.learn-body')), 'the incidental-findings page');
 
   // ---- V/Q sandbox
   await page.evaluate(() => window.__pft.setMode('learn', { topic: 'vq' })); await page.waitForSelector('.an-vq');

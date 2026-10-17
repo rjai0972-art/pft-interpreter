@@ -12,6 +12,7 @@ const frag = tpl
   .replace('/*EDUCATION*/', () => safe(rd('src/education.js')))
   .replace('/*ANATOMY*/', () => safe(rd('src/anatomy.js')))
   .replace('/*ECG*/', () => safe(rd('src/ecg.js')))
+  .replace('/*NODULES*/', () => safe(rd('src/nodules.js')))
   .replace('/*EXAMPLES*/', () => safe(rd('src/examples.js')))
   .replace('/*THREE*/', () => '/* three.js r147 — MIT License, (c) 2010-2022 three.js authors (vendor/three.LICENSE) */\n' + safe(rd('vendor/three.min.js')))
   .replace('/*UI*/', () => safe(rd('dist/ui.js')));
