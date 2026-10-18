@@ -80,7 +80,22 @@ sample points, labels as sprites); `t3Advance` drives along the airway and, at a
 aimed at (`t3AimedKid`: within 0.6 rad of an opening, but a look within 0.12 rad of the axis bumps into the keel);
 `t3Pad` is the steering pad, `t3ViewLabels` projects the openings' names onto the picture; keys W/S or ↑/↓ drive,
 ← →/A D and Q E aim, R F roll when "Keep anterior up" is off, 1–9 pick an opening, Backspace backs out, Home restarts.
-The nodule module (`src/nodules.js`, testable in node): `mayo`, `va`, `brock` are the published equations; `vdt` the
+The simulator now sits beside the tree map in the navigator (`simFig`, its own renderer and canvas `an-3d-scope`;
+`t3Frame` draws both canvases in one loop) with the atlas ring folded beneath it; `mapTip` moves the scope-tip dot along
+the current airway of the map without redrawing the page. `ebusPop(stationId)` (`src/ui_4b_anatomy.js`) is the EBUS
+card: `SONO[station]` gives the poster layout (`near` positions L/R/D/DL/DR/DDL/DDR/SL/SR, `views` for 11Rs/11Ri, `at`
+the ring it is sampled from, `pearls`), `sonoFig` draws it (grey scale, `sonoDoppler` toggles the colour), `probeRing`
+draws the small ring with the probe dot from `LANDMARKS`; `closeEbus` closes it (Escape, the backdrop, the button).
+`t3ExportSTL` runs marching cubes over the capsule union at 1 mm with the surface at |d| − 1.5 (a hollow wall) and
+writes a binary STL in the model frame. The CT lab (`src/ui_4f_ct.js`): `ctDraw` paints one axial section in
+Hounsfield units at `CT.z` (mm from the carina, +up) through `ctGray` (the window), from `ctBody` (the chest wall
+ellipse by level), `ctLungF` (the lung ellipsoids), `ctLungDots` (seeded vessel spheres), the `MEDIASTINUM` vessels
+and blobs (`ctTube` samples each tube and draws a disc where the slice cuts it), the `TREE3D` airways (true cylinder
+sections), the nodes, and the bones (ribs sloping through the slice, sternum, clavicles, scapulae, the vertebra and
+its disc spaces); every structure registers a hit ellipse in `CT.shapes` (with `med`, `station` or `tree` ids for
+the 3D highlight and the EBUS card) and `ctLabels` prints the margins with leader lines (`names`) or numbered markers
+(`numbers`, below 430 px, with the picture zoomed); `ctSetZ` moves the slider, the plane on the mediastinum model
+(`T3.ctZ`) and the quiz. The nodule module (`src/nodules.js`, testable in node): `mayo`, `va`, `brock` are the published equations; `vdt` the
 doubling time; `fleischner(q)` and `lungRads(q)` return the guideline's step for a nodule described by setting, type,
 mean diameter, solid component, status (baseline / new / growing / stable), multiplicity and patient risk.
 

@@ -7,8 +7,8 @@
    tap an opening to advance. A procedural model from standard dimensions, not a patient's CT. */
 const MC_EDGE = [0,265,515,778,1030,1295,1541,1804,2060,2309,2575,2822,3082,3331,3593,3840,400,153,915,666,1430,1183,1941,1692,2460,2197,2975,2710,3482,3219,3993,3728,560,825,51,314,1590,1855,1077,1340,2620,2869,2111,2358,3642,3891,3129,3376,928,681,419,170,1958,1711,1445,1196,2988,2725,2479,2214,4010,3747,3497,3232,1120,1385,1635,1898,102,367,613,876,3180,3429,3695,3942,2154,2403,2665,2912,1520,1273,2035,1786,502,255,1013,764,3580,3317,4095,3830,2554,2291,3065,2800,1616,1881,1107,1370,598,863,85,348,3676,3925,3167,3414,2650,2899,2137,2384,1984,1737,1475,1226,966,719,453,204,4044,3781,3535,3270,3018,2755,2505,2240,2240,2505,2755,3018,3270,3535,3781,4044,204,453,719,966,1226,1475,1737,1984,2384,2137,2899,2650,3414,3167,3925,3676,348,85,863,598,1370,1107,1881,1616,2800,3065,2291,2554,3830,4095,3317,3580,764,1013,255,502,1786,2035,1273,1520,2912,2665,2403,2154,3942,3695,3429,3180,876,613,367,102,1898,1635,1385,1120,3232,3497,3747,4010,2214,2479,2725,2988,1196,1445,1711,1958,170,419,681,928,3376,3129,3891,3642,2358,2111,2869,2620,1340,1077,1855,1590,314,51,825,560,3728,3993,3219,3482,2710,2975,2197,2460,1692,1941,1183,1430,666,915,153,400,3840,3593,3331,3082,2822,2575,2309,2060,1804,1541,1295,1030,778,515,265,0];
 const MC_TRI = [[],[0,8,3],[0,1,9],[1,8,3,9,8,1],[1,2,10],[0,8,3,1,2,10],[9,2,10,0,2,9],[2,8,3,2,10,8,10,9,8],[3,11,2],[0,11,2,8,11,0],[1,9,0,2,3,11],[1,11,2,1,9,11,9,8,11],[3,10,1,11,10,3],[0,10,1,0,8,10,8,11,10],[3,9,0,3,11,9,11,10,9],[9,8,10,10,8,11],[4,7,8],[4,3,0,7,3,4],[0,1,9,8,4,7],[4,1,9,4,7,1,7,3,1],[1,2,10,8,4,7],[3,4,7,3,0,4,1,2,10],[9,2,10,9,0,2,8,4,7],[2,10,9,2,9,7,2,7,3,7,9,4],[8,4,7,3,11,2],[11,4,7,11,2,4,2,0,4],[9,0,1,8,4,7,2,3,11],[4,7,11,9,4,11,9,11,2,9,2,1],[3,10,1,3,11,10,7,8,4],[1,11,10,1,4,11,1,0,4,7,11,4],[4,7,8,9,0,11,9,11,10,11,0,3],[4,7,11,4,11,9,9,11,10],[9,5,4],[9,5,4,0,8,3],[0,5,4,1,5,0],[8,5,4,8,3,5,3,1,5],[1,2,10,9,5,4],[3,0,8,1,2,10,4,9,5],[5,2,10,5,4,2,4,0,2],[2,10,5,3,2,5,3,5,4,3,4,8],[9,5,4,2,3,11],[0,11,2,0,8,11,4,9,5],[0,5,4,0,1,5,2,3,11],[2,1,5,2,5,8,2,8,11,4,8,5],[10,3,11,10,1,3,9,5,4],[4,9,5,0,8,1,8,10,1,8,11,10],[5,4,0,5,0,11,5,11,10,11,0,3],[5,4,8,5,8,10,10,8,11],[9,7,8,5,7,9],[9,3,0,9,5,3,5,7,3],[0,7,8,0,1,7,1,5,7],[1,5,3,3,5,7],[9,7,8,9,5,7,10,1,2],[10,1,2,9,5,0,5,3,0,5,7,3],[8,0,2,8,2,5,8,5,7,10,5,2],[2,10,5,2,5,3,3,5,7],[7,9,5,7,8,9,3,11,2],[9,5,7,9,7,2,9,2,0,2,7,11],[2,3,11,0,1,8,1,7,8,1,5,7],[11,2,1,11,1,7,7,1,5],[9,5,8,8,5,7,10,1,3,10,3,11],[5,7,0,5,0,9,7,11,0,1,0,10,11,10,0],[11,10,0,11,0,3,10,5,0,8,0,7,5,7,0],[11,10,5,7,11,5],[10,6,5],[0,8,3,5,10,6],[9,0,1,5,10,6],[1,8,3,1,9,8,5,10,6],[1,6,5,2,6,1],[1,6,5,1,2,6,3,0,8],[9,6,5,9,0,6,0,2,6],[5,9,8,5,8,2,5,2,6,3,2,8],[2,3,11,10,6,5],[11,0,8,11,2,0,10,6,5],[0,1,9,2,3,11,5,10,6],[5,10,6,1,9,2,9,11,2,9,8,11],[6,3,11,6,5,3,5,1,3],[0,8,11,0,11,5,0,5,1,5,11,6],[3,11,6,0,3,6,0,6,5,0,5,9],[6,5,9,6,9,11,11,9,8],[5,10,6,4,7,8],[4,3,0,4,7,3,6,5,10],[1,9,0,5,10,6,8,4,7],[10,6,5,1,9,7,1,7,3,7,9,4],[6,1,2,6,5,1,4,7,8],[1,2,5,5,2,6,3,0,4,3,4,7],[8,4,7,9,0,5,0,6,5,0,2,6],[7,3,9,7,9,4,3,2,9,5,9,6,2,6,9],[3,11,2,7,8,4,10,6,5],[5,10,6,4,7,2,4,2,0,2,7,11],[0,1,9,4,7,8,2,3,11,5,10,6],[9,2,1,9,11,2,9,4,11,7,11,4,5,10,6],[8,4,7,3,11,5,3,5,1,5,11,6],[5,1,11,5,11,6,1,0,11,7,11,4,0,4,11],[0,5,9,0,6,5,0,3,6,11,6,3,8,4,7],[6,5,9,6,9,11,4,7,9,7,11,9],[10,4,9,6,4,10],[4,10,6,4,9,10,0,8,3],[10,0,1,10,6,0,6,4,0],[8,3,1,8,1,6,8,6,4,6,1,10],[1,4,9,1,2,4,2,6,4],[3,0,8,1,2,9,2,4,9,2,6,4],[0,2,4,4,2,6],[8,3,2,8,2,4,4,2,6],[10,4,9,10,6,4,11,2,3],[0,8,2,2,8,11,4,9,10,4,10,6],[3,11,2,0,1,6,0,6,4,6,1,10],[6,4,1,6,1,10,4,8,1,2,1,11,8,11,1],[9,6,4,9,3,6,9,1,3,11,6,3],[8,11,1,8,1,0,11,6,1,9,1,4,6,4,1],[3,11,6,3,6,0,0,6,4],[6,4,8,11,6,8],[7,10,6,7,8,10,8,9,10],[0,7,3,0,10,7,0,9,10,6,7,10],[10,6,7,1,10,7,1,7,8,1,8,0],[10,6,7,10,7,1,1,7,3],[1,2,6,1,6,8,1,8,9,8,6,7],[2,6,9,2,9,1,6,7,9,0,9,3,7,3,9],[7,8,0,7,0,6,6,0,2],[7,3,2,6,7,2],[2,3,11,10,6,8,10,8,9,8,6,7],[2,0,7,2,7,11,0,9,7,6,7,10,9,10,7],[1,8,0,1,7,8,1,10,7,6,7,10,2,3,11],[11,2,1,11,1,7,10,6,1,6,7,1],[8,9,6,8,6,7,9,1,6,11,6,3,1,3,6],[0,9,1,11,6,7],[7,8,0,7,0,6,3,11,0,11,6,0],[7,11,6],[7,6,11],[3,0,8,11,7,6],[0,1,9,11,7,6],[8,1,9,8,3,1,11,7,6],[10,1,2,6,11,7],[1,2,10,3,0,8,6,11,7],[2,9,0,2,10,9,6,11,7],[6,11,7,2,10,3,10,8,3,10,9,8],[7,2,3,6,2,7],[7,0,8,7,6,0,6,2,0],[2,7,6,2,3,7,0,1,9],[1,6,2,1,8,6,1,9,8,8,7,6],[10,7,6,10,1,7,1,3,7],[10,7,6,1,7,10,1,8,7,1,0,8],[0,3,7,0,7,10,0,10,9,6,10,7],[7,6,10,7,10,8,8,10,9],[6,8,4,11,8,6],[3,6,11,3,0,6,0,4,6],[8,6,11,8,4,6,9,0,1],[9,4,6,9,6,3,9,3,1,11,3,6],[6,8,4,6,11,8,2,10,1],[1,2,10,3,0,11,0,6,11,0,4,6],[4,11,8,4,6,11,0,2,9,2,10,9],[10,9,3,10,3,2,9,4,3,11,3,6,4,6,3],[8,2,3,8,4,2,4,6,2],[0,4,2,4,6,2],[1,9,0,2,3,4,2,4,6,4,3,8],[1,9,4,1,4,2,2,4,6],[8,1,3,8,6,1,8,4,6,6,10,1],[10,1,0,10,0,6,6,0,4],[4,6,3,4,3,8,6,10,3,0,3,9,10,9,3],[10,9,4,6,10,4],[4,9,5,7,6,11],[0,8,3,4,9,5,11,7,6],[5,0,1,5,4,0,7,6,11],[11,7,6,8,3,4,3,5,4,3,1,5],[9,5,4,10,1,2,7,6,11],[6,11,7,1,2,10,0,8,3,4,9,5],[7,6,11,5,4,10,4,2,10,4,0,2],[3,4,8,3,5,4,3,2,5,10,5,2,11,7,6],[7,2,3,7,6,2,5,4,9],[9,5,4,0,8,6,0,6,2,6,8,7],[3,6,2,3,7,6,1,5,0,5,4,0],[6,2,8,6,8,7,2,1,8,4,8,5,1,5,8],[9,5,4,10,1,6,1,7,6,1,3,7],[1,6,10,1,7,6,1,0,7,8,7,0,9,5,4],[4,0,10,4,10,5,0,3,10,6,10,7,3,7,10],[7,6,10,7,10,8,5,4,10,4,8,10],[6,9,5,6,11,9,11,8,9],[3,6,11,0,6,3,0,5,6,0,9,5],[0,11,8,0,5,11,0,1,5,5,6,11],[6,11,3,6,3,5,5,3,1],[1,2,10,9,5,11,9,11,8,11,5,6],[0,11,3,0,6,11,0,9,6,5,6,9,1,2,10],[11,8,5,11,5,6,8,0,5,10,5,2,0,2,5],[6,11,3,6,3,5,2,10,3,10,5,3],[5,8,9,5,2,8,5,6,2,3,8,2],[9,5,6,9,6,0,0,6,2],[1,5,8,1,8,0,5,6,8,3,8,2,6,2,8],[1,5,6,2,1,6],[1,3,6,1,6,10,3,8,6,5,6,9,8,9,6],[10,1,0,10,0,6,9,5,0,5,6,0],[0,3,8,5,6,10],[10,5,6],[11,5,10,7,5,11],[11,5,10,11,7,5,8,3,0],[5,11,7,5,10,11,1,9,0],[10,7,5,10,11,7,9,8,1,8,3,1],[11,1,2,11,7,1,7,5,1],[0,8,3,1,2,7,1,7,5,7,2,11],[9,7,5,9,2,7,9,0,2,2,11,7],[7,5,2,7,2,11,5,9,2,3,2,8,9,8,2],[2,5,10,2,3,5,3,7,5],[8,2,0,8,5,2,8,7,5,10,2,5],[9,0,1,5,10,3,5,3,7,3,10,2],[9,8,2,9,2,1,8,7,2,10,2,5,7,5,2],[1,3,5,3,7,5],[0,8,7,0,7,1,1,7,5],[9,0,3,9,3,5,5,3,7],[9,8,7,5,9,7],[5,8,4,5,10,8,10,11,8],[5,0,4,5,11,0,5,10,11,11,3,0],[0,1,9,8,4,10,8,10,11,10,4,5],[10,11,4,10,4,5,11,3,4,9,4,1,3,1,4],[2,5,1,2,8,5,2,11,8,4,5,8],[0,4,11,0,11,3,4,5,11,2,11,1,5,1,11],[0,2,5,0,5,9,2,11,5,4,5,8,11,8,5],[9,4,5,2,11,3],[2,5,10,3,5,2,3,4,5,3,8,4],[5,10,2,5,2,4,4,2,0],[3,10,2,3,5,10,3,8,5,4,5,8,0,1,9],[5,10,2,5,2,4,1,9,2,9,4,2],[8,4,5,8,5,3,3,5,1],[0,4,5,1,0,5],[8,4,5,8,5,3,9,0,5,0,3,5],[9,4,5],[4,11,7,4,9,11,9,10,11],[0,8,3,4,9,7,9,11,7,9,10,11],[1,10,11,1,11,4,1,4,0,7,4,11],[3,1,4,3,4,8,1,10,4,7,4,11,10,11,4],[4,11,7,9,11,4,9,2,11,9,1,2],[9,7,4,9,11,7,9,1,11,2,11,1,0,8,3],[11,7,4,11,4,2,2,4,0],[11,7,4,11,4,2,8,3,4,3,2,4],[2,9,10,2,7,9,2,3,7,7,4,9],[9,10,7,9,7,4,10,2,7,8,7,0,2,0,7],[3,7,10,3,10,2,7,4,10,1,10,0,4,0,10],[1,10,2,8,7,4],[4,9,1,4,1,7,7,1,3],[4,9,1,4,1,7,0,8,1,8,7,1],[4,0,3,7,4,3],[4,8,7],[9,10,8,10,11,8],[3,0,9,3,9,11,11,9,10],[0,1,10,0,10,8,8,10,11],[3,1,10,11,3,10],[1,2,11,1,11,9,9,11,8],[3,0,9,3,9,11,1,2,9,2,11,9],[0,2,11,8,0,11],[3,2,11],[2,3,8,2,8,10,10,8,9],[9,10,2,0,9,2],[2,3,8,2,8,10,0,1,8,1,10,8],[1,10,2],[1,3,8,9,1,8],[0,9,1],[0,3,8],[]];
-const T3 = { mode: 'out', renderer: null, canvas: null, out: null, med: null, inn: null, innFor: '', raf: 0, size: [0, 0], drag: null, yaw: 0, pitch: 0, orbit: { th: 0.5, ph: 1.25, d: 330 }, orbitMed: { th: 0.4, ph: 1.35, d: 430 }, tween: null, depth: 6, depthFor: '', labels: true, overlay: true, level: true, roll: 0, vlabels: true, hint: '' };
-function t3Orbit() { return T3.mode === 'med' ? T3.orbitMed : T3.orbit; }
+const T3 = { mode: 'out', renderer: null, canvas: null, rendererIn: null, canvasIn: null, out: null, med: null, inn: null, innFor: '', raf: 0, size: [0, 0], sizeIn: [0, 0], drag: null, dragIn: null, ctZ: 20, yaw: 0, pitch: 0, orbit: { th: 0.5, ph: 1.25, d: 330 }, orbitMed: { th: 0.4, ph: 1.35, d: 430 }, tween: null, depth: 6, depthFor: '', labels: true, overlay: true, level: true, roll: 0, vlabels: true, hint: '' };
+function t3Orbit() { return T3.mode === 'out' ? T3.orbit : T3.orbitMed; }
 /* ---- position along the current airway, in millimetres from its start (real lengths: trachea 11 cm, RMB 2.4 cm, LMB 4.6 cm …) */
 function t3Len(id) { const s = t3Seg(id); return s.a.distanceTo(s.b); }
 function t3Depth() { if (T3.depthFor !== treeAt) { T3.depthFor = treeAt; T3.depth = Math.min(4, t3Len(treeAt) * 0.4); } return T3.depth; }
@@ -32,7 +32,7 @@ function t3Move(mm) {
 /* the readout and the corner map follow the scope without redrawing the page */
 function t3UpdateNav() {
   const el = document.querySelector('[data-3d-depth]'); if (el) el.textContent = t3DepthText();
-  const mm = document.querySelector('.an-sim-map'); if (mm) { mm.textContent = ''; mm.appendChild(miniMap(t3Depth() / (t3Len(treeAt) || 1))); }
+  if (typeof mapTip === 'function') mapTip();
 }
 /* go to another airway with the scope at a given depth in it (the depth is set before the page re-renders) */
 function t3Enter(id, mm) {
@@ -331,41 +331,66 @@ function t3Advance() {
 }
 function t3Hint(text) { T3.hint = text; const el = document.querySelector('[data-3d-hint]'); if (el) { el.textContent = text; el.hidden = !text; } clearTimeout(T3.hintTimer); T3.hintTimer = setTimeout(() => { T3.hint = ''; const e2 = document.querySelector('[data-3d-hint]'); if (e2) e2.hidden = true; }, 2200); }
 /* ---- the canvas, shared by both views */
+/* Two canvases: the scope simulator has its own renderer (it sits beside the tree map), the orbit model (outside /
+   mediastinum / CT plane) another. Both are drawn by one animation loop while they are on the page. */
+function t3Renderer(cv) {
+  let r; try { r = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: false }); } catch (e) { return null; }
+  r.setPixelRatio(Math.min(2, window.devicePixelRatio || 1)); r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 0.95; r.setClearColor(0xefe9e1);
+  return r;
+}
 function t3Ensure() {
   if (T3.renderer) return true;
   if (!t3Available()) return false;
   T3.canvas = document.createElement('canvas'); T3.canvas.className = 'an-3d'; T3.canvas.setAttribute('aria-label', '3D airway model'); T3.canvas.tabIndex = 0;
-  try { T3.renderer = new THREE.WebGLRenderer({ canvas: T3.canvas, antialias: true, alpha: false }); } catch (e) { return false; }
-  T3.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
-  T3.renderer.toneMapping = THREE.ACESFilmicToneMapping; T3.renderer.toneMappingExposure = 0.95;
-  T3.renderer.setClearColor(0xefe9e1);
+  T3.renderer = t3Renderer(T3.canvas); if (!T3.renderer) return false;
   T3.out = t3BuildOut();
-  const cv = T3.canvas;
+  t3WireOrbit(T3.canvas);
+  return true;
+}
+function t3EnsureIn() {
+  if (T3.rendererIn) return true;
+  if (!t3Available()) return false;
+  T3.canvasIn = document.createElement('canvas'); T3.canvasIn.className = 'an-3d an-3d-scope'; T3.canvasIn.setAttribute('aria-label', 'Bronchoscope view'); T3.canvasIn.tabIndex = 0;
+  T3.rendererIn = t3Renderer(T3.canvasIn); if (!T3.rendererIn) return false;
+  T3.rendererIn.setClearColor(0x2a1210);
+  t3WireScope(T3.canvasIn);
+  return true;
+}
+/* the orbit canvas: drag to orbit, wheel or pinch to zoom, tap a branch to go there */
+function t3WireOrbit(cv) {
   cv.addEventListener('pointerdown', (e) => { if (!T3.drag) T3.drag = { x: e.clientX, y: e.clientY, moved: false, id: e.pointerId, pts: {} }; T3.drag.pts[e.pointerId] = [e.clientX, e.clientY]; try { cv.setPointerCapture(e.pointerId); } catch (x) { /* ignore */ } });
   cv.addEventListener('pointermove', (e) => {
     const d = T3.drag; if (!d) return;
     if (d.pts[e.pointerId]) d.pts[e.pointerId] = [e.clientX, e.clientY];
     const ids = Object.keys(d.pts);
-    if (ids.length >= 2) {   // pinch: zoom the outside view
-      const p0 = d.pts[ids[0]], p1 = d.pts[ids[1]], dist = Math.hypot(p0[0] - p1[0], p0[1] - p1[1]);
-      if (d.pinch && T3.mode !== 'in') t3Orbit().d = Math.max(80, Math.min(900, t3Orbit().d * d.pinch / dist));
-      d.pinch = dist; d.moved = true; return;
-    }
+    if (ids.length >= 2) { const p0 = d.pts[ids[0]], p1 = d.pts[ids[1]], dist = Math.hypot(p0[0] - p1[0], p0[1] - p1[1]); if (d.pinch) t3Orbit().d = Math.max(80, Math.min(900, t3Orbit().d * d.pinch / dist)); d.pinch = dist; d.moved = true; return; }
     const dx = e.clientX - d.x, dy = e.clientY - d.y;
     if (Math.abs(dx) + Math.abs(dy) > 3) d.moved = true;
-    if (T3.mode !== 'in') { const ob = t3Orbit(); ob.th -= dx * 0.008; ob.ph = Math.max(0.15, Math.min(3.0, ob.ph - dy * 0.008)); }
-    else { T3.yaw = Math.max(-1.3, Math.min(1.3, T3.yaw - dx * 0.006)); T3.pitch = Math.max(-1.0, Math.min(1.0, T3.pitch + dy * 0.006)); t3PadSync(); }
+    const ob = t3Orbit(); ob.th -= dx * 0.008; ob.ph = Math.max(0.15, Math.min(3.0, ob.ph - dy * 0.008));
     d.x = e.clientX; d.y = e.clientY;
   });
-  const end = (e) => { const d = T3.drag; if (!d) return; delete d.pts[e.pointerId]; if (Object.keys(d.pts).length) return; T3.drag = null; if (!d.moved) t3Pick(e); };
+  const end = (e) => { const d = T3.drag; if (!d) return; delete d.pts[e.pointerId]; if (Object.keys(d.pts).length) return; T3.drag = null; if (!d.moved) t3PickOrbit(e); };
   cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', () => { T3.drag = null; });
-  cv.addEventListener('wheel', (e) => { if (T3.mode === 'in') return; e.preventDefault(); const ob = t3Orbit(); ob.d = Math.max(80, Math.min(900, ob.d * (1 + Math.sign(e.deltaY) * 0.08))); }, { passive: false });
+  cv.addEventListener('wheel', (e) => { e.preventDefault(); const ob = t3Orbit(); ob.d = Math.max(80, Math.min(900, ob.d * (1 + Math.sign(e.deltaY) * 0.08))); }, { passive: false });
+}
+/* the scope canvas: drag to look, tap an opening to enter it or a node to open its EBUS card, keys to drive */
+function t3WireScope(cv) {
+  cv.addEventListener('pointerdown', (e) => { T3.dragIn = { x: e.clientX, y: e.clientY, moved: false }; try { cv.setPointerCapture(e.pointerId); } catch (x) { /* ignore */ } });
+  cv.addEventListener('pointermove', (e) => {
+    const d = T3.dragIn; if (!d) return;
+    const dx = e.clientX - d.x, dy = e.clientY - d.y;
+    if (Math.abs(dx) + Math.abs(dy) > 3) d.moved = true;
+    T3.yaw = Math.max(-1.3, Math.min(1.3, T3.yaw - dx * 0.006)); T3.pitch = Math.max(-1.0, Math.min(1.0, T3.pitch + dy * 0.006)); t3PadSync();
+    d.x = e.clientX; d.y = e.clientY;
+  });
+  const end = (e) => { const d = T3.dragIn; if (!d) return; T3.dragIn = null; if (!d.moved) t3PickScope(e); };
+  cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', () => { T3.dragIn = null; });
+  cv.addEventListener('pointermove', (e) => { if (T3.dragIn) return; cv.style.cursor = t3NodeAt(e) ? 'pointer' : ''; });
   cv.addEventListener('keydown', (e) => {
     const T = AN.TREE, n = T[treeAt];
     const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
-    if (T3.mode === 'in' && (key === 'ArrowUp' || key === 'w')) { e.preventDefault(); T3.refocus = true; t3Advance(); }
+    if (key === 'ArrowUp' || key === 'w') { e.preventDefault(); T3.refocus = true; t3Advance(); }
     else if (key === 'ArrowDown' || key === 's') { e.preventDefault(); T3.refocus = true; t3Move(-T3_STEP); }
-    else if (key === 'ArrowUp') { e.preventDefault(); T3.refocus = true; t3Move(T3_STEP); }
     else if (key === 'Backspace') { e.preventDefault(); if (n.parent) { T3.refocus = true; t3Enter(n.parent, Math.max(0, t3MaxDepth(n.parent) - 4)); } }
     else if (/^[1-9]$/.test(key)) { const k = n.kids[+key - 1]; if (k) { e.preventDefault(); T3.refocus = true; t3Enter(k, 4); } }
     else if (key === 'ArrowLeft' || key === 'a') { e.preventDefault(); T3.yaw = Math.max(-1.3, T3.yaw - 0.12); t3PadSync(); }   // yaw > 0 looks to the screen's right (the patient's right)
@@ -374,55 +399,95 @@ function t3Ensure() {
     else if (key === 'r') { T3.roll += 0.15; } else if (key === 'f') { T3.roll -= 0.15; }
     else if (key === 'Home') { e.preventDefault(); T3.refocus = true; T3.yaw = 0; T3.pitch = 0; T3.roll = 0; t3Enter('trachea', 4); }
     else if (key === 'c') { T3.yaw = 0; T3.pitch = 0; T3.roll = 0; t3PadSync(); }
+    else if (key === 'Escape') { if (typeof closeEbus === 'function') closeEbus(); }
   });
-  return true;
 }
-/* a tap: outside, the branch under the pointer; inside, the opening whose airway the ray enters */
-function t3Pick(e) {
+/* a tap on the orbit model: the branch under the pointer, or the name of a structure */
+function t3PickOrbit(e) {
   const rect = T3.canvas.getBoundingClientRect(), x = ((e.clientX - rect.left) / rect.width) * 2 - 1, y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-  const rc = new THREE.Raycaster();
-  if (T3.mode === 'out' || T3.mode === 'med') {
-    const v = T3.mode === 'med' ? T3.med : T3.out;
-    rc.setFromCamera(new THREE.Vector2(x, y), v.camera);
-    const hits = rc.intersectObjects(v.group.children.concat(v.med ? v.med.children : []), false);
-    const hit = hits.filter(hh => hh.object.userData.id || hh.object.userData.lm)[0];
-    if (!hit) return;
-    if (hit.object.userData.id) treeGo(hit.object.userData.id, true);
-    else if (hit.object.userData.station) { toast('Station ' + hit.object.userData.station + ' — open the station map for its borders and the EBUS picture'); }
-    else toast(hit.object.userData.lm);
-  } else if (T3.inn) {
-    rc.setFromCamera(new THREE.Vector2(x, y), T3.inn.camera);
-    const ray = rc.ray, kids = AN.TREE[treeAt].kids;
-    let best = null;
-    kids.forEach(k => {
-      const s = t3Seg(k), steps = 24;
-      for (let i = 0; i <= steps; i++) { const p = s.a.clone().lerp(s.b, i / steps); const d = ray.distanceToPoint(p); const along = p.clone().sub(ray.origin).dot(ray.direction); if (d < s.r * 1.5 && along > 2 && (!best || d / s.r < best.score)) best = { id: k, along: along, score: d / s.r }; }
-    });
-    if (best) treeGo(best.id, true);
-  }
+  const rc = new THREE.Raycaster(), v = T3.mode === 'out' ? T3.out : T3.med; if (!v) return;
+  rc.setFromCamera(new THREE.Vector2(x, y), v.camera);
+  const hits = rc.intersectObjects(v.group.children.concat(v.med ? v.med.children : []), false);
+  const hit = hits.filter(hh => hh.object.userData.id || hh.object.userData.lm)[0];
+  if (!hit) return;
+  if (hit.object.userData.id) treeGo(hit.object.userData.id, true);
+  else if (hit.object.userData.station) { if (typeof ebusPop === 'function') ebusPop(hit.object.userData.station); else toast('Station ' + hit.object.userData.station); }
+  else toast(hit.object.userData.lm);
 }
-function t3Resize(w) {
-  const hgt = Math.round(Math.max(240, Math.min(440, w * 0.78)));
-  if (T3.size[0] === w && T3.size[1] === hgt) return;
-  T3.size = [w, hgt]; T3.renderer.setSize(w, hgt, false); T3.canvas.style.width = '100%'; T3.canvas.style.height = hgt + 'px';
-  [T3.out, T3.med, T3.inn].forEach(v => { if (v) { v.camera.aspect = w / hgt; v.camera.updateProjectionMatrix(); } });
+/* the overlay node under the pointer in the scope view (visible ones only) */
+function t3NodeAt(e) {
+  const inn = T3.inn; if (!inn || !T3.overlay) return null;
+  const rect = T3.canvasIn.getBoundingClientRect(), x = ((e.clientX - rect.left) / rect.width) * 2 - 1, y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+  const rc = new THREE.Raycaster(); rc.setFromCamera(new THREE.Vector2(x, y), inn.camera);
+  const nodes = inn.ovParts.filter(o => o.part.k === 'n' && o.mesh.visible).map(o => o.mesh);
+  const hit = rc.intersectObjects(nodes, false)[0];
+  return hit ? inn.ovParts.filter(o => o.mesh === hit.object)[0].part.station : null;
+}
+/* a tap in the scope view: a node opens its EBUS card; otherwise the opening whose airway the ray enters */
+function t3PickScope(e) {
+  const st = t3NodeAt(e);
+  if (st) { if (typeof ebusPop === 'function') ebusPop(st); return; }
+  if (!T3.inn) return;
+  const rect = T3.canvasIn.getBoundingClientRect(), x = ((e.clientX - rect.left) / rect.width) * 2 - 1, y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+  const rc = new THREE.Raycaster(); rc.setFromCamera(new THREE.Vector2(x, y), T3.inn.camera);
+  const ray = rc.ray, kids = AN.TREE[treeAt].kids;
+  let best = null;
+  kids.forEach(k => {
+    const s = t3Seg(k), steps = 24;
+    for (let i = 0; i <= steps; i++) { const p = s.a.clone().lerp(s.b, i / steps); const d = ray.distanceToPoint(p); const along = p.clone().sub(ray.origin).dot(ray.direction); if (d < s.r * 1.5 && along > 2 && (!best || d / s.r < best.score)) best = { id: k, along: along, score: d / s.r }; }
+  });
+  if (best) { T3.refocus = true; t3Enter(best.id, 4); }
+}
+function t3Resize(r, cv, views, size, hgtOf) {
+  const w = Math.max(200, Math.floor(cv.parentElement.getBoundingClientRect().width)), hgt = hgtOf(w);
+  if (size[0] === w && size[1] === hgt) return;
+  size[0] = w; size[1] = hgt; r.setSize(w, hgt, false); cv.style.width = '100%'; cv.style.height = hgt + 'px';
+  views.forEach(v => { if (v) { v.camera.aspect = w / hgt; v.camera.updateProjectionMatrix(); } });
 }
 function t3Frame() {
   T3.raf = 0;
-  if (!T3.canvas || !T3.canvas.isConnected) return;
-  const w = Math.max(200, Math.floor(T3.canvas.parentElement.getBoundingClientRect().width));
-  t3Resize(w);
-  if (T3.mode === 'out') { T3.renderer.setClearColor(0xefe9e1); t3PaintOut(T3.out); T3.renderer.render(T3.out.scene, T3.out.camera); }
-  else if (T3.mode === 'med' && T3.med) { T3.renderer.setClearColor(0xefe9e1); t3PaintOut(T3.med); t3Marker(T3.med); T3.renderer.render(T3.med.scene, T3.med.camera); }
-  else if (T3.inn) {
-    T3.renderer.setClearColor(0x2a1210);
+  let any = false;
+  if (T3.canvas && T3.canvas.isConnected) {
+    any = true;
+    t3Resize(T3.renderer, T3.canvas, [T3.out, T3.med], T3.size, (w) => Math.round(Math.max(240, Math.min(440, w * 0.78))));
+    const mode = T3.mode === 'in' ? 'out' : T3.mode;
+    if (mode === 'out') { t3PaintOut(T3.out); T3.renderer.render(T3.out.scene, T3.out.camera); }
+    else if ((mode === 'med' || mode === 'ct') && T3.med) { t3PaintOut(T3.med); t3Marker(T3.med); if (T3.med.plane) T3.med.plane.visible = mode === 'ct'; T3.renderer.render(T3.med.scene, T3.med.camera); }
+  }
+  if (T3.canvasIn && T3.canvasIn.isConnected && T3.inn) {
+    any = true;
+    t3Resize(T3.rendererIn, T3.canvasIn, [T3.inn], T3.sizeIn, (w) => Math.round(Math.max(220, Math.min(420, w * 0.82))));
     const pose = t3PoseIn(treeAt);
     if (T3.tween) { const k = Math.min(1, (performance.now() - T3.tween.t0) / (T3.tween.dur || 650)); const e = k * k * (3 - 2 * k); pose.eye = T3.tween.from.clone().lerp(pose.eye, e); if (k >= 1) T3.tween = null; }
-    t3LookIn(T3.inn, pose); t3Overlay(T3.inn, pose.eye, T3.inn.look); T3.renderer.render(T3.inn.scene, T3.inn.camera); t3ViewLabels();
+    t3LookIn(T3.inn, pose); t3Overlay(T3.inn, pose.eye, T3.inn.look); T3.rendererIn.render(T3.inn.scene, T3.inn.camera); t3ViewLabels();
   }
-  T3.raf = requestAnimationFrame(t3Frame);
+  if (any) T3.raf = requestAnimationFrame(t3Frame);
 }
-/* the figure on the tree topic */
+/* ---- the airway as a file for a printer: a hollow wall 1.5 mm each side of the lumen surface, as ASCII STL */
+function t3ExportSTL() {
+  const caps = Object.keys(AN.TREE3D).map(k => Object.assign({ id: k }, t3Seg(k))).filter(c => c.id !== 'larynx');
+  const lo = new THREE.Vector3(Infinity, Infinity, Infinity), hi = new THREE.Vector3(-Infinity, -Infinity, -Infinity);
+  caps.forEach(s => { [s.a, s.b].forEach(p => { lo.min(p.clone().subScalar(s.r + 4)); hi.max(p.clone().addScalar(s.r + 4)); }); });
+  const ext = hi.clone().sub(lo), cell = 1.0, n = [Math.ceil(ext.x / cell), Math.ceil(ext.y / cell), Math.ceil(ext.z / cell)];
+  const pre = caps.map(c => { const q = capPrep(c); q.rings = false; return q; });
+  const wall = 1.5;
+  const geo = marchingCubes((x, y, z) => { let d = Infinity; for (let i = 0; i < pre.length; i++) { const v = capSdf(x, y, z, pre[i]); if (v < d) d = v; } return Math.abs(d) - wall; }, lo, hi, n);
+  const pos = geo.getAttribute('position'), idx = geo.getIndex();
+  // binary STL (80-byte header, facet count, 50 bytes a facet), in millimetres, the model frame (x left, y anterior, z up)
+  const nf = Math.floor(idx.count / 3), buf = new ArrayBuffer(84 + nf * 50), dv = new DataView(buf);
+  const head = 'PFT airway tree, hollow wall 1.5 mm, mm, x left y anterior z up'; for (let i = 0; i < 80; i++) dv.setUint8(i, i < head.length ? head.charCodeAt(i) : 32);
+  dv.setUint32(80, nf, true);
+  const v = (i) => [pos.getX(i), pos.getZ(i), pos.getY(i)];   // scene (x, y up, z anterior) back to the model frame
+  let o = 84;
+  for (let t = 0; t < nf * 3; t += 3) {
+    const a = v(idx.getX(t)), b = v(idx.getX(t + 1)), c = v(idx.getX(t + 2));
+    const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2], wx = c[0] - a[0], wy = c[1] - a[1], wz = c[2] - a[2];
+    let nx = uy * wz - uz * wy, ny = uz * wx - ux * wz, nz = ux * wy - uy * wx; const nl = Math.hypot(nx, ny, nz) || 1; nx /= nl; ny /= nl; nz /= nl;
+    [nx, ny, nz, a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]].forEach(f => { dv.setFloat32(o, f, true); o += 4; });
+    dv.setUint16(o, 0, true); o += 2;
+  }
+  saveFile('airway_tree_hollow_1p5mm.stl', buf, 'model/stl');
+}
 /* labels on the picture: the name of each opening ahead, placed where it projects on the screen */
 function t3ViewLabels() {
   const box = T3.labelBox; if (!box || !T3.inn || !box.isConnected) return;
@@ -450,52 +515,64 @@ function t3Pad() {
   pad.sync = place;
   return pad;
 }
-function tree3dFig() {
-  if (!t3Ensure()) return h('figure', { class: 'an-fig' }, [h('div', { class: 'an-3d-none', text: '3D view needs WebGL, which this browser or view does not provide.' }), h('figcaption', { text: '3D airway model' })]);
-  const labId = uid('l3'), ovId = uid('ov'), lvId = uid('lv'), vlId = uid('vl');
+/* the scope simulator: beside the tree map on the navigator */
+function simFig() {
+  if (!t3EnsureIn()) return h('figure', { class: 'an-fig' }, [h('div', { class: 'an-3d-none', text: 'The scope simulator needs WebGL, which this browser or view does not provide.' }), h('figcaption', { text: 'Bronchoscope view' })]);
+  const ovId = uid('ov'), lvId = uid('lv'), vlId = uid('vl');
   const chk = (id, key, text, attr, title) => h('label', { class: 'chk-inline', for: id, title: title || null }, [h('input', { type: 'checkbox', id: id, checked: !!T3[key], [attr]: '1', onchange: (e) => { T3[key] = e.target.checked; if (key === 'level') { T3.roll = 0; } } }), text]);
-  const modes = h('div', { class: 'an-3d-modes' }, [[['out', 'Outside'], ['in', 'Scope (simulator)'], ['med', 'Mediastinum']].map(m => h('button', { type: 'button', class: 'ch', role: 'radio', 'aria-checked': String(T3.mode === m[0]), 'data-3d-mode': m[0], text: m[1], onclick: () => { T3.mode = m[0]; render(); } })),
-    T3.mode === 'med' ? chk(labId, 'labels', 'Labels', 'data-3d-labels') : null,
-    T3.mode === 'in' ? chk(ovId, 'overlay', 'Overlay vessels & nodes', 'data-3d-overlay', 'See the structures against the wall through it, as in an EBUS atlas') : null,
-    T3.mode === 'in' ? chk(vlId, 'vlabels', 'Labels', 'data-3d-vlabels') : null,
-    T3.mode === 'in' ? chk(lvId, 'level', 'Keep anterior up', 'data-3d-level', 'Off: R and F turn the scope on its axis and the picture rolls, as on a real monitor') : null,
-    h('button', { type: 'button', class: 'lnk', text: 'Reset view', onclick: () => { T3.orbit = { th: 0.5, ph: 1.25, d: 330 }; T3.orbitMed = { th: 0.4, ph: 1.35, d: 430 }; T3.yaw = 0; T3.pitch = 0; T3.roll = 0; const pd = document.querySelector('[data-3d-pad]'); if (pd && pd.sync) pd.sync(); } })]);
-  if (T3.mode === 'med' && !T3.med) { T3.med = t3BuildMed(); T3.med.camera.aspect = T3.size[0] / (T3.size[1] || 1); T3.med.camera.updateProjectionMatrix(); }
-  if (T3.mode === 'in') {
-    if (!T3.inn || T3.inn.id !== treeAt) {
-      const prevEye = T3.inn ? T3.inn.camera.position.clone() : null;
-      T3.inn = t3BuildIn(treeAt);
-      if (prevEye) T3.tween = { from: prevEye, t0: performance.now() };
-      T3.inn.camera.aspect = T3.size[0] / (T3.size[1] || 1); T3.inn.camera.updateProjectionMatrix();
-    }
+  if (!T3.inn || T3.inn.id !== treeAt) {
+    const prevEye = T3.inn ? T3.inn.camera.position.clone() : null;
+    T3.inn = t3BuildIn(treeAt);
+    if (prevEye) T3.tween = { from: prevEye, t0: performance.now() };
+    T3.inn.camera.aspect = T3.sizeIn[0] / (T3.sizeIn[1] || 1); T3.inn.camera.updateProjectionMatrix();
   }
   const n = AN.TREE[treeAt];
-  // labels for the openings ahead, laid over the picture
   const SHORT3D = { rmb: 'R main', lmb: 'L main', bi: 'B. intermedius', rul: 'RUL', rml: 'RML', rll: 'RLL', lul: 'LUL', lud: 'Upper division', ling: 'Lingula', lll: 'LLL', trachea: 'Trachea' };
-  const labelBox = T3.mode === 'in' ? h('div', { class: 'an-vlabels' }, n.kids.map(k => h('span', { class: 'an-vlabel', 'data-open': k, hidden: true, text: AN.TREE[k].b || SHORT3D[k] || AN.TREE[k].name, onclick: () => { T3.refocus = true; t3Enter(k, 4); } }))) : null;
+  const labelBox = h('div', { class: 'an-vlabels' }, n.kids.map(k => h('span', { class: 'an-vlabel', 'data-open': k, hidden: true, text: AN.TREE[k].b || SHORT3D[k] || AN.TREE[k].name, onclick: () => { T3.refocus = true; t3Enter(k, 4); } })));
   T3.labelBox = labelBox;
-  const hud = T3.mode === 'in' ? h('div', { class: 'an-hud' }, [h('span', { class: 'an-hud-name', text: n.name }), h('span', { class: 'an-hud-hint', 'data-3d-hint': '1', hidden: !T3.hint, text: T3.hint || '' })]) : null;
-  const wrap = h('div', { class: 'an-3d-wrap' + (T3.mode === 'in' ? ' scope' : '') }, [T3.canvas, labelBox, hud]);
-  // the simulator: the navigational map beside the picture, the pad and the drive buttons beneath
-  let panel = wrap;
-  if (T3.mode === 'in') {
-    const map = h('div', { class: 'an-sim-map', title: 'Bronchial tree navigational map: the path travelled and the scope' }, [miniMap(t3Depth() / (t3Len(treeAt) || 1))]);
-    panel = h('div', { class: 'an-sim' }, [map, wrap]);
-  }
-  const nav = T3.mode === 'out' ? null : h('div', { class: 'an-3d-nav' }, [
-    T3.mode === 'in' ? t3Pad() : null,
+  const hud = h('div', { class: 'an-hud' }, [h('span', { class: 'an-hud-name', text: n.name }), h('span', { class: 'an-hud-hint', 'data-3d-hint': '1', hidden: !T3.hint, text: T3.hint || '' })]);
+  const wrap = h('div', { class: 'an-3d-wrap scope' }, [T3.canvasIn, labelBox, hud]);
+  const opts = h('div', { class: 'an-3d-modes' }, [
+    chk(ovId, 'overlay', 'Overlay vessels & nodes', 'data-3d-overlay', 'See the structures against the wall through it, as in an EBUS atlas; tap a node for its EBUS card'),
+    chk(vlId, 'vlabels', 'Labels', 'data-3d-vlabels'),
+    chk(lvId, 'level', 'Keep anterior up', 'data-3d-level', 'Off: R and F turn the scope on its axis and the picture rolls, as on a real monitor'),
+    h('button', { type: 'button', class: 'lnk', text: 'Centre the view', onclick: () => { T3.yaw = 0; T3.pitch = 0; T3.roll = 0; t3PadSync(); } })]);
+  const nav = h('div', { class: 'an-3d-nav' }, [
+    t3Pad(),
     h('div', { class: 'an-drive' }, [
-      h('button', { type: 'button', class: 'btn sm', 'data-3d-fwd': '1', title: 'Advance (↑ or W; hold to glide). At a carina the scope enters the opening it is aimed at.', text: '▲ Advance', onclick: () => (T3.mode === 'in' ? t3Advance() : t3Move(T3_STEP)) }),
+      h('button', { type: 'button', class: 'btn sm', 'data-3d-fwd': '1', title: 'Advance (↑ or W; hold to glide). At a carina the scope enters the opening it is aimed at.', text: '▲ Advance', onclick: () => t3Advance() }),
       h('button', { type: 'button', class: 'btn sm quiet', 'data-3d-back': '1', title: 'Withdraw (↓ or S; hold to glide)', text: '▼ Withdraw', onclick: () => t3Move(-T3_STEP) }),
-      T3.mode === 'in' ? h('button', { type: 'button', class: 'btn sm quiet', 'data-3d-restart': '1', title: 'Home', text: 'Restart at the trachea', onclick: () => { T3.yaw = 0; T3.pitch = 0; T3.roll = 0; T3.refocus = true; t3Enter('trachea', 4); } }) : null
+      h('button', { type: 'button', class: 'btn sm quiet', 'data-3d-restart': '1', title: 'Home', text: 'Restart at the trachea', onclick: () => { T3.yaw = 0; T3.pitch = 0; T3.roll = 0; T3.refocus = true; t3Enter('trachea', 4); } })
     ]),
     h('span', { class: 'an-3d-depth', 'data-3d-depth': '1', text: t3DepthText() })
   ]);
-  const cap = T3.mode === 'out' ? 'Outside: drag to orbit, wheel or pinch to zoom, tap a branch to go there (the current path is blue).'
-    : (T3.mode === 'med' ? 'Mediastinum: the tree with the great vessels, the oesophagus, the spine behind, the heart (faint) and the nodal stations (olive). The blue ring is where the scope is, its yellow dot at 12 o’clock (anterior) — the scope view above shows that level in cross-section. Drag to orbit, tap a branch to go there, tap a structure for its name.'
-    : 'Scope: steer with the pad, ← → (or A D) and Q E, drive with ▲ ▼ (or W S, ↑ ↓; hold to glide). At a carina the scope enters the opening it is aimed at; tap a label or press 1–' + Math.max(1, n.kids.length) + ' to pick one; Backspace backs out; C centres the view; Home restarts. The overlay shows the vessels and nodes against the wall as you pass them, fading with distance. Rings in front, the flat membrane behind.');
-  const fig = h('figure', { class: 'an-fig an-fig-3d' }, [modes, panel, nav, h('figcaption', { text: cap + ' Procedural model from standard dimensions, not a patient.' })]);
+  const fig = h('figure', { class: 'an-fig an-fig-3d an-sim', 'data-sim': '1' }, [opts, wrap, nav,
+    h('figcaption', { text: 'Bronchoscope view from the ' + n.name.toLowerCase() + '. Steer with the pad, ← → (or A D) and Q E; drive with ▲ ▼ (or W S, ↑ ↓; hold to glide). At a carina the scope enters the opening it is aimed at — driven straight it meets the keel; tap a label or press 1–' + Math.max(1, n.kids.length) + ' to pick one; Backspace backs out; Home restarts. The overlay shows the vessels and nodes against the wall as you pass them; tap a node for its EBUS picture and pearls. Rings in front, the flat membrane behind. Lengths and calibres from standard adult dimensions.' })]);
   if (!T3.raf) T3.raf = requestAnimationFrame(t3Frame);
-  if (T3.refocus) { T3.refocus = false; setTimeout(() => { try { T3.canvas.focus({ preventScroll: true }); } catch (x) { /* ignore */ } }, 0); }   // keyboard navigation keeps the canvas focused across re-renders
+  if (T3.refocus) { T3.refocus = false; setTimeout(() => { try { T3.canvasIn.focus({ preventScroll: true }); } catch (x) { /* ignore */ } }, 0); }
+  return fig;
+}
+/* the orbit model under the navigator: the whole tree, or the mediastinum around it (the CT page adds a slice plane) */
+function tree3dFig(ct) {
+  if (!t3Ensure()) return h('figure', { class: 'an-fig' }, [h('div', { class: 'an-3d-none', text: '3D view needs WebGL, which this browser or view does not provide.' }), h('figcaption', { text: '3D airway model' })]);
+  if (ct) T3.mode = 'ct'; else if (T3.mode === 'in' || T3.mode === 'ct') T3.mode = 'out';
+  const labId = uid('l3');
+  const modes = h('div', { class: 'an-3d-modes' }, [ct ? null : [['out', 'Outside'], ['med', 'Mediastinum']].map(m => h('button', { type: 'button', class: 'ch', role: 'radio', 'aria-checked': String(T3.mode === m[0]), 'data-3d-mode': m[0], text: m[1], onclick: () => { T3.mode = m[0]; render(); } })),
+    T3.mode !== 'out' ? h('label', { class: 'chk-inline', for: labId }, [h('input', { type: 'checkbox', id: labId, checked: T3.labels, 'data-3d-labels': '1', onchange: (e) => { T3.labels = e.target.checked; } }), 'Labels']) : null,
+    h('button', { type: 'button', class: 'lnk', text: 'Reset view', onclick: () => { T3.orbit = { th: 0.5, ph: 1.25, d: 330 }; T3.orbitMed = { th: 0.4, ph: 1.35, d: 430 }; } }),
+    T3.mode === 'out' ? h('button', { type: 'button', class: 'lnk', 'data-3d-stl': '1', title: 'The airway as a hollow wall (1.5 mm each side of the lumen) in STL, for a printer or a CAD program', text: 'Download STL for printing', onclick: () => { toast('Building the model (a few seconds)…'); setTimeout(t3ExportSTL, 30); } }) : null]);
+  if (T3.mode !== 'out' && !T3.med) { T3.med = t3BuildMed(); T3.med.camera.aspect = T3.size[0] / (T3.size[1] || 1); T3.med.camera.updateProjectionMatrix(); }
+  if (ct && T3.med && !T3.med.plane) {
+    const pl = new THREE.Mesh(new THREE.PlaneGeometry(230, 190), new THREE.MeshBasicMaterial({ color: 0x3f8fd0, transparent: true, opacity: 0.22, side: THREE.DoubleSide, depthWrite: false }));
+    pl.rotation.x = -Math.PI / 2; const edge = new THREE.LineSegments(new THREE.EdgesGeometry(pl.geometry), new THREE.LineBasicMaterial({ color: 0x2f6fbf })); edge.rotation.x = -Math.PI / 2;
+    const g = new THREE.Group(); g.add(pl); g.add(edge); T3.med.scene.add(g); T3.med.plane = g;
+  }
+  if (T3.med && T3.med.plane) T3.med.plane.position.set(0, T3.ctZ, 0);
+  const wrap = h('div', { class: 'an-3d-wrap' }, [T3.canvas]);
+  const cap = ct ? 'The mediastinum with the slice: drag to orbit, wheel or pinch to zoom; the blue plane is the level of the CT section on the left.'
+    : (T3.mode === 'out' ? 'Outside: drag to orbit, wheel or pinch to zoom, tap a branch to go there (the current path is blue). The STL is the same tree as a hollow wall, for printing a model to drive a real scope through.'
+    : 'Mediastinum: the tree with the great vessels, the oesophagus, the spine behind, the heart (faint) and the nodal stations (olive). The blue ring is where the scope is, its yellow dot at 12 o’clock (anterior). Drag to orbit, tap a branch to go there, tap a structure for its name, tap a station for its EBUS card.');
+  const fig = h('figure', { class: 'an-fig an-fig-3d' }, [modes, wrap, h('figcaption', { text: cap + ' Procedural model from standard dimensions, not a patient.' })]);
+  if (!T3.raf) T3.raf = requestAnimationFrame(t3Frame);
   return fig;
 }

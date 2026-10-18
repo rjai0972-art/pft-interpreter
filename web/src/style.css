@@ -1195,13 +1195,13 @@ table.ct .ix-c.txt { width: 64px; }
 .ecg-text h3 { margin: 0; font-size: 14px; }
 .ecg-text p { margin: 0; }
 
-/* ---- v7.6: the scope simulator — map beside the picture, vignette, labels on the picture, the steering pad */
-.an-sim { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); }
-@media (min-width: 640px) { .an-sim { grid-template-columns: 180px minmax(0, 1fr); align-items: stretch; } }
-.an-sim-map { border-radius: 10px; background: var(--surface-2); padding: 6px; min-height: 120px; }
-.an-sim-map svg { width: 100%; height: 100%; max-height: 440px; display: block; }
-@media (max-width: 639px) { .an-sim-map { height: 150px; } .an-sim-map svg { max-height: 138px; } }
+/* ---- v7.6/7.7: the scope simulator beside the map in the navigator — vignette, labels on the picture, the steering pad */
+.an-sim { display: grid; gap: 8px; align-content: start; }
 .an-mini .an-br.on { stroke: #e08a2a; }
+.an-map .an-tip { pointer-events: none; }
+.an-ring-fold { margin-top: 4px; }
+.an-ring-fold > summary { font-size: 13px; }
+.an-ring-fig { max-width: 420px; }
 .an-3d-wrap.scope { border-radius: 14px; background: #0a0506; }
 .an-3d-wrap.scope::after { content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: 14px; background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 52%, rgba(0, 0, 0, 0.45) 80%, rgba(0, 0, 0, 0.92) 100%); box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.55); }
 .an-vlabels { position: absolute; inset: 0; pointer-events: none; }
@@ -1250,3 +1250,52 @@ table.ct .ix-c.txt { width: 64px; }
 .nod-tl { font-size: 11px; font-weight: 600; fill: var(--ink); }
 .nod-ts { font-size: 9px; fill: var(--muted); }
 @media (max-width: 560px) { .nod-bar { grid-template-columns: 110px minmax(0, 1fr) 48px; } }
+
+/* ---- v7.7: the EBUS card (a pop-up for one station) and the probe ring */
+.pop-bg { position: fixed; inset: 0; z-index: 60; background: rgba(12, 16, 22, 0.55); display: flex; align-items: center; justify-content: center; padding: 16px; overflow: auto; }
+.pop-card { background: var(--surface); color: var(--ink); border: 1px solid var(--line-strong); border-radius: 14px; box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35); max-width: 900px; width: 100%; max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); overflow: auto; padding: 14px 16px 16px; display: grid; gap: 10px; }
+.pop-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.pop-head > div { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 15px; }
+.pop-x { flex: none; font-size: 15px; line-height: 1; padding: 4px 9px; }
+.pop-body { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 700px) { .pop-body { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); align-items: start; } }
+.pop-main .an-fig { margin: 0; }
+.pop-side { display: grid; gap: 8px; font-size: 13.5px; }
+.pop-side .an-fig { margin: 0; max-width: 300px; }
+.pop-side p { margin: 0; }
+.pop-pearls ul { margin: 2px 0 0; padding-left: 18px; display: grid; gap: 4px; }
+.pop-acts { display: flex; flex-wrap: wrap; gap: 6px; }
+body.has-pop { overflow: hidden; }
+.an-sono-set { display: grid; gap: 10px; }
+.an-sono-fig:not(.doppler) .an-sono-flow { display: none; }
+.an-sono-dop { font-size: 12.5px; }
+.an-probe-halo { fill: #f2c14e; opacity: 0.35; }
+.an-probe-dot { fill: #f2c14e; stroke: #8a5a00; stroke-width: 1.5; }
+.an-land .an-lm.n.mark circle { stroke: #f2c14e; stroke-width: 2.6; }
+.an-land .an-lm.n { cursor: pointer; }
+
+/* ---- v7.7: the CT lab */
+.ct-lab { max-width: none; container-type: inline-size; }
+.ct-grid { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+@container (min-width: 980px) { .ct-grid { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); align-items: start; } }
+.learn-body .ct-list { display: block; }
+.ct-left { display: grid; gap: 8px; min-width: 0; }
+.ct-right { min-width: 0; }
+.ct-right .an-fig { margin: 0; }
+.ct-opts { gap: 6px 12px; }
+.ct-stage { position: relative; border-radius: 10px; overflow: hidden; background: #000; }
+.ct-canvas { display: block; width: 100%; height: auto; aspect-ratio: 1000 / 560; cursor: crosshair; outline: none; }
+.ct-canvas:focus-visible { box-shadow: 0 0 0 2px var(--accent) inset; }
+.ct-hover { position: absolute; left: 10px; bottom: 24px; font-size: 12.5px; font-weight: 600; color: #f6efd6; pointer-events: none; text-shadow: 0 1px 2px #000; }
+.ct-level { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.ct-slider { flex: 1 1 160px; min-width: 120px; accent-color: var(--accent); }
+.ct-levelname { font-size: 12.5px; color: var(--ink-2); flex-basis: 100%; }
+.ct-presets { display: flex; flex-wrap: wrap; gap: 4px; }
+.ct-presets .ch { font-size: 12px; padding: 2px 9px; }
+.ct-list { columns: 3; column-gap: 16px; margin: 0; font-size: 12.5px; }
+.learn-body .ct-list.num { padding-left: 30px; list-style: decimal; }
+@media (max-width: 900px) { .ct-list { columns: 2; } }
+.ct-list li { break-inside: avoid; padding: 1px 4px; border-radius: 4px; cursor: default; }
+.ct-list li.hl { background: rgba(242, 193, 78, 0.35); }
+.learn-body .ct-list:not(.num) { list-style: none; padding-left: 0; }
+@media (max-width: 560px) { .ct-list { columns: 1; } }

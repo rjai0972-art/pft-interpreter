@@ -73,7 +73,18 @@ function treeMap() {
   // segment numbers beside the nodes (outside the buttons so each button's hit area is its circle)
   if (!(treeDrill && !treeDrill.done)) Object.keys(T).forEach(k => { const n = T[k]; if (!n.b) return; const left = n.la ? n.la === 'end' : n.side === 'R'; svg.appendChild(svt(n.xy[0] + (left ? -8 : 8), n.xy[1] + 3, n.b, { class: 'an-bl', 'text-anchor': left ? 'end' : 'start' })); });
   if (mapLayers.nodes && !(treeDrill && !treeDrill.done)) svg.appendChild(mapStations());
+  const tip = sv('g', { class: 'an-tip', 'data-tip': '1' }); tip.appendChild(sv('circle', { r: 10, class: 'an-mini-halo' })); tip.appendChild(sv('circle', { r: 5.5, class: 'an-mini-dot' })); svg.appendChild(tip);
+  mapTip(tip);
   return svg;
+}
+/* the scope tip on the map: along the current airway at the simulator's depth */
+function mapTip(el) {
+  const g = el || document.querySelector('.an-map .an-tip'); if (!g) return;
+  const T = AN.TREE, n = T[treeAt];
+  const startOf = (k) => (T[k].line ? T[k].line[1] : T[k].xy);
+  const a = n.line ? n.line[0] : (n.parent ? startOf(n.parent) : n.xy), b = n.line ? n.line[1] : n.xy;
+  const f = (typeof T3 !== 'undefined' && typeof t3Depth === 'function' && typeof THREE !== 'undefined') ? Math.max(0, Math.min(1, t3Depth() / (t3Len(treeAt) || 1))) : 0.5;
+  g.setAttribute('transform', 'translate(' + (a[0] + (b[0] - a[0]) * f).toFixed(1) + ' ' + (a[1] + (b[1] - a[1]) * f).toFixed(1) + ')');
 }
 /* the station map's coordinates on the tree map: the two airways are drawn to nearly the same scale */
 const mx = (x) => x - 10, my = (y) => 172 + (y - 190) * 0.9;
@@ -99,10 +110,10 @@ function mapStations() {
   AN.STATIONS.forEach(st => st.xy.forEach((p, i) => {
     const id = st.id, sid = st.xy.length > 1 && /^(1|9)$/.test(id) ? id + (i ? 'L' : 'R') : id;
     const m = sv('g', { class: 'an-st mini ' + (ZONE_CLASS[st.zone] || '') + (st.dashed ? ' dashed' : ''), 'data-station': sid, tabindex: '0', role: 'button' });
-    m.appendChild(sv('title', {})).textContent = 'Station ' + id + ' — ' + st.name + ' (tap to open on the station map)';
+    m.appendChild(sv('title', {})).textContent = 'Station ' + id + ' — ' + st.name + (st.reach && st.reach.ebus ? ' (tap for the EBUS card)' : ' (tap to open on the station map)');
     m.appendChild(sv('circle', { cx: mx(p[0]), cy: my(p[1]), r: 7.5 }));
     m.appendChild(svt(mx(p[0]), my(p[1]) + 2.6, id.length > 3 ? id.replace('–', '-') : id, { 'text-anchor': 'middle', class: 'an-stl tiny' }));
-    const go = () => { stationSel = id; setMode('learn', { topic: 'stations' }); };
+    const go = () => { if (st.reach && st.reach.ebus && typeof ebusPop === 'function') ebusPop(sid); else { stationSel = id; setMode('learn', { topic: 'stations' }); } };
     m.addEventListener('click', go); m.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
     hoverable(m, sid, '');
     g.appendChild(m);
@@ -189,8 +200,9 @@ function scopeView() {
 const LAND_KIND = { a: 'artery', v: 'vein', n: 'node', e: 'oesophagus', o: 'other' };
 let treeLevel = 'lower';   // the trachea has two rings: upper (arch vessels, 2R/2L) and lower (carina: 4R/4L/7)
 function landKey() { return treeAt === 'trachea' && treeLevel === 'upper' ? 'trachea_upper' : treeAt; }
-function landRing(cx, cy, R) {
-  const g = sv('g', { class: 'an-land', 'data-land': landKey() });
+function landRing(cx, cy, R, key, mark) {
+  key = key || landKey();
+  const g = sv('g', { class: 'an-land', 'data-land': key });
   const box = { x0: cx - R - 8, y0: cy - R - 8, x1: cx + R + 8, y1: cy + R + 8 };
   const grow = (x0, y0, x1, y1) => { box.x0 = Math.min(box.x0, x0); box.y0 = Math.min(box.y0, y0); box.x1 = Math.max(box.x1, x1); box.y1 = Math.max(box.y1, y1); };
   const CW = 3.75;   // about one character of the 7.6px label
@@ -205,11 +217,12 @@ function landRing(cx, cy, R) {
     grow(x0 - 1, y - 7, x0 + w + 1, y - 7 + hgt + 1);
     return t;
   };
-  (AN.LANDMARKS[landKey()] || []).forEach(it => {
+  (AN.LANDMARKS[key] || []).forEach(it => {
     const p = clockXY(cx, cy, R, it.h, it.d), r = R * it.s;
-    const item = sv('g', { class: 'an-lm ' + it.k, 'data-lm': it.l, tabindex: '0' });
+    const item = sv('g', { class: 'an-lm ' + it.k + (mark && it.k === 'n' && it.l === mark ? ' mark' : ''), 'data-lm': it.l, tabindex: '0' });
     if (it.k === 'n') item.setAttribute('data-station', it.l); else if (it.m) item.setAttribute('data-med', it.m);
     hoverable(item, it.k === 'n' ? it.l : '', it.k === 'n' ? '' : it.m);
+    if (it.k === 'n') { item.setAttribute('role', 'button'); const open = () => ebusPop(it.l); item.addEventListener('click', open); item.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } }); }
     item.appendChild(sv('title', {})).textContent = it.l + ' — ' + LAND_KIND[it.k] + (it.t ? '. ' + it.t : '');
     let rx, ry;
     if (it.k === 'n') {
@@ -252,6 +265,7 @@ function startDrill() {
 }
 function treeNav() {
   const T = AN.TREE, n = T[treeAt], path = treePath(treeAt);
+  if (treeAt === 'trachea' && typeof THREE !== 'undefined' && typeof t3Depth === 'function') { const d = t3Depth(); treeLevel = d < 60 ? 'upper' : 'lower'; }   // the ring follows the scope's depth
   const crumbs = h('nav', { class: 'an-crumbs', 'aria-label': 'Position' }, path.map((k, i) => [i ? h('span', { class: 'sep', text: '›' }) : null,
     k === treeAt ? h('b', { text: T[k].name }) : h('button', { type: 'button', class: 'lnk', 'data-crumb': k, text: T[k].name.replace(/ bronchus$/, ''), onclick: () => treeGo(k, true) })]));
   const moves = h('div', { class: 'an-moves' }, [
@@ -284,15 +298,17 @@ function treeNav() {
         h('button', { type: 'button', class: 'btn sm quiet', 'data-drill-stop': '1', text: 'Stop the drill', onclick: () => { treeDrill = null; render(); } })])
     ]);
   }
+  const ring = h('figure', { class: 'an-fig an-ring-fig' }, [scopeView(),
+    landOn() && treeAt === 'trachea' ? h('div', { class: 'seg an-level', role: 'radiogroup', 'aria-label': 'Level of the trachea' }, [['upper', 'Upper trachea'], ['lower', 'Lower trachea and carina']].map(o => h('button', { type: 'button', class: 'ch', role: 'radio', 'data-level': o[0], 'aria-checked': String(treeLevel === o[0]), text: o[1], onclick: () => { treeLevel = o[0]; if (typeof THREE !== 'undefined') t3SetDepth(o[0] === 'upper' ? 30 : 95); render(); } }))) : null,
+    landOn() ? landLegend() : null,
+    h('figcaption', { text: 'Cross-section at this level, as an atlas draws it: the lumen with the openings ahead' + (landOn() ? ' and the ring of what lies against the wall (hover or tap a structure for its note; tap a station for its EBUS card)' : '') + '. Tap an opening to advance.' })]);
   return h('div', { class: 'an-tree', 'data-at': treeAt }, [
     h('div', { class: 'an-pics' }, [
       h('figure', { class: 'an-fig' }, [treeMap(), h('div', { class: 'an-layers' }, [['vessels', 'Vessels'], ['nodes', 'Nodal stations']].map(l => { const id = uid('ly'); return h('label', { class: 'chk-inline', for: id }, [h('input', { type: 'checkbox', id: id, checked: !!mapLayers[l[0]], ['data-map-' + l[0]]: '1', onchange: (e) => { mapLayers[l[0]] = e.target.checked; prefSet(MAP_KEY, mapLayers); render(); } }), l[1]]); })),
-        h('figcaption', { text: 'Anterior view — tap any branch' + (mapLayers.nodes ? '; tap a station to open it on the station map' : '') })]),
-      h('figure', { class: 'an-fig' }, [scopeView(),
-        landOn() && treeAt === 'trachea' ? h('div', { class: 'seg an-level', role: 'radiogroup', 'aria-label': 'Level of the trachea' }, [['upper', 'Upper trachea'], ['lower', 'Lower trachea and carina']].map(o => h('button', { type: 'button', class: 'ch', role: 'radio', 'data-level': o[0], 'aria-checked': String(treeLevel === o[0]), text: o[1], onclick: () => { treeLevel = o[0]; if (typeof THREE !== 'undefined') t3SetDepth(o[0] === 'upper' ? 30 : 95); render(); } }))) : null,
-        landOn() ? landLegend() : null,
-        h('figcaption', { text: 'Scope view from the ' + n.name.toLowerCase() + ' — tap an opening to advance' + (landOn() ? '; the ring shows what lies against the wall at this level (hover or tap a structure for its note)' : '') })])
+        h('figcaption', { text: 'Navigational map, anterior view — the path in blue, the scope tip in yellow; tap any branch to go there' + (mapLayers.nodes ? '; tap a station for its EBUS card' : '') })]),
+      typeof simFig === 'function' ? simFig() : null
     ]),
+    h('details', { class: 'plain an-ring-fold', open: true }, [h('summary', { text: 'Cross-section at this level (the atlas ring)' }), ring]),
     crumbs, moves, mirror, drill, notes, picsBlock('tree:' + treeAt, 'this view')
   ]);
 }
@@ -377,12 +393,18 @@ function stationMap() {
    The sector of a convex probe: the airway wall under the transducer, the node below it (hypoechoic, with a rim), the
    vessels that sit beside or beyond it (anechoic, coloured by type here — on the screen colour follows the direction of
    flow), the needle path. A drawing to learn the layout from, not an image. */
-const SONO_POS = { L: [96, 104, 20, 16], R: [204, 104, 20, 16], D: [150, 162, 34, 20], DL: [90, 152, 28, 18], DR: [210, 152, 28, 18], SL: [106, 58, 22, 13], SR: [194, 58, 22, 13] };
-function sonoFig(s) {
+const SONO_POS = { L: [96, 104, 20, 16], R: [204, 104, 20, 16], D: [150, 162, 34, 20], DL: [90, 152, 28, 18], DR: [210, 152, 28, 18], DDL: [76, 192, 30, 15], DDR: [224, 192, 30, 15], SL: [106, 58, 22, 13], SR: [194, 58, 22, 13] };
+function sonoFig(s, only) {
   const spec = AN.SONO && AN.SONO[s.id];
   if (!spec) return s.reach && s.reach.ebus ? null : h('p', { class: 'fine', 'data-sono': 'none', text: 'Not an EBUS station: no endobronchial picture to learn.' });
+  const views = (spec.views || [spec]).filter(v => !only || !spec.views || v.id === only);
+  if (views.length === 1) return sonoOne(s, views[0], spec);
+  return h('div', { class: 'an-sono-set' }, views.map(v => sonoOne(s, v, spec)));
+}
+function sonoOne(s, spec, parent) {
+  const id = spec.id || s.id;
   const W = 300, H = 212, ax = 150, ay = 6, rad = 200, half = 34 * Math.PI / 180;
-  const svg = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, class: 'an-sono', role: 'img', 'aria-label': 'Schematic EBUS picture of station ' + s.id });
+  const svg = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, class: 'an-sono', role: 'img', 'aria-label': 'Schematic EBUS picture of station ' + id });
   const fid = uid('sp');
   const defs = sv('defs', {});
   const flt = sv('filter', { id: fid + 'n', x: '0', y: '0', width: '100%', height: '100%' });
@@ -416,19 +438,93 @@ function sonoFig(s) {
     scene.appendChild(g);
     svg.appendChild(svt(q[0], q[1] + q[3] + 9, v[0], { class: 'an-sono-t', 'text-anchor': 'middle' }));
   });
-  // the node: hypoechoic, oval, a thin brighter rim
-  scene.appendChild(sv('ellipse', { cx: 150, cy: 100, rx: 33, ry: 24, class: 'an-sono-node' }));
-  scene.appendChild(sv('ellipse', { cx: 150, cy: 100, rx: 28, ry: 19, class: 'an-sono-node-in' }));
-  svg.appendChild(svt(150, 98, 'node ' + s.id, { class: 'an-sono-t big', 'text-anchor': 'middle' }));
-  svg.appendChild(svt(150, 109, 'hypoechoic', { class: 'an-sono-t dim', 'text-anchor': 'middle' }));
+  // the node: hypoechoic, oval, a thin brighter rim (larger when nothing else is in the picture, as at station 7)
+  const big = !(spec.near || []).length, nrx = big ? 46 : 33, nry = big ? 34 : 24, ncy = big ? 108 : 100;
+  scene.appendChild(sv('ellipse', { cx: 150, cy: ncy, rx: nrx, ry: nry, class: 'an-sono-node' }));
+  scene.appendChild(sv('ellipse', { cx: 150, cy: ncy, rx: nrx - 5, ry: nry - 5, class: 'an-sono-node-in' }));
+  svg.appendChild(svt(150, ncy - 2, 'node ' + id, { class: 'an-sono-t big', 'text-anchor': 'middle' }));
+  svg.appendChild(svt(150, ncy + 9, 'hypoechoic', { class: 'an-sono-t dim', 'text-anchor': 'middle' }));
   // needle path, from the transducer at a shallow angle into the node
-  scene.appendChild(sv('line', { x1: 136, y1: 26, x2: 150, y2: 96, class: 'an-sono-needle' }));
+  scene.appendChild(sv('line', { x1: 136, y1: 26, x2: 150, y2: ncy - 4, class: 'an-sono-needle' }));
   svg.appendChild(svt(118, 44, 'needle', { class: 'an-sono-t', 'text-anchor': 'end' }));
   // depth marks, 1 cm apart
   for (let i = 1; i <= 4; i++) { const y = ay + i * 44; svg.appendChild(sv('line', { x1: W - 12, y1: y, x2: W - 4, y2: y, class: 'an-sono-tick' })); svg.appendChild(svt(W - 14, y + 3, i + ' cm', { class: 'an-sono-t dim', 'text-anchor': 'end' })); }
   const legend = h('div', { class: 'an-lgd' }, [['a', 'artery'], ['v', 'vein'], ['n', 'node'], ['e', 'oesophagus']].map(x => h('span', { class: 'an-lg ' + x[0] }, [h('i'), x[1]])));
-  return h('figure', { class: 'an-fig an-sono-fig', 'data-sono': s.id }, [svg, legend,
-    h('figcaption', {}, [h('b', { text: 'Schematic EBUS picture, not a photograph. ' }), 'Probe on the ' + spec.probe + '. ' + (spec.near || []).map(v => v[0]).join(', ') + ' around the node' + (spec.note ? '. ' + spec.note : '.') + ' Vessels are coloured by type here; on the screen Doppler colour follows the direction of flow.'])]);
+  const names = (spec.near || []).map(v => v[0]);
+  const dopId = uid('dop'), fig = h('figure', { class: 'an-fig an-sono-fig' + (sonoDoppler ? ' doppler' : ''), 'data-sono': id });
+  const vessels = (spec.near || []).some(v => v[1] === 'a' || v[1] === 'v');
+  const dop = vessels ? h('label', { class: 'chk-inline an-sono-dop', for: dopId, title: 'Grey scale alone cannot tell a node from a vessel; colour Doppler can' }, [h('input', { type: 'checkbox', id: dopId, checked: sonoDoppler, 'data-sono-doppler': '1', onchange: (e) => { sonoDoppler = e.target.checked; document.querySelectorAll('.an-sono-fig').forEach(f => f.classList.toggle('doppler', sonoDoppler)); } }), 'Colour Doppler']) : null;
+  [svg, legend,
+    dop,
+    h('figcaption', {}, [h('b', { text: (spec.id ? spec.id + ': ' : '') + 'Schematic EBUS picture, not a photograph. ' }), 'Probe on the ' + spec.probe + '. ' + (names.length ? names.join(', ') + ' around the node' : 'The node alone under the wall') + (spec.note ? '. ' + spec.note : '.') + (vessels ? ' In grey scale a vessel is anechoic (black) and a node hypoechoic (dark grey) — close enough to confuse; with Doppler on, the vessels are coloured by type here (on the screen the colour follows the direction of flow).' : '')])].forEach(c => { if (c) fig.appendChild(c); });
+  return fig;
+}
+let sonoDoppler = false;
+
+/* ------------------------------------------------------------------ the EBUS card: a pop-up for one station
+   Opened from a node on the ring, a station on the tree map, a node in the simulator or the overlay. The picture as the
+   poster lays it out, where the probe sits on the wall (the yellow dot, as on an endoscopic inset), and the pearls. */
+let ebusEl = null, ebusFrom = null;
+function closeEbus() { if (!ebusEl) return; ebusEl.remove(); ebusEl = null; document.body.classList.remove('has-pop'); if (ebusFrom && ebusFrom.focus && document.contains(ebusFrom)) { try { ebusFrom.focus({ preventScroll: true }); } catch (e) { /* ignore */ } } ebusFrom = null; }
+function stationOf(sid) {
+  const S = AN.STATIONS;
+  return S.filter(x => x.id === sid)[0] || (/^11R/.test(sid) ? S.filter(x => x.id === '11R')[0] : null) || (/^12/.test(sid) ? S.filter(x => x.id === '12–14')[0] : null) || null;
+}
+/* a small ring with the probe on the wall at the station's clock position */
+function probeRing(key, sid) {
+  const cx = 100, cy = 100, R = 64;
+  const svg = sv('svg', { class: 'an-scope land an-probe', role: 'img', 'aria-label': 'Where the probe sits for station ' + sid });
+  const ring = landRing(cx, cy, R, key, sid); const b = ring.box;
+  const vb = { x0: Math.min(0, b.x0 - 4), y0: Math.min(0, b.y0 - 12), x1: Math.max(200, b.x1 + 4), y1: Math.max(200, b.y1 + 12) };
+  svg.setAttribute('viewBox', vb.x0 + ' ' + vb.y0 + ' ' + (vb.x1 - vb.x0) + ' ' + (vb.y1 - vb.y0));
+  svg.appendChild(sv('circle', { cx: cx, cy: cy, r: R + 8, class: 'an-wall' }));
+  svg.appendChild(sv('circle', { cx: cx, cy: cy, r: R, class: 'an-lumen' }));
+  for (let i = 1; i <= 3; i++) { const rr = R * (1 - i * 0.14); svg.appendChild(sv('path', { d: 'M' + (cx - rr) + ' ' + (cy + 6) + ' A' + rr + ' ' + rr + ' 0 0 1 ' + (cx + rr) + ' ' + (cy + 6), class: 'an-ring' })); }
+  svg.appendChild(sv('path', { d: 'M' + (cx - R * 0.72) + ' ' + (cy + R * 0.62) + ' Q' + cx + ' ' + (cy + R * 0.5) + ' ' + (cx + R * 0.72) + ' ' + (cy + R * 0.62), class: 'an-memb' }));
+  svg.appendChild(ring.g);
+  const it = (AN.LANDMARKS[key] || []).filter(x => x.k === 'n' && x.l === sid)[0];
+  if (it) {
+    const p = clockXY(cx, cy, R, it.h, 0.93);
+    svg.appendChild(sv('circle', { cx: p[0], cy: p[1], r: 9, class: 'an-probe-halo' }));
+    svg.appendChild(sv('circle', { cx: p[0], cy: p[1], r: 5.5, class: 'an-probe-dot', 'data-probe': sid }));
+    svg.appendChild(sv('title', {})).textContent = 'Probe against the wall at about ' + Math.round(it.h) + ' o’clock';
+  }
+  const L = treeMirror ? ['R', 'L'] : ['L', 'R'];
+  svg.appendChild(svt(100, vb.y0 + 9, 'anterior', { class: 'an-cp', 'text-anchor': 'middle' }));
+  svg.appendChild(svt(100, vb.y1 - 1, 'posterior', { class: 'an-cp', 'text-anchor': 'middle' }));
+  svg.appendChild(svt(vb.x0 + 4, 104, L[0], { class: 'an-cp' })); svg.appendChild(svt(vb.x1 - 4, 104, L[1], { class: 'an-cp', 'text-anchor': 'end' }));
+  return svg;
+}
+function ebusPop(sid) {
+  closeEbus();
+  const st = stationOf(sid); if (!st) { toast('Station ' + sid); return; }
+  const spec = AN.SONO && AN.SONO[st.id];
+  const view = spec && spec.views ? (spec.views.filter(v => v.id === sid)[0] || spec.views[0]) : spec;
+  const nodeId = spec && spec.views ? (view ? view.id : sid) : (/^12/.test(sid) ? sid : st.id);
+  // the ring to draw: the one the user is looking at if it holds this node, else the station's usual one
+  const here = landKey(), holds = (k) => (AN.LANDMARKS[k] || []).some(x => x.k === 'n' && x.l === nodeId && x.d < 1.4);   // against the wall, not beyond it
+  const at = (view && view.at) || (spec && spec.at) || null;
+  const key = holds(here) ? here : (at ? (at[0] === 'trachea' && at[1] === 'upper' ? 'trachea_upper' : at[0]) : (Object.keys(AN.LANDMARKS).filter(holds)[0] || ''));
+  const goTo = key === 'trachea_upper' ? ['trachea', 'upper'] : [key, 'lower'];
+  ebusFrom = document.activeElement;
+  const close = h('button', { type: 'button', class: 'btn sm quiet pop-x', 'data-pop-close': '1', 'aria-label': 'Close', text: '✕', onclick: closeEbus });
+  const head = h('div', { class: 'pop-head' }, [
+    h('div', {}, [h('b', { text: 'Station ' + st.id + ' — ' + st.name }), h('span', { class: 'tf ' + (ZONE_CLASS[st.zone] || ''), text: st.zone.replace(/ \(.*\)/, '') + ' zone' }), h('span', { class: 'tf', text: st.n })]), close]);
+  const pic = spec ? sonoFig(st, spec.views && spec.views.some(v => v.id === sid) ? sid : '') : h('p', { class: 'fine', text: 'Not an EBUS station: ' + (st.reach.other || 'reached another way') + '.' });
+  const side = h('div', { class: 'pop-side' }, [
+    key ? h('figure', { class: 'an-fig' }, [probeRing(key, nodeId), h('figcaption', { text: 'Where the probe sits on the wall (yellow), seen from the ' + (AN.TREE[goTo[0]] ? AN.TREE[goTo[0]].name.toLowerCase() : key) + (goTo[1] === 'upper' ? ', upper part' : '') + '.' })]) : null,
+    view && view.probe ? h('p', {}, [h('span', { class: 'lbl', text: 'Probe. ' }), 'On the ' + view.probe + '.']) : null,
+    spec && spec.pearls ? h('div', { class: 'pop-pearls' }, [h('p', { class: 'lbl', text: 'Pearls' }), h('ul', {}, spec.pearls.map(t => h('li', { text: t })))]) : h('p', {}, [h('span', { class: 'lbl', text: 'From the airway. ' }), st.where]),
+    h('div', { class: 'pop-acts' }, [
+      key && AN.TREE[goTo[0]] ? h('button', { type: 'button', class: 'btn sm', 'data-pop-go': goTo[0], text: 'Go there in the simulator', onclick: () => { closeEbus(); treeLevel = goTo[1]; treeGo(goTo[0], true); if (typeof THREE !== 'undefined' && goTo[0] === 'trachea') t3SetDepth(goTo[1] === 'upper' ? 30 : 95); } }) : null,
+      h('button', { type: 'button', class: 'btn sm quiet', 'data-pop-map': st.id, text: 'Open on the station map', onclick: () => { closeEbus(); stationSel = st.id; setMode('learn', { topic: 'stations' }); } })
+    ])
+  ]);
+  const card = h('div', { class: 'pop-card', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'EBUS card for station ' + st.id, 'data-ebus-pop': st.id }, [head, h('div', { class: 'pop-body' }, [h('div', { class: 'pop-main' }, [pic]), side])]);
+  ebusEl = h('div', { class: 'pop-bg', onclick: (e) => { if (e.target === ebusEl) closeEbus(); } }, [card]);
+  ebusEl.addEventListener('keydown', (e) => { if (e.key === 'Escape') { e.stopPropagation(); closeEbus(); } });
+  document.body.appendChild(ebusEl); document.body.classList.add('has-pop');
+  close.focus();
 }
 
 /* ------------------------------------------------------------------ your own pictures

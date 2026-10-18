@@ -90,7 +90,7 @@ function eduBlocks(id, topic) {
     if (b.table) { out.push(eduTable(b.table)); }
     if (b.note) out.push(h('p', { class: 'fine', text: b.note }));
     if (b.fig) { const f = eduFig(b.fig); if (f) out.push(f); }
-    if (b.widget) { const w = anatWidget(b.widget) || ecgWidget(b.widget) || nodWidget(b.widget); if (w) out.push(w); }
+    if (b.widget) { const w = anatWidget(b.widget) || ecgWidget(b.widget) || nodWidget(b.widget) || ctWidget(b.widget); if (w) out.push(w); }
     if (b.links) out.push(h('ul', { class: 'edu-links' }, b.links.map(l => h('li', {}, [h('a', { href: l[1], target: '_blank', rel: 'noopener noreferrer', text: l[0] }), l[2] ? h('span', { class: 'fine', text: ' — ' + l[2] }) : null]))));
   });
   return out;
