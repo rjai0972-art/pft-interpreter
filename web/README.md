@@ -95,7 +95,20 @@ sections), the nodes, and the bones (ribs sloping through the slice, sternum, cl
 its disc spaces); every structure registers a hit ellipse in `CT.shapes` (with `med`, `station` or `tree` ids for
 the 3D highlight and the EBUS card) and `ctLabels` prints the margins with leader lines (`names`) or numbered markers
 (`numbers`, below 430 px, with the picture zoomed); `ctSetZ` moves the slider, the plane on the mediastinum model
-(`T3.ctZ`) and the quiz. The nodule module (`src/nodules.js`, testable in node): `mayo`, `va`, `brock` are the published equations; `vdt` the
+(`T3.ctZ`) and the quiz. The foundations (`src/physio.js`, testable in node): the topics of the anatomy → physiology →
+bronchoscopy area in course order (`groups`), `LEVELS` (the airway wall level by level), `p50`/`sat`/`o2content`
+(a Severinghaus-style dissociation curve with the P50 moved by pH, temperature, PCO2 and 2,3-DPG), `pao2`/`aaNormal`.
+The heart–lung model (`src/heartlung.js`, testable in node): `ptpOf` (the lung's static curve, V = 100·(1 − e^(−Ptp/τ)),
+τ = 11.6/compliance), `cwPpl` (the passive chest wall, zero at 60% VC), `rsPaw` (Rahn: their sum), `frcOf` (the
+crossing), `breath` (a half-sine inspiration and an exponential expiration cut by the next breath — the end-expiratory
+volume above FRC is dynamic hyperinflation and its pressure auto-PEEP; the pleural pressure follows the lung curve
+minus the resistive pressure on a spontaneous breath, with post-inspiratory braking on expiration, and the chest wall
+curve on a passive ventilator breath; elastic and resistive work from the areas), `circ` (venous return from the mean
+systemic pressure to the collapse plateau, a cardiac function curve starting at the pleural pressure with its slope set
+by the pulmonary vascular tone and the lung volume's distance from FRC, the operating point by bisection) and `run`
+(the whole cycle); `PRESETS` are the clinical scenes. `ui_4g_physio.js` draws the syllabus, the ladder (`ladderFig`),
+the breath cycle, the spirogram, the A–a calculator, the dissociation-curve lab (`odcLab`) and the heart–lung lab
+(`hlLab`: the Campbell and Guyton SVGs redrawn each animation frame from `HLS.run`). The nodule module (`src/nodules.js`, testable in node): `mayo`, `va`, `brock` are the published equations; `vdt` the
 doubling time; `fleischner(q)` and `lungRads(q)` return the guideline's step for a nodule described by setting, type,
 mean diameter, solid component, status (baseline / new / growing / stable), multiplicity and patient risk.
 

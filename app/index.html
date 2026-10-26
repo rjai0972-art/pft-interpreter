@@ -1309,6 +1309,101 @@ body.has-pop { overflow: hidden; }
 .learn-body .ct-list:not(.num) { list-style: none; padding-left: 0; }
 @media (max-width: 560px) { .ct-list { columns: 1; } }
 
+/* ---- v7.8: foundations — the syllabus, the airway ladder, the breath cycle, the spirogram, the gas calculators, the dissociation curve, the heart–lung lab */
+.syl { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); }
+.syl-group { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--surface); }
+.syl-group h4 { margin: 0 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.learn-body .syl-list { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+.learn-body .syl-list li { font-size: 13.5px; line-height: 1.4; }
+.syl-list .lnk { font-size: 13.5px; font-weight: 600; text-align: left; }
+.an-fig svg.an-ladder { background: var(--surface); }
+.ld-head { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; fill: var(--muted); }
+.ld-row { cursor: pointer; outline: none; }
+.ld-bg { fill: transparent; stroke: var(--line); stroke-width: 1; }
+.ld-row.cond .ld-bg { fill: rgba(63, 111, 158, 0.05); }
+.ld-row.resp .ld-bg { fill: rgba(190, 80, 60, 0.06); }
+.ld-row:hover .ld-bg, .ld-row:focus-visible .ld-bg, .ld-row.on .ld-bg { stroke: var(--accent); stroke-width: 2; fill: rgba(242, 193, 78, 0.18); }
+.ld-wall { fill: #d7a8a0; }
+.ld-lumen { fill: #f7efe9; }
+.ld-cart { fill: #9ec3d8; stroke: #5a8fb0; stroke-width: 0.8; }
+.ld-sm { fill: #b8663f; }
+.ld-alv { fill: #fbe3dc; stroke: #d7a8a0; stroke-width: 1; }
+.ld-cap { fill: none; stroke: #c4463f; stroke-width: 2.2; }
+.ld-name { font-size: 12.5px; font-weight: 650; fill: var(--ink); }
+.ld-sub { font-size: 10px; fill: var(--muted); }
+.ld-zone { font-size: 9.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+.ld-zone.cond { fill: #3f6f9e; } .ld-zone.resp { fill: #b74a3a; }
+.ld-bm { stroke: #7a6a55; stroke-width: 1.6; }
+.ld-cell { stroke: #6a5a48; stroke-width: 0.8; }
+.ld-cell.col { fill: #b8d5a8; } .ld-cell.goblet { fill: #e9c9ec; } .ld-cell.club { fill: #cfe0f5; } .ld-cell.cub { fill: #d9e4c4; } .ld-cell.sq { fill: #f0d7c0; } .ld-cell.t2 { fill: #9fb8d6; }
+.ld-cil { stroke: #4e6b3f; stroke-width: 0.8; }
+.ld-basal { fill: #b47ab0; }
+.ld-mac { fill: #c9a94a; stroke: #7d6520; stroke-width: 0.8; }
+.ld-capb { fill: #e9a4a0; }
+.ld-ep { font-size: 10px; fill: var(--ink-2); }
+.ld-wtext { font-size: 10px; fill: var(--ink-2); }
+.an-lg.ld-col i { background: #b8d5a8; } .an-lg.ld-goblet i { background: #e9c9ec; } .an-lg.ld-club i { background: #cfe0f5; } .an-lg.ld-cub i { background: #d9e4c4; } .an-lg.ld-sq i { background: #f0d7c0; } .an-lg.ld-t2 i { background: #9fb8d6; } .an-lg.ld-mac i { background: #c9a94a; } .an-lg.ld-cart i { background: #9ec3d8; } .an-lg.ld-sm i { background: #b8663f; }
+.ld-detail { border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; background: var(--surface); display: grid; gap: 4px; font-size: 13.5px; }
+.ld-detail p { margin: 0; }
+.ph-cycle-fig { max-width: 620px; } .ph-spiro-fig { max-width: 620px; }
+.ph-insp { fill: rgba(63, 111, 158, 0.08); }
+.ph-ph { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; fill: var(--muted); }
+.ph-rl { font-size: 10px; font-weight: 600; fill: var(--ink-2); } .ph-rl.vol { fill: #3f6f9e; } .ph-rl.flow { fill: #5a8f5a; } .ph-rl.palv { fill: #c47a2a; } .ph-rl.ppl { fill: #b74a3a; }
+.ph-grid { stroke: var(--line); stroke-width: 1; } .ph-grid.zero { stroke: var(--line-strong); }
+.ph-tick { font-size: 10px; fill: var(--muted); }
+.ph-tr { fill: none; stroke-width: 2.2; } .ph-tr.vol { stroke: #3f6f9e; } .ph-tr.flow { stroke: #5a8f5a; } .ph-tr.palv { stroke: #c47a2a; } .ph-tr.ppl { stroke: #b74a3a; }
+.sp-band rect { opacity: 0.55; } .sp-IRV { fill: #d4e3f3; } .sp-TV { fill: #f6dfa8; } .sp-ERV { fill: #d8ead0; } .sp-RV { fill: #e8d5d2; }
+.sp-band.on rect, .sp-band:hover rect { opacity: 0.95; stroke: var(--accent); stroke-width: 1.5; }
+.sp-lab { font-size: 11px; font-weight: 650; fill: var(--ink); }
+.sp-trace { fill: none; stroke: var(--ink); stroke-width: 2; }
+.sp-br { stroke: var(--ink-2); stroke-width: 1.5; } .sp-cap.on .sp-br, .sp-cap:hover .sp-br { stroke: var(--accent); stroke-width: 2.5; }
+.sp-cap, .sp-band { cursor: pointer; outline: none; }
+.sp-note { min-height: 2.4em; }
+.aa-grid { display: grid; gap: 4px 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); font-size: 13.5px; }
+.odc-grid { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 760px) { .odc-grid { grid-template-columns: minmax(0, 1.3fr) minmax(220px, 0.8fr); align-items: start; } }
+.an-fig svg.ph-odc { background: var(--surface); }
+.odc-norm { fill: none; stroke: var(--muted); stroke-width: 1.6; stroke-dasharray: 4 3; }
+.odc-cur { fill: none; stroke: #b74a3a; stroke-width: 2.6; }
+.odc-myo { fill: none; stroke: #6a5a9e; stroke-width: 1.6; }
+.odc-pt.art { fill: #b74a3a; } .odc-pt.ven { fill: #3f6f9e; }
+.odc-lab { font-size: 10.5px; fill: var(--ink-2); }
+.odc-p50 { stroke: var(--accent); stroke-width: 1.2; stroke-dasharray: 3 3; }
+.odc-ctrls { display: grid; gap: 6px; }
+.odc-sl { display: grid; grid-template-columns: minmax(0, 1fr) 64px; gap: 0 8px; align-items: center; font-size: 12.5px; }
+.odc-sl .nod-l { grid-column: 1 / -1; }
+.odc-sl input[type=range] { width: 100%; accent-color: var(--accent); }
+.odc-val { font-variant-numeric: tabular-nums; color: var(--ink-2); text-align: right; }
+.odc-read { font-size: 13.5px; }
+.hl-lab { max-width: none; }
+.hl-ctrls { display: grid; gap: 8px; }
+.hl-ctrl-row { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+.hl-scrub { flex: 1 1 160px; min-width: 120px; accent-color: var(--accent); }
+.hl-sliders { display: grid; gap: 8px 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); }
+.hl-slgroup { display: grid; gap: 4px; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--surface); }
+.hl-slgroup h4 { margin: 0 0 2px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.hl-grid { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 820px) { .hl-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.hl-pane h4 { margin: 0 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.an-fig svg.hl-svg { background: var(--surface); }
+.hl-lung { fill: none; stroke: #b74a3a; stroke-width: 2.2; } .hl-cw { fill: none; stroke: #3f6f9e; stroke-width: 2.2; } .hl-rs { fill: none; stroke: #7fb3d5; stroke-width: 1.8; stroke-dasharray: 5 3; }
+.hl-loop { fill: none; stroke: #4a4a4a; stroke-width: 1.4; } .hl-loop.in { stroke: #1d1d1d; stroke-width: 2.4; } .hl-loop.aw { stroke: #5a8fb0; stroke-width: 1.6; }
+.hl-wel { fill: rgba(242, 193, 78, 0.35); } .hl-wres { fill: rgba(183, 74, 58, 0.22); }
+.hl-frc { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; } .hl-vee { stroke: #c47a2a; stroke-width: 1; stroke-dasharray: 3 3; }
+.hl-t { font-size: 10.5px; fill: var(--ink-2); } .hl-t.lung { fill: #b74a3a; font-weight: 600; } .hl-t.cw { fill: #3f6f9e; font-weight: 600; } .hl-t.rs { fill: #5a8fb0; } .hl-t.warn { fill: #c47a2a; } .hl-t.vr { fill: #3f6f9e; font-weight: 600; } .hl-t.cf { fill: #b74a3a; font-weight: 600; }
+.hl-dot { fill: #f2c14e; stroke: #8a5a00; stroke-width: 1.5; }
+.hl-pmus { stroke: var(--ink); stroke-width: 1.6; marker-end: none; }
+.hl-vr { fill: none; stroke: #3f6f9e; stroke-width: 2.4; } .hl-cf { fill: none; stroke: #b74a3a; stroke-width: 2.4; } .hl-vr.ghost, .hl-cf.ghost { stroke-width: 1.2; opacity: 0.35; stroke-dasharray: 4 3; }
+.hl-op { fill: #f2c14e; stroke: #8a5a00; stroke-width: 1.5; }
+.hl-tm { stroke: var(--ink); stroke-width: 2; } .hl-tm-end { fill: var(--ink); }
+.hl-strip { width: 100%; }
+.hl-cotr { fill: none; stroke: #f2c14e; stroke-width: 2; } .hl-ppltr { fill: none; stroke: #b74a3a; stroke-width: 1.6; }
+.hl-co { fill: #8a5a00; } .hl-ppl { fill: #b74a3a; }
+.hl-rg { display: grid; gap: 4px 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); font-size: 13px; }
+.hl-r { display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px dotted var(--line); padding: 2px 0; }
+.hl-r b { text-align: right; font-variant-numeric: tabular-nums; } .hl-r.warn b { color: #c47a2a; }
+.an-lg.hl-lung i { background: #b74a3a; } .an-lg.hl-cw i { background: #3f6f9e; } .an-lg.hl-rs i { background: #7fb3d5; } .an-lg.hl-loop i { background: #1d1d1d; } .an-lg.hl-wel i { background: rgba(242, 193, 78, 0.6); } .an-lg.hl-wres i { background: rgba(183, 74, 58, 0.4); } .an-lg.hl-vr i { background: #3f6f9e; } .an-lg.hl-cf i { background: #b74a3a; } .an-lg.hl-op i { background: #f2c14e; }
+
 </style>
 </head>
 <body>
@@ -5728,7 +5823,7 @@ function interpret(raw) {
 }
 
 const API = {
-  version: '7.7.0',
+  version: '7.8.0',
   catalogVersion: CATALOG.version,
   Z_LLN: Z_LLN, Z_ULN: Z_ULN, STYLES: STYLES,
   TESTS: TESTS, PRESETS: PRESETS, SCHEMA: SCHEMA, LOOPS: LOOPS, INDICATIONS: INDICATIONS, KIND_OPTS: KIND_OPTS, PRIOR_FIELDS: PRIOR_FIELDS, CUR_FIELDS: CUR_FIELDS, MAX_PRIORS: MAX_PRIORS, MAX_TREND: MAX_TREND,
@@ -7673,6 +7768,436 @@ const GROUPS = [{ title: 'Nodules and screening', ids: ['nodules', 'screening', 
 root.PFT_NOD = { topics: T, groups: GROUPS, mayo: mayo, va: va, brock: brock, vdt: vdt, fleischner: fleischner, lungRads: lungRads };
 if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_NOD;
 })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this));
+
+/* ------------------------------------------------------------------ foundations: lung anatomy, the cells of the airway, and respiratory physiology
+   Topics for the Learn area in the order a course runs them (gross anatomy → histology → mechanics → airflow →
+   ventilation → diffusion → V/Q → transport → control → the heart–lung interaction), written from the standard
+   accounts (West; Levitzky; the Physeo physiology workbook and First Aid's respiratory chapter as the outline) and
+   the data for the figures. Same block types as anatomy.js. */
+(function (root) {
+  'use strict';
+  const T = {};
+
+  /* ---- the respiratory tree, level by level: what the wall is made of and which cells line it ---- */
+  const LEVELS = [
+    { id: 'trachea', name: 'Trachea', gen: 'generation 0', zone: 'conducting', dia: '18–22 mm', ep: 'Pseudostratified ciliated columnar', cells: ['ciliated cell', 'goblet cell', 'basal cell', 'brush cell', 'neuroendocrine (Kulchitsky) cell'], wall: 'C-shaped hyaline cartilage rings (16–20) in front, trachealis muscle behind; submucosal seromucous glands', note: 'The mucociliary escalator starts here: cilia beat toward the larynx about 1,000 times a minute, moving the mucus blanket 5–20 mm a minute. Chronic irritation turns the epithelium squamous (metaplasia) and multiplies the goblet cells (chronic bronchitis).' },
+    { id: 'bronchi', name: 'Main, lobar and segmental bronchi', gen: 'generations 1–4', zone: 'conducting', dia: '12 → 4 mm', ep: 'Pseudostratified ciliated columnar', cells: ['ciliated cell', 'goblet cell', 'basal cell', 'neuroendocrine cell'], wall: 'Cartilage plates (irregular, not rings), a complete layer of spiral smooth muscle, submucosal glands, bronchial arteries in the wall', note: 'Cartilage and glands end with the bronchi. Resistance to airflow is highest in these medium-sized airways: fewer in parallel and turbulent flow.' },
+    { id: 'bronchioles', name: 'Bronchioles', gen: 'generations 5–15', zone: 'conducting', dia: '< 1 mm', ep: 'Simple ciliated columnar → cuboidal', cells: ['ciliated cell', 'club (Clara) cell', 'few goblet cells proximally'], wall: 'No cartilage, no glands; a relatively thick ring of smooth muscle (the site of bronchospasm); held open by the radial traction of the surrounding alveolar walls', note: 'Club cells are non-ciliated, dome-topped secretory cells: they make a surfactant-like lining fluid (CC16), detoxify inhaled toxins with cytochrome P-450, and act as the stem cell of the bronchiolar epithelium. Goblet cells disappear; cilia continue.' },
+    { id: 'terminal', name: 'Terminal bronchioles', gen: 'generation 16', zone: 'conducting (the last)', dia: '≈ 0.5 mm', ep: 'Simple ciliated cuboidal', cells: ['ciliated cell', 'club cell'], wall: 'Smooth muscle, elastic fibres; no cartilage', note: 'The end of the conducting zone (about 150 mL of anatomic dead space from nose to here). Everything beyond a terminal bronchiole is one acinus — the functional unit of gas exchange, about 7 mm across. The sum of the cross-sections is now so large that gas moves by diffusion rather than bulk flow and resistance is trivial.' },
+    { id: 'respiratory', name: 'Respiratory bronchioles', gen: 'generations 17–19', zone: 'respiratory', dia: '≈ 0.4 mm', ep: 'Simple cuboidal, becoming squamous', cells: ['cuboidal (non-ciliated) cell', 'club cell', 'occasional cilia end here'], wall: 'Thin smooth muscle and elastin, interrupted by alveoli budding from the wall', note: 'The first alveoli open from the wall, so gas exchange begins. Centrilobular emphysema (the smoker’s pattern) destroys this level first; the respiratory bronchiole is also where the particles the escalator missed are handled by macrophages.' },
+    { id: 'ducts', name: 'Alveolar ducts and sacs', gen: 'generations 20–22', zone: 'respiratory', dia: '≈ 0.3 mm', ep: 'Squamous (the alveolar lining)', cells: ['type I pneumocyte', 'type II pneumocyte', 'alveolar macrophage'], wall: 'Rings of smooth muscle and elastin at the alveolar mouths; otherwise all alveoli', note: 'The ducts are corridors walled entirely by alveolar openings; each ends in a cluster of sacs.' },
+    { id: 'alveoli', name: 'Alveoli', gen: 'generation 23', zone: 'respiratory', dia: '0.2–0.3 mm', ep: 'Simple squamous', cells: ['type I pneumocyte (95% of the surface, 40% of the cells)', 'type II pneumocyte (5% of the surface, 60% of the cells)', 'alveolar macrophage (dust cell)', 'capillary endothelium', 'fibroblasts and elastin in the septum'], wall: 'The blood–gas barrier: type I cell, fused basement membranes, capillary endothelium — 0.2–0.5 µm on the thin side', note: 'About 300–500 million alveoli with 70–100 m² of surface, the area of a tennis court. Type I cells cannot divide; type II cells make surfactant in lamellar bodies and are the stem cell that regenerates both types after injury (the “hyperplasia” of diffuse alveolar damage). Pores of Kohn connect neighbouring alveoli and let air — and pneumonia — spread. Macrophages clear what reaches the alveolus and carry it up to the escalator or into the lymphatics (hemosiderin-laden after bleeding or oedema).' }
+  ];
+
+  /* ---- the oxyhaemoglobin dissociation curve: Severinghaus-style fit with the P50 moved by pH, temperature, PCO2 and 2,3-DPG ---- */
+  function p50(f) {
+    const ph = f.ph === undefined ? 7.4 : f.ph, t = f.temp === undefined ? 37 : f.temp, pco2 = f.pco2 === undefined ? 40 : f.pco2, dpg = f.dpg === undefined ? 1 : f.dpg;
+    // Bohr: ΔlogP50/ΔpH ≈ −0.48; temperature: ΔlogP50/Δ°C ≈ +0.024; PCO2 (beyond its pH effect): small; 2,3-DPG: ×1 normal, 0 → P50 ≈ 17
+    let lp = Math.log10(26.8) - 0.48 * (ph - 7.4) + 0.024 * (t - 37) + 0.05 * Math.log10(pco2 / 40);
+    lp += 0.19 * Math.log10(Math.max(0.1, dpg));
+    return Math.pow(10, lp);
+  }
+  function sat(po2, p50v, hill) { const n = hill || 2.7; const x = Math.pow(po2 / p50v, n); return x / (1 + x); }
+  function o2content(hb, s, po2) { return 1.34 * hb * s + 0.003 * po2; }   // mL/dL
+
+  /* ---- alveolar gas and the A–a gradient ---- */
+  function pao2(fio2, pb, paco2, rq) { return fio2 * ((pb || 760) - 47) - paco2 / (rq || 0.8); }
+  function aaNormal(age) { return 2.5 + 0.21 * age; }
+
+  /* ================================================================== topics ================================================================== */
+  T.start = { title: 'Start here: how the area is laid out', kicker: 'A course in order, from the shape of the lung to the heart that sits in it', blocks: [
+    { p: 'This area runs the way a physiology course does. Anatomy first: the lungs and their lobes, then the wall of the airway level by level — which cells line the trachea, which are left by the time the alveolus is reached — then the tree itself, the sections of a CT and the nodal stations. Then physiology in the order the gas travels: the mechanics that move the chest, the airflow through the tree, how much of it reaches the alveoli, the diffusion across the barrier, the matching of ventilation to blood flow, the carriage of oxygen and carbon dioxide, the control of it all from the brainstem, and finally the heart and the lungs sharing one chest. Bronchoscopy follows, because the pictures and the pitfalls make sense once the anatomy and the physiology are in hand.' },
+    { widget: 'syllabus' },
+    { h: 'How to use it', ul: [
+      'Each topic has a figure or a lab you can work rather than read: hover a level of the airway for its cells, drag the oxygen curve, scroll a CT, drive the scope, set the ventilator on the heart–lung lab.',
+      'Labels can be hidden and most figures have a quiz. The PFT interpretation area covers how the same physiology appears on a test report; the links at the end of each topic cross between the two.',
+      'Sources are at the foot of every topic. The physiology follows West and Levitzky, with the Physeo workbook and First Aid’s respiratory chapter as the outline; the heart–lung lab follows Kenny’s An Approach to Mechanical Heart-Lung Interaction (open access).'] }
+  ] };
+
+  T.lunganat = { title: 'The lungs: gross anatomy', kicker: 'Lobes · hilum · pleura · diaphragm · the two blood supplies', blocks: [
+    { p: 'The lungs hang in the pleural sacs on either side of the mediastinum, each attached only at its hilum (the root: main bronchus, pulmonary artery, two pulmonary veins, bronchial vessels, lymphatics and nerves) and by the pulmonary ligament below it. The right lung is larger (three lobes, 55% of the gas exchange) and shorter (the liver pushes the right dome of the diaphragm up); the left lung has two lobes, a cardiac notch, and the lingula where the right has its middle lobe.' },
+    { widget: 'lobes' },
+    { h: 'Lobes, fissures and surfaces', ul: [
+      'Right: upper, middle and lower lobes; the oblique fissure runs from about T4 behind to the sixth costochondral junction in front, the horizontal fissure from the oblique fissure at the mid-axillary line to the fourth costal cartilage. Left: upper and lower lobes and the oblique fissure only; the lingula is the tongue of the upper lobe below the cardiac notch.',
+      'On the chest radiograph the lower lobes are mostly posterior and inferior and the upper lobes anterior and superior: a lateral film shows the oblique fissure sloping down and forward. The right middle lobe and the lingula lie against the heart (silhouette sign), the lower lobes against the diaphragm.',
+      'Surfaces: costal (ribs, intercostals), mediastinal (the heart, great vessels, oesophagus and the hilum), diaphragmatic (the base). The apex rises 2–3 cm above the clavicle behind the subclavian vessels — the reason an apical tumour (Pancoast) catches the brachial plexus and the sympathetic chain, and a supraclavicular line can drop a lung.',
+      'Segments: ten on the right, eight to ten on the left (B1+2 share a bronchus; B7 is usually absent) — see Lungs, lobes and segments for the map the scope follows.'] },
+    { h: 'The hilum and its order', ul: [
+      'From front to back at both hila: pulmonary veins, pulmonary artery, bronchus — with one exception: on the right the pulmonary artery lies anterior to the bronchus (the upper lobe bronchus is “eparterial”), on the left it arches superior to the main bronchus. RALS: Right Anterior, Left Superior.',
+      'The right main bronchus is wider, shorter (2.5 cm) and more vertical (about 25° from the axis of the trachea) than the left (5 cm, 45°): aspirated material goes right — into the lower lobe when upright, the posterior segment of the upper lobe or the superior segment of the lower lobe when supine.',
+      'The carina lies at T4–T5 (the sternal angle of Louis), posterior to the ascending aorta and anteromedial to the descending aorta; the azygos vein arches over the right main bronchus, the aortic arch over the left.'] },
+    { h: 'Pleura and the pleural space', ul: [
+      'The visceral pleura covers the lung and the fissures (it has no somatic innervation: lung pain is referred, dull); the parietal pleura lines the chest wall, diaphragm and mediastinum (intercostal and phrenic nerves: sharp, localised, pleuritic pain, shoulder pain from the diaphragmatic pleura).',
+      'The space between them holds a few millilitres of fluid at a pressure a few cm H2O below atmospheric (−5 at FRC in the mid-chest, more negative at the apex, nearer zero at the base: the gradient that ventilates the base better). Air in the space (pneumothorax) breaks the coupling and the lung collapses toward its own resting volume while the chest wall springs out.',
+      'The pleura reaches lower than the lung: the costodiaphragmatic recess at the back extends to the twelfth rib, so a needle below the ninth rib posteriorly can enter the pleura without the lung — and below it, the liver or the spleen. Thoracentesis goes over the top of a rib (the neurovascular bundle runs under each rib) in the eighth to ninth space posteriorly for fluid, the second space anteriorly for air.'] },
+    { h: 'The diaphragm and the muscles of breathing', ul: [
+      'The diaphragm does three-quarters of the work of quiet breathing: it descends 1–2 cm at rest and up to 10 cm with effort, lengthening the chest and lifting the lower ribs (the bucket-handle). Innervation C3–C5 (phrenic): an elevated hemidiaphragm on a film with a mediastinal mass is a phrenic palsy until proven otherwise; pain from the central tendon is referred to the shoulder (C4).',
+      'Openings: the caval hiatus at T8 (IVC, right phrenic nerve), the oesophageal hiatus at T10 (oesophagus, vagal trunks), the aortic hiatus at T12 (aorta, thoracic duct, azygos vein) — 8, 10, 12 letters.',
+      'External intercostals and the scalenes lift the ribs in inspiration; the accessory muscles (sternocleidomastoid, pectorals, trapezius) are recruited with effort. Quiet expiration is passive — the recoil of the lung and chest wall; forced expiration uses the abdominal wall and the internal intercostals, and raises pleural pressure above atmospheric, which is what compresses the airways (see Airflow).'] },
+    { h: 'Two circulations', table: { head: ['', 'Pulmonary circulation', 'Bronchial circulation'], rows: [
+      ['Source', 'Right ventricle: the whole cardiac output (5 L/min)', 'Aorta and intercostal arteries: 1–2% of the output'],
+      ['Pressure', 'Low: 25/8, mean 15 mm Hg; resistance a tenth of the systemic', 'Systemic'],
+      ['Supplies', 'Gas exchange in the alveolar capillaries', 'The airway walls down to the respiratory bronchioles, the pleura, the vasa vasorum'],
+      ['Drains', 'Four pulmonary veins to the left atrium', 'Bronchial veins to the azygos, and partly into the pulmonary veins (a small normal right-to-left shunt)'],
+      ['When it matters', 'Hypoxic vasoconstriction, embolism, pulmonary hypertension, the capillary wedge', 'Massive haemoptysis (90% bronchial), infarction is rare after embolism because the bronchial supply keeps the lung alive, bronchial artery embolisation']] } },
+    { h: 'Lymphatics and nerves', ul: [
+      'Lymph runs centripetally along the bronchovascular bundles to the hilar (N1), then the mediastinal (N2) nodes, and from the mediastinum to the thoracic duct and the right lymphatic duct; the subpleural plexus drains the periphery. This is why the IASLC map is organised the way it is (see Mediastinal nodal stations).',
+      'Parasympathetic (vagus): bronchoconstriction, mucus secretion, vasodilatation — M3 receptors, the target of ipratropium and tiotropium. Sympathetic: β2 receptors relax airway smooth muscle (there is little direct sympathetic innervation; circulating adrenaline and the inhalers do the work). Sensory: stretch receptors (Hering–Breuer), irritant receptors (cough, bronchospasm), C-fibre J receptors in the interstitium (the rapid shallow breathing of oedema and embolism).'] },
+    { h: 'Development in one paragraph', p: 'The lung bud grows from the foregut in week 4 (embryonic stage, to week 7: trachea, main, lobar and segmental bronchi — errors give tracheo-oesophageal fistula and pulmonary agenesis); the pseudoglandular stage (weeks 5–17) builds the tree to the terminal bronchioles; the canalicular stage (16–25) adds respiratory bronchioles, capillaries and the first pneumocytes — surfactant synthesis starts around week 20 and viability around 24–25; the saccular stage (24 weeks to birth) makes terminal sacs; the alveolar stage (36 weeks to about 8 years) septates them into true alveoli. Surfactant deficiency is the neonatal respiratory distress syndrome (prematurity, maternal diabetes through fetal insulin, caesarean delivery); antenatal steroids drive its synthesis, and the lecithin/sphingomyelin ratio of amniotic fluid (≥ 2) marks maturity. Pulmonary hypoplasia follows anything that stops the fetal lung expanding: diaphragmatic hernia, oligohydramnios (Potter sequence).' },
+    { src: ['Moore KL, Dalley AF, Agur AMR. Clinically Oriented Anatomy, 8th ed. Wolters Kluwer 2018 (chapter 4, Thorax).', 'First Aid for the USMLE Step 1, 2025 ed. McGraw Hill: Respiratory — embryology and anatomy.', 'Physeo Physiology workbook: Pulmonology, section I.', 'West JB, Luks AM. West’s Respiratory Physiology: The Essentials, 11th ed. Wolters Kluwer 2021 (chapter 1).'] }
+  ] };
+
+  T.histo = { title: 'The airway wall, level by level', kicker: 'Which cells line each generation, and what the wall is made of', blocks: [
+    { p: 'From the trachea to the alveolus the tube divides about 23 times. The first 16 generations only conduct (the conducting zone, about 150 mL: the anatomic dead space); the last seven exchange gas (the respiratory zone, about 3 litres). Along the way the epithelium flattens from pseudostratified ciliated columnar to simple squamous, cartilage and glands drop out, smooth muscle takes over and then thins, goblet cells give way to club cells, and the cilia stop at the respiratory bronchiole. Hover a level for its cells; hide the labels to test yourself.' },
+    { widget: 'ladder' },
+    { h: 'The cells and what they do', table: { head: ['Cell', 'Where', 'Job', 'When it matters'], rows: [
+      ['Ciliated columnar cell', 'Trachea to respiratory bronchiole (fewer and shorter distally)', 'Beats the mucus blanket toward the larynx (mucociliary escalator, 5–20 mm/min)', 'Primary ciliary dyskinesia (dynein arm defect — Kartagener: situs inversus, sinusitis, bronchiectasis, male infertility); smoke and viruses strip cilia'],
+      ['Goblet cell', 'Trachea and bronchi (sparse in bronchioles)', 'Secretes mucin (MUC5AC)', 'Hyperplasia and metaplasia into the small airways in chronic bronchitis and asthma'],
+      ['Basal cell', 'Trachea and bronchi', 'Stem cell of the pseudostratified epithelium', 'Squamous metaplasia under chronic irritation; the origin of squamous carcinoma'],
+      ['Submucosal gland', 'Trachea and bronchi (with cartilage)', 'Most of the mucus (seromucous); IgA', 'Hypertrophied in chronic bronchitis (the Reid index); cystic fibrosis thickens the secretions'],
+      ['Club (Clara) cell', 'Bronchioles, especially terminal', 'Secretes CC16 and surfactant-like fluid; cytochrome P-450 detoxification; progenitor of the bronchiolar epithelium', 'Target of bronchiolar injury; CC16 is a serum marker of airway damage'],
+      ['Neuroendocrine (Kulchitsky) cell', 'Scattered, in clusters (neuroepithelial bodies)', 'Secretes serotonin, bombesin, calcitonin; oxygen sensing in the fetus', 'Carcinoid and small-cell carcinoma'],
+      ['Type I pneumocyte', 'Alveolus: 95% of the surface', 'The thin side of the blood–gas barrier; cannot divide', 'Destroyed first in diffuse alveolar damage (ARDS)'],
+      ['Type II pneumocyte', 'Alveolar corners: 5% of the surface, 60% of the cells', 'Surfactant (lamellar bodies; DPPC with SP-A, B, C, D); stem cell for both types; ion transport that clears alveolar fluid', 'Hyperplasia after injury; SP-B deficiency is lethal; the lecithin/sphingomyelin ratio'],
+      ['Alveolar macrophage', 'Alveolar surface, from blood monocytes', 'Phagocytosis of what the escalator missed; cytokines, proteases; lipid handling', 'Hemosiderin-laden after haemorrhage or oedema; asbestos bodies; silica kills them and starts fibrosis; pulmonary alveolar proteinosis when GM-CSF signalling fails'],
+      ['Airway smooth muscle', 'Trachealis; complete rings from the bronchi to the terminal bronchioles', 'Sets calibre: β2 relaxes, M3 and leukotrienes constrict', 'Asthma (hypertrophy, hyperreactivity); the site of action of every bronchodilator'],
+      ['Cartilage', 'Trachea (C-rings) and bronchi (plates)', 'Keeps the large airways open in expiration', 'Tracheomalacia, relapsing polychondritis; the lack of it is why small airways collapse at low volume']] } },
+    { h: 'Rules to carry', ul: [
+      'Cartilage, glands and goblet cells end with the bronchi; smooth muscle continues to the terminal bronchiole; cilia continue to the respiratory bronchiole; pseudostratified columnar becomes simple cuboidal at the terminal bronchiole and squamous at the alveolus.',
+      'The conducting zone warms, humidifies and filters: particles over 10 µm are caught in the nose, 2–10 µm on the escalator, under 2 µm reach the alveoli and are handled by macrophages — the size that matters for coal dust, silica and asbestos.',
+      'Resistance lives in the medium bronchi, not the small airways: the thousands of bronchioles in parallel have a vast total cross-section. Small-airway disease can be advanced before spirometry changes (the “silent zone”).',
+      'Surfactant lowers surface tension more the more it is compressed, which stabilises small alveoli against large ones (Laplace: P = 2T/r) and keeps the alveoli dry; it is made from week 20, mature by 35, and driven by glucocorticoids and thyroxine, inhibited by insulin.',
+      'The blood–gas barrier is 0.2–0.5 µm on the thin side (type I cell, fused basement membranes, endothelium) and up to several µm on the thick side where the interstitium carries fluid: oedema widens the thick side first, which is why interstitial oedema impairs diffusion before it floods the alveolus.'] },
+    { src: ['Ross MH, Pawlina W. Histology: A Text and Atlas, 8th ed. Wolters Kluwer 2020 (chapter 19, Respiratory System).', 'Physeo Physiology workbook: Pulmonology, section I, figure 3.2.', 'First Aid for the USMLE Step 1, 2025 ed.: Respiratory tree; alveolar cell types; club cells.', 'West JB, Luks AM. West’s Respiratory Physiology, 11th ed. (chapter 1, Structure and function).'] }
+  ] };
+
+  T.mechanics = { title: 'Mechanics: pressures, compliance and surface tension', kicker: 'Why the lung stays inflated, what a breath costs, and where the pressures go', blocks: [
+    { p: 'The lung is an elastic bag that wants to collapse; the chest wall is a spring that wants to expand. Coupled through a thin film of pleural fluid, they settle at the volume where the two recoils are equal — functional residual capacity — with the pleural pressure about 5 cm H2O below atmospheric. Every breath is a departure from that equilibrium, paid for by the inspiratory muscles against two loads: the elastic recoil of lung and chest wall, and the friction of airflow.' },
+    { widget: 'cycle' },
+    { h: 'The pressures and their names', table: { head: ['Pressure', 'Definition', 'At FRC', 'Quiet inspiration', 'Measured by'], rows: [
+      ['Alveolar (PA)', 'Gas pressure in the alveoli relative to the mouth', '0', 'Falls to about −1, returns to 0 at end-inspiration', 'A plateau on the ventilator (no flow)'],
+      ['Pleural (Ppl)', 'Pressure in the pleural space', '−5 cm H2O', 'Falls to about −8 (more with resistance or a stiff lung)', 'Oesophageal balloon'],
+      ['Transpulmonary (PA − Ppl)', 'The pressure that distends the lung', '+5', 'Rises to about +8', 'Plateau minus oesophageal'],
+      ['Trans-chest-wall (Ppl − Pbody)', 'The pressure across the chest wall', '−5', 'Falls (the wall is pulled in below its own resting volume)', '—'],
+      ['Trans-respiratory (PA − Pbody)', 'Across the whole system: what a ventilator applies', '0', '—', 'Airway pressure on the ventilator']] },
+      note: 'Transmural pressure (inside minus outside) is what sets the size of any elastic structure — alveolus, chest wall, or the right atrium (see the heart–lung lab). A ventilator and a diaphragm reach the same transpulmonary pressure from opposite sides: the diaphragm pulls the pleural pressure down, the ventilator pushes the alveolar pressure up.' },
+    { h: 'Compliance', ul: [
+      'Compliance is the change in volume per change in distending pressure (ΔV/ΔP): about 200 mL/cm H2O for the lung, 150–200 for the chest wall, and 85–100 for the two in series (1/Crs = 1/CL + 1/Ccw). It is the slope of the pressure–volume curve, so it depends on where on the curve you are: the lung is stiffest near TLC, the chest wall near RV.',
+      'A stiff lung (fibrosis, oedema, ARDS, pneumonia, consolidation) lowers CL: more pleural pressure per breath, a low FRC, rapid shallow breathing to minimise elastic work. A floppy lung (emphysema: elastin destroyed; ageing) raises CL: a high FRC, a flat recoil curve, and airways that collapse because nothing tethers them.',
+      'A stiff chest wall (obesity, ascites, kyphoscoliosis, pleural thickening, burns, ankylosing spondylitis) lowers Ccw: the FRC falls and more of any applied airway pressure reaches the pleural space (ΔPpl ≈ Paw × CL/(CL + Ccw)) — the reason the plateau pressure overestimates lung stress in the obese and under-reads it when the chest wall is normal.',
+      'Specific compliance (compliance per litre of lung) separates “stiff” from “small”: a pneumonectomy halves compliance without stiffening anything.',
+      'Hysteresis: the inflation curve lies to the right of the deflation curve because surface tension must be overcome to open units and recruit alveoli; a saline-filled lung has almost none, which is how surface tension was shown to be half of the lung’s recoil.'] },
+    { h: 'Surface tension and surfactant', ul: [
+      'An air–water interface in a sphere generates a collapsing pressure P = 2T/r (Laplace): with water’s tension (70 dyn/cm) the alveoli would need 20–30 cm H2O to stay open and the small ones would empty into the large.',
+      'Surfactant — dipalmitoylphosphatidylcholine with the surfactant proteins, from the type II cell — lowers the tension to near zero as the film is compressed, more so in a small alveolus than a large one, which cancels the Laplace instability, raises compliance, keeps the alveoli dry (less suction on the interstitium) and halves the work of breathing.',
+      'Without it: the neonatal respiratory distress syndrome (prematurity, maternal diabetes, caesarean section without labour); in adults the surfactant of ARDS is inactivated by plasma proteins, which is part of why the lung becomes stiff and atelectatic. Antenatal glucocorticoids, exogenous surfactant and PEEP are the answers.'] },
+    { h: 'The work of breathing', ul: [
+      'Work = pressure × volume: the area inside the pressure–volume loop. Elastic work is stored in the lung and returned on expiration; resistive work (airflow, tissue friction) is lost as heat. At rest breathing costs 1–2% of oxygen consumption; with a stiff lung or obstructed airways it can take 20–30%, and the respiratory muscles compete with the rest of the body for blood.',
+      'Each patient finds the cheapest pattern: a stiff lung is breathed fast and shallow (less elastic work per breath, more dead space); an obstructed lung slow and deep, at high volume where the airways are widest and the resistive work smallest — the dynamic hyperinflation of COPD and asthma (see Airflow and the heart–lung lab, where the areas are drawn).',
+      'The Campbell diagram puts lung and chest wall curves on one plot of volume against pleural pressure: FRC is where they cross, the horizontal gap between them at any volume is the muscle pressure needed to hold it, and the triangle between them over a breath is the elastic work. Open the heart–lung lab to drive it.'] },
+    { h: 'How it shows on a PFT', ul: [
+      'Restriction (low TLC with a preserved or raised FEV1/FVC) is the signature of low compliance of the lung or the chest wall, or of weak muscles; MIP/MEP and the supine fall in FVC separate muscle from parenchyma. Hyperinflation (high FRC, RV, RV/TLC) is the signature of high compliance and airflow limitation.',
+      'Oesophageal manometry gives the lung’s own curve; the static pressure–volume curve on a ventilator (the lower and upper inflection points, the driving pressure VT/Crs) is the same physiology at the bedside.'] },
+    { src: ['West JB, Luks AM. West’s Respiratory Physiology, 11th ed. (chapter 7, Mechanics of breathing).', 'Levitzky MG. Pulmonary Physiology, 9th ed. McGraw Hill 2018 (chapter 2).', 'Physeo Physiology workbook: Pulmonology, section IV (breathing mechanics) and section III (equations).', 'First Aid for the USMLE Step 1, 2025 ed.: Lung and chest wall properties; work of breathing.', 'Kenny JE. An Approach to Mechanical Heart-Lung Interaction, 1st ed. 2020, chapter 1 (the Campbell diagram).'] }
+  ] };
+
+  T.airflow = { title: 'Airflow and resistance', kicker: 'Laminar and turbulent flow · where the resistance is · why expiration has a ceiling', blocks: [
+    { p: 'Gas moves because the alveolar pressure differs from the mouth: Flow = ΔP / R. In quiet breathing the whole difference is a centimetre of water or so, because resistance is low — about 1–2 cm H2O per L/s across the airways, half of it in the nose and larynx. What makes the number interesting is where it lives, how it changes with lung volume, and the ceiling on expiratory flow that no effort can lift.' },
+    { h: 'The physics', ul: [
+      'Laminar flow (Poiseuille): R = 8ηl/πr⁴ — halve the radius and resistance rises sixteen-fold. Flow is proportional to the pressure difference and depends on gas viscosity.',
+      'Turbulent flow (high velocity, large diameter, branch points: the trachea and large bronchi, any cough): pressure rises with the square of flow and depends on gas density — the reason heliox (less dense) helps upper-airway obstruction and does little in the periphery.',
+      'The Reynolds number (2ρvr/η) predicts which: above about 2,000 flow is turbulent. In the bronchial tree most flow is transitional; truly laminar flow exists only in the small airways where velocity is tiny.',
+      'The smallest airways contribute the least resistance, not the most: their individual resistance is high but there are tens of thousands in parallel, with a total cross-section of a football field, so velocity and pressure drop are negligible. The medium bronchi (generations 2–7) carry most of the resistance.'] },
+    { h: 'What changes resistance', ul: [
+      'Lung volume: airways are tethered open by the elastic recoil of the parenchyma around them, so resistance falls as volume rises (conductance is linear with volume) and rises steeply below FRC — the reason an asthmatic breathes at high volume and a patient with emphysema can empty only slowly.',
+      'Smooth muscle tone: parasympathetic (M3) and leukotrienes, histamine, cold air, irritants and exercise constrict; β2 agonists, anticholinergics and (weakly) circulating adrenaline relax. The site is the bronchioles with their complete muscle ring and no cartilage.',
+      'Mucus, oedema and wall thickening (asthma, bronchitis, bronchiectasis) narrow the lumen from within; loss of radial traction (emphysema) and loss of cartilage (malacia) let it collapse from without.',
+      'Gas: density matters in turbulent flow (heliox, depth), viscosity in laminar flow.'] },
+    { h: 'Dynamic compression and the flow–volume loop', ul: [
+      'On forced expiration the pleural pressure becomes positive. Alveolar pressure is pleural plus recoil, so there is always a point along the airway where the pressure inside has fallen to the pleural pressure outside — the equal pressure point. Downstream of it the airway is compressed: a Starling resistor. Beyond a modest effort more muscle pressure only squeezes the airway harder; flow becomes effort-independent, set by the recoil pressure and the resistance upstream of the EPP.',
+      'At high lung volume the EPP sits in the cartilaginous airways and flow is effort-dependent (the peak flow); as volume falls the EPP moves into the small airways and flow falls along the descending limb of the loop, which is why the shape of that limb — concave in obstruction — is the most sensitive part of spirometry.',
+      'Low recoil (emphysema) moves the EPP peripheral and the small airways collapse early: a scooped loop, air trapping, a high RV, and pursed-lip breathing (which moves the EPP back by raising mouth pressure). High recoil (fibrosis) keeps airways open: a tall, narrow loop with a supernormal flow for the volume.',
+      'Inspiration has no ceiling: the airways are pulled open by the negative pleural pressure. A flattened inspiratory limb therefore points to the extrathoracic airway (vocal cords, tracheal stenosis, goitre); a flattened expiratory limb with a normal inspiratory one to an intrathoracic lesion (tracheal tumour); both flat to a fixed stenosis.'] },
+    { h: 'Time constants and air trapping', ul: [
+      'Each unit empties with a time constant τ = R × C; three time constants empty 95% of it. Normal lungs have τ ≈ 0.2–0.3 s, so a 2-second expiration suffices. Emphysema (high C, high R) and asthma (high R) have time constants of seconds: when expiration is cut short by the next breath the unit does not get back to its resting volume — dynamic hyperinflation — and the pressure left in it at end-expiration is auto-PEEP.',
+      'Auto-PEEP must be overcome before any inspiratory flow can begin (a threshold load), flattens the diaphragm, moves breathing to the stiff upper part of the curve, raises the pressure around the heart and limits venous return (see the heart–lung lab). In the ventilated patient it hides behind the ventilator’s PEEP and is found with an end-expiratory hold or an expiratory flow that never reaches zero.'] },
+    { h: 'How it shows on a PFT', ul: [
+      'Obstruction: a low FEV1/FVC, a concave expiratory limb, a reduced FEF25–75 (small airways), air trapping (high RV, RV/TLC) and, when the loss of recoil is the cause, a high compliance and a low DLCO (emphysema) rather than a normal DLCO (asthma, bronchitis).',
+      'Bronchodilator reversibility and the methacholine challenge test the smooth muscle part of resistance; body plethysmography measures airway resistance and specific conductance directly.'] },
+    { src: ['West JB, Luks AM. West’s Respiratory Physiology, 11th ed. (chapter 7).', 'Levitzky MG. Pulmonary Physiology, 9th ed. (chapter 2: airways resistance, dynamic compression).', 'Mead J, et al. Significance of the relationship between lung recoil and maximum expiratory flow. J Appl Physiol 1967;22:95–108.', 'Physeo Physiology workbook: Pulmonology, sections II and III.', 'Kenny JE. An Approach to Mechanical Heart-Lung Interaction, chapter 1 (resistance, auto-PEEP).'] }
+  ] };
+
+  T.ventilation = { title: 'Ventilation, dead space and the alveolar gas', kicker: 'How much of each breath does any good, and what it leaves in the alveolus', blocks: [
+    { p: 'Of a 500 mL breath, 150 mL fills the conducting airways and is breathed straight back out. Only the rest reaches the alveoli, and it is alveolar ventilation — not minute ventilation — that sets the alveolar carbon dioxide and, through it, the alveolar oxygen. The arithmetic is small but it runs the whole of acid–base and of oxygenation on a ventilator.' },
+    { widget: 'spiro' },
+    { h: 'Volumes and capacities', ul: [
+      'Four volumes: tidal (≈ 500 mL, 6–8 mL/kg), inspiratory reserve, expiratory reserve, residual (what cannot be exhaled: about 1.2 L, 20–25% of TLC in the young, more with age). Four capacities, each a sum: IC = VT + IRV; FRC = ERV + RV (the resting volume, about 2.5–3 L, less supine, in obesity and in pregnancy); VC = IRV + VT + ERV (about 4.5 L); TLC = VC + RV (about 6 L).',
+      'A spirometer measures everything but the RV; anything containing the RV (FRC, TLC) needs helium dilution or nitrogen washout (which see only the gas that communicates) or body plethysmography (which sees all the compressible gas, trapped included — the gap between the two is the trapped volume).',
+      'FRC is the reference point of mechanics: the volume where recoils balance, where airway resistance and pulmonary vascular resistance are lowest, and the volume the next breath starts from. The oxygen store of the FRC is what preoxygenation fills and what hypoxaemia during apnoea drains — small in the obese and in pregnancy.'] },
+    { h: 'Dead space', ul: [
+      'Anatomic dead space ≈ 150 mL (about 1 mL per pound, 2.2 mL/kg): the conducting zone, measured by Fowler’s nitrogen washout. It grows with a large breath (airways are stretched open), with neck extension, with a snorkel, and shrinks with a tracheostomy.',
+      'Alveolar dead space: ventilated alveoli with no flow — the apex in the upright lung, zone 1, embolism, low cardiac output, overdistension by PEEP. Physiologic dead space is the two together, measured by Bohr: VD/VT = (PaCO2 − PECO2)/PaCO2, normally 0.2–0.35, where PECO2 is the mixed expired CO2.',
+      'Shallow breathing raises the dead-space fraction because the anatomic dead space is fixed: a 250 mL breath wastes 60% of itself. This is why rapid shallow breathing fails and why the respiratory rate alone says nothing about ventilation.',
+      'The end-tidal CO2 reads the alveoli that empty last; the gap between arterial and end-tidal CO2 (normally 2–5 mm Hg) is a bedside measure of alveolar dead space — it widens with embolism, hypovolaemia and overdistension.'] },
+    { h: 'The equations', table: { head: ['', 'Equation', 'Reading it'], rows: [
+      ['Minute ventilation', 'V̇E = VT × f', '500 × 12 = 6 L/min at rest'],
+      ['Alveolar ventilation', 'V̇A = (VT − VD) × f', '(500 − 150) × 12 = 4.2 L/min; the only part that changes blood gases'],
+      ['Alveolar CO2', 'PACO2 = V̇CO2 × 0.863 / V̇A', 'Halve V̇A and the PaCO2 doubles; double it and the PaCO2 halves — a hyperbola, so going from 40 to 30 needs a third more ventilation, from 40 to 80 a halving'],
+      ['Alveolar O2', 'PAO2 = FiO2 × (PB − 47) − PaCO2 / R', 'On air at sea level ≈ 150 − 1.25 × PaCO2 ≈ 100 mm Hg; R (the respiratory quotient) is 0.8 on a mixed diet, 1.0 on carbohydrate'],
+      ['A–a gradient', 'PAO2 − PaO2', 'Normal ≈ 2.5 + 0.21 × age (or age/4 + 4); up to 15 on air; wider on oxygen'],
+      ['Dead-space fraction', 'VD/VT = (PaCO2 − PECO2) / PaCO2', 'Bohr; 0.2–0.35 at rest, lower on exercise, higher in emphysema, embolism, ARDS and shock']] } },
+    { widget: 'aa' },
+    { h: 'Hypoventilation and hyperventilation', ul: [
+      'Hypoventilation — V̇A too small for the CO2 being produced — raises the PaCO2 and lowers the PAO2 by the same stoichiometry (about 1.25 mm Hg of O2 for every 1 of CO2), so the hypoxaemia comes with a normal A–a gradient and corrects easily with oxygen, which is both its signature and its trap (oxygen fixes the saturation and hides the rising CO2). Causes are outside the lung: opioids and sedatives, the brainstem, the cord and phrenic nerves, the neuromuscular junction and muscle, the chest wall and obesity, the upper airway.',
+      'Hyperventilation (V̇A too large) lowers the PaCO2 and raises the PAO2 a little: respiratory alkalosis, cerebral vasoconstriction, a left shift of the oxygen curve, ionised calcium falls (tetany). Pain, anxiety, hypoxaemia, acidosis, sepsis, salicylate, pregnancy, liver disease, and the stiff lung of oedema and fibrosis (J receptors) all drive it.',
+      'CO2 production rises with fever, feeding (especially carbohydrate), shivering, sepsis, seizures and exercise; a ventilated patient with fixed ventilation becomes hypercapnic without any change in the lung.'] },
+    { h: 'How it shows on a PFT and a blood gas', ul: [
+      'Spirometry gives VT, VC and the reserves; the lung volume study gives RV, FRC and TLC and the trapped gas. A high RV/TLC is trapping; a low TLC is restriction; a low VC with a normal TLC is weakness or trapping.',
+      'On the gas: a high PaCO2 with a normal A–a gradient is hypoventilation; with a wide gradient, lung disease (V/Q mismatch) is adding to it. Chronic hypercapnia carries a raised bicarbonate (3.5 mmol/L per 10 mm Hg); acute, only 1.'] },
+    { src: ['West JB, Luks AM. West’s Respiratory Physiology, 11th ed. (chapters 2 and 8).', 'Physeo Physiology workbook: Pulmonology, sections II and III.', 'First Aid for the USMLE Step 1, 2025 ed.: Lung volumes and capacities; ventilation; determination of physiologic dead space; alveolar gas equation.', 'Wanger J, et al. Standardisation of the measurement of lung volumes. Eur Respir J 2005;26:511–22.'] }
+  ] };
+
+  T.diffusion = { title: 'Diffusion across the barrier', kicker: 'Fick’s law · perfusion-limited and diffusion-limited gases · what the DLCO measures', blocks: [
+    { p: 'Gas crosses the alveolar wall by diffusion alone. Fick’s law says the rate is proportional to the area and the partial-pressure difference and inversely to the thickness, times a constant that favours the small, soluble molecule: carbon dioxide diffuses about twenty times faster than oxygen, so a barrier that limits oxygen has no effect on carbon dioxide. With 70–100 m² of area and half a micron of thickness, oxygen equilibrates in a third of the 0.75 s the red cell spends in the capillary. That reserve is what diffusion limitation uses up.' },
+    { h: 'Perfusion-limited and diffusion-limited', ul: [
+      'A gas is perfusion-limited when it equilibrates before the end of the capillary: the amount taken up is set by how much blood flows past (nitrous oxide; oxygen and carbon dioxide in health). More uptake needs more flow, not a thinner wall.',
+      'A gas is diffusion-limited when it has not equilibrated by the end of the capillary: carbon monoxide, which haemoglobin binds so avidly that its partial pressure in plasma stays near zero and the gradient never closes — the uptake depends only on the barrier and the blood volume in contact with it. That is why CO measures the diffusing capacity.',
+      'Oxygen becomes diffusion-limited when the reserve is spent: a thickened barrier (fibrosis, oedema), a lost area (emphysema), a fast transit (exercise, especially at altitude, where the gradient is small). Desaturation on exercise with a normal resting gas is the clinical signature.',
+      'Reaction rate matters too: the DLCO is 1/DL = 1/DM + 1/(θ × Vc) — the membrane and the blood in the capillaries, which is why anaemia, pulmonary emboli and a low cardiac output lower it and polycythaemia, left-to-right shunts, alveolar haemorrhage and asthma raise it.'] },
+    { h: 'The DLCO', ul: [
+      'Single-breath: inhale a dilute CO and helium mixture to TLC, hold 10 s, exhale; the fall in CO against the helium (which only dilutes) gives the uptake in mL/min/mm Hg. The helium also gives the alveolar volume VA; KCO = DLCO/VA is uptake per litre of lung.',
+      'Low DLCO with a low KCO: loss or thickening of the capillary bed — emphysema, interstitial lung disease, pulmonary vascular disease, anaemia. Low DLCO with a normal or high KCO: a small but normal lung — pneumonectomy, chest wall restriction, weak muscles, poor inspiration (the KCO rises because capillary blood is squeezed into less lung).',
+      'Correct for haemoglobin (a fall of 1 g/dL lowers the DLCO by about 3–4%), for carboxyhaemoglobin (smokers), and for altitude; a high DLCO is pulmonary haemorrhage, polycythaemia, left-to-right shunt, obesity, asthma or exercise shortly before. The PFT interpretation area has the full reading rules.'] },
+    { h: 'Where oxygen and carbon dioxide stand along the capillary', ul: [
+      'Mixed venous blood arrives at PO2 40 and PCO2 46 mm Hg; alveolar gas sits at PO2 100 and PCO2 40. Oxygen reaches 100 within 0.25 s; carbon dioxide reaches 40 even faster because of its solubility — but the Haldane effect (oxygenated haemoglobin holds less CO2) and the carbonic anhydrase reaction take part of the time.',
+      'Thickening of the barrier slows oxygen without touching carbon dioxide: isolated hypoxaemia with a low or normal PaCO2 (the patient hyperventilates) is the pattern of interstitial disease and early oedema.'] },
+    { src: ['West JB, Luks AM. West’s Respiratory Physiology, 11th ed. (chapter 3, Diffusion).', 'Graham BL, et al. 2017 ERS/ATS standards for single-breath carbon monoxide uptake in the lung. Eur Respir J 2017;49:1600016.', 'Hughes JMB, Pride NB. Examination of the carbon monoxide diffusing capacity (DLCO) in relation to its KCO and VA components. Am J Respir Crit Care Med 2012;186:132–9.', 'Physeo Physiology workbook: Pulmonology, section V (perfusion- and diffusion-limited gas exchange).', 'First Aid for the USMLE Step 1, 2025 ed.: Pulmonary circulation (diffusion).'] }
+  ] };
+
+  T.transport = { title: 'Oxygen and carbon dioxide in the blood', kicker: 'The dissociation curve · content and delivery · how CO2 travels · hypoxaemia and hypoxia', blocks: [
+    { p: 'Plasma dissolves only 0.3 mL of oxygen per decilitre at a PaO2 of 100; haemoglobin carries 20. The shape of its binding curve — steep where the tissues are, flat where the lung is — is the design of the whole system: load fully over a wide range of alveolar PO2, unload a great deal for a small fall of tissue PO2. Drag the curve to see what moves it.' },
+    { widget: 'odc' },
+    { h: 'Reading the curve', ul: [
+      'Sigmoid because of cooperativity: each oxygen bound makes the next bind more easily (tense to relaxed). Myoglobin, a monomer, is a hyperbola with a far higher affinity — it stores oxygen in muscle and gives it up only at a very low PO2.',
+      'P50 (the PO2 at 50% saturation) is 26–27 mm Hg. Arterial blood (PO2 100) is 97% saturated on the flat part; mixed venous blood (PO2 40) is 75% — only a quarter unloaded at rest, with three-quarters in reserve for exercise, when the tissue PO2 falls to 20 and the curve gives up most of the rest.',
+      'Right shift (lower affinity, easier unloading, P50 up): acidosis, CO2, heat, 2,3-DPG (chronic hypoxia, altitude, anaemia), exercise — the tissues ask and the Bohr effect answers. Left shift (P50 down): alkalosis, low CO2, cold, low 2,3-DPG (stored blood), fetal haemoglobin (which binds 2,3-DPG poorly), carbon monoxide and methaemoglobin.',
+      'Carbon monoxide binds 210 times more tightly than oxygen: it takes sites (a lower carrying capacity, like anaemia) and it shifts the remaining haemoglobin left (like no other anaemia), so the tissues get even less. The PaO2 is normal, the pulse oximeter reads COHb as oxyhaemoglobin, and only co-oximetry tells the truth. Methaemoglobin (Fe3+: dapsone, benzocaine, nitrites) cannot bind oxygen and shifts the rest left too; the oximeter reads about 85% whatever the truth, and the blood is chocolate-brown.'] },
+    { h: 'Content and delivery', table: { head: ['Quantity', 'Equation', 'Normal', 'Note'], rows: [
+      ['O2 content (CaO2)', '1.34 × Hb × SaO2 + 0.003 × PaO2', '≈ 20 mL/dL', 'Haemoglobin and saturation carry it; PaO2 barely counts except under hyperbaric oxygen'],
+      ['O2 delivery (DO2)', 'CaO2 × cardiac output × 10', '≈ 1,000 mL/min', 'Anaemia, hypoxaemia and low output each cut it; the tissues extract a quarter at rest'],
+      ['O2 consumption (VO2)', 'CO × (CaO2 − CvO2) × 10', '≈ 250 mL/min', 'Fick: the basis of the cardiac output by the Fick method'],
+      ['Mixed venous saturation', '≈ 75% (PvO2 40)', '', 'Falls when delivery falls or demand rises; the earliest sign of a failing circulation']] },
+      note: 'Anaemia and carbon monoxide poisoning both lower the content with a normal PaO2 and (for anaemia) a normal saturation; cyanide leaves content, delivery and saturation normal and blocks the use of oxygen (a high mixed venous saturation, lactic acidosis).' },
+    { h: 'Carbon dioxide', ul: [
+      'Carried three ways: about 90% of the blood’s CO2 as bicarbonate (CO2 + H2O → H2CO3 → H+ + HCO3− inside the red cell, catalysed by carbonic anhydrase; the bicarbonate leaves the cell in exchange for chloride — the chloride shift — and the proton is buffered by haemoglobin), 5% bound to the globin as carbamino compounds, 5% dissolved (CO2 is twenty times more soluble than O2, which is why the dissolved fraction counts at all). Of the extra CO2 picked up in the tissues and dropped in the lung the shares are nearer 60 / 30 / 10.',
+      'The CO2 curve is nearly linear over the physiological range and steeper than the oxygen curve, so a small change in ventilation moves the PaCO2 a long way, and venous blood holds only 4 mL/dL more than arterial.',
+      'Haldane effect: deoxygenated haemoglobin carries more CO2 (as carbamino and as a buffer for H+), so unloading oxygen in the tissues loads CO2, and loading oxygen in the lung unloads it — the mirror of the Bohr effect, and part of why oxygen given to a chronically hypercapnic patient raises the PaCO2 (with the loss of hypoxic drive and the worsened V/Q matching).'] },
+    { h: 'Hypoxaemia and hypoxia: the systematic approach', ul: [
+      'Hypoxaemia is a low PaO2 (below about 80 mm Hg on air, or the age-predicted value); hypoxia is too little oxygen reaching the tissues and has four forms: hypoxaemic, anaemic (and carbon monoxide), stagnant (low flow), histotoxic (cyanide). Only the first shows on the gas.',
+      'For hypoxaemia, compute the A–a gradient. Normal gradient: low inspired oxygen (altitude, a wrong gas mixture) or hypoventilation (the PaCO2 is high). Wide gradient: V/Q mismatch (the commonest; corrects with oxygen), shunt (does not correct — anatomic or the perfusion of airless lung), diffusion limitation (corrects; worse on exercise).',
+      'Then the response to 100% oxygen: a PaO2 under 100–150 on 100% is a shunt of 30% or more. Then the context: the chest film, the echocardiogram with bubbles (intracardiac or pulmonary AVM), the exercise test. The Ventilation and perfusion topic has the table.'] },
+    { h: 'Altitude and exercise', ul: [
+      'Altitude lowers the barometric pressure, so the PIO2 falls at a fixed FiO2 (at 5,500 m, half the sea-level value). The carotid bodies drive hyperventilation (respiratory alkalosis, then renal bicarbonate loss over days — acetazolamide speeds it); 2,3-DPG rises (a right shift) but the alkalosis shifts left; erythropoietin raises the haemoglobin over weeks; hypoxic vasoconstriction raises the pulmonary pressure (high-altitude pulmonary oedema is its extreme; chronic mountain sickness its slow form).',
+      'Exercise multiplies oxygen consumption up to fifteen-fold: ventilation rises in step with CO2 production, cardiac output rises, the apices are recruited (V/Q evens out), extraction rises to 75% with the right shift of heat and acid, and the PaO2 and PaCO2 stay almost unchanged until near the maximum. The anaerobic threshold is where lactate begins to buffer; above it ventilation rises faster than VO2.'] },
+    { src: ['West JB, Luks AM. West’s Respiratory Physiology, 11th ed. (chapter 6, Gas transport by the blood).', 'Severinghaus JW. Simple, accurate equations for human blood O2 dissociation computations. J Appl Physiol 1979;46:599–602.', 'Physeo Physiology workbook: Pulmonology, section V (gas exchange).', 'First Aid for the USMLE Step 1, 2025 ed.: Hemoglobin; oxygen content of blood; oxyhemoglobin dissociation curve; carbon dioxide transport; hypoxia and hypoxemia; response to altitude and exercise; cyanide vs carbon monoxide.'] }
+  ] };
+
+  T.control = { title: 'Control of breathing', kicker: 'The brainstem · chemoreceptors · what drives the rate and depth', blocks: [
+    { p: 'Breathing is the one vital function that runs on autopilot and takes orders. The rhythm is generated in the medulla, shaped in the pons, driven by the carbon dioxide (as pH) the central chemoreceptors feel and the oxygen the carotid bodies feel, and overridden by the cortex for speech, breath-holding and panic. The system defends the PaCO2 within 2–3 mm Hg day and night and lets the PaO2 fall a long way before it reacts.' },
+    { h: 'The generators', ul: [
+      'Medulla: the dorsal respiratory group (nucleus of the solitary tract: inspiration, the afferents from the vagus and glossopharyngeal), the ventral respiratory group (the pre-Bötzinger complex that generates the rhythm; expiratory and inspiratory neurones), the retrotrapezoid nucleus (the chemosensitive hub).',
+      'Pons: the pneumotaxic centre (parabrachial nuclei) that switches inspiration off and sets the rate; the apneustic centre that holds inspiration. Lesions below the pons leave an irregular, gasping rhythm; above it the rhythm survives but the pattern is lost (Cheyne–Stokes with a slow circulation or forebrain damage, central neurogenic hyperventilation with the midbrain).',
+      'Output: the phrenic nerves (C3–5) and the intercostal nerves; the upper-airway muscles are activated a fraction before the diaphragm so that the airway is open when the pressure drops — the step that fails in obstructive sleep apnoea.'] },
+    { h: 'The sensors', table: { head: ['Sensor', 'Where', 'Stimulus', 'Share of the drive', 'Speed'], rows: [
+      ['Central chemoreceptors', 'Ventral medulla (retrotrapezoid nucleus, raphe)', 'H+ of the CSF and brain interstitium: CO2 crosses the barrier, bicarbonate does not', '≈ 70–80% of the CO2 response', 'Minutes; blunted by chronic hypercapnia as CSF bicarbonate rises'],
+      ['Peripheral chemoreceptors', 'Carotid bodies (IX) and aortic bodies (X)', 'Low PaO2 (steeply below 60 mm Hg), high PaCO2, low pH; also low flow, cyanide, nicotine', 'All of the hypoxic drive; a fast 20–30% of the CO2 response', 'Seconds: breath-to-breath'],
+      ['Pulmonary stretch receptors', 'Airway smooth muscle (vagus)', 'Inflation', 'Hering–Breuer: ends inspiration at large volumes (infants, big breaths)', '—'],
+      ['Irritant receptors', 'Airway epithelium (vagus)', 'Smoke, dust, cold, histamine', 'Cough, bronchoconstriction, tachypnoea', '—'],
+      ['J (juxtacapillary) receptors', 'Alveolar walls near the capillaries (vagal C fibres)', 'Interstitial oedema, embolism, inflammation', 'Rapid shallow breathing, dyspnoea', '—'],
+      ['Muscle and joint receptors, baroreceptors, pain, temperature', 'Limbs, arteries, skin', 'Exercise, hypotension, pain, fever', 'Part of the exercise response', '—']] } },
+    { h: 'The responses', ul: [
+      'CO2: ventilation rises 2–3 L/min per mm Hg of PaCO2, more when the PO2 is low (the two interact), less in sleep, with opioids, sedatives, age and chronic hypercapnia (the response curve flattens and shifts right). Metabolic acidosis adds to the drive through the carotid bodies (Kussmaul); the CSF catches up over hours.',
+      'O2: little happens until the PaO2 falls below 60 mm Hg (saturation about 90%), then ventilation rises steeply; the response is sharper when the CO2 is high and almost abolished when it is low — which is why a hyperventilating patient at altitude limits his own drive, and why giving oxygen to a patient dependent on hypoxic drive can hypoventilate him (less than once thought; V/Q worsening and the Haldane effect contribute more).',
+      'Sleep removes the wakefulness drive: the PaCO2 rises 2–4 mm Hg, upper-airway tone falls (obstructive apnoea), and a sleeping CO2 set point is unmasked in central apnoea and in obesity hypoventilation. Pregnancy (progesterone) and liver failure lower the set point; opioids, myxoedema and the obesity hypoventilation syndrome raise it.'] },
+    { h: 'Patterns to recognise', ul: [
+      'Kussmaul: deep, regular, fast — metabolic acidosis. Cheyne–Stokes: crescendo–decrescendo with apnoeas — heart failure (a long circulation time), stroke, altitude, opioids. Biot (ataxic): irregular clusters — medullary damage. Apneustic: prolonged inspiratory holds — pontine damage. Central neurogenic hyperventilation — midbrain.',
+      'Rapid shallow breathing with a normal gas: a stiff lung, oedema, embolism, pain, anxiety; the rapid shallow breathing index (f/VT > 105) on a weaning trial predicts failure.',
+      'The patient who looks comfortable with a PaCO2 of 70 is a chronic retainer; the one who is drowsy and sweaty with a PaCO2 of 55 is acute. The bicarbonate tells them apart.'] },
+    { src: ['West JB, Luks AM. West’s Respiratory Physiology, 11th ed. (chapter 8, Control of ventilation).', 'Levitzky MG. Pulmonary Physiology, 9th ed. (chapter 9).', 'Guyenet PG, Bayliss DA. Neural control of breathing and CO2 homeostasis. Neuron 2015;87:946–61.', 'Physeo Physiology workbook: Pulmonology, section VI (integrated respiration).'] }
+  ] };
+
+  T.heartlung = { title: 'The heart–lung lab', kicker: 'The Campbell diagram joined to the Guyton diagram · drive a breath, set a ventilator, change the circulation', blocks: [
+    { p: 'The lungs and the heart share a chest, and the pressure in it is the variable that joins them. The Campbell diagram plots lung volume against pleural pressure: the lung and chest wall curves, FRC where they cross, the loop of a breath, the work as the areas it encloses. The Guyton diagram plots blood flow against right atrial pressure: what returns to the heart (the venous return line, from the mean systemic filling pressure down to the point where the great veins collapse) and what the heart can put out (the cardiac function curve, which starts at the pressure around the heart — the pleural pressure). Put the two side by side and a breath becomes a movement of the cardiac curve along the pressure axis, the operating point sliding with it. Press play, then change one thing at a time.' },
+    { widget: 'hl' },
+    { h: 'What to try', ul: [
+      'A normal spontaneous breath: the pleural pressure falls, the cardiac function curve shifts left, right atrial pressure falls and venous return and output rise a little on inspiration. The transmural pressure of the atrium (Pra − Ppl) rises: the heart fills more.',
+      'Hypovolaemia (lower the mean systemic pressure a little): the operating point slides onto the steep part of the cardiac curve, so the same breath now swings the output far more — the physiology behind pulse-pressure and stroke-volume variation and the collapsing inferior vena cava. Take a deeper breath, or lower the pressure further, and the right atrial pressure falls to the collapse pressure: venous return is flow-limited (the great veins flatten at the thoracic inlet), the breath no longer moves the output, and only volume will.',
+      'A ventilator breath at zero PEEP: the pleural pressure now rises with the breath (it follows the chest wall curve) and the cardiac curve shifts right; right atrial pressure rises, transmural pressure and output fall. Add PEEP: the lung sits higher on its curve, the pleural pressure rises in proportion to the chest wall’s share (ΔPpl ≈ PEEP × CL/(CL + Ccw)), the mean systemic pressure rises a little (the abdomen is pressed) and so does the collapse pressure — the net effect on output is smaller than the rise in right atrial pressure suggests, until the volume is high enough to squeeze the pulmonary vessels.',
+      'A stiff lung (lower lung compliance): the plateau pressure rises but the pleural pressure hardly changes — most of the airway pressure is spent across the lung. A stiff chest wall (obesity, ascites): the same airway pressure now raises the pleural pressure far more, the heart is squeezed and the plateau pressure overstates the stress on the lung.',
+      'COPD exacerbation or asthma: raise the resistance and the rate. The loop no longer returns to FRC — dynamic hyperinflation — and auto-PEEP appears as a threshold the muscles must overcome before any flow; the resistive area balloons; the raised volume squeezes the pulmonary vessels (afterload on the right ventricle) and the raised pressure around the heart limits return.',
+      'Pulmonary hypertension or RV strain (raise the pulmonary vascular tone): the cardiac curve flattens; the right atrial pressure rises and output falls, and a breath moves it little — the right ventricle is afterload-, not preload-, limited.',
+      'Cardiogenic pulmonary oedema: stiff lungs, more resistance, a high filling pressure and a weak heart: large negative pleural swings load the left ventricle (its afterload is the transmural pressure it must generate) and raise venous return into a heart that cannot take it. Positive pressure reverses both — the reason CPAP works in acute heart failure.'] },
+    { h: 'The rules underneath', ul: [
+      'The heart fills by transmural pressure: right atrial pressure minus the pressure around it. A rising CVP on a ventilator may be a falling transmural pressure; a “normal” CVP in a gasping patient may hide a huge negative pleural pressure.',
+      'Venous return = (Pms − Pra)/Rv until Pra falls below the pressure around the great veins, after which it is flat (a Starling resistor at the thoracic inlet and the diaphragm). Pms is set by the blood volume and the venous tone; the abdomen raises it when the diaphragm descends and when the abdomen is tense.',
+      'Pulmonary vascular resistance is lowest at FRC: alveolar vessels are squeezed above it, extra-alveolar vessels collapse below it. Hyperinflation afterloads the right ventricle; atelectasis does too.',
+      'Spontaneous inspiration pulls blood into the chest and pulls the left ventricle’s wall outward (a higher afterload); positive pressure pushes blood out of the chest and unloads the left ventricle. The same breath helps one ventricle and hinders the other.',
+      'In a passive ventilated patient the pleural pressure rides the chest wall curve; the plateau pressure is a transrespiratory pressure, and only with an oesophageal balloon is the transpulmonary pressure known. In an actively breathing ventilated patient the pleural pressure can be deeply negative despite positive pressure at the mouth.'] },
+    { note: 'A teaching model: typical adult numbers and textbook curve shapes, with the circulation treated as a steady state at every instant (there is no capacitance, so the swings over a breath are larger than in a real patient). After Kenny JE, An Approach to Mechanical Heart-Lung Interaction (2020, Creative Commons), chapters 1–4.' },
+    { src: ['Kenny JE. An Approach to Mechanical Heart-Lung Interaction, 1st ed. Toronto: Spectral Envelope Publishing House, 2020 (heart-lung.org; Creative Commons): chapters 1–4.', 'Campbell EJM. The Respiratory Muscles and the Mechanics of Breathing. Lloyd-Luke, 1958.', 'Guyton AC, Lindsey AW, Kaufmann BN. Effect of mean circulatory filling pressure and other circulatory factors on cardiac output. Am J Physiol 1955;180:463–8.', 'Magder S. Volume and its relationship to cardiac output and venous return. Crit Care 2016;20:271.', 'Pinsky MR. Cardiopulmonary interactions: physiologic basis and clinical applications. Ann Am Thorac Soc 2018;15(Suppl 1):S45–8.'] }
+  ] };
+
+  /* the order of the whole area: anatomy → physiology → bronchoscopy */
+  const GROUPS = [
+    { title: 'Start', ids: ['start'] },
+    { title: 'Anatomy', ids: ['lunganat', 'histo', 'airway', 'tree', 'ct', 'stations'] },
+    { title: 'Physiology', ids: ['mechanics', 'airflow', 'ventilation', 'diffusion', 'vq', 'transport', 'control', 'heartlung'] },
+    { title: 'Bronchoscopy', ids: ['bronch_basics', 'bronch_prep', 'sedation', 'antithrombotic', 'bal', 'sampling', 'icu', 'ebus'] }
+  ];
+  root.PFT_PHYS = { topics: T, groups: GROUPS, LEVELS: LEVELS, p50: p50, sat: sat, o2content: o2content, pao2: pao2, aaNormal: aaNormal };
+  if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_PHYS;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* ------------------------------------------------------------------ the Campbell / Guyton model (heart–lung interaction)
+   A teaching model, after Kenny JE, An Approach to Mechanical Heart-Lung Interaction (2020, CC): the Campbell diagram
+   (lung volume against pleural pressure: the static lung and chest wall curves, the dynamic loop of a breath, the work
+   of breathing) joined to the Guyton diagram (venous return against cardiac function) through the one variable they
+   share, the pressure around the heart. Numbers are typical adult ones and the shapes are the textbook ones; the point
+   is the direction things move, not a patient's values. Pure functions: usable in node for the tests. */
+(function (root) {
+  'use strict';
+  const CMH2O = 0.7355;   // mm Hg per cm H2O
+  /* default parameters */
+  const DEF = {
+    mode: 'spont',       // 'spont' (muscles drive the breath) or 'vent' (a passive, volume-targeted breath)
+    cl: 1,               // lung compliance, multiple of normal (200 mL/cm H2O at FRC)
+    ccw: 1,              // chest wall compliance, multiple of normal (150 mL/cm H2O)
+    cwShift: 0,          // cm H2O the chest wall curve is pushed rightward (obesity, ascites: more pleural pressure at any volume)
+    raw: 2,              // airway resistance, cm H2O/(L/s) (normal 1–3; 10–25 in an exacerbation)
+    vt: 12,              // tidal volume, % of vital capacity (12% of 4.5 L ≈ 540 mL)
+    rr: 14,              // breaths/min
+    peep: 0,             // set PEEP (ventilator) or CPAP (spontaneous), cm H2O
+    pms: 8,              // mean systemic filling pressure, mm Hg (volume status)
+    contr: 1,            // contractility, multiple of normal
+    pvr: 1,              // pulmonary vascular tone, multiple of normal (hypoxia, embolism, pulmonary hypertension)
+    vc: 4.5              // vital capacity, L (to turn % VC into litres)
+  };
+  /* ---- static curves (volume in % VC above RV; pressures in cm H2O) ---- */
+  // transpulmonary pressure the lung needs to hold a volume: V = 100·(1 − e^(−Ptp/τ)), τ = 11.6 at normal compliance
+  function ptpOf(V, p) { const tau = 11.6 / p.cl; const f = Math.min(0.995, Math.max(0.0005, V / 100)); return -tau * Math.log(1 - f); }
+  function lungPpl(V, p) { return -ptpOf(V, p); }   // the static lung curve on the Campbell diagram (Palv = 0)
+  // the passive chest wall: zero at its own equilibrium (about 60% VC), sigmoid about it
+  function cwPpl(V, p) { const d = V - 60; return (0.2 * d * (1 + (d / 45) * (d / 45))) / p.ccw + p.cwShift; }
+  // the respiratory system as the ventilator sees it (Rahn): Paw = Ptp + Pcw
+  function rsPaw(V, p) { return ptpOf(V, p) + cwPpl(V, p); }
+  function solve(f, lo, hi) { let a = lo, b = hi, fa = f(a); for (let i = 0; i < 48; i++) { const m = (a + b) / 2, fm = f(m); if ((fm < 0) === (fa < 0)) { a = m; fa = fm; } else b = m; } return (a + b) / 2; }
+  function frcOf(p) { return solve(V => cwPpl(V, p) - lungPpl(V, p), 0.5, 99); }
+  // compliances at a volume (mL/cm H2O), for the readouts
+  function clAt(V, p) { const h = 0.5; return (h * 2) / (ptpOf(V + h, p) - ptpOf(V - h, p)) * p.vc * 10; }
+  function ccwAt(V, p) { const h = 0.5; return (h * 2) / (cwPpl(V + h, p) - cwPpl(V - h, p)) * p.vc * 10; }
+  function crsAt(V, p) { const h = 0.5; return (h * 2) / (rsPaw(V + h, p) - rsPaw(V - h, p)) * p.vc * 10; }
+  /* ---- the breath: end-expiratory volume, auto-PEEP, the loop ---- */
+  function breath(p) {
+    const frc = frcOf(p), T = 60 / p.rr, ti = T / 3, te = T - ti;
+    const vtL = p.vt / 100 * p.vc;
+    // passive emptying follows a time constant τ = R·Crs; with a short expiratory time the lung does not get back to its rest volume
+    const crs = crsAt(frc + p.vt / 2, p) / 1000;   // L/cm H2O
+    const tau = p.raw * crs;
+    // the resting volume the set PEEP (or CPAP) holds the system at
+    const rest = p.peep > 0 ? solve(V => rsPaw(V, p) - p.peep, frc, 99.5) : frc;
+    const e = Math.exp(-te / tau), trapped = e > 1e-6 ? Math.min(60, (p.vt * e) / (1 - e)) : 0;
+    const vee = Math.min(96, rest + trapped);                     // end-expiratory volume, % VC
+    const autoPeep = Math.max(0, rsPaw(vee, p) - p.peep);        // alveolar pressure left at end-expiration, above the set PEEP
+    const vei = Math.min(99, vee + p.vt);
+    const pts = [];
+    const N = 60;
+    for (let i = 0; i <= N; i++) {   // inspiration: a half-sine flow profile
+      const u = i / N, V = vee + p.vt * (1 - Math.cos(Math.PI * u)) / 2, flow = (vtL * Math.PI / (2 * ti)) * Math.sin(Math.PI * u);
+      pts.push(point(V, flow, u * ti, 'in', p, u, autoPeep));
+    }
+    for (let i = 1; i <= N; i++) {   // expiration: exponential emptying toward the rest volume, cut off by the next breath
+      const t = i / N * te, V = rest + (vei - rest) * Math.exp(-t / tau), flow = -((vei - rest) / 100 * p.vc) / tau * Math.exp(-t / tau);
+      pts.push(point(V, flow, ti + t, 'ex', p, i / N, autoPeep));
+    }
+    // work per breath (J): the loop against the static curves. elastic = area between the lung and chest wall curves over the tidal range
+    const dv = (vei - vee) / 40, lPerPct = p.vc / 100;
+    let wEl = 0, wRes = 0;
+    for (let k = 0; k < 40; k++) {
+      const V = vee + dv * (k + 0.5);
+      wEl += Math.max(0, cwPpl(V, p) - lungPpl(V, p) - (p.mode === 'spont' ? p.peep : 0)) * dv * lPerPct;   // cm H2O · L (CPAP carries part of the elastic load)
+    }
+    for (let i = 1; i <= N; i++) { const a = pts[i - 1], b = pts[i]; wRes += Math.abs(a.pres) * (b.V - a.V) * lPerPct; }   // the resistive part of the inspiratory limb
+    const J = 0.0981;   // 1 cm H2O · L = 0.0981 J
+    const pmus = p.mode === 'spont' ? Math.max(0, cwPpl(vei, p) - lungPpl(vei, p) + autoPeep - p.peep) : 0;
+    return { frc: frc, rest: rest, vee: vee, vei: vei, autoPeep: autoPeep, tau: tau, ti: ti, te: te, T: T, pts: pts, wEl: wEl * J, wRes: wRes * J, pmus: pmus, cl: clAt(vee + p.vt / 2, p), ccw: ccwAt(vee + p.vt / 2, p), crs: crs * 1000, trapped: trapped };
+  }
+  /* one instant of the breath: where the pleural (and airway) pressure sits */
+  function point(V, flow, t, phase, p, u, ap) {
+    const pres = p.raw * flow;                     // resistive pressure, cm H2O (positive on inspiration)
+    let ppl, paw, palv;
+    if (p.mode === 'spont') {
+      paw = p.peep;                                // CPAP at the mouth lifts the whole picture
+      if (phase === 'in') {
+        // the muscles pull the pleural pressure below the static lung curve by the resistive pressure; any auto-PEEP must be
+        // pulled down first (a threshold load, spent over the first part of inspiration)
+        palv = -pres + p.peep + ap * Math.max(0, 1 - 4 * u); ppl = palv - ptpOf(V, p);
+      } else {
+        // expiration: the inspiratory muscles let go over the first part of it (post-inspiratory braking), then the chest is passive
+        // and the pleural pressure sits on the chest wall curve; the recoil of the system drives the flow
+        const f = 0.45 + 0.55 * Math.min(1, u * 1.6);
+        const lungSide = -ptpOf(V, p) + p.peep, cwSide = cwPpl(V, p);
+        ppl = lungSide + f * (cwSide - lungSide); palv = ptpOf(V, p) + ppl;
+      }
+    } else {
+      // passive: the pleural pressure follows the chest wall; the ventilator supplies the transpulmonary and the resistive pressure
+      ppl = cwPpl(V, p);
+      palv = ptpOf(V, p) + ppl;
+      paw = palv + pres;
+    }
+    return { V: V, flow: flow, t: t, phase: phase, ppl: ppl, palv: palv, paw: paw, pres: pres };
+  }
+  /* ---- the circulation (mm Hg, L/min) ---- */
+  function circ(V, ppl, p, br) {
+    const pplMm = ppl * CMH2O;
+    // the pressure around the heart is the pleural pressure; the heart fills by Pra − Ppl (transmural)
+    const frc = br ? br.frc : frcOf(p);
+    // pulmonary vascular resistance is lowest at FRC and rises either side of it (alveolar vessels squeezed at high volume, extra-alveolar at low)
+    const d = (V - frc) / 40, fpvr = p.pvr * (1 + 0.6 * d * d);
+    // mean systemic pressure: volume status, lifted a little by the diaphragm pressing on the abdomen and by any pressure the ventilator leaves in the chest
+    const pms = p.pms + 0.012 * Math.max(0, V - frc) + Math.max(0, (p.mode === 'vent' ? pplMm - (-5 * CMH2O) : 0)) * 0.8;
+    const pcrit = 0 + 0.03 * Math.max(0, V - frc) * CMH2O + Math.max(0, (p.mode === 'vent' ? pplMm - (-5 * CMH2O) : 0)) * 0.8;   // the great veins collapse when Pra falls below the pressure around them
+    const rvr = 1.2;
+    const vr = (pra) => (Math.max(pcrit, pra) >= pms ? 0 : (pms - Math.max(pcrit, pra)) / rvr);
+    const k = 4 * Math.sqrt(fpvr), coMax = 6.4 * p.contr / Math.sqrt(fpvr);
+    const cf = (pra) => { const ptm = pra - pplMm; return ptm <= 0 ? 0 : coMax * (1 - Math.exp(-ptm / k)); };
+    // the operating point: where what returns equals what the heart puts out
+    const pra = solve(x => cf(x) - vr(x), pplMm - 0.001, Math.max(pplMm + 0.01, pms));
+    const co = cf(pra);
+    return { pplMm: pplMm, pms: pms, pcrit: pcrit, rvr: rvr, fpvr: fpvr, k: k, coMax: coMax, pra: pra, co: co, ptm: pra - pplMm, vr: vr, cf: cf };
+  }
+  /* the whole cycle: the loop with the circulation at every point */
+  function run(opts) {
+    const p = Object.assign({}, DEF, opts || {});
+    const br = breath(p);
+    const cyc = br.pts.map(pt => { const c = circ(pt.V, pt.ppl, p, br); return Object.assign({}, pt, { pra: c.pra, co: c.co, ptm: c.ptm, pms: c.pms, pcrit: c.pcrit }); });
+    const cos = cyc.map(x => x.co), coMax = Math.max.apply(null, cos), coMin = Math.min.apply(null, cos);
+    const atRest = circ(br.vee, cyc[0].ppl, p, br), atTop = circ(br.vei, cyc[60].ppl, p, br);
+    return { p: p, br: br, cyc: cyc, rest: atRest, top: atTop, coMean: cos.reduce((a, b) => a + b, 0) / cos.length, coVar: coMax > 0 ? (coMax - coMin) / ((coMax + coMin) / 2) : 0 };
+  }
+  const PRESETS = [
+    { id: 'normal', name: 'Normal', set: {} },
+    { id: 'copd', name: 'COPD exacerbation (hyperinflation, auto-PEEP)', set: { cl: 1.6, raw: 14, rr: 24, vt: 10 } },
+    { id: 'asthma', name: 'Acute asthma', set: { raw: 20, rr: 26, vt: 10 } },
+    { id: 'oedema', name: 'Cardiogenic pulmonary oedema', set: { cl: 0.45, raw: 5, rr: 28, vt: 8, pms: 12, contr: 0.55 } },
+    { id: 'ards', name: 'ARDS, ventilated with PEEP 10', set: { mode: 'vent', cl: 0.4, raw: 4, peep: 10, vt: 9, rr: 24 } },
+    { id: 'obese', name: 'Obesity / tense ascites', set: { ccw: 0.55, cwShift: 5, vt: 9, rr: 20 } },
+    { id: 'hypo', name: 'Hypovolaemia', set: { pms: 5.5 } },
+    { id: 'rvf', name: 'Pulmonary hypertension / RV strain', set: { pvr: 2.4, contr: 0.8 } },
+    { id: 'ventnorm', name: 'Ventilated, normal lungs, PEEP 5', set: { mode: 'vent', peep: 5, vt: 10, rr: 14 } }
+  ];
+  root.PFT_HL = { DEF: DEF, PRESETS: PRESETS, CMH2O: CMH2O, ptpOf: ptpOf, lungPpl: lungPpl, cwPpl: cwPpl, rsPaw: rsPaw, frcOf: frcOf, breath: breath, circ: circ, run: run, clAt: clAt, ccwAt: ccwAt, crsAt: crsAt };
+  if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_HL;
+})(typeof window !== 'undefined' ? window : globalThis);
 
 </script>
 <script>
@@ -11361,6 +11886,445 @@ function ctLab() {
 }
 function ctWidget(kind) { return kind === 'ct' ? ctLab() : null; }
 
+/* ------------------------------------------------------------------ foundations: the figures and labs of the anatomy and physiology topics
+   syllabus (the map of the area), ladder (the airway wall level by level), cycle (pressures over a breath), spiro (volumes
+   and capacities), aa (alveolar gas calculator), odc (the oxygen dissociation curve lab), hl (the Campbell + Guyton lab). */
+const PH = window.PFT_PHYS, HL = window.PFT_HL;
+function svHide(el, on) { if (on) el.setAttribute('hidden', ''); else el.removeAttribute('hidden'); return el; }
+
+/* ---- the map of the area: a card per topic in course order ---- */
+function syllabusFig() {
+  const cat = (typeof learnCatOf === 'function') ? learnCatOf('start') : null;
+  const groups = PH.groups.filter(g => g.title !== 'Start');
+  const topicsOf = (id) => (cat && cat.topics[id]) || PH.topics[id] || AN.topics[id];
+  return h('div', { class: 'syl', 'data-syllabus': '1' }, groups.map(g => h('div', { class: 'syl-group' }, [
+    h('h4', { text: g.title }),
+    h('ol', { class: 'syl-list' }, g.ids.map(id => { const t = topicsOf(id); return t ? h('li', {}, [h('button', { type: 'button', class: 'lnk', 'data-syl': id, text: t.title, onclick: () => setMode('learn', { topic: id }) }), h('span', { class: 'fine', text: ' — ' + (t.kicker || '') })]) : null; }))
+  ])));
+}
+
+/* ---- the airway wall, level by level ---- */
+const LADDER_Q = [
+  ['The last level that has cartilage in its wall', ['bronchi']], ['The last level with goblet cells and glands', ['bronchi']], ['The first level with club cells', ['bronchioles']],
+  ['The end of the conducting zone (the anatomic dead space ends here)', ['terminal']], ['The first level where gas is exchanged', ['respiratory']], ['Where the cilia stop', ['respiratory']],
+  ['The level that carries most of the resistance to airflow', ['bronchi']], ['The home of the type II pneumocyte', ['alveoli']], ['The epithelium becomes simple cuboidal here', ['terminal']],
+  ['Rings of C-shaped cartilage with a muscle behind', ['trachea']], ['Centrilobular emphysema starts here', ['respiratory']], ['Corridors walled by alveolar openings', ['ducts']]
+];
+let ladderSel = '', ladderLabels = true, ladderQuiz = null;
+function ladderFig() {
+  const L = PH.LEVELS, W = 740, RH = 58, Y0 = 34, H = Y0 + RH * L.length + 8;
+  const svg = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, class: 'an-ladder', role: 'img', 'aria-label': 'The airway wall level by level' });
+  const zoneCol = (z) => (/respiratory/.test(z) ? 'resp' : 'cond');
+  // column heads
+  svg.appendChild(svt(80, 18, 'the tube', { class: 'ld-head', 'text-anchor': 'middle' }));
+  svg.appendChild(svt(170, 18, 'level', { class: 'ld-head' }));
+  svg.appendChild(svt(390, 18, 'epithelium', { class: 'ld-head' }));
+  svg.appendChild(svt(560, 18, 'wall', { class: 'ld-head' }));
+  L.forEach((lv, i) => {
+    const y = Y0 + i * RH, mid = y + RH / 2, hidden = !ladderLabels;
+    const g = sv('g', { class: 'ld-row ' + zoneCol(lv.zone) + (ladderSel === lv.id ? ' on' : ''), 'data-level': lv.id, tabindex: '0', role: 'button' });
+    g.appendChild(sv('rect', { x: 4, y: y, width: W - 8, height: RH - 2, rx: 8, class: 'ld-bg' }));
+    // the tube: a band that narrows and thins, with the wall's components
+    const th = [26, 20, 14, 10, 8, 7, 0][i], wall = [4, 3.5, 2.5, 1.6, 1, 0.8, 0][i];
+    if (th > 0) {
+      g.appendChild(sv('rect', { x: 20, y: mid - th / 2 - wall, width: 120, height: th + 2 * wall, rx: 4, class: 'ld-wall' }));
+      g.appendChild(sv('rect', { x: 20, y: mid - th / 2, width: 120, height: th, rx: 3, class: 'ld-lumen' }));
+      if (lv.id === 'trachea') for (let k = 0; k < 6; k++) g.appendChild(sv('path', { d: 'M' + (28 + k * 20) + ' ' + (mid - th / 2 - wall + 1) + ' a6 ' + (th / 2 + wall - 1) + ' 0 0 0 0 ' + (th + 2 * wall - 2), class: 'ld-cart' }));
+      if (lv.id === 'bronchi') for (let k = 0; k < 5; k++) g.appendChild(sv('rect', { x: 26 + k * 23, y: (k % 2 ? mid + th / 2 : mid - th / 2 - wall) , width: 12, height: wall, rx: 1.5, class: 'ld-cart' }));
+      if (/bronchi|terminal|respiratory/.test(lv.id)) { g.appendChild(sv('rect', { x: 20, y: mid - th / 2 - wall, width: 120, height: Math.max(1.2, wall * 0.6), class: 'ld-sm' })); g.appendChild(sv('rect', { x: 20, y: mid + th / 2 + wall * 0.4, width: 120, height: Math.max(1.2, wall * 0.6), class: 'ld-sm' })); }
+      if (lv.id === 'respiratory') [40, 80, 120].forEach(x => g.appendChild(sv('circle', { cx: x, cy: mid + th / 2 + 7, r: 5, class: 'ld-alv' })));
+      if (lv.id === 'ducts') [30, 55, 80, 105, 130].forEach(x => { g.appendChild(sv('circle', { cx: x, cy: mid - th / 2 - 7, r: 5.5, class: 'ld-alv' })); g.appendChild(sv('circle', { cx: x, cy: mid + th / 2 + 7, r: 5.5, class: 'ld-alv' })); });
+    } else {
+      [[40, mid - 8], [66, mid + 9], [92, mid - 9], [118, mid + 7], [60, mid - 12], [100, mid + 14]].forEach((c, k) => g.appendChild(sv('circle', { cx: c[0], cy: c[1], r: k < 4 ? 11 : 7, class: 'ld-alv' })));
+      g.appendChild(sv('path', { d: 'M28 ' + (mid + 20) + ' q20 -6 40 0 t40 0 t40 0', class: 'ld-cap' }));
+    }
+    // the name
+    const tx = 160;
+    g.appendChild(svt(tx, mid - 6, hidden ? '?' : lv.name, { class: 'ld-name' }));
+    g.appendChild(svt(tx, mid + 9, hidden ? '' : lv.gen + ' · ' + lv.dia, { class: 'ld-sub' }));
+    g.appendChild(svt(tx, mid + 22, hidden ? '' : (zoneCol(lv.zone) === 'resp' ? 'respiratory zone' : 'conducting zone'), { class: 'ld-zone ' + zoneCol(lv.zone) }));
+    // the epithelium: cells on a basement membrane
+    const bx = 380, bw = 150, base = mid + 16;
+    g.appendChild(sv('line', { x1: bx, y1: base, x2: bx + bw, y2: base, class: 'ld-bm' }));
+    const kind = [ 'pscc', 'pscc', 'scc', 'cub', 'cubsq', 'sq', 'alv' ][i];
+    if (kind === 'pscc' || kind === 'scc') {
+      const n = kind === 'pscc' ? 9 : 8, cw = bw / n, ch = kind === 'pscc' ? 26 : 18;
+      for (let k = 0; k < n; k++) {
+        const x = bx + k * cw, gob = kind === 'pscc' && (k === 2 || k === 6), club = kind === 'scc' && (k === 2 || k === 5);
+        if (gob) { g.appendChild(sv('path', { d: 'M' + (x + 1) + ' ' + base + ' L' + (x + 1) + ' ' + (base - ch * 0.5) + ' Q' + (x + cw / 2) + ' ' + (base - ch - 4) + ' ' + (x + cw - 1) + ' ' + (base - ch * 0.5) + ' L' + (x + cw - 1) + ' ' + base + ' Z', class: 'ld-cell goblet' })); }
+        else if (club) { g.appendChild(sv('path', { d: 'M' + (x + 1) + ' ' + base + ' L' + (x + 1) + ' ' + (base - ch * 0.7) + ' Q' + (x + cw / 2) + ' ' + (base - ch - 6) + ' ' + (x + cw - 1) + ' ' + (base - ch * 0.7) + ' L' + (x + cw - 1) + ' ' + base + ' Z', class: 'ld-cell club' })); }
+        else { g.appendChild(sv('rect', { x: x + 1, y: base - ch, width: cw - 2, height: ch, class: 'ld-cell col' })); for (let c = 0; c < 4; c++) g.appendChild(sv('line', { x1: x + 3 + c * (cw - 6) / 3, y1: base - ch, x2: x + 3 + c * (cw - 6) / 3 + (c % 2 ? 1.5 : -1.5), y2: base - ch - 6, class: 'ld-cil' })); }
+        if (kind === 'pscc' && k % 3 === 1) g.appendChild(sv('ellipse', { cx: x + cw / 2, cy: base - 4, rx: 3, ry: 2.6, class: 'ld-basal' }));
+      }
+    } else if (kind === 'cub' || kind === 'cubsq') {
+      const n = 9, cw = bw / n;
+      for (let k = 0; k < n; k++) {
+        const x = bx + k * cw, club = (k === 3 || k === 7), sq = kind === 'cubsq' && k >= 5 && !club;
+        if (club) g.appendChild(sv('path', { d: 'M' + (x + 1) + ' ' + base + ' L' + (x + 1) + ' ' + (base - 9) + ' Q' + (x + cw / 2) + ' ' + (base - 18) + ' ' + (x + cw - 1) + ' ' + (base - 9) + ' L' + (x + cw - 1) + ' ' + base + ' Z', class: 'ld-cell club' }));
+        else { g.appendChild(sv('rect', { x: x + 1, y: base - (sq ? 4 : 12), width: cw - 2, height: sq ? 4 : 12, class: 'ld-cell ' + (sq ? 'sq' : 'cub') })); if (!sq && kind === 'cub') for (let c = 0; c < 3; c++) g.appendChild(sv('line', { x1: x + 4 + c * 5, y1: base - 12, x2: x + 4 + c * 5, y2: base - 16, class: 'ld-cil' })); }
+      }
+    } else if (kind === 'sq') {
+      for (let k = 0; k < 5; k++) g.appendChild(sv('rect', { x: bx + k * 30 + 1, y: base - 4, width: 28, height: 4, class: 'ld-cell sq' }));
+      g.appendChild(sv('rect', { x: bx + 62, y: base - 12, width: 12, height: 12, class: 'ld-cell t2' }));
+    } else {
+      for (let k = 0; k < 5; k++) g.appendChild(sv('rect', { x: bx + k * 30 + 1, y: base - 3, width: 28, height: 3, class: 'ld-cell sq' }));
+      g.appendChild(sv('rect', { x: bx + 32, y: base - 12, width: 12, height: 12, class: 'ld-cell t2' })); g.appendChild(sv('rect', { x: bx + 110, y: base - 12, width: 12, height: 12, class: 'ld-cell t2' }));
+      g.appendChild(sv('circle', { cx: bx + 78, cy: base - 20, r: 7, class: 'ld-mac' }));
+      g.appendChild(sv('rect', { x: bx, y: base + 2, width: bw, height: 6, rx: 3, class: 'ld-capb' }));
+    }
+    g.appendChild(svt(bx, mid - 17, hidden ? '' : lv.ep, { class: 'ld-ep' }));
+    // the wall in words
+    const wtext = hidden ? '' : lv.wall;
+    const lines = []; let cur = '';
+    wtext.split(' ').forEach(w => { if ((cur + ' ' + w).length > 34) { lines.push(cur); cur = w; } else cur = cur ? cur + ' ' + w : w; }); if (cur) lines.push(cur);
+    lines.slice(0, 3).forEach((ln, k) => g.appendChild(svt(560, mid - 10 + k * 12, ln + (k === 2 && lines.length > 3 ? ' …' : ''), { class: 'ld-wtext' })));
+    const pick = () => { if (ladderQuiz && !ladderQuiz.done) { ladderAnswer(lv.id); return; } ladderSel = ladderSel === lv.id ? '' : lv.id; render(); };
+    g.addEventListener('click', pick); g.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
+    g.appendChild(sv('title', {})).textContent = hidden ? 'Tap to answer' : lv.name + ' — ' + lv.ep;
+    svg.appendChild(g);
+  });
+  const sel = L.filter(x => x.id === ladderSel)[0];
+  const detail = sel ? h('div', { class: 'ld-detail', 'data-level-detail': sel.id }, [
+    h('p', { class: 'an-name' }, [h('b', { text: sel.name }), h('span', { class: 'tf', text: sel.gen }), h('span', { class: 'tf', text: sel.dia })]),
+    h('p', {}, [h('span', { class: 'lbl', text: 'Epithelium. ' }), sel.ep + '.']),
+    h('p', {}, [h('span', { class: 'lbl', text: 'Cells. ' }), sel.cells.join(', ') + '.']),
+    h('p', {}, [h('span', { class: 'lbl', text: 'Wall. ' }), sel.wall + '.']),
+    h('p', {}, [h('span', { class: 'lbl', text: 'Note. ' }), sel.note])
+  ]) : h('p', { class: 'fine', text: 'Tap a level for its cells and what they do.' });
+  const labId = uid('ldl');
+  const opts = h('div', { class: 'an-3d-modes' }, [
+    h('label', { class: 'chk-inline', for: labId }, [h('input', { type: 'checkbox', id: labId, checked: ladderLabels, 'data-ladder-labels': '1', onchange: (e) => { ladderLabels = e.target.checked; render(); } }), 'Labels']),
+    ladderQuiz ? null : h('button', { type: 'button', class: 'btn sm', 'data-ldq-start': '1', text: 'Quiz: find the level', onclick: () => { ladderQuiz = { n: 0, score: 0, done: false }; ladderNext(); } })
+  ]);
+  let quiz = null;
+  if (ladderQuiz) {
+    const q = ladderQuiz;
+    quiz = h('div', { class: 'an-drill on', 'data-ldq': q.done ? 'done' : 'on' }, [
+      h('p', {}, [h('span', { class: 'lbl', text: 'Tap the level: ' }), h('b', { text: q.q[0] }), ' ', h('span', { class: 'fine', text: 'Question ' + q.n + ' · score ' + q.score })]),
+      q.done ? h('p', { class: 'an-found', text: 'Correct — ' + L.filter(x => x.id === q.q[1][0])[0].name + (q.tries > 1 ? ' (after ' + q.tries + ' taps).' : '.') }) : (q.wrong ? h('p', { class: 'an-wrong', text: 'That is the ' + L.filter(x => x.id === q.wrong)[0].name.toLowerCase() + '. Try again.' }) : null),
+      h('div', { class: 'an-drill-acts' }, [h('button', { type: 'button', class: 'btn sm', 'data-ldq-next': '1', text: q.done ? 'Next' : 'Skip', onclick: ladderNext }), h('button', { type: 'button', class: 'btn sm quiet', 'data-ldq-stop': '1', text: 'Stop the quiz', onclick: () => { ladderQuiz = null; render(); } })])
+    ]);
+  }
+  const legend = h('div', { class: 'an-lgd' }, [['col', 'ciliated columnar'], ['goblet', 'goblet'], ['club', 'club'], ['cub', 'cuboidal'], ['sq', 'squamous / type I'], ['t2', 'type II'], ['mac', 'macrophage'], ['cart', 'cartilage'], ['sm', 'smooth muscle']].map(x => h('span', { class: 'an-lg ld-' + x[0] }, [h('i'), x[1]])));
+  return h('figure', { class: 'an-fig an-ladder-fig', 'data-ladder': '1' }, [opts, svg, legend, quiz, detail,
+    h('figcaption', { text: 'The respiratory tree from the trachea (generation 0) to the alveoli (about generation 23): the tube narrows and its wall loses cartilage, then glands and goblet cells, then cilia and muscle, while the lining flattens from pseudostratified columnar to squamous. Drawn to teach, not to scale.' })]);
+}
+function ladderNext() {
+  const q = ladderQuiz; if (!q) return;
+  let pick; do { pick = LADDER_Q[Math.floor(Math.random() * LADDER_Q.length)]; } while (q.q && pick === q.q);
+  q.q = pick; q.n++; q.tries = 0; q.done = false; q.wrong = ''; ladderSel = ''; render();
+}
+function ladderAnswer(id) {
+  const q = ladderQuiz; q.tries++;
+  if (q.q[1].indexOf(id) >= 0) { q.done = true; if (q.tries === 1) q.score++; q.wrong = ''; ladderSel = id; } else q.wrong = id;
+  render();
+}
+
+/* ---- pressures over one quiet breath ---- */
+function cycleFig() {
+  const W = 560, H = 330, x0 = 40, x1 = 540, T = 4, ti = 1.6, tau = 0.5, VT = 0.5, R = 2;
+  const svg = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, class: 'ph-cycle', role: 'img', 'aria-label': 'Volume, flow, alveolar and pleural pressure over a quiet breath' });
+  const xs = (t) => x0 + (x1 - x0) * t / T;
+  // volume: a half-cosine in, a smooth exponential out (zero flow at the turn); flow is its derivative; alveolar pressure = flow × resistance; pleural = −5 − recoil(volume) + alveolar
+  const vol = (t) => t < ti ? VT * (1 - Math.cos(Math.PI * t / ti)) / 2 : VT * Math.exp(-Math.pow((t - ti) / tau, 1.4));
+  const flow = (t) => (vol(t + 0.004) - vol(t - 0.004)) / 0.008;
+  const palv = (t) => -R * flow(t);
+  const ppl = (t) => -5 - vol(t) * 5 + palv(t);
+  const rows = [
+    { name: 'Volume (L above FRC)', y0: 30, hgt: 50, lo: 0, hi: 0.5, f: vol, ticks: [0, 0.5], cls: 'vol' },
+    { name: 'Flow (L/s)', y0: 100, hgt: 56, lo: -0.8, hi: 0.8, f: flow, ticks: [-0.5, 0, 0.5], cls: 'flow' },
+    { name: 'Alveolar pressure (cm H2O)', y0: 176, hgt: 50, lo: -1.6, hi: 1.6, f: palv, ticks: [-1, 0, 1], cls: 'palv' },
+    { name: 'Pleural pressure (cm H2O)', y0: 246, hgt: 60, lo: -9, hi: -4, f: ppl, ticks: [-8, -5], cls: 'ppl' }
+  ];
+  svg.appendChild(sv('rect', { x: xs(0), y: 18, width: xs(ti) - xs(0), height: H - 30, class: 'ph-insp' }));
+  svg.appendChild(svt((xs(0) + xs(ti)) / 2, 14, 'inspiration', { class: 'ph-ph', 'text-anchor': 'middle' }));
+  svg.appendChild(svt((xs(ti) + xs(T)) / 2, 14, 'expiration', { class: 'ph-ph', 'text-anchor': 'middle' }));
+  rows.forEach(r => {
+    const ys = (v) => r.y0 + r.hgt - (v - r.lo) / (r.hi - r.lo) * r.hgt;
+    r.ticks.forEach(tk => { svg.appendChild(sv('line', { x1: x0, y1: ys(tk), x2: x1, y2: ys(tk), class: 'ph-grid' + (tk === 0 || tk === -5 ? ' zero' : '') })); svg.appendChild(svt(x0 - 4, ys(tk) + 3, String(tk), { class: 'ph-tick', 'text-anchor': 'end' })); });
+    let d = ''; for (let i = 0; i <= 240; i++) { const t = 0.004 + (T - 0.008) * i / 240; d += (i ? ' L' : 'M') + xs(t).toFixed(1) + ' ' + ys(r.f(t)).toFixed(1); }
+    svg.appendChild(sv('path', { d: d, class: 'ph-tr ' + r.cls }));
+    svg.appendChild(svt(x1 - 2, r.y0 + 9, r.name, { class: 'ph-rl ' + r.cls, 'text-anchor': 'end' }));
+  });
+  [0, 1, 2, 3, 4].forEach(t => svg.appendChild(svt(xs(t), H - 6, t + ' s', { class: 'ph-tick', 'text-anchor': 'middle' })));
+  return h('figure', { class: 'an-fig ph-cycle-fig', 'data-cycle': '1' }, [svg, h('figcaption', { text: 'A quiet breath. The muscles pull the pleural pressure down from −5; alveolar pressure follows it below the mouth and gas flows in until, at end-inspiration, alveolar pressure is back to zero and the whole fall in pleural pressure is transpulmonary (holding the extra half litre). Expiration is passive: recoil raises the alveolar pressure above the mouth and the lung empties along its time constant. The part of the pleural swing that is spent on flow (the dip at mid-inspiration) is the resistive work; the part that holds volume is the elastic work.' })]);
+}
+
+/* ---- the spirogram with the volumes and the capacities ---- */
+const SPIRO_NOTE = {
+  TV: 'Tidal volume: a quiet breath, about 500 mL (6–8 mL/kg).', IRV: 'Inspiratory reserve volume: what can still be inhaled after a quiet breath, about 3 L.', ERV: 'Expiratory reserve volume: what can still be exhaled after a quiet breath, about 1.2 L; the first to go with obesity, pregnancy and lying down.',
+  RV: 'Residual volume: what stays after a full exhalation, about 1.2 L (20–25% of TLC); not measurable by spirometry.', IC: 'Inspiratory capacity = VT + IRV, about 3.5 L; falls with hyperinflation and is the volume that shrinks on exercise in COPD.', FRC: 'Functional residual capacity = ERV + RV, about 2.5–3 L: the resting volume where the recoils balance; the oxygen store during apnoea.',
+  VC: 'Vital capacity = IRV + VT + ERV, about 4.5 L: everything that can be moved; forced (FVC) when exhaled fast.', TLC: 'Total lung capacity = VC + RV, about 6 L; low in restriction, high in emphysema.'
+};
+let spiroSel = '';
+function spiroFig() {
+  const W = 590, H = 300, x0 = 20, x1 = 410, y0 = 20, y1 = 280, L = (v) => y1 - (y1 - y0) * v / 6;
+  const svg = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, class: 'ph-spiro', role: 'img', 'aria-label': 'Spirogram with the lung volumes and capacities' });
+  const bands = [['IRV', 3.0, 6.0], ['TV', 2.5, 3.0], ['ERV', 1.2, 2.5], ['RV', 0, 1.2]];
+  bands.forEach(b => { const g = sv('g', { class: 'sp-band' + (spiroSel === b[0] ? ' on' : ''), 'data-vol': b[0], tabindex: '0' }); g.appendChild(sv('rect', { x: x0, y: L(b[2]), width: x1 - x0, height: L(b[1]) - L(b[2]), class: 'sp-' + b[0] })); g.appendChild(svt(b[0] === 'TV' ? x1 - 8 : x0 + 6, (L(b[1]) + L(b[2])) / 2 + 4, b[0], { class: 'sp-lab', 'text-anchor': b[0] === 'TV' ? 'end' : 'start' })); g.appendChild(sv('title', {})).textContent = SPIRO_NOTE[b[0]]; const on = () => { spiroSel = b[0]; spiroNote(); }; g.addEventListener('mouseenter', on); g.addEventListener('focus', on); g.addEventListener('click', on); svg.appendChild(g); });
+  // the trace: quiet breaths, a maximal inspiration, a maximal expiration, quiet breaths
+  let d = '', t = 0; const pts = [];
+  const seg = (fn, dur, n) => { for (let i = 0; i <= n; i++) { const u = i / n; pts.push([t + dur * u, fn(u)]); } t += dur; };
+  for (let k = 0; k < 3; k++) seg(u => 2.5 + 0.5 * (1 - Math.cos(2 * Math.PI * u)) / 2, 1, 24);
+  seg(u => 2.5 + 3.5 * (1 - Math.cos(Math.PI * u)) / 2, 1.4, 30);
+  seg(u => 6 - 4.8 * (1 - Math.cos(Math.PI * u)) / 2, 1.8, 30);
+  seg(u => 1.2 + 1.3 * (1 - Math.cos(Math.PI * u)) / 2, 0.8, 20);
+  for (let k = 0; k < 2; k++) seg(u => 2.5 + 0.5 * (1 - Math.cos(2 * Math.PI * u)) / 2, 1, 24);
+  pts.forEach((p, i) => { d += (i ? ' L' : 'M') + (x0 + (x1 - x0) * p[0] / t).toFixed(1) + ' ' + L(p[1]).toFixed(1); });
+  svg.appendChild(sv('path', { d: d, class: 'sp-trace' }));
+  // the capacities as brackets on the right
+  const caps = [['IC', 2.5, 6.0, 462], ['FRC', 0, 2.5, 462], ['VC', 1.2, 6.0, 506], ['TLC', 0, 6.0, 548]];
+  caps.forEach(c => { const g = sv('g', { class: 'sp-cap' + (spiroSel === c[0] ? ' on' : ''), 'data-vol': c[0], tabindex: '0' }); g.appendChild(sv('line', { x1: c[3], y1: L(c[1]), x2: c[3], y2: L(c[2]), class: 'sp-br' })); g.appendChild(sv('line', { x1: c[3] - 5, y1: L(c[1]), x2: c[3] + 5, y2: L(c[1]), class: 'sp-br' })); g.appendChild(sv('line', { x1: c[3] - 5, y1: L(c[2]), x2: c[3] + 5, y2: L(c[2]), class: 'sp-br' })); g.appendChild(svt(c[3] + 8, (L(c[1]) + L(c[2])) / 2 + 4, c[0], { class: 'sp-lab' })); g.appendChild(sv('title', {})).textContent = SPIRO_NOTE[c[0]]; const on = () => { spiroSel = c[0]; spiroNote(); }; g.addEventListener('mouseenter', on); g.addEventListener('focus', on); g.addEventListener('click', on); svg.appendChild(g); });
+  [0, 1, 2, 3, 4, 5, 6].forEach(v => svg.appendChild(svt(x1 + 4, L(v) + 3, v + ' L', { class: 'ph-tick' })));
+  const note = h('p', { class: 'fine sp-note', 'data-spiro-note': '1', text: spiroSel ? SPIRO_NOTE[spiroSel] : 'Hover or tap a volume or a capacity.' });
+  function spiroNote() { note.textContent = SPIRO_NOTE[spiroSel] || ''; svg.querySelectorAll('[data-vol]').forEach(el => el.classList.toggle('on', el.getAttribute('data-vol') === spiroSel)); }
+  return h('figure', { class: 'an-fig ph-spiro-fig', 'data-spiro': '1' }, [svg, note, h('figcaption', { text: 'Three quiet breaths, a maximal inspiration to TLC, a maximal expiration to RV, and back to quiet breathing. The four volumes do not overlap; the four capacities are sums of them. Everything that includes the residual volume — FRC and TLC — is beyond the spirometer and needs gas dilution or the body box.' })]);
+}
+
+/* ---- the alveolar gas equation and the A–a gradient ---- */
+function aaCalc() {
+  const st = { fio2: 21, pb: 760, paco2: 40, pao2: 90, age: 40, rq: 0.8 };
+  const out = h('div', { class: 'nod-out', 'data-aa-out': '1' });
+  const fld = (key, label, min, max, step) => { const id = uid('aa'); return h('label', { class: 'nod-f', for: id }, [h('span', { class: 'nod-l', text: label }), h('input', { type: 'number', class: 'num', id: id, 'data-aa': key, min: min, max: max, step: step, value: st[key], oninput: (e) => { const v = +e.target.value; if (isFinite(v)) { st[key] = v; calc(); } } })]); };
+  function calc() {
+    const PA = PH.pao2(st.fio2 / 100, st.pb, st.paco2, st.rq), aa = PA - st.pao2, norm = PH.aaNormal(st.age), pf = st.pao2 / (st.fio2 / 100);
+    const expOnAir = st.fio2 <= 21.5 ? '' : ' On this FiO2 the gradient widens even in health (roughly 5–7 mm Hg per 10% of FiO2), so judge by the PaO2/FiO2 ratio as well.';
+    let read;
+    if (st.pao2 >= 80 && st.fio2 <= 21.5) read = 'No hypoxaemia on air.';
+    else if (aa <= norm + 5) read = 'Hypoxaemia with a normal gradient: hypoventilation (the PaCO2 says how much) or a low inspired oxygen pressure — the lung itself is transferring gas normally.';
+    else read = 'A wide gradient: the lung is the problem — V/Q mismatch, shunt or diffusion limitation. If oxygen fails to raise the PaO2, shunt; if the fall is worst on exercise, diffusion.';
+    out.textContent = '';
+    out.appendChild(h('div', { class: 'aa-grid' }, [
+      h('div', {}, [h('span', { class: 'lbl', text: 'PIO2 ' }), (st.fio2 / 100 * (st.pb - 47)).toFixed(0) + ' mm Hg']),
+      h('div', {}, [h('span', { class: 'lbl', text: 'PAO2 ' }), PA.toFixed(0) + ' mm Hg']),
+      h('div', {}, [h('span', { class: 'lbl', text: 'A–a ' }), h('b', { 'data-aa-val': '1', text: aa.toFixed(0) + ' mm Hg' }), ' (normal for age ≤ ' + norm.toFixed(0) + ')']),
+      h('div', {}, [h('span', { class: 'lbl', text: 'PaO2/FiO2 ' }), pf.toFixed(0)])
+    ]));
+    out.appendChild(h('p', { 'data-aa-read': '1', text: read + expOnAir }));
+  }
+  calc();
+  return h('div', { class: 'nod-calc', 'data-aa-calc': '1' }, [h('h3', { text: 'Alveolar gas and the A–a gradient' }),
+    h('div', { class: 'nod-grid' }, [fld('fio2', 'FiO2 (%)', 21, 100, 1), fld('pb', 'Barometric pressure (mm Hg)', 300, 800, 1), fld('paco2', 'PaCO2 (mm Hg)', 10, 120, 1), fld('pao2', 'PaO2 (mm Hg)', 20, 600, 1), fld('age', 'Age (years)', 1, 100, 1), fld('rq', 'Respiratory quotient', 0.7, 1.0, 0.05)]),
+    out, h('p', { class: 'fine', text: 'PAO2 = FiO2 × (PB − 47) − PaCO2/RQ; A–a = PAO2 − PaO2; the normal gradient grows with age (≈ 2.5 + 0.21 × age). Denver sits at 630 mm Hg, Everest base camp at 400.' })]);
+}
+
+/* ---- the oxygen dissociation curve lab ---- */
+const ODC = { ph: 7.4, temp: 37, pco2: 40, dpg: 1, cohb: 0, hb: 15, myo: false, pao2: 95, pvo2: 40 };
+function odcLab() {
+  const W = 520, H = 330, x0 = 48, x1 = 500, y0 = 16, y1 = 290;
+  const X = (p) => x0 + (x1 - x0) * p / 100, Y = (s) => y1 - (y1 - y0) * s;
+  const svg = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, class: 'ph-odc', role: 'img', 'aria-label': 'Oxygen–haemoglobin dissociation curve' });
+  for (let p = 0; p <= 100; p += 20) { svg.appendChild(sv('line', { x1: X(p), y1: y0, x2: X(p), y2: y1, class: 'ph-grid' })); svg.appendChild(svt(X(p), y1 + 14, String(p), { class: 'ph-tick', 'text-anchor': 'middle' })); }
+  for (let s = 0; s <= 1; s += 0.25) { svg.appendChild(sv('line', { x1: x0, y1: Y(s), x2: x1, y2: Y(s), class: 'ph-grid' })); svg.appendChild(svt(x0 - 4, Y(s) + 3, Math.round(s * 100) + '%', { class: 'ph-tick', 'text-anchor': 'end' })); }
+  svg.appendChild(svt((x0 + x1) / 2, H - 4, 'PO2 (mm Hg)', { class: 'ph-tick', 'text-anchor': 'middle' }));
+  const norm = sv('path', { class: 'odc-norm' }), cur = sv('path', { class: 'odc-cur' }), myo = svHide(sv('path', { class: 'odc-myo' }), true);
+  const artP = sv('circle', { r: 5, class: 'odc-pt art' }), venP = sv('circle', { r: 5, class: 'odc-pt ven' }), p50L = sv('line', { class: 'odc-p50' }), p50T = svt(0, 0, '', { class: 'ph-tick odc-p50t' });
+  const artT = svt(0, 0, 'arterial', { class: 'odc-lab' }), venT = svt(0, 0, 'venous', { class: 'odc-lab' });
+  [norm, myo, cur, p50L, p50T, artP, venP, artT, venT].forEach(e => svg.appendChild(e));
+  const read = h('div', { class: 'odc-read', 'data-odc-read': '1' });
+  const curve = (p50v) => { let d = ''; for (let i = 0; i <= 100; i++) { const p = i; d += (i ? ' L' : 'M') + X(p).toFixed(1) + ' ' + Y(PH.sat(p, p50v)).toFixed(1); } return d; };
+  norm.setAttribute('d', curve(26.8));
+  { let d = ''; for (let i = 0; i <= 100; i++) d += (i ? ' L' : 'M') + X(i).toFixed(1) + ' ' + Y(i / (i + 2.8)).toFixed(1); myo.setAttribute('d', d); }
+  function draw() {
+    const p50v = PH.p50(ODC) * (1 - 0.55 * ODC.cohb / 100);   // CO binds some sites and makes the rest hold tighter
+    cur.setAttribute('d', curve(p50v));
+    svHide(myo, !ODC.myo);
+    const sa = PH.sat(ODC.pao2, p50v), svv = PH.sat(ODC.pvo2, p50v), avail = ODC.hb * (1 - ODC.cohb / 100);
+    const ca = PH.o2content(avail, sa, ODC.pao2), cv = PH.o2content(avail, svv, ODC.pvo2);
+    artP.setAttribute('cx', X(ODC.pao2)); artP.setAttribute('cy', Y(sa)); venP.setAttribute('cx', X(ODC.pvo2)); venP.setAttribute('cy', Y(svv));
+    artT.setAttribute('x', X(ODC.pao2) + 8); artT.setAttribute('y', Y(sa) + 14); venT.setAttribute('x', X(ODC.pvo2) + 8); venT.setAttribute('y', Y(svv) + 14);
+    p50L.setAttribute('x1', X(p50v)); p50L.setAttribute('x2', X(p50v)); p50L.setAttribute('y1', Y(0.5)); p50L.setAttribute('y2', y1);
+    p50T.setAttribute('x', X(p50v) + 3); p50T.setAttribute('y', Y(0.5) - 4); p50T.textContent = 'P50 ' + p50v.toFixed(1);
+    const shift = p50v > 28 ? 'right shift (easier unloading)' : (p50v < 25.5 ? 'left shift (tighter binding)' : 'no shift');
+    read.textContent = '';
+    read.appendChild(h('div', { class: 'aa-grid' }, [
+      h('div', {}, [h('span', { class: 'lbl', text: 'P50 ' }), h('b', { 'data-odc-p50': '1', text: p50v.toFixed(1) + ' mm Hg' }), ' — ' + shift]),
+      h('div', {}, [h('span', { class: 'lbl', text: 'SaO2 at PaO2 ' + ODC.pao2 + ': ' }), h('b', { 'data-odc-sa': '1', text: (sa * 100).toFixed(1) + '%' })]),
+      h('div', {}, [h('span', { class: 'lbl', text: 'SvO2 at PvO2 ' + ODC.pvo2 + ': ' }), (svv * 100).toFixed(1) + '%']),
+      h('div', {}, [h('span', { class: 'lbl', text: 'Arterial content ' }), h('b', { 'data-odc-ca': '1', text: ca.toFixed(1) + ' mL/dL' }), ODC.cohb ? ' (' + ODC.cohb + '% of the haemoglobin carries CO)' : '']),
+      h('div', {}, [h('span', { class: 'lbl', text: 'Venous content ' }), cv.toFixed(1) + ' mL/dL — ' + (ca - cv).toFixed(1) + ' mL/dL extracted']),
+      h('div', {}, [h('span', { class: 'lbl', text: 'Delivery at 5 L/min ' }), (ca * 50).toFixed(0) + ' mL/min'])
+    ]));
+  }
+  const sl = (key, label, min, max, step, fmt) => { const id = uid('od'); const inp = h('input', { type: 'range', id: id, min: min, max: max, step: step, value: ODC[key], 'data-odc': key, oninput: (e) => { ODC[key] = +e.target.value; val.textContent = fmt(ODC[key]); draw(); } }); const val = h('span', { class: 'odc-val', text: fmt(ODC[key]) }); return h('label', { class: 'odc-sl', for: id }, [h('span', { class: 'nod-l', text: label }), inp, val]); };
+  const myoId = uid('my');
+  const ctrls = h('div', { class: 'odc-ctrls' }, [
+    sl('ph', 'pH', 6.9, 7.7, 0.02, v => v.toFixed(2)), sl('temp', 'Temperature (°C)', 30, 42, 0.5, v => v.toFixed(1)), sl('pco2', 'PCO2 (mm Hg)', 20, 80, 1, v => String(v)), sl('dpg', '2,3-DPG (× normal)', 0, 2, 0.1, v => v.toFixed(1) + '×'),
+    sl('cohb', 'Carboxyhaemoglobin (%)', 0, 60, 1, v => v + '%'), sl('hb', 'Haemoglobin (g/dL)', 5, 20, 0.5, v => v.toFixed(1)), sl('pao2', 'PaO2 (mm Hg)', 30, 100, 1, v => String(v)), sl('pvo2', 'PvO2 (mm Hg)', 15, 60, 1, v => String(v)),
+    h('label', { class: 'chk-inline', for: myoId }, [h('input', { type: 'checkbox', id: myoId, checked: ODC.myo, 'data-odc-myo': '1', onchange: (e) => { ODC.myo = e.target.checked; draw(); } }), 'Show myoglobin']),
+    h('button', { type: 'button', class: 'lnk', 'data-odc-reset': '1', text: 'Reset', onclick: () => { Object.assign(ODC, { ph: 7.4, temp: 37, pco2: 40, dpg: 1, cohb: 0, hb: 15, myo: false, pao2: 95, pvo2: 40 }); render(); } })
+  ]);
+  draw();
+  return h('figure', { class: 'an-fig ph-odc-fig', 'data-odc': '1' }, [h('div', { class: 'odc-grid' }, [svg, ctrls]), read,
+    h('figcaption', { text: 'The grey curve is normal (P50 26.8 mm Hg); the coloured one is yours. Acid, carbon dioxide, heat and 2,3-DPG push it right and the tissues get more at the same PO2; alkali, cold, low DPG, carbon monoxide and fetal haemoglobin pull it left. Carbon monoxide also takes sites, so the content falls like anaemia while the saturation of what remains looks normal to a pulse oximeter. Myoglobin, a monomer, is the hyperbola far to the left.' })]);
+}
+
+/* ---- the heart–lung lab: the Campbell diagram beside the Guyton diagram ---- */
+const HLS = { p: Object.assign({}, HL.DEF), run: null, phase: 0, playing: true, raf: 0, t0: 0, trace: [] };
+function hlRun() { HLS.run = HL.run(HLS.p); return HLS.run; }
+function hlLab() {
+  const run = hlRun();
+  const p = HLS.p;
+  // ---------- the Campbell diagram ----------
+  const CW = 420, CH = 340, cx0 = 52, cx1 = 408, cy0 = 14, cy1 = 300, PMIN = -32, PMAX = 36;
+  const X = (pr) => cx0 + (cx1 - cx0) * (pr - PMIN) / (PMAX - PMIN), Y = (v) => cy1 - (cy1 - cy0) * v / 100;
+  const camp = sv('svg', { viewBox: '0 0 ' + CW + ' ' + CH, class: 'hl-svg hl-camp', role: 'img', 'aria-label': 'Campbell diagram: lung volume against pleural pressure' });
+  for (let pr = -30; pr <= 30; pr += 10) { camp.appendChild(sv('line', { x1: X(pr), y1: cy0, x2: X(pr), y2: cy1, class: 'ph-grid' + (pr === 0 ? ' zero' : '') })); camp.appendChild(svt(X(pr), cy1 + 13, String(pr), { class: 'ph-tick', 'text-anchor': 'middle' })); }
+  for (let v = 0; v <= 100; v += 25) { camp.appendChild(sv('line', { x1: cx0, y1: Y(v), x2: cx1, y2: Y(v), class: 'ph-grid' })); camp.appendChild(svt(cx0 - 4, Y(v) + 3, v + '%', { class: 'ph-tick', 'text-anchor': 'end' })); }
+  camp.appendChild(svt((cx0 + cx1) / 2, CH - 4, p.mode === 'vent' ? 'pressure (cm H2O): pleural for the lung and chest wall curves, airway for Crs' : 'pleural pressure (cm H2O)', { class: 'ph-tick', 'text-anchor': 'middle' }));
+  camp.appendChild(svt(cx0 + 4, cy0 + 10, 'lung volume (% VC)', { class: 'ph-tick' }));
+  const elastic = sv('path', { class: 'hl-wel' }), resist = sv('path', { class: 'hl-wres' }), lungC = sv('path', { class: 'hl-lung' }), cwC = sv('path', { class: 'hl-cw' }), rsC = svHide(sv('path', { class: 'hl-rs' }), p.mode !== 'vent'), loop = sv('path', { class: 'hl-loop' }), loopIn = sv('path', { class: 'hl-loop in' }), loopAw = svHide(sv('path', { class: 'hl-loop aw' }), p.mode !== 'vent');
+  const frcL = sv('line', { class: 'hl-frc' }), frcT = svt(0, 0, 'FRC', { class: 'hl-t' }), veeL = sv('line', { class: 'hl-vee' }), veeT = svt(0, 0, '', { class: 'hl-t warn' });
+  const dot = sv('circle', { r: 5, class: 'hl-dot' }), pmusL = sv('line', { class: 'hl-pmus' }), pmusT = svt(0, 0, '', { class: 'hl-t' });
+  const lungT = svt(0, 0, 'lung', { class: 'hl-t lung' }), cwT = svt(0, 0, 'chest wall', { class: 'hl-t cw' }), rsT = svHide(svt(0, 0, 'Crs (airway pressure)', { class: 'hl-t rs' }), p.mode !== 'vent');
+  [elastic, resist, lungC, cwC, rsC, loop, loopIn, loopAw, frcL, frcT, veeL, veeT, pmusL, pmusT, lungT, cwT, rsT, dot].forEach(e => camp.appendChild(e));
+  // ---------- the Guyton diagram ----------
+  const GW = 420, GH = 340, gx0 = 52, gx1 = 408, gy0 = 14, gy1 = 300, QMIN = -8, QMAX = 18, FMAX = 10;
+  const GX = (pr) => gx0 + (gx1 - gx0) * (pr - QMIN) / (QMAX - QMIN), GY = (f) => gy1 - (gy1 - gy0) * f / FMAX;
+  const guy = sv('svg', { viewBox: '0 0 ' + GW + ' ' + GH, class: 'hl-svg hl-guy', role: 'img', 'aria-label': 'Guyton diagram: venous return and cardiac function against right atrial pressure' });
+  for (let pr = -5; pr <= 15; pr += 5) { guy.appendChild(sv('line', { x1: GX(pr), y1: gy0, x2: GX(pr), y2: gy1, class: 'ph-grid' + (pr === 0 ? ' zero' : '') })); guy.appendChild(svt(GX(pr), gy1 + 13, String(pr), { class: 'ph-tick', 'text-anchor': 'middle' })); }
+  for (let f = 0; f <= FMAX; f += 2) { guy.appendChild(sv('line', { x1: gx0, y1: GY(f), x2: gx1, y2: GY(f), class: 'ph-grid' })); guy.appendChild(svt(gx0 - 4, GY(f) + 3, String(f), { class: 'ph-tick', 'text-anchor': 'end' })); }
+  guy.appendChild(svt((gx0 + gx1) / 2, GH - 4, 'right atrial pressure (mm Hg)', { class: 'ph-tick', 'text-anchor': 'middle' }));
+  guy.appendChild(svt(gx0 + 4, gy0 + 10, 'blood flow (L/min)', { class: 'ph-tick' }));
+  const vrGhost = sv('path', { class: 'hl-vr ghost' }), cfGhost = sv('path', { class: 'hl-cf ghost' }), vrC = sv('path', { class: 'hl-vr' }), cfC = sv('path', { class: 'hl-cf' });
+  const op = sv('circle', { r: 5.5, class: 'hl-op' }), tm = sv('line', { class: 'hl-tm' }), tmA = sv('circle', { r: 3, class: 'hl-tm-end' }), tmB = sv('circle', { r: 3, class: 'hl-tm-end' }), tmT = svt(0, 0, '', { class: 'hl-t' });
+  const pmsT = svt(0, 0, 'Pms', { class: 'hl-t vr' }), pplT = svt(0, 0, 'Ppl', { class: 'hl-t cf' }), coT = svt(0, 0, '', { class: 'hl-t' }), vrT = svt(0, 0, 'venous return', { class: 'hl-t vr' }), cfT = svt(0, 0, 'cardiac function', { class: 'hl-t cf' });
+  [vrGhost, cfGhost, vrC, cfC, tm, tmA, tmB, tmT, pmsT, pplT, vrT, cfT, coT, op].forEach(e => guy.appendChild(e));
+  // ---------- the strip: cardiac output and pleural pressure over the last breaths ----------
+  const SW = 860, SH = 120, sx0 = 50, sx1 = 850;
+  const strip = sv('svg', { viewBox: '0 0 ' + SW + ' ' + SH, class: 'hl-svg hl-strip', role: 'img', 'aria-label': 'Cardiac output and pleural pressure over the breaths' });
+  const coTr = sv('path', { class: 'hl-cotr' }), pplTr = sv('path', { class: 'hl-ppltr' });
+  strip.appendChild(svt(sx0 - 4, 18, 'CO', { class: 'ph-tick hl-co', 'text-anchor': 'end' })); strip.appendChild(svt(sx0 - 4, SH - 22, 'Ppl', { class: 'ph-tick hl-ppl', 'text-anchor': 'end' }));
+  strip.appendChild(coTr); strip.appendChild(pplTr);
+  // ---------- readouts ----------
+  const reads = h('div', { class: 'hl-reads', 'data-hl-reads': '1' });
+  function pathOf(fn, from, to, n, xf, yf) { let d = ''; for (let i = 0; i <= n; i++) { const v = from + (to - from) * i / n; const pr = fn(v); if (!isFinite(pr)) continue; d += (d ? ' L' : 'M') + xf(pr).toFixed(1) + ' ' + yf(v).toFixed(1); } return d; }
+  function drawStatic() {
+    const r = HLS.run, b = r.br, pp = r.p;
+    lungC.setAttribute('d', pathOf(v => HL.lungPpl(v, pp) + (pp.mode === 'spont' ? pp.peep : 0), 1, 99, 80, X, Y));
+    cwC.setAttribute('d', pathOf(v => HL.cwPpl(v, pp), 1, 99, 80, X, Y));
+    svHide(rsC, pp.mode !== 'vent'); svHide(rsT, pp.mode !== 'vent'); svHide(loopAw, pp.mode !== 'vent');
+    if (pp.mode === 'vent') { rsC.setAttribute('d', pathOf(v => HL.rsPaw(v, pp), 1, 99, 80, X, Y)); let vEdge = 99; for (let v = 1; v <= 99; v++) { if (HL.rsPaw(v, pp) >= PMAX - 1) { vEdge = v; break; } } rsT.setAttribute('x', cx1 - 2); rsT.setAttribute('text-anchor', 'end'); rsT.setAttribute('y', Y(Math.min(vEdge, 99)) - 6); }
+    lungT.setAttribute('x', X(HL.lungPpl(88, pp) + (pp.mode === 'spont' ? pp.peep : 0)) - 4); lungT.setAttribute('y', Y(88)); lungT.setAttribute('text-anchor', 'end');
+    cwT.setAttribute('x', X(HL.cwPpl(88, pp)) + 4); cwT.setAttribute('y', Y(88));
+    // the loop
+    const pts = b.pts, xOf = (q) => X(pp.mode === 'vent' ? q.ppl : q.ppl);
+    let d = ''; pts.forEach((q, i) => { d += (i ? ' L' : 'M') + xOf(q).toFixed(1) + ' ' + Y(q.V).toFixed(1); }); loop.setAttribute('d', d + ' Z');
+    let di = ''; pts.slice(0, 61).forEach((q, i) => { di += (i ? ' L' : 'M') + xOf(q).toFixed(1) + ' ' + Y(q.V).toFixed(1); }); loopIn.setAttribute('d', di);
+    if (pp.mode === 'vent') { let da = ''; pts.forEach((q, i) => { da += (i ? ' L' : 'M') + X(Math.min(PMAX, q.paw)).toFixed(1) + ' ' + Y(q.V).toFixed(1); }); loopAw.setAttribute('d', da + ' Z'); }
+    // the areas: elastic between the curves over the tidal range; resistive between the inspiratory limb and the static lung curve
+    let de = ''; for (let i = 0; i <= 30; i++) { const v = b.vee + (b.vei - b.vee) * i / 30; de += (i ? ' L' : 'M') + X(HL.cwPpl(v, pp)).toFixed(1) + ' ' + Y(v).toFixed(1); }
+    for (let i = 30; i >= 0; i--) { const v = b.vee + (b.vei - b.vee) * i / 30; de += ' L' + X(HL.lungPpl(v, pp) + (pp.mode === 'spont' ? pp.peep : 0)).toFixed(1) + ' ' + Y(v).toFixed(1); }
+    elastic.setAttribute('d', de + ' Z');
+    if (pp.mode === 'spont') {
+      let dr = ''; pts.slice(0, 61).forEach((q, i) => { dr += (i ? ' L' : 'M') + X(q.ppl).toFixed(1) + ' ' + Y(q.V).toFixed(1); });
+      for (let i = 30; i >= 0; i--) { const v = b.vee + (b.vei - b.vee) * i / 30; dr += ' L' + X(HL.lungPpl(v, pp) + pp.peep).toFixed(1) + ' ' + Y(v).toFixed(1); }
+      resist.setAttribute('d', dr + ' Z');
+    } else resist.setAttribute('d', '');
+    frcL.setAttribute('x1', cx0); frcL.setAttribute('x2', cx1); frcL.setAttribute('y1', Y(b.frc)); frcL.setAttribute('y2', Y(b.frc)); frcT.setAttribute('x', cx1 - 2); frcT.setAttribute('y', Y(b.frc) - 3); frcT.setAttribute('text-anchor', 'end');
+    const hyper = b.vee > b.frc + 0.5;
+    svHide(veeL, !hyper); svHide(veeT, !hyper);
+    if (hyper) { veeL.setAttribute('x1', cx0); veeL.setAttribute('x2', cx1); veeL.setAttribute('y1', Y(b.vee)); veeL.setAttribute('y2', Y(b.vee)); veeT.setAttribute('x', cx1 - 2); veeT.setAttribute('y', Y(b.vee) - 3); veeT.setAttribute('text-anchor', 'end'); veeT.textContent = b.autoPeep > 0.3 ? 'end-expiration · auto-PEEP ' + b.autoPeep.toFixed(1) : (pp.peep > 0 ? 'end-expiration on PEEP ' + pp.peep : 'end-expiration'); }
+    // the muscle pressure at end-inspiration (spontaneous) or the plateau pressure (ventilator)
+    if (pp.mode === 'spont') { const vI = b.vei, a = HL.lungPpl(vI, pp) + pp.peep, c = HL.cwPpl(vI, pp); pmusL.setAttribute('x1', X(a)); pmusL.setAttribute('x2', X(c)); pmusL.setAttribute('y1', Y(vI)); pmusL.setAttribute('y2', Y(vI)); pmusT.setAttribute('x', (X(a) + X(c)) / 2); pmusT.setAttribute('y', Y(vI) - 9); pmusT.setAttribute('text-anchor', 'middle'); pmusT.textContent = 'Pmus ' + b.pmus.toFixed(0); }
+    else { const vI = b.vei, c = HL.cwPpl(vI, pp), aw = HL.rsPaw(vI, pp); pmusL.setAttribute('x1', X(c)); pmusL.setAttribute('x2', X(Math.min(PMAX, aw))); pmusL.setAttribute('y1', Y(vI)); pmusL.setAttribute('y2', Y(vI)); pmusT.setAttribute('x', (X(c) + X(Math.min(PMAX, aw))) / 2); pmusT.setAttribute('y', Y(vI) - 5); pmusT.setAttribute('text-anchor', 'middle'); pmusT.textContent = 'Ptp ' + (aw - c).toFixed(0) + ' · plateau ' + aw.toFixed(0); }
+    // the Guyton curves at rest (ghost) — the live ones are drawn each frame
+    const c0 = r.rest;
+    vrGhost.setAttribute('d', pathOf(pr => c0.vr(pr), QMIN, c0.pms, 60, GX, GY).replace(/M/, 'M')); // placeholder, redone below with x as pressure
+    vrGhost.setAttribute('d', vrPath(c0)); cfGhost.setAttribute('d', cfPath(c0));
+    // readouts
+    const perMin = (b.wEl + b.wRes) * pp.rr;
+    reads.textContent = '';
+    const row = (k, v, cls) => h('div', { class: 'hl-r' + (cls ? ' ' + cls : '') }, [h('span', { class: 'lbl', text: k }), h('b', { text: v })]);
+    reads.appendChild(h('div', { class: 'hl-rg' }, [
+      row('FRC', b.frc.toFixed(0) + '% VC (' + (b.frc / 100 * pp.vc).toFixed(2) + ' L)'),
+      row('End-expiratory volume', b.vee.toFixed(0) + '% VC' + (hyper ? (b.trapped > 0.5 ? ' — hyperinflated by ' : ' — held above FRC by ') + ((b.vee - b.frc) / 100 * pp.vc * 1000).toFixed(0) + ' mL' + (b.trapped > 0.5 ? ' (trapped)' : ' (PEEP)') : ''), hyper && b.trapped > 0.5 ? 'warn' : ''),
+      row('Auto-PEEP', b.autoPeep.toFixed(1) + ' cm H2O', b.autoPeep > 2 ? 'warn' : ''),
+      row('Time constant', b.tau.toFixed(2) + ' s (expiration ' + b.te.toFixed(1) + ' s)'),
+      row('Compliance (lung / chest wall / system)', b.cl.toFixed(0) + ' / ' + b.ccw.toFixed(0) + ' / ' + b.crs.toFixed(0) + ' mL/cm H2O'),
+      row(pp.mode === 'spont' ? 'Muscle pressure at end-inspiration' : 'Plateau pressure', pp.mode === 'spont' ? b.pmus.toFixed(1) + ' cm H2O' : HL.rsPaw(b.vei, pp).toFixed(1) + ' cm H2O (driving ' + (HL.rsPaw(b.vei, pp) - Math.max(pp.peep, HL.rsPaw(b.vee, pp))).toFixed(1) + ')'),
+      row('Pleural pressure, end-expiration → end-inspiration', b.pts[0].ppl.toFixed(1) + ' → ' + b.pts[60].ppl.toFixed(1) + ' cm H2O'),
+      row('Work per breath (elastic + resistive)', b.wEl.toFixed(2) + ' + ' + b.wRes.toFixed(2) + ' J = ' + (b.wEl + b.wRes).toFixed(2) + ' J · ' + perMin.toFixed(1) + ' J/min'),
+      row('Mean systemic pressure / collapse pressure', c0.pms.toFixed(1) + ' / ' + c0.pcrit.toFixed(1) + ' mm Hg'),
+      row('Right atrial pressure, end-expiration → end-inspiration', r.rest.pra.toFixed(1) + ' → ' + r.top.pra.toFixed(1) + ' mm Hg'),
+      row('Transmural (filling) pressure', r.rest.ptm.toFixed(1) + ' → ' + r.top.ptm.toFixed(1) + ' mm Hg'),
+      row('Cardiac output', r.rest.co.toFixed(2) + ' → ' + r.top.co.toFixed(2) + ' L/min · swing over the breath ' + (r.coVar * 100).toFixed(0) + '%', r.coVar > 0.25 ? 'warn' : '')
+    ]));
+  }
+  function vrPath(c) { let d = ''; for (let i = 0; i <= 80; i++) { const pr = QMIN + (QMAX - QMIN) * i / 80; const f = c.vr(pr); d += (i ? ' L' : 'M') + GX(pr).toFixed(1) + ' ' + GY(Math.min(FMAX, f)).toFixed(1); } return d; }
+  function cfPath(c) { let d = ''; for (let i = 0; i <= 80; i++) { const pr = QMIN + (QMAX - QMIN) * i / 80; const f = c.cf(pr); d += (i ? ' L' : 'M') + GX(pr).toFixed(1) + ' ' + GY(Math.min(FMAX, f)).toFixed(1); } return d; }
+  function drawFrame(phase) {
+    const r = HLS.run, b = r.br, pp = r.p, n = b.pts.length - 1, i = Math.max(0, Math.min(n, Math.round(phase * n)));
+    const q = r.cyc[i], c = HL.circ(q.V, q.ppl, pp, b);
+    dot.setAttribute('cx', X(q.ppl)); dot.setAttribute('cy', Y(q.V));
+    vrC.setAttribute('d', vrPath(c)); cfC.setAttribute('d', cfPath(c));
+    op.setAttribute('cx', GX(c.pra)); op.setAttribute('cy', GY(Math.min(FMAX, c.co)));
+    tm.setAttribute('x1', GX(c.pplMm)); tm.setAttribute('x2', GX(c.pra)); tm.setAttribute('y1', GY(0) + 0); tm.setAttribute('y2', GY(0) + 0);
+    tmA.setAttribute('cx', GX(c.pplMm)); tmA.setAttribute('cy', GY(0)); tmB.setAttribute('cx', GX(c.pra)); tmB.setAttribute('cy', GY(0));
+    tmT.setAttribute('x', (GX(c.pplMm) + GX(c.pra)) / 2); tmT.setAttribute('y', GY(0) - 8); tmT.setAttribute('text-anchor', 'middle'); tmT.textContent = 'transmural ' + c.ptm.toFixed(1);
+    pmsT.setAttribute('x', GX(c.pms)); pmsT.setAttribute('y', GY(0) + 24); pmsT.setAttribute('text-anchor', 'middle'); pmsT.textContent = 'Pms ' + c.pms.toFixed(1);
+    pplT.setAttribute('x', GX(c.pplMm)); pplT.setAttribute('y', GY(0) + 24); pplT.setAttribute('text-anchor', 'middle'); pplT.textContent = 'Ppl ' + c.pplMm.toFixed(1);
+    coT.setAttribute('x', GX(c.pra) + 9); coT.setAttribute('y', GY(Math.min(FMAX, c.co)) + 16); coT.textContent = 'CO ' + c.co.toFixed(1) + ' · Pra ' + c.pra.toFixed(1);
+    vrT.setAttribute('x', GX((c.pms + c.pcrit) / 2) + 6); vrT.setAttribute('y', GY(c.vr((c.pms + c.pcrit) / 2)) - 6);
+    cfT.setAttribute('x', GX(QMAX - 0.5)); cfT.setAttribute('y', GY(Math.min(FMAX, c.cf(QMAX - 0.5))) - 8); cfT.setAttribute('text-anchor', 'end');
+    // the strip
+    HLS.trace.push([q.co, q.ppl]); if (HLS.trace.length > 240) HLS.trace.shift();
+    const tr = HLS.trace, cos = tr.map(t => t[0]), ppls = tr.map(t => t[1]);
+    const cmin = Math.min.apply(null, cos) - 0.3, cmax = Math.max.apply(null, cos) + 0.3, pmin = Math.min.apply(null, ppls) - 1, pmax = Math.max.apply(null, ppls) + 1;
+    let dc = '', dp = '';
+    tr.forEach((t, k) => { const x = sx0 + (sx1 - sx0) * k / 239; dc += (k ? ' L' : 'M') + x.toFixed(1) + ' ' + (8 + 44 * (1 - (t[0] - cmin) / (cmax - cmin))).toFixed(1); dp += (k ? ' L' : 'M') + x.toFixed(1) + ' ' + (64 + 44 * (1 - (t[1] - pmin) / (pmax - pmin))).toFixed(1); });
+    coTr.setAttribute('d', dc); pplTr.setAttribute('d', dp);
+    const ph = document.querySelector('[data-hl-phase]'); if (ph && !HLS.scrub) ph.value = String(Math.round(phase * 1000));
+  }
+  function frame(now) {
+    HLS.raf = 0;
+    if (!camp.isConnected) return;
+    if (HLS.playing) { const T = HLS.run.br.T * 1000; HLS.phase = ((now - HLS.t0) % T) / T; drawFrame(HLS.phase); }
+    HLS.raf = requestAnimationFrame(frame);
+  }
+  // ---------- controls ----------
+  const sl = (key, label, min, max, step, fmt, title) => { const id = uid('hl'); const val = h('span', { class: 'odc-val', text: fmt(p[key]) }); const inp = h('input', { type: 'range', id: id, min: min, max: max, step: step, value: p[key], 'data-hl': key, oninput: (e) => { p[key] = +e.target.value; val.textContent = fmt(p[key]); hlRun(); drawStatic(); drawFrame(HLS.phase); } }); return h('label', { class: 'odc-sl', for: id, title: title || null }, [h('span', { class: 'nod-l', text: label }), inp, val]); };
+  const modes = h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Who drives the breath' }, [['spont', 'Spontaneous breath'], ['vent', 'Ventilator (passive)']].map(m => h('button', { type: 'button', class: 'ch', role: 'radio', 'data-hl-mode': m[0], 'aria-checked': String(p.mode === m[0]), text: m[1], onclick: () => { p.mode = m[0]; HLS.trace = []; render(); } })));
+  const presetSel = h('select', { class: 'learn-cat', 'data-hl-preset': '1', 'aria-label': 'Preset', onchange: (e) => { const pr = HL.PRESETS.filter(x => x.id === e.target.value)[0]; if (!pr) return; Object.assign(HLS.p, HL.DEF, pr.set); HLS.trace = []; render(); } }, [h('option', { value: '', text: 'Presets…' })].concat(HL.PRESETS.map(pr => h('option', { value: pr.id, text: pr.name }))));
+  const playBtn = h('button', { type: 'button', class: 'btn sm', 'data-hl-play': '1', text: HLS.playing ? '❚❚ Pause' : '▶ Play', onclick: () => { HLS.playing = !HLS.playing; playBtn.textContent = HLS.playing ? '❚❚ Pause' : '▶ Play'; if (HLS.playing) { HLS.t0 = performance.now() - HLS.phase * HLS.run.br.T * 1000; } } });
+  const scrub = h('input', { type: 'range', min: 0, max: 1000, step: 1, value: Math.round(HLS.phase * 1000), 'data-hl-phase': '1', 'aria-label': 'Point in the breath', class: 'hl-scrub', oninput: (e) => { HLS.playing = false; playBtn.textContent = '▶ Play'; HLS.scrub = true; HLS.phase = +e.target.value / 1000; drawFrame(HLS.phase); HLS.scrub = false; } });
+  const ctrls = h('div', { class: 'hl-ctrls' }, [
+    h('div', { class: 'hl-ctrl-row' }, [modes, presetSel, playBtn, scrub]),
+    h('div', { class: 'hl-sliders' }, [
+      h('div', { class: 'hl-slgroup' }, [h('h4', { text: 'The lungs and the chest' }),
+        sl('cl', 'Lung compliance (× normal)', 0.3, 2.2, 0.05, v => v.toFixed(2) + '×', 'Low: fibrosis, oedema, ARDS, pneumonia. High: emphysema'),
+        sl('ccw', 'Chest wall compliance (× normal)', 0.3, 2, 0.05, v => v.toFixed(2) + '×', 'Low: obesity, ascites, kyphoscoliosis, burns'),
+        sl('cwShift', 'Chest wall load (cm H2O)', 0, 12, 0.5, v => v.toFixed(1), 'Pushes the chest wall curve right: a tense abdomen, obesity'),
+        sl('raw', 'Airway resistance (cm H2O/L/s)', 1, 30, 0.5, v => v.toFixed(1), 'Normal 1–3; asthma or COPD exacerbation 10–25')]),
+      h('div', { class: 'hl-slgroup' }, [h('h4', { text: 'The breath' }),
+        sl('vt', 'Tidal volume (% VC)', 4, 45, 1, v => v + '% (' + (v / 100 * p.vc * 1000).toFixed(0) + ' mL)'),
+        sl('rr', 'Rate (breaths/min)', 6, 40, 1, v => String(v)),
+        sl('peep', p.mode === 'vent' ? 'PEEP (cm H2O)' : 'CPAP (cm H2O)', 0, 20, 1, v => String(v))]),
+      h('div', { class: 'hl-slgroup' }, [h('h4', { text: 'The circulation' }),
+        sl('pms', 'Mean systemic pressure (mm Hg)', 3, 16, 0.5, v => v.toFixed(1), 'Volume status and venous tone: hypovolaemia 4–5, fluid overload 12+'),
+        sl('contr', 'Contractility (× normal)', 0.3, 1.8, 0.05, v => v.toFixed(2) + '×'),
+        sl('pvr', 'Pulmonary vascular tone (× normal)', 0.6, 3.5, 0.1, v => v.toFixed(1) + '×', 'Hypoxia, embolism, pulmonary hypertension: afterload on the right ventricle')])
+    ])
+  ]);
+  const legend = h('div', { class: 'an-lgd hl-lgd' }, [['lung', 'lung (static)'], ['cw', 'chest wall'], ['rs', 'respiratory system (airway pressure)'], ['loop', 'the breath'], ['wel', 'elastic work'], ['wres', 'resistive work'], ['vr', 'venous return'], ['cf', 'cardiac function'], ['op', 'operating point']].map(x => h('span', { class: 'an-lg hl-' + x[0] }, [h('i'), x[1]])));
+  const fig = h('figure', { class: 'an-fig hl-lab', 'data-hl': '1' }, [ctrls, h('div', { class: 'hl-grid' }, [h('div', { class: 'hl-pane' }, [h('h4', { text: 'Campbell: the chest' }), camp]), h('div', { class: 'hl-pane' }, [h('h4', { text: 'Guyton: the circulation' }), guy])]), strip, legend, reads,
+    h('figcaption', { text: 'Left: lung volume against pleural pressure — the static lung curve (red) and chest wall curve (blue) cross at FRC; the loop is one breath (dark on inspiration); the shaded triangle is the elastic work, the sliver beside the inspiratory limb the resistive work; the horizontal bar at end-inspiration is the muscle pressure holding that volume (or, on the ventilator, the transpulmonary pressure out to the plateau on the light-blue respiratory-system curve). Right: blood flow against right atrial pressure — the venous return line falls from the mean systemic pressure to the collapse plateau; the cardiac function curve starts at the pleural pressure and slides along the axis with every breath; the dot is where the two meet, and the dumbbell under it is the transmural pressure the heart fills by. Below: cardiac output and pleural pressure over the last breaths.' })]);
+  drawStatic(); drawFrame(HLS.phase);
+  HLS.t0 = performance.now() - HLS.phase * run.br.T * 1000;
+  if (!HLS.raf) HLS.raf = requestAnimationFrame(frame);
+  return fig;
+}
+function physWidget(kind) {
+  if (kind === 'syllabus') return syllabusFig();
+  if (kind === 'ladder') return ladderFig();
+  if (kind === 'cycle') return cycleFig();
+  if (kind === 'spiro') return spiroFig();
+  if (kind === 'aa') return aaCalc();
+  if (kind === 'odc') return odcLab();
+  if (kind === 'hl') return hlLab();
+  return null;
+}
+
 
 /* ========================================================================== Learn
    A reading section: topics from window.PFT_EDU, each ending with the glossary entries that belong to it. */
@@ -11368,7 +12332,7 @@ const EDU = window.PFT_EDU || { topics: {}, groups: [] };
 /* Learn is organised in areas (a dropdown above the topic list); each area has its groups of topics. */
 const LEARN_CATS = [
   { id: 'pft', title: 'PFT interpretation', topics: EDU.topics, groups: EDU.groups },
-  { id: 'airway', title: 'Anatomy & bronchoscopy', topics: AN.topics, groups: AN.groups },
+  { id: 'airway', title: 'Anatomy, physiology & bronchoscopy', topics: Object.assign({}, AN.topics, window.PFT_PHYS.topics), groups: window.PFT_PHYS.groups },
   { id: 'ecg', title: 'Cardiac conduction & ECG', topics: ECG.topics, groups: ECG.groups },
   { id: 'cancer', title: 'Lung nodules & cancer screening', topics: NOD.topics, groups: NOD.groups }
 ];
@@ -11453,7 +12417,7 @@ function eduBlocks(id, topic) {
     if (b.table) { out.push(eduTable(b.table)); }
     if (b.note) out.push(h('p', { class: 'fine', text: b.note }));
     if (b.fig) { const f = eduFig(b.fig); if (f) out.push(f); }
-    if (b.widget) { const w = anatWidget(b.widget) || ecgWidget(b.widget) || nodWidget(b.widget) || ctWidget(b.widget); if (w) out.push(w); }
+    if (b.widget) { const w = anatWidget(b.widget) || ecgWidget(b.widget) || nodWidget(b.widget) || ctWidget(b.widget) || physWidget(b.widget); if (w) out.push(w); }
     if (b.links) out.push(h('ul', { class: 'edu-links' }, b.links.map(l => h('li', {}, [h('a', { href: l[1], target: '_blank', rel: 'noopener noreferrer', text: l[0] }), l[2] ? h('span', { class: 'fine', text: ' — ' + l[2] }) : null]))));
   });
   return out;

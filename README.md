@@ -81,7 +81,7 @@ and the single-file browser version (`PFT_Interpreter_standalone.html`) always w
 - Code signing is optional and not set up. For Windows add a signing certificate to the build; for Mac add an Apple Developer ID and notarization.
   Until then the first-launch steps above are needed.
 
-## How the reading is built (version 7.7)
+## How the reading is built (version 7.8)
 
 The rules layer computes every measurement state before any wording is chosen (ERS/ATS 2022 z-scores and the LLN;
 a reviewed adult phrase catalog anchored to the ERS/ATS 2022, ATS/ERS 2019, ERS/ATS 2023, ERS/ATS 2017, ERS 2019 and
@@ -136,8 +136,15 @@ optional wording, differentials, prompts and the heads-up list beneath it. Two t
 tones.
 
 Learn has four areas, chosen from a dropdown above the topic list. "PFT interpretation" is the reading-room curriculum
-(the logic, each test, reference equations, change over time, the phrase catalog and worked examples). "Anatomy &
-bronchoscopy" adds: lungs, lobes and segments with a lobe map and the Boyden numbering; a bronchial-tree navigator: an
+(the logic, each test, reference equations, change over time, the phrase catalog and worked examples). "Anatomy,
+physiology & bronchoscopy" runs like a course and opens with a start page that maps it. Anatomy first: the lungs
+(lobes, fissures, the hilum and RALS, the pleura and where a needle is safe, the diaphragm and its openings, the two
+circulations, lymphatics and nerves, development in a paragraph); then the airway wall level by level — an
+interactive ladder from the trachea to the alveoli that draws each generation's tube (cartilage rings, plates, muscle,
+alveoli) and its epithelium (ciliated columnar, goblet, basal, club, cuboidal, squamous, type I and II, macrophage) with
+the cells and their jobs on tap, labels that hide and a find-the-level quiz, and a cell table with the pearls
+(Kartagener, the Reid index, club cells and P-450, surfactant, the barrier); then lungs, lobes and segments with a lobe
+map and the Boyden numbering; a bronchial-tree navigator: an
 anterior-view map with the great vessels and the nodal stations as layers that switch on and off and the scope tip as
 a yellow dot moving along the airway, and beside it the scope simulator (three.js, inlined, MIT) — the endoscopic
 picture (vignetted, the mucosa mottled with vessels), a steering pad and keys to aim, advance and withdraw along
@@ -172,7 +179,26 @@ on a phone), switchable layers for the nodal stations and the segmental bronchi,
 light it on the model, labels that hide, and a find-the-structure quiz; the IASLC nodal-station map (borders,
 N category, which of EBUS, EUS and mediastinoscopy reaches each station, where to put the transducer, the schematic
 EBUS picture and a tap-the-station quiz; a photo of your own can be pinned to any airway view or station and stays in
-that browser, since published atlas photographs are copyrighted and none are built in); ventilation and perfusion (a one-alveolus sandbox along the V/Q line on air or 100% oxygen, West's zones, the
+that browser, since published atlas photographs are copyrighted and none are built in). Physiology next, in the order
+the gas travels and following West, Levitzky, the Physeo workbook and First Aid's respiratory chapter as the outline:
+mechanics (the pressures of a breath drawn as four traces, compliance, surface tension and surfactant, the work of
+breathing), airflow and resistance (laminar and turbulent flow, where the resistance lives, the equal pressure point
+and the flow–volume loop, time constants and auto-PEEP), ventilation and dead space (an interactive spirogram of the
+volumes and capacities, the equations, an alveolar-gas and A–a gradient calculator that reads the result), diffusion
+(perfusion- and diffusion-limited gases, the DLCO and KCO), ventilation and perfusion (the existing sandbox and West's
+zones), oxygen and carbon dioxide in the blood (a dissociation-curve lab with sliders for pH, temperature, CO2,
+2,3-DPG, carbon monoxide, haemoglobin and the arterial and venous points, with P50, saturations, contents and delivery
+read out; CO2 transport; the systematic approach to hypoxaemia; altitude and exercise), control of breathing (the
+generators, the sensors, the responses and the patterns), and the heart–lung lab: the Campbell diagram (lung and
+chest wall curves, FRC, the loop of a breath, elastic and resistive work as shaded areas, the muscle pressure or the
+plateau and the respiratory-system curve on a ventilator) joined to the Guyton diagram (venous return from the mean
+systemic pressure to the collapse plateau, the cardiac function curve starting at the pleural pressure, the operating
+point and the transmural pressure) — animated breath by breath with a strip of cardiac output and pleural pressure,
+sliders for lung and chest wall compliance, chest wall load, airway resistance, tidal volume, rate, PEEP or CPAP, mean
+systemic pressure, contractility and pulmonary vascular tone, a spontaneous or ventilator breath, and presets (COPD
+exacerbation with auto-PEEP, asthma, cardiogenic oedema, ARDS on PEEP, obesity and ascites, hypovolaemia,
+pulmonary hypertension, a ventilated normal lung), after Kenny's open-access An Approach to Mechanical Heart-Lung
+Interaction; then (a one-alveolus sandbox along the V/Q line on air or 100% oxygen, West's zones, the
 causes of hypoxaemia); and the bronchoscopy essentials distilled from the BTS 2013 guideline, the ACCP 2011 sedation
 statement, the 2017 antithrombotic review, the ATS 2012 BAL guideline and the local BAL protocol (indications and
 risk, the pre-procedure checklist, sedation and topical anaesthesia with a lidocaine running total, antiplatelets and
