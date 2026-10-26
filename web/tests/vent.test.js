@@ -1,0 +1,60 @@
+// mechanical ventilation: the model, the waveforms and the content, in node
+require('../src/physio.js'); const V = require('../src/vent.js');
+let pass = 0, fail = 0;
+const ok = (c, m) => { if (c) pass++; else { fail++; console.log('FAIL', m); } };
+const near = (a, b, t) => Math.abs(a - b) <= t;
+const C = (id) => V.CASES.filter(c => c.id === id)[0];
+const run = (id, s, o) => V.gas(C(id).p, s, o);
+// ---- content
+ok(V.SETTINGS.length >= 26 && V.SETTINGS.every(x => x.id && x.name && x.what && x.cat) && V.SETTINGS.some(x => /cycle-off/i.test(x.name)) && V.SETTINGS.some(x => /IPAP/.test(x.name)), 'the glossary covers two dozen settings with their aliases, NIV included');
+ok(V.MODES.length === 9 && V.MODES.every(m => m.trigger && m.target && m.cycle) && V.MODES[0].id === 'vcac', 'nine modes, each with trigger, target and cycle');
+ok(V.WAVES.length === 14 && V.WAVES.every(w => V.wave(w.id).t.length > 100), 'fourteen waveform patterns and every one draws');
+ok(Object.keys(V.topics).length === 5 && V.groups.length === 4, 'five topics in four groups');
+ok(near(V.PBW('f', 165), 57, 0.5) && near(V.PBW('m', 180), 75.1, 0.5), 'predicted body weight: 57 kg for a 165 cm woman, 75 kg for a 180 cm man');
+// ---- waveforms carry their signatures
+const vc = V.wave('vc_normal'), pc = V.wave('pc_normal'), ap = V.wave('autopeep'), dbl = V.wave('double'), st = V.wave('starve'), hr = V.wave('high_raw');
+const during = (d, from, to, key) => d[key].filter((v, i) => d.t[i] >= from && d.t[i] < to);
+ok(near(Math.max.apply(null, vc.vol), 500, 5) && near(Math.max.apply(null, during(vc, 0, 0.5, 'flow')), 60, 1) && near(vc.paw[Math.round(0.65 / 0.01)], 5 + 500 / 60, 1.5), 'volume control: 500 mL at a constant 60 L/min; the plateau during the pause is PEEP + V/C');
+ok(Math.max.apply(null, during(pc, 0, 1, 'paw')) <= 20.01 && during(pc, 0.05, 0.3, 'flow')[0] > during(pc, 0.7, 0.9, 'flow')[0], 'pressure control: the pressure holds at PEEP + Pinsp while the flow decelerates');
+ok(Math.min.apply(null, during(ap, 2.3, 2.5, 'flow')) < -5 && ap.vol[Math.round(2.49 / 0.01)] > 100, 'auto-PEEP: expiratory flow has not reached zero when the next breath starts and volume is left in the lung');
+ok(Math.max.apply(null, dbl.vol) > 600 && Math.max.apply(null, V.wave('vc_normal').vol) < 520, 'double triggering stacks two breaths into one volume');
+ok(Math.min.apply(null, during(st, 0.3, 1.2, 'paw')) < Math.min.apply(null, during(vc, 0.3, 0.5, 'paw')) - 2, 'flow starvation scoops the pressure below the normal ramp');
+ok(Math.max.apply(null, hr.paw) > Math.max.apply(null, vc.paw) + 12 && near(hr.paw[Math.round(0.65 / 0.01)], vc.paw[Math.round(0.65 / 0.01)], 2), 'high resistance raises the peak and not the plateau');
+// ---- the model: the right plan for each case meets its targets, the wrong one does not
+const copd = run('copd', C('copd').vent), copdNiv = run('copd', Object.assign({}, C('copd').niv, { mode: 'niv', ps: 9, peep: 5, ti: 1, sed: 'none' })), copdO2 = run('copd', { mode: 'o2', fio2: 0.6, sed: 'none' });
+ok(copd.ph >= 7.3 && copd.paco2 >= 48 && copd.paco2 <= 68 && copd.autoPeep < 5, 'COPD on a slow rate with a short Ti: pH up, PaCO2 near his baseline, no trapping: ' + copd.paco2.toFixed(0) + ' / ' + copd.ph.toFixed(2));
+ok(copdNiv.ph >= 7.35 && copdNiv.paco2 < 65 && V.verdict(C('copd'), copdNiv).met >= 4, 'COPD on BiPAP 14/5: the pH recovers; most targets met');
+ok(copdO2.paco2 > 100 && copdO2.ph < 7.2, 'COPD on oxygen alone: the CO2 climbs and the pH falls (the trap)');
+const copdFast = run('copd', Object.assign({}, C('copd').vent, { rr: 26, vt: 650, flow: 40 }));
+ok(copdFast.ph > 7.6 && copdFast.paco2 < 30 && copdFast.autoPeep > 3 && V.verdict(C('copd'), copdFast).met < V.verdict(C('copd'), copd).met, 'COPD over-ventilated: post-hypercapnic alkalosis and auto-PEEP; fewer targets met');
+ok(/post-hypercapnic/.test(V.acidBase(copdFast)) && /compensated respiratory acidosis/.test(V.acidBase(copd)), 'the reading names post-hypercapnic alkalosis and the compensated retainer');
+const copdDay = run('copd', Object.assign({}, C('copd').vent, { rr: 26, vt: 650, flow: 40 }), { day: 1 });
+ok(copdDay.hco3 < copdFast.hco3 - 5, 'a day later the kidney has let the bicarbonate go: ' + copdDay.hco3.toFixed(0));
+const ards = run('ards', C('ards').vent), ardsNoPeep = run('ards', Object.assign({}, C('ards').vent, { peep: 0, fio2: 1 })), ardsBig = run('ards', Object.assign({}, C('ards').vent, { vt: 650 })), ardsHigh = run('ards', Object.assign({}, C('ards').vent, { peep: 22 }));
+ok(ards.vtKg >= 5.5 && ards.vtKg <= 6.5 && ards.pplat <= 30 && ards.dp <= 15 && ards.spo2pct >= 88 && ards.ph >= 7.25, 'ARDS at 6 mL/kg with PEEP 12: protective and oxygenated');
+ok(ardsNoPeep.pao2 < ards.pao2 + 10 && ardsNoPeep.shuntEff > ards.shuntEff + 0.08, 'without PEEP the shunt is larger even on 100% oxygen');
+ok(ardsBig.pplat > 30 && ardsBig.dp > 15 && ardsBig.vtKg > 10, 'a 650 mL breath in a 57 kg woman: a plateau over 30, a driving pressure over 15, 11 mL/kg');
+ok(ardsHigh.co < 2.5 && V.verdict(C('ards'), ardsHigh).dead, 'PEEP 22 in a dry patient collapses the output: peri-arrest');
+const asthma = run('asthma', C('asthma').vent), asthmaFast = run('asthma', Object.assign({}, C('asthma').vent, { rr: 24, vt: 600, flow: 40 })), asthmaOk = run('asthma', Object.assign({}, C('asthma').vent, { rr: 14, vt: 500 }));
+ok(asthma.te > 4 && asthma.autoPeep < 3 && asthma.paco2 > 55, 'asthma at 12 × 450: a long expiration, little trapping, permissive hypercapnia');
+ok(asthmaFast.autoPeep > 6 && asthmaFast.co < asthma.co - 1, 'asthma at 24 × 600 with a slow flow: auto-PEEP and a falling output');
+ok(asthmaOk.ph >= 7.2 && V.verdict(C('asthma'), asthmaOk).met >= 7, 'asthma at 14 × 500 with a fast flow: the pH over 7.2 and the targets met');
+const dka = run('dka', C('dka').vent), dkaSlow = run('dka', Object.assign({}, C('dka').vent, { rr: 12, vt: 450, sed: 'deep' })), dkaOwn = run('dka', { mode: 'o2', fio2: 0.3, sed: 'none' }), dkaDay = run('dka', Object.assign({}, C('dka').vent, { rr: 30, vt: 520 }), { day: 1 });
+ok(dkaOwn.paco2 < 20 && dkaOwn.ph > 7.2, 'DKA breathing for herself: Kussmaul ventilation holds the pH up');
+ok(dkaSlow.ph < 6.95 && V.verdict(C('dka'), dkaSlow).dead, 'DKA intubated and ventilated at a normal rate: the pH collapses');
+ok(dka.ph > dkaSlow.ph + 0.2 && dkaDay.hco3 > 14 && dkaDay.ph > 7.3, 'a high rate protects the pH; after a day of insulin the bicarbonate is back and the pH normal');
+const chfNiv = run('chf', Object.assign({}, C('chf').niv, { mode: 'niv', ps: 4, peep: 8, ti: 1, sed: 'none' })), chfO2 = run('chf', { mode: 'o2', fio2: 0.6, sed: 'none' });
+ok(chfNiv.spo2pct >= 92 && chfNiv.ph >= 7.3 && chfNiv.co >= chfO2.co && V.verdict(C('chf'), chfNiv).met === V.verdict(C('chf'), chfNiv).total, 'oedema on CPAP/NIV: oxygenated, ventilated, the failing ventricle no worse; all targets met');
+const od = run('od', Object.assign({}, C('od').vent, { vt: 500, rr: 12 })), odNiv = run('od', { mode: 'niv', ps: 7, peep: 5, fio2: 0.4, rr: 14, ti: 1, sed: 'none' });
+ok(od.paco2 >= 36 && od.paco2 <= 52 && od.spo2pct >= 94, 'the overdose on 12 × 500: a normal gas from normal lungs');
+ok(odNiv.spontRR <= 8 && near(odNiv.rrTot, 14, 0.5), 'the overdose has almost no drive of his own: on NIV the backup rate does the breathing');
+const tbi = run('tbi', C('tbi').vent), tbiHyper = run('tbi', Object.assign({}, C('tbi').vent, { rr: 24 }));
+ok(tbi.paco2 >= 34 && tbi.paco2 <= 41 && tbiHyper.paco2 < 28, 'the brain: 14 × 540 gives normocapnia; 24 a minute hyperventilates');
+const ohsNiv = run('ohs', Object.assign({}, C('ohs').niv, { mode: 'niv', ps: 9, peep: 9, ti: 1, sed: 'none' })), ohsLowEpap = run('ohs', Object.assign({}, C('ohs').niv, { mode: 'niv', ps: 9, peep: 4, ti: 1, sed: 'none' }));
+ok(ohsNiv.ph >= 7.3 && ohsNiv.spo2pct >= 88 && ohsLowEpap.pao2 < ohsNiv.pao2 - 2, 'obesity hypoventilation on bilevel with a high EPAP: better oxygenation than with a low one');
+// ---- the venous gas and the readouts
+ok(V.CASES.every(c => { const o = run(c.id, c.vent); return o.pvco2 > o.paco2 + 4 && o.pvco2 < o.paco2 + 14 && o.phv < o.ph && o.phv > o.ph - 0.08; }), 'the venous gas sits a few mm Hg of CO2 above and a few hundredths of pH below the arterial in every case');
+ok(V.CASES.every(c => { const o = run(c.id, c.vent); return isFinite(o.pao2) && isFinite(o.ph) && o.vdFrac > 0.2 && o.vdFrac <= 0.8 && o.co > 1.4; }), 'every case computes a finite, bounded state on its starting settings');
+ok(/inadequate respiratory compensation/.test(V.acidBase(dkaSlow)) && /Hypoxaemia/.test(V.acidBase(ardsNoPeep)) || /Hypoxaemia/.test(V.acidBase(run('ards', { mode: 'o2', fio2: 0.6, sed: 'none' }))), 'the reading names failed compensation and hypoxaemia with a wide gradient');
+console.log('vent ' + pass + ' passed, ' + fail + ' failed');
+process.exit(fail ? 1 : 0);

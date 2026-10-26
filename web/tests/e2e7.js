@@ -16,7 +16,7 @@ const uniqN = (a) => a.filter((x, i) => a.indexOf(x) === i).length;
 
   // ---- areas
   await page.locator('.vw[data-view="learn"]').click(); await page.waitForSelector('.learn-body');
-  ok(await page.locator('#learn-cat option').count() === 4, 'Learn offers four areas');
+  ok(await page.locator('#learn-cat option').count() === 5, 'Learn offers five areas');
   ok(await page.locator('.learn-body').getAttribute('data-cat') === 'pft', 'PFT interpretation is the default area');
   const nPft = await page.locator('.ln-btn').count();
   ok(nPft >= 20, 'the PFT area keeps its topics (' + nPft + ')');
@@ -378,6 +378,70 @@ const uniqN = (a) => a.filter((x, i) => a.indexOf(x) === i).length;
   ok(true, 'tapping station 4R on the section opens its EBUS card');
   await page.keyboard.press('Escape'); await page.waitForTimeout(80);
 
+  // ---- mechanical ventilation: the modes, the settings, the waveforms, the simulator
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'vent_basics' })); await page.waitForSelector('.learn-body[data-topic="vent_basics"]');
+  const ventTopics = await page.locator('.ln-btn').evaluateAll(els => els.map(e => e.getAttribute('data-topic')));
+  ok(await page.locator('#learn-cat').inputValue() === 'vent' && ventTopics.join() === 'vent_basics,vent_settings,vent_niv,vent_waves,vent_sim', 'a fifth Learn area, mechanical ventilation, in order: ' + ventTopics.join());
+  ok(await page.locator('[data-ventmodes] [data-mode-row]').count() === 9 && /Paw \+ Pmus = V\/Crs \+ Flow × Raw \+ PEEPtotal/.test(await txt('.learn-body')) && /DOPES/.test(await txt('.learn-body')) === false, 'nine modes in the trigger / target / cycle matrix and the equation of motion');
+  await page.locator('[data-mode-row="psv"]').click(); await page.waitForSelector('[data-mode-card="psv"]');
+  ok(/Flow \(at a percentage of peak flow/.test(await txt('[data-mode-row="psv"]')) && /spontaneous breathing trials/.test(await txt('[data-mode-card]')), 'tapping pressure support shows its cycle and its uses');
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'vent_settings' })); await page.waitForSelector('[data-ventsettings]');
+  ok(await page.locator('[data-settings-list] [data-setting]').count() >= 26, 'the glossary lists every setting');
+  await page.locator('[data-settings-q]').fill('cycle'); await page.waitForTimeout(80);
+  ok(await page.locator('[data-settings-list] [data-setting="cycle"]').count() === 1 && await page.locator('[data-settings-list] [data-setting]').count() <= 6 && /40–60% in COPD/.test(await txt('[data-setting="cycle"]')), 'searching “cycle” finds the cycle-off setting with its typical values');
+  await page.locator('[data-settings-q]').fill(''); await page.locator('[data-settings-cat="Non-invasive"]').click(); await page.waitForTimeout(80);
+  ok(await page.locator('[data-settings-list] [data-setting="ipap"]').count() === 1 && await page.locator('[data-settings-list] [data-setting="vt"]').count() === 0, 'the category chips filter: IPAP/EPAP under non-invasive, tidal volume not');
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'vent_niv' })); await page.waitForSelector('.learn-body[data-topic="vent_niv"]');
+  ok(/pH < 7\.35, PaCO2 > 45/.test(await txt('.learn-body')) && /ROX/.test(await txt('.learn-body')) && /HACOR/.test(await txt('.learn-body')) && /FLORALI/.test(await txt('.learn-body')), 'non-invasive: the indications table, the failure scores, the evidence');
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'vent_waves' })); await page.waitForSelector('[data-ventwaves]');
+  ok(await page.locator('[data-wave]').count() === 14 && await page.locator('.vw-svg .vw-tr').count() === 3 && /Volume control, constant flow/.test(await txt('[data-wave-note]')), 'fourteen patterns; three traces; volume control first');
+  await page.locator('[data-wave="autopeep"]').click(); await page.waitForSelector('[data-wave-note="autopeep"]');
+  ok(/Expiratory flow has not returned to zero/.test(await txt('[data-wave-note]')) && /80% of the auto-PEEP/.test(await txt('[data-wave-note]')), 'auto-PEEP: what you see and what to do');
+  await page.locator('[data-wave="double"]').click(); await page.waitForSelector('[data-wave-note="double"]');
+  ok(/stacked/.test(await txt('[data-wave-note]')), 'double triggering is drawn and explained');
+  // the simulator: COPD → NIV (best) → apply → targets; the ventilator with a wrong rate; a day later
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'vent_sim' })); await page.waitForSelector('[data-ventsim]');
+  ok(await page.locator('[data-case]').count() === 8 && await page.locator('[data-case-present="copd"]').count() === 1 && /Predicted body weight 70 kg/.test(await txt('[data-case-present]')), 'eight cases; COPD first with its predicted body weight');
+  await page.locator('[data-triage="o2"]').click(); await page.waitForSelector('[data-triage-verdict="wrong"]');
+  ok(/Haldane/.test(await txt('.vs-verdict')), 'oxygen alone for the drowsy retainer is wrong, with the physiology');
+  await page.locator('[data-triage="niv"]').click(); await page.waitForSelector('[data-triage-verdict="best"]');
+  await page.locator('[data-triage-go]').click(); await page.waitForSelector('[data-plan="niv"][aria-checked="true"]');
+  ok(await page.locator('[data-vs="ipap"]').inputValue() === '14' && await page.locator('[data-vs="epap"]').inputValue() === '5', 'proceeding with NIV loads BiPAP 14/5');
+  await page.locator('[data-vs-apply]').click(); await page.waitForSelector('[data-vs-abg]');
+  const gasVal = (card, label) => page.evaluate(([c, l]) => { const cell = Array.from(document.querySelectorAll(c + ' .vs-cell')).filter(x => x.querySelector('.lbl').textContent === l)[0]; return cell ? parseFloat(cell.querySelector('b').textContent) : NaN; }, [card, label]);
+  const mechVal = (label) => page.evaluate((l) => { const r = Array.from(document.querySelectorAll('[data-vs-mech] .hl-r')).filter(x => x.querySelector('.lbl').textContent === l)[0]; return r ? r.querySelector('b').textContent : ''; }, label);
+  const phA = await gasVal('[data-vs-abg]', 'pH'), pco2A = await gasVal('[data-vs-abg]', 'PaCO2'), bicA = await gasVal('[data-vs-abg]', 'HCO3');
+  ok(phA >= 7.3 && phA <= 7.49 && pco2A >= 45 && pco2A <= 65 && bicA === 32, 'on BiPAP an hour later the pH is up and the PaCO2 near his baseline: pH ' + phA + ', PaCO2 ' + pco2A);
+  const phV = await gasVal('[data-vs-vbg]', 'pH'), pco2V = await gasVal('[data-vs-vbg]', 'PvCO2');
+  ok(pco2V > pco2A + 3 && pco2V < pco2A + 14 && phV < phA, 'the venous gas sits a few mm Hg above and a few hundredths below the arterial: ' + pco2V + ' / ' + phV);
+  ok(/compensated respiratory acidosis/.test(await txt('[data-vs-read]')) && await page.locator('[data-target="ok"]').count() >= 4, 'the reading names the compensated retainer and most targets are met');
+  await page.locator('[data-plan="tube"]').click(); await page.waitForSelector('[data-vs="vt"]');
+  await page.locator('[data-vs="rr"]').fill('26'); await page.locator('[data-vs="vt"]').fill('650'); await page.locator('[data-vs="flow"]').fill('40');
+  await page.locator('[data-vs-apply]').click(); await page.waitForTimeout(200);
+  const phB = await gasVal('[data-vs-abg]', 'pH'), pco2B = await gasVal('[data-vs-abg]', 'PaCO2');
+  ok(phB > 7.6 && pco2B < 30 && /post-hypercapnic/.test(await txt('[data-vs-read]')) && await page.locator('[data-target="no"]').count() >= 2, 'VC-AC 650 × 26 over-ventilates the retainer: alkalaemia, auto-PEEP, targets lost: pH ' + phB + ', PaCO2 ' + pco2B);
+  ok(/^5 \+ [3-9]\.\d = /.test(await mechVal('PEEP set + auto')), 'the mechanics card shows the auto-PEEP: ' + await mechVal('PEEP set + auto'));
+  await page.locator('[data-vs-day]').click(); await page.waitForTimeout(200);
+  ok((await gasVal('[data-vs-abg]', 'HCO3')) < 26 && await page.locator('[data-vs-log] tbody tr').count() === 3, 'a day later the kidney has let the bicarbonate go; the chart keeps the three gases: HCO3 ' + await gasVal('[data-vs-abg]', 'HCO3'));
+  // DKA: observation is best; a slow ventilator rate collapses the pH
+  await page.locator('[data-case="dka"]').click(); await page.waitForSelector('[data-case-present="dka"]');
+  await page.locator('[data-triage="o2"]').click(); await page.waitForSelector('[data-triage-verdict="best"]');
+  await page.locator('[data-triage="tube"]').click(); await page.waitForSelector('[data-triage-verdict="poor"]');
+  await page.locator('[data-triage-go]').click(); await page.waitForSelector('[data-vs="vt"]');
+  await page.locator('[data-vs="rr"]').fill('12'); await page.selectOption('[data-vs="sed"]', 'deep');
+  await page.locator('[data-vs-apply]').click(); await page.waitForSelector('[data-vs-verdict]');
+  ok(await page.locator('[data-vs-verdict="dead"]').count() === 1 && /Peri-arrest/.test(await txt('.vs-sum')) && /mixed respiratory and metabolic acidosis/.test(await txt('[data-vs-read]')), 'DKA on 12 a minute, deeply sedated: peri-arrest with a pH in the sixes: ' + await gasVal('[data-vs-abg]', 'pH') + ' / ' + await txt('.vs-sum'));
+  await page.locator('[data-vs="rr"]').fill('30'); await page.locator('[data-vs="vt"]').fill('520'); await page.selectOption('[data-vs="sed"]', 'light');
+  await page.locator('[data-vs-apply]').click(); await page.waitForTimeout(200);
+  ok(await page.locator('[data-vs-verdict="all"]').count() === 1 || await page.locator('[data-target="no"]').count() <= 1, 'at 30 × 520 the compensation is restored: targets met');
+  // ARDS: the tube is best; 6 mL/kg with PEEP
+  await page.locator('[data-case="ards"]').click(); await page.waitForSelector('[data-case-present="ards"]');
+  await page.locator('[data-triage="tube"]').click(); await page.waitForSelector('[data-triage-verdict="best"]');
+  await page.locator('[data-triage-go]').click(); await page.waitForSelector('[data-vs="vt"]');
+  ok(await page.locator('[data-vs="vt"]').inputValue() === '340' && await page.locator('[data-vs="peep"]').inputValue() === '12', 'ARDS loads 340 mL (6 mL/kg of 57 kg) with PEEP 12');
+  await page.locator('[data-vs="vt"]').fill('650'); await page.locator('[data-vs-apply]').click(); await page.waitForTimeout(200);
+  ok(parseFloat(await mechVal('Driving pressure')) > 15 && parseFloat((await mechVal('Peak / plateau')).split('/')[1]) > 30 && await page.locator('[data-target="no"]').count() >= 3, 'a 650 mL breath: a driving pressure over 15, a plateau over 30, targets lost: ' + await mechVal('Driving pressure') + ' · ' + await mechVal('Peak / plateau'));
+
   // ---- conduction and the ECG
   await page.evaluate(() => window.__pft.setMode('learn', { topic: 'ecglab' })); await page.waitForSelector('.ecg-lab[data-ecg="normal"]');
   ok(await page.locator('#learn-cat').inputValue() === 'ecg' && (await page.locator('#learn-cat option').allInnerTexts()).some(t => /Cardiac conduction/.test(t)), 'a third Learn area: cardiac conduction & ECG');
@@ -422,7 +486,7 @@ const uniqN = (a) => a.filter((x, i) => a.indexOf(x) === i).length;
 
   // ---- lung nodules and screening
   await page.evaluate(() => window.__pft.setMode('learn', { topic: 'nodules' })); await page.waitForSelector('[data-nod-risk]');
-  ok(await page.locator('#learn-cat').inputValue() === 'cancer' && await page.locator('#learn-cat option').count() === 4, 'a fourth Learn area: lung nodules & cancer screening');
+  ok(await page.locator('#learn-cat').inputValue() === 'cancer' && await page.locator('#learn-cat option').count() === 5, 'a fourth Learn area: lung nodules & cancer screening');
   ok(/Fleischner/.test(await txt('.learn-body')) && /Lung-RADS/.test(await txt('.learn-body')) && /Brock/.test(await txt('.learn-body')) && await page.locator('.learn-body table').count() >= 4, 'the nodule page carries the Fleischner, Lung-RADS and model tables');
   ok(await page.locator('[data-nod-risk] [data-model]').count() === 3 && /17%/.test(await txt('[data-nod-risk] [data-model="mayo"]')), 'three probability models computed for the default case (Mayo 17%): ' + await txt('[data-nod-risk-out]'));
   await page.locator('[data-nod-risk] [data-nod="size"]').fill('20'); await page.locator('[data-nod-risk] [data-nod="spic"]').check(); await page.waitForTimeout(80);

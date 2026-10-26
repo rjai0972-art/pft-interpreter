@@ -15,6 +15,7 @@ const frag = tpl
   .replace('/*NODULES*/', () => safe(rd('src/nodules.js')))
   .replace('/*PHYSIO*/', () => safe(rd('src/physio.js')))
   .replace('/*HEARTLUNG*/', () => safe(rd('src/heartlung.js')))
+  .replace('/*VENT*/', () => safe(rd('src/vent.js')))
   .replace('/*EXAMPLES*/', () => safe(rd('src/examples.js')))
   .replace('/*THREE*/', () => '/* three.js r147 — MIT License, (c) 2010-2022 three.js authors (vendor/three.LICENSE) */\n' + safe(rd('vendor/three.min.js')))
   .replace('/*UI*/', () => safe(rd('dist/ui.js')));

@@ -108,7 +108,16 @@ systemic pressure to the collapse plateau, a cardiac function curve starting at 
 by the pulmonary vascular tone and the lung volume's distance from FRC, the operating point by bisection) and `run`
 (the whole cycle); `PRESETS` are the clinical scenes. `ui_4g_physio.js` draws the syllabus, the ladder (`ladderFig`),
 the breath cycle, the spirogram, the A–a calculator, the dissociation-curve lab (`odcLab`) and the heart–lung lab
-(`hlLab`: the Campbell and Guyton SVGs redrawn each animation frame from `HLS.run`). The nodule module (`src/nodules.js`, testable in node): `mayo`, `va`, `brock` are the published equations; `vdt` the
+(`hlLab`: the Campbell and Guyton SVGs redrawn each animation frame from `HLS.run`). Mechanical ventilation
+(`src/vent.js`, testable in node): `SETTINGS` (the glossary), `MODES` (trigger/target/cycle), `WAVES` and `wave(id)`
+(pressure, flow and volume traces from the equation of motion for each pattern, with a schedule of breath starts so that
+double triggering stacks), `CASES` (each with the patient's mechanics and gas-exchange parameters, the triage options with
+verdicts, the starting NIV and ventilator settings, and the targets with advice — a fifth element scopes a target to the
+ventilator or to any supported mode), `mech` (pressures, auto-PEEP, delivered volume for pressure-driven breaths), `gas`
+(a fixed-point iteration of the patient's drive, the delivered breaths, dead space, PaCO2, pH with the bicarbonate now or
+after a day, oxygenation from a recruitable shunt plus a V/Q admixture, the venous gas, the circulation under PEEP),
+`acidBase` (the reading in words), `grade`/`verdict`. `ui_4h_vent.js` draws the mode matrix, the glossary, the waveform
+viewer and the simulator (`VS` holds the case, the plan, the settings and the chart). The nodule module (`src/nodules.js`, testable in node): `mayo`, `va`, `brock` are the published equations; `vdt` the
 doubling time; `fleischner(q)` and `lungRads(q)` return the guideline's step for a nodule described by setting, type,
 mean diameter, solid component, status (baseline / new / growing / stable), multiplicity and patient risk.
 

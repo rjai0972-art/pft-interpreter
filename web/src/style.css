@@ -1394,3 +1394,42 @@ body.has-pop { overflow: hidden; }
 .hl-r { display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px dotted var(--line); padding: 2px 0; }
 .hl-r b { text-align: right; font-variant-numeric: tabular-nums; } .hl-r.warn b { color: #c47a2a; }
 .an-lg.hl-lung i { background: #b74a3a; } .an-lg.hl-cw i { background: #3f6f9e; } .an-lg.hl-rs i { background: #7fb3d5; } .an-lg.hl-loop i { background: #1d1d1d; } .an-lg.hl-wel i { background: rgba(242, 193, 78, 0.6); } .an-lg.hl-wres i { background: rgba(183, 74, 58, 0.4); } .an-lg.hl-vr i { background: #3f6f9e; } .an-lg.hl-cf i { background: #b74a3a; } .an-lg.hl-op i { background: #f2c14e; }
+
+/* ---- v7.9: mechanical ventilation — the modes, the settings glossary, the waveform viewer, the simulator */
+.vm-tbl tbody tr { cursor: pointer; } .vm-tbl tbody tr.on, .vm-tbl tbody tr:hover { background: rgba(242, 193, 78, 0.18); } .vm-tbl tbody tr:focus-visible { outline: 2px solid var(--accent); }
+.vm-card { border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; background: var(--surface); display: grid; gap: 4px; font-size: 13.5px; } .vm-card p { margin: 0; }
+.vs-glossary { display: grid; gap: 8px; }
+.vs-search { width: 100%; max-width: 520px; font-size: 14px; padding: 6px 10px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface); color: var(--ink); }
+.vs-cats { flex-wrap: wrap; }
+.vs-list { display: grid; gap: 4px; }
+.vs-item .tb p { margin: 0 0 4px; }
+.vw-pick { display: grid; gap: 4px; }
+.vw-group { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; } .vw-group .seg { flex-wrap: wrap; } .vw-group .ch { font-size: 12px; padding: 2px 9px; } .vw-group .ch[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+.an-fig svg.vw-svg { background: var(--surface); }
+.vw-bg { fill: rgba(63, 111, 158, 0.04); }
+.vw-tr { fill: none; stroke-width: 2; } .vw-tr.paw { stroke: #c47a2a; } .vw-tr.flow { stroke: #5a8f5a; } .vw-tr.vol { stroke: #3f6f9e; }
+.ph-rl.paw { fill: #c47a2a; }
+.vw-note { border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; background: var(--surface); display: grid; gap: 4px; font-size: 13.5px; } .vw-note p { margin: 0; }
+.vs-fig { max-width: none; }
+.vs-cases { flex-wrap: wrap; } .vs-cases .ch { font-size: 12.5px; }
+.vs-present { border-left: 3px solid var(--accent); padding: 4px 12px; display: grid; gap: 4px; font-size: 14px; } .vs-present p { margin: 0; }
+.vs-step { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--surface); display: grid; gap: 8px; }
+.vs-step h4 { margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.vs-step h5 { margin: 0 0 4px; font-size: 12.5px; color: var(--ink-2); }
+.vs-options { display: flex; flex-wrap: wrap; gap: 6px; } .vs-options .btn.on { background: var(--ink); color: var(--surface); }
+.vs-verdict { border-radius: 8px; padding: 8px 10px; font-size: 13.5px; line-height: 1.45; }
+.vs-verdict.best { background: rgba(90, 143, 90, 0.16); } .vs-verdict.reasonable { background: rgba(242, 193, 78, 0.22); } .vs-verdict.poor { background: rgba(196, 122, 42, 0.18); } .vs-verdict.wrong { background: rgba(183, 74, 58, 0.16); }
+.vs-f input.num, .vs-f select { width: 100%; }
+.vs-apply { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.vs-gases { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 700px) { .vs-gases { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); } }
+.vs-gas { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+.vs-gasgrid { display: grid; gap: 4px 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 110px), 1fr)); }
+.vs-cell { display: grid; font-size: 13px; } .vs-cell b { font-size: 15px; font-variant-numeric: tabular-nums; }
+.vs-read { margin: 0; font-size: 13.5px; line-height: 1.5; }
+.vs-sum { margin: 0; font-size: 14px; } .vs-sum.good { color: #3d7a3d; } .vs-sum.bad { color: #b74a3a; }
+.learn-body .vs-targets { list-style: none; padding: 0; display: grid; gap: 4px; }
+.learn-body .vs-targets li { font-size: 13.5px; line-height: 1.45; display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 6px; }
+.vs-mark { font-weight: 700; } .vs-targets li.ok .vs-mark { color: #3d7a3d; } .vs-targets li.no .vs-mark { color: #b74a3a; }
+.vs-adv { color: var(--ink-2); }
+.vs-log td, .vs-log th { font-size: 12.5px; }

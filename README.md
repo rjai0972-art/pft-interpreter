@@ -81,7 +81,7 @@ and the single-file browser version (`PFT_Interpreter_standalone.html`) always w
 - Code signing is optional and not set up. For Windows add a signing certificate to the build; for Mac add an Apple Developer ID and notarization.
   Until then the first-launch steps above are needed.
 
-## How the reading is built (version 7.8)
+## How the reading is built (version 7.9)
 
 The rules layer computes every measurement state before any wording is chosen (ERS/ATS 2022 z-scores and the LLN;
 a reviewed adult phrase catalog anchored to the ERS/ATS 2022, ATS/ERS 2019, ERS/ATS 2023, ERS/ATS 2017, ERS 2019 and
@@ -135,7 +135,7 @@ report builds on the right as values are entered (below the form on narrower scr
 optional wording, differentials, prompts and the heads-up list beneath it. Two themes, linen and charcoal, in neutral
 tones.
 
-Learn has four areas, chosen from a dropdown above the topic list. "PFT interpretation" is the reading-room curriculum
+Learn has five areas, chosen from a dropdown above the topic list. "PFT interpretation" is the reading-room curriculum
 (the logic, each test, reference equations, change over time, the phrase catalog and worked examples). "Anatomy,
 physiology & bronchoscopy" runs like a course and opens with a start page that maps it. Anatomy first: the lungs
 (lobes, fissures, the hilum and RALS, the pleura and where a needle is safe, the diaphragm and its openings, the two
@@ -218,4 +218,21 @@ roads for a solid nodule over 8 mm, biopsy choice, referral and communication); 
 the USPSTF 2021, CMS, ACS 2023, NCCN and CHEST 2021 criteria side by side, running a programme and the VHA
 demonstration project); and other abnormalities on chest CT (interstitial lung abnormalities per Fleischner 2020,
 emphysema, airway and pleural findings, cysts, nodes, coronary calcification and the ACR incidental-findings guidance).
-Source code and tests: `web/`; the catalog and its rule specification: `web/catalog/`.
+Source code and tests: `web/`; the catalog and its rule specification: `web/catalog/`. "Mechanical ventilation" is the fifth area: how a ventilator breathes (the equation of
+motion; trigger, target and cycle; volume against pressure; a first setting after intubation; protective ventilation
+in one list) with a trigger/target/cycle matrix of nine modes; the settings one by one — a searchable glossary of
+two dozen settings and measurements with their aliases, typical values and what moves when each is turned up or
+down, from tidal volume and PEEP to cycle-off, rise time, auto-PEEP, driving pressure, IPAP/EPAP and high-flow;
+non-invasive support (who, how, when it is failing: CPAP, bilevel, high-flow, the ROX and HACOR scores, the ERS/ATS
+guideline); waveforms and asynchrony — a viewer that draws pressure, flow and volume against time from the equation
+of motion for fourteen patterns (volume and pressure control, pressure support, high resistance, low compliance,
+auto-PEEP, the stress index, flow starvation, double and ineffective triggering, delayed and premature cycling, leak,
+secretions) with what you see and what to do; and a simulator of eight patients in respiratory failure (COPD
+exacerbation, ARDS, near-fatal asthma, DKA with aspiration, cardiogenic oedema, opioid overdose, brain injury, obesity
+hypoventilation): read the presentation and the gases, triage the level of support (oxygen, high-flow, NIV, the tube)
+and get the verdict with its reasoning, set the mask or the ventilator (mode, volume, rate, flow or Ti, PEEP, FiO2,
+inspiratory pressure or support, sedation), apply it and read the arterial and venous gases an hour later and a day
+later (alveolar ventilation and dead space set the PaCO2, the bicarbonate and the kidney the pH, shunt and V/Q and
+PEEP the PaO2, time constants the auto-PEEP, the pressure in the chest the cardiac output), with an acid–base reading
+in words, the mechanics and the circulation, the case's own targets grading the plan with advice, and a chart of
+the gases as the plan changes.
