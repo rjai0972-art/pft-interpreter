@@ -399,48 +399,76 @@ const uniqN = (a) => a.filter((x, i) => a.indexOf(x) === i).length;
   ok(/Expiratory flow has not returned to zero/.test(await txt('[data-wave-note]')) && /80% of the auto-PEEP/.test(await txt('[data-wave-note]')), 'auto-PEEP: what you see and what to do');
   await page.locator('[data-wave="double"]').click(); await page.waitForSelector('[data-wave-note="double"]');
   ok(/stacked/.test(await txt('[data-wave-note]')), 'double triggering is drawn and explained');
-  // the simulator: COPD → NIV (best) → apply → targets; the ventilator with a wrong rate; a day later
+  // the simulator: COPD → NIV (best) → the screen and the gases; the ventilator with a wrong rate; a day later
   await page.evaluate(() => window.__pft.setMode('learn', { topic: 'vent_sim' })); await page.waitForSelector('[data-ventsim]');
   ok(await page.locator('[data-case]').count() === 8 && await page.locator('[data-case-present="copd"]').count() === 1 && /Predicted body weight 70 kg/.test(await txt('[data-case-present]')), 'eight cases; COPD first with its predicted body weight');
+  ok(await page.locator('.vent-screen.off').count() === 1 && await page.locator('[data-tile]').count() === 0, 'before a level of support is chosen the screen is dark');
   await page.locator('[data-triage="o2"]').click(); await page.waitForSelector('[data-triage-verdict="wrong"]');
   ok(/Haldane/.test(await txt('.vs-verdict')), 'oxygen alone for the drowsy retainer is wrong, with the physiology');
   await page.locator('[data-triage="niv"]').click(); await page.waitForSelector('[data-triage-verdict="best"]');
   await page.locator('[data-triage-go]').click(); await page.waitForSelector('[data-plan="niv"][aria-checked="true"]');
   ok(await page.locator('[data-vs="ipap"]').inputValue() === '14' && await page.locator('[data-vs="epap"]').inputValue() === '5', 'proceeding with NIV loads BiPAP 14/5');
-  await page.locator('[data-vs-apply]').click(); await page.waitForSelector('[data-vs-abg]');
+  await page.waitForSelector('[data-vs-abg]');
   const gasVal = (card, label) => page.evaluate(([c, l]) => { const cell = Array.from(document.querySelectorAll(c + ' .vs-cell')).filter(x => x.querySelector('.lbl').textContent === l)[0]; return cell ? parseFloat(cell.querySelector('b').textContent) : NaN; }, [card, label]);
   const mechVal = (label) => page.evaluate((l) => { const r = Array.from(document.querySelectorAll('[data-vs-mech] .hl-r')).filter(x => x.querySelector('.lbl').textContent === l)[0]; return r ? r.querySelector('b').textContent : ''; }, label);
+  const tile = (name) => page.evaluate((n) => { const t = document.querySelector('[data-tile="' + n + '"]'); return t ? { v: parseFloat(t.querySelector('.vsc-v').textContent), text: t.querySelector('.vsc-v').textContent, alarm: t.classList.contains('alarm') } : null; }, name);
   const phA = await gasVal('[data-vs-abg]', 'pH'), pco2A = await gasVal('[data-vs-abg]', 'PaCO2'), bicA = await gasVal('[data-vs-abg]', 'HCO3');
   ok(phA >= 7.3 && phA <= 7.49 && pco2A >= 45 && pco2A <= 65 && bicA === 32, 'on BiPAP an hour later the pH is up and the PaCO2 near his baseline: pH ' + phA + ', PaCO2 ' + pco2A);
   const phV = await gasVal('[data-vs-vbg]', 'pH'), pco2V = await gasVal('[data-vs-vbg]', 'PvCO2');
   ok(pco2V > pco2A + 3 && pco2V < pco2A + 14 && phV < phA, 'the venous gas sits a few mm Hg above and a few hundredths below the arterial: ' + pco2V + ' / ' + phV);
   ok(/compensated respiratory acidosis/.test(await txt('[data-vs-read]')) && await page.locator('[data-target="ok"]').count() >= 4, 'the reading names the compensated retainer and most targets are met');
+  // the screen: the tiles agree with the settings and the mechanics; the traces are drawn; the lungs breathe
+  ok(await page.locator('[data-vs-screen]:not(.off)').count() === 1 && await page.locator('[data-tile]').count() === 12 && /BiPAP 14\/5/.test(await txt('[data-vs-screenmode]')), 'the ventilator screen lights up with twelve tiles and the settings in its header');
+  ok((await tile('Ppeak')).v === 14 && (await tile('Pplat')).v < 14 && /^5 \(\+/.test((await tile('PEEP')).text) && (await tile('SpO2')).v === Math.round(await gasVal('[data-vs-abg]', 'SaO2')), 'on BiPAP the peak is the IPAP, the plateau below it, the PEEP tile shows the auto-PEEP and the SpO2 matches the gas');
+  const drawn = await page.evaluate(() => { const cv = document.querySelector('.vsc-canvas'); const ctx = cv.getContext('2d'); const d = ctx.getImageData(0, 0, cv.width, cv.height).data; let yellow = 0, green = 0, blue = 0; for (let i = 0; i < d.length; i += 16) { const r = d[i], g = d[i + 1], b = d[i + 2]; if (r > 200 && g > 160 && b < 120) yellow++; else if (g > 180 && r < 160 && b < 160) green++; else if (b > 200 && r < 140) blue++; } return { w: cv.width, yellow, green, blue }; });
+  ok(drawn.w > 300 && drawn.yellow > 15 && drawn.green > 15 && drawn.blue > 15, 'the canvas carries a yellow pressure, a green flow and a blue volume trace: ' + JSON.stringify(drawn));
+  const lungA = await page.locator('[data-lung-pair]').getAttribute('transform'); await page.waitForTimeout(700); const lungB = await page.locator('[data-lung-pair]').getAttribute('transform');
+  ok(lungA !== lungB && /scale\(1\.\d+\)/.test(lungA) && await page.locator('.lg-mask').count() === 1, 'the lungs are breathing under a mask: ' + lungA + ' → ' + lungB);
+  ok(await page.locator('.pv-breath[data-pv-over="0"]').count() === 1 && await page.locator('.lg-hatch').count() === 0 && await page.locator('.lg-cons').count() === 0, 'the breath sits on the steep part of the P–V curve; soft lungs without consolidation');
+  await page.locator('[data-vs-record]').click(); await page.waitForTimeout(100);
   await page.locator('[data-plan="tube"]').click(); await page.waitForSelector('[data-vs="vt"]');
+  ok(await page.locator('.lg-tube').count() === 1 && (await tile('Ppeak')).v > (await tile('Pplat')).v + 10, 'the ventilator: a tube on the lungs; in volume control the peak sits well above the plateau (the resistance)');
   await page.locator('[data-vs="rr"]').fill('26'); await page.locator('[data-vs="vt"]').fill('650'); await page.locator('[data-vs="flow"]').fill('40');
-  await page.locator('[data-vs-apply]').click(); await page.waitForTimeout(200);
+  await page.waitForTimeout(250);
   const phB = await gasVal('[data-vs-abg]', 'pH'), pco2B = await gasVal('[data-vs-abg]', 'PaCO2');
-  ok(phB > 7.6 && pco2B < 30 && /post-hypercapnic/.test(await txt('[data-vs-read]')) && await page.locator('[data-target="no"]').count() >= 2, 'VC-AC 650 × 26 over-ventilates the retainer: alkalaemia, auto-PEEP, targets lost: pH ' + phB + ', PaCO2 ' + pco2B);
-  ok(/^5 \+ [3-9]\.\d = /.test(await mechVal('PEEP set + auto')), 'the mechanics card shows the auto-PEEP: ' + await mechVal('PEEP set + auto'));
-  await page.locator('[data-vs-day]').click(); await page.waitForTimeout(200);
-  ok((await gasVal('[data-vs-abg]', 'HCO3')) < 26 && await page.locator('[data-vs-log] tbody tr').count() === 3, 'a day later the kidney has let the bicarbonate go; the chart keeps the three gases: HCO3 ' + await gasVal('[data-vs-abg]', 'HCO3'));
+  ok(phB > 7.6 && pco2B < 30 && /post-hypercapnic/.test(await txt('[data-vs-read]')) && await page.locator('[data-target="no"]').count() >= 2, 'VC-AC 650 × 26 over-ventilates the retainer live, without an apply: alkalaemia, auto-PEEP, targets lost: pH ' + phB + ', PaCO2 ' + pco2B);
+  ok(/^5 \+ [3-9]\.\d = /.test(await mechVal('PEEP set + auto')) && (await tile('PEEP')).alarm && /Auto-PEEP/.test(await txt('.vsc-alarms')) && /VC-AC VT 650 × 26/.test(await txt('[data-vs-screenmode]')), 'the mechanics card and the screen both show the auto-PEEP, with an alarm: ' + await txt('.vsc-alarms'));
+  await page.locator('[data-vs-record]').click(); await page.locator('[data-vs-when="1"]').click(); await page.waitForTimeout(200); await page.locator('[data-vs-record]').click(); await page.waitForTimeout(100);
+  ok((await gasVal('[data-vs-abg]', 'HCO3')) < 26 && await page.locator('[data-vs-log] tbody tr').count() === 3 && /a day later/.test(await txt('[data-vs-log] tbody tr:last-child')), 'a day later the kidney has let the bicarbonate go; the chart keeps the three gases recorded: HCO3 ' + await gasVal('[data-vs-abg]', 'HCO3'));
+  // the patient's lungs: stiffen them, add shunt, reset
+  await page.locator('[data-vs-when="0"]').click(); await page.locator('[data-vs="rr"]').fill('12'); await page.locator('[data-vs="vt"]').fill('480'); await page.locator('[data-vs="flow"]').fill('70'); await page.waitForTimeout(200);
+  const pplat0 = (await tile('Pplat')).v, pao20 = await gasVal('[data-vs-abg]', 'PaO2');
+  await page.locator('[data-vp="crs"]').fill('20'); await page.waitForTimeout(250);
+  ok((await tile('Pplat')).v > pplat0 + 10 && (await tile('Cstat')).v === 20 && await page.locator('.lg-hatch').count() > 0 && await page.locator('.pv-breath[data-pv-over="1"]').count() === 1 && parseFloat(await mechVal('Driving pressure')) >= 24, 'compliance 20: the plateau climbs, the lungs hatch, the breath runs past the upper inflection, the driving pressure is 24: ' + (await tile('Pplat')).v);
+  await page.locator('[data-vp="shunt"]').fill('0.4'); await page.waitForTimeout(250);
+  const pao2Sh = await gasVal('[data-vs-abg]', 'PaO2');
+  ok(pao2Sh < pao20 - 30 && await page.locator('.lg-cons').count() >= 8 && (await tile('SpO2')).alarm, 'a 40% shunt: the PaO2 collapses whatever the FiO2, the lungs consolidate, the SpO2 alarms: ' + pao2Sh);
+  await page.locator('[data-vs="fio2"]').fill('1'); await page.waitForTimeout(250);
+  ok((await gasVal('[data-vs-abg]', 'PaO2')) < 70, 'and 100% oxygen does not fix a shunt: PaO2 ' + await gasVal('[data-vs-abg]', 'PaO2'));
+  await page.locator('[data-vp-reset]').click(); await page.waitForTimeout(250);
+  ok(await page.locator('.lg-hatch').count() === 0 && await page.locator('.lg-cons').count() === 0 && (await tile('Cstat')).v === 70 && await page.locator('[data-vp="crs"]').inputValue() === '70', 'reset: the case’s own lungs are back');
   // DKA: observation is best; a slow ventilator rate collapses the pH
   await page.locator('[data-case="dka"]').click(); await page.waitForSelector('[data-case-present="dka"]');
   await page.locator('[data-triage="o2"]').click(); await page.waitForSelector('[data-triage-verdict="best"]');
+  await page.locator('[data-triage-go]').click(); await page.waitForSelector('.vent-screen.monitor');
+  ok(await page.locator('[data-tile]').count() === 8 && (await tile('RR')).v > 25 && await page.locator('.lg-tube, .lg-mask').count() === 0, 'on oxygen alone the screen is a bedside monitor: eight tiles, Kussmaul breathing, nothing on the airway');
   await page.locator('[data-triage="tube"]').click(); await page.waitForSelector('[data-triage-verdict="poor"]');
   await page.locator('[data-triage-go]').click(); await page.waitForSelector('[data-vs="vt"]');
-  await page.locator('[data-vs="rr"]').fill('12'); await page.selectOption('[data-vs="sed"]', 'deep');
-  await page.locator('[data-vs-apply]').click(); await page.waitForSelector('[data-vs-verdict]');
+  await page.locator('[data-vs="rr"]').fill('12'); await page.selectOption('[data-vs="sed"]', 'deep'); await page.waitForTimeout(250);
   ok(await page.locator('[data-vs-verdict="dead"]').count() === 1 && /Peri-arrest/.test(await txt('.vs-sum')) && /mixed respiratory and metabolic acidosis/.test(await txt('[data-vs-read]')), 'DKA on 12 a minute, deeply sedated: peri-arrest with a pH in the sixes: ' + await gasVal('[data-vs-abg]', 'pH') + ' / ' + await txt('.vs-sum'));
-  await page.locator('[data-vs="rr"]').fill('30'); await page.locator('[data-vs="vt"]').fill('520'); await page.selectOption('[data-vs="sed"]', 'light');
-  await page.locator('[data-vs-apply]').click(); await page.waitForTimeout(200);
+  await page.locator('[data-vs="rr"]').fill('30'); await page.locator('[data-vs="vt"]').fill('520'); await page.selectOption('[data-vs="sed"]', 'light'); await page.waitForTimeout(250);
   ok(await page.locator('[data-vs-verdict="all"]').count() === 1 || await page.locator('[data-target="no"]').count() <= 1, 'at 30 × 520 the compensation is restored: targets met');
   // ARDS: the tube is best; 6 mL/kg with PEEP
   await page.locator('[data-case="ards"]').click(); await page.waitForSelector('[data-case-present="ards"]');
   await page.locator('[data-triage="tube"]').click(); await page.waitForSelector('[data-triage-verdict="best"]');
   await page.locator('[data-triage-go]').click(); await page.waitForSelector('[data-vs="vt"]');
   ok(await page.locator('[data-vs="vt"]').inputValue() === '340' && await page.locator('[data-vs="peep"]').inputValue() === '12', 'ARDS loads 340 mL (6 mL/kg of 57 kg) with PEEP 12');
-  await page.locator('[data-vs="vt"]').fill('650'); await page.locator('[data-vs-apply]').click(); await page.waitForTimeout(200);
-  ok(parseFloat(await mechVal('Driving pressure')) > 15 && parseFloat((await mechVal('Peak / plateau')).split('/')[1]) > 30 && await page.locator('[data-target="no"]').count() >= 3, 'a 650 mL breath: a driving pressure over 15, a plateau over 30, targets lost: ' + await mechVal('Driving pressure') + ' · ' + await mechVal('Peak / plateau'));
+  ok(await page.locator('.lg-hatch').count() > 0 && await page.locator('.lg-cons').count() >= 4 && (await tile('Pplat')).v <= 30 && await page.locator('.pv-breath[data-pv-over="0"]').count() === 1, 'ARDS lungs: stiff and consolidated; the protective breath stays below the upper inflection');
+  await page.locator('[data-vs="vt"]').fill('650'); await page.waitForTimeout(250);
+  ok(parseFloat(await mechVal('Driving pressure')) > 15 && parseFloat((await mechVal('Peak / plateau')).split('/')[1]) > 30 && await page.locator('[data-target="no"]').count() >= 3 && (await tile('Pplat')).alarm && await page.locator('.pv-breath[data-pv-over="1"]').count() === 1, 'a 650 mL breath: a driving pressure over 15, a plateau over 30 with its alarm, overdistension on the curve, targets lost: ' + await mechVal('Driving pressure') + ' · ' + await mechVal('Peak / plateau'));
+  // leaving the page stops the animation
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'vent_waves' })); await page.waitForTimeout(300);
+  ok(await page.locator('[data-vs-screen]').count() === 0, 'leaving the simulator takes the screen away (the frame loop stops with it)');
 
   // ---- conduction and the ECG
   await page.evaluate(() => window.__pft.setMode('learn', { topic: 'ecglab' })); await page.waitForSelector('.ecg-lab[data-ecg="normal"]');

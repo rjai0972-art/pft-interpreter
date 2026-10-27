@@ -1433,3 +1433,54 @@ body.has-pop { overflow: hidden; }
 .vs-mark { font-weight: 700; } .vs-targets li.ok .vs-mark { color: #3d7a3d; } .vs-targets li.no .vs-mark { color: #b74a3a; }
 .vs-adv { color: var(--ink-2); }
 .vs-log td, .vs-log th { font-size: 12.5px; }
+/* ---- v7.10: the ventilator screen, the lungs, the P–V panel, the patient panel */
+.vs-set-grid { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 900px) { .vs-set-grid { grid-template-columns: minmax(250px, 0.7fr) minmax(0, 1.9fr); align-items: start; } }
+.vs-set-left .nod-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.vs-set-left .nod-grid > label:has(select) { grid-column: 1 / -1; }
+.vs-set-left { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.vent-screen { background: #0b1620; color: #e7eef4; border-radius: 12px; padding: 8px 10px 10px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; border: 2px solid #1f3444; min-width: 0; }
+.vent-screen.off { min-height: 120px; align-content: center; justify-items: center; }
+.vsc-off { margin: 0; color: #8fa7b8; font-size: 13px; }
+.vsc-head { display: flex; justify-content: space-between; gap: 8px; align-items: center; font-size: 12px; color: #c9d6e0; }
+.vsc-mode { font-weight: 600; letter-spacing: 0.02em; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vsc-brand { color: #8fa7b8; text-transform: uppercase; letter-spacing: 0.1em; font-size: 10px; flex: none; }
+.vsc-body { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 700px) { .vsc-body { grid-template-columns: minmax(0, 1fr) 200px; align-items: start; } }
+.vsc-canvas { width: 100%; max-width: 100%; height: auto; aspect-ratio: 720 / 560; display: block; border-radius: 6px; background: #0b1620; min-width: 0; }
+.vsc-tiles { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; min-width: 0; }
+.vsc-alarms { font-size: 11px; color: #8fa7b8; border: 1px solid #1f3444; border-radius: 6px; padding: 3px 6px; min-height: 20px; }
+.vsc-alarms.on { color: #ffd4cf; background: #5a1f1a; border-color: #a33a30; animation: vsc-blink 1.2s steps(2, start) infinite; }
+@keyframes vsc-blink { 50% { background: #7a2a22; } }
+@media (prefers-reduced-motion: reduce) { .vsc-alarms.on { animation: none; } }
+.vsc-grid { display: grid; gap: 4px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 699px) { .vsc-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } .vsc-v { font-size: 14px; } }
+.vsc-tile { background: #10212e; border: 1px solid #1f3444; border-radius: 6px; padding: 4px 6px; display: grid; line-height: 1.15; min-width: 0; }
+.vsc-tile.alarm { border-color: #d04a3f; background: #3a1a18; }
+.vsc-k { font-size: 10px; color: #8fa7b8; text-transform: uppercase; letter-spacing: 0.06em; }
+.vsc-v { font-size: 17px; font-weight: 700; color: #f2f6f9; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vsc-tile.alarm .vsc-v { color: #ffb3aa; }
+.vsc-u { font-size: 9.5px; color: #6f8798; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vs-lung-grid { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 900px) { .vs-lung-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); align-items: start; } }
+.vs-lungbox { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--surface); display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; min-width: 0; }
+.vs-lungbox h5, .vs-patient h5 { margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.an-fig svg.vs-lungs, .an-fig svg.vs-pv { background: var(--surface); }
+.lg-wall { fill: #f1e6dc; stroke: #c9b4a6; stroke-width: 3; } .lg-wall.stiff { stroke: #8a6a55; stroke-width: 9; }
+.lg-rib { fill: none; stroke: #ddd0c4; stroke-width: 4; }
+.lg-lung { stroke: #b97d74; stroke-width: 1.5; transition: fill 0.4s; }
+.lg-hatch { stroke: #7a4a44; stroke-width: 1.4; fill: none; }
+.lg-cons { fill: #ece6e0; stroke: #a08a7e; stroke-width: 0.8; }
+.lg-trachea, .lg-bronchus { fill: none; stroke: #e2c8c2; stroke-linecap: round; }
+.lg-trachea { stroke: #d9b8b0; }
+.lg-spasm { fill: none; stroke: #b74a3a; stroke-linecap: round; }
+.lg-dia { fill: none; stroke: #8a6a55; stroke-width: 4; }
+.lg-tube { fill: #d6e3ec; stroke: #7f98aa; stroke-width: 1.5; } .lg-mask { fill: #d6e3ec; stroke: #7f98aa; stroke-width: 1.5; } .lg-cannula { fill: none; stroke: #7f98aa; stroke-width: 3; }
+.lg-devt { font-size: 10px; fill: var(--muted); }
+.lg-cap { font-size: 10.5px; fill: var(--ink-2); }
+.pv-curve { fill: none; stroke: var(--ink); stroke-width: 2; }
+.pv-mark { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
+.pv-breath { stroke: #3f6f9e; stroke-width: 3.5; stroke-linecap: round; } .pv-breath.over { stroke: #b74a3a; }
+.pv-pt { fill: #3f6f9e; } .pv-pt.over { fill: #b74a3a; }
+.ph-tick.warn { fill: #b74a3a; font-weight: 600; }
+.vs-patient { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--surface); display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; min-width: 0; }

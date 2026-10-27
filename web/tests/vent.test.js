@@ -56,5 +56,18 @@ ok(ohsNiv.ph >= 7.3 && ohsNiv.spo2pct >= 88 && ohsLowEpap.pao2 < ohsNiv.pao2 - 2
 ok(V.CASES.every(c => { const o = run(c.id, c.vent); return o.pvco2 > o.paco2 + 4 && o.pvco2 < o.paco2 + 14 && o.phv < o.ph && o.phv > o.ph - 0.08; }), 'the venous gas sits a few mm Hg of CO2 above and a few hundredths of pH below the arterial in every case');
 ok(V.CASES.every(c => { const o = run(c.id, c.vent); return isFinite(o.pao2) && isFinite(o.ph) && o.vdFrac > 0.2 && o.vdFrac <= 0.8 && o.co > 1.4; }), 'every case computes a finite, bounded state on its starting settings');
 ok(/inadequate respiratory compensation/.test(V.acidBase(dkaSlow)) && /Hypoxaemia/.test(V.acidBase(ardsNoPeep)) || /Hypoxaemia/.test(V.acidBase(run('ards', { mode: 'o2', fio2: 0.6, sed: 'none' }))), 'the reading names failed compensation and hypoxaemia with a wide gradient');
+// ---- the screen traces and the pressure–volume curve
+const trVc = (() => { const c = C('copd'), o = run('copd', c.vent); return V.traces(c.p, Object.assign({}, c.vent), o); })();
+ok(near(trVc.T, 60 / run('copd', C('copd').vent).rrTot, 0.01) && trVc.t.length === trVc.paw.length && trVc.paw.length === trVc.flow.length && trVc.flow.length === trVc.vol.length, 'a cycle of the screen at the total rate, with pressure, flow and volume of the same length');
+ok(Math.max.apply(null, trVc.paw) > Math.max.apply(null, trVc.paw.slice(Math.round(trVc.paw.length / 2))) + 10 && near(Math.max.apply(null, trVc.flow), C('copd').vent.flow, 1) && Math.min.apply(null, trVc.flow) < -10, 'volume control: a square inspiratory flow at the set flow, a pressure peak during it, expiratory flow below zero');
+ok(near(Math.max.apply(null, trVc.vol), C('copd').vent.vt + run('copd', C('copd').vent).trappedMl, 5) && trVc.vol[trVc.vol.length - 1] > 5 && trVc.pmean > 5 && trVc.pmean < 12, 'the volume reaches the tidal volume above what is trapped and does not return to zero (auto-PEEP); the mean pressure is modest');
+const trPc = (() => { const c = C('ards'), s = Object.assign({}, c.vent, { mode: 'pcac', pinsp: 14, ti: 1 }), o = run('ards', s); return V.traces(c.p, s, o); })();
+ok(near(Math.max.apply(null, trPc.paw), 26, 0.5) && trPc.flow[5] > trPc.flow[60] && trPc.flow[60] > 0, 'pressure control: a square pressure at PEEP + Pinsp with a decelerating flow');
+const trOwn = (() => { const c = C('dka'), s = { mode: 'o2', fio2: 0.3, sed: 'none' }, o = run('dka', s); return V.traces(c.p, s, o); })();
+ok(trOwn.own && Math.max.apply(null, trOwn.paw) === 0 && Math.min.apply(null, trOwn.pmus) < -5 && Math.max.apply(null, trOwn.flow) > 20, 'breathing for herself: no airway pressure, a muscle pressure swing, her own flow');
+const pvSoft = V.pvCurve({ crs: 70 }), pvStiff = V.pvCurve({ crs: 28 });
+ok(pvSoft.f(0) === 0 && pvSoft.f(18) > pvSoft.f(10) && near((pvSoft.f(20) - pvSoft.f(16)) / 4, 70, 3) && pvSoft.uip > 27 && pvSoft.uip < 30 && pvSoft.lip > 6 && pvSoft.lip < 9, 'the P–V curve starts at FRC, has the compliance as its slope in the middle and inflections near 8 and 28 cm H2O');
+ok(pvStiff.vmax < pvSoft.vmax / 2 && pvStiff.f(24) < pvSoft.f(24) / 2 && pvStiff.f(45) < pvStiff.vmax, 'a stiff lung has a flatter, lower curve that still plateaus');
+ok(V.CASES.every(c => { const o = run(c.id, c.vent), n = run(c.id, Object.assign({}, c.niv, { mode: 'niv', ps: c.niv.ipap - c.niv.epap, peep: c.niv.epap, ti: 1, sed: 'none' })); return (c.vent.mode === 'vcac' ? o.ppeak > o.pplat : o.ppeak === c.vent.peep + (c.vent.mode === 'pcac' ? c.vent.pinsp : c.vent.ps)) && n.ppeak === c.niv.ipap; }), 'the peak is above the plateau in volume control and is the pressure set in pressure modes (the IPAP on bilevel)');
 console.log('vent ' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

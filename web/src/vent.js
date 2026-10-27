@@ -270,7 +270,9 @@
     const peepTot = peep + autoPeep;
     const pplat = peepTot + vt / p.crs + (p.cwStiff ? 3 : 0);
     const flowLs = s.mode === 'vcac' ? s.flow / 60 : vt / 1000 / Math.max(0.2, ti) * 1.6;
-    const ppeak = pplat + p.raw * flowLs;
+    // volume control: the peak is the plateau plus the resistive pressure of the set flow; pressure modes: the peak is the pressure set
+    const setPress = s.mode === 'pcac' ? s.pinsp : (s.mode === 'psv' || s.mode === 'niv' ? s.ps : 0);
+    const ppeak = s.mode === 'vcac' || own ? pplat + p.raw * flowLs : peep + setPress;   // with a strong effort the alveolar plateau can exceed the airway pressure: the patient adds the stretch
     return { vt: vt, ti: ti, te: te, tau: tau, autoPeep: autoPeep, peepTot: peepTot, peepSet: peep, pplat: pplat, ppeak: ppeak, dp: vt / p.crs, trappedMl: trappedMl };
   }
   function invertSat(S, p50v) { let lo = 10, hi = 700; for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2; if (PH.sat(m, p50v) < S) lo = m; else hi = m; } return (lo + hi) / 2; }
@@ -357,7 +359,7 @@
       } else if (met) {
         const w = 1.5 * b + 8;
         parts.push('a metabolic acidosis with ' + (Math.abs(pc - w) <= 2 ? 'appropriate respiratory compensation (PaCO2 ' + pc.toFixed(0) + ' against a Winters expectation of ' + w.toFixed(0) + ' ± 2)' : (pc > w + 2 ? 'inadequate respiratory compensation — the PaCO2 of ' + pc.toFixed(0) + ' should be ' + w.toFixed(0) + ': the ventilation is not keeping up with the acid' : 'more hyperventilation than compensation needs (PaCO2 ' + pc.toFixed(0) + ' below the expected ' + w.toFixed(0) + ')')));
-      } else parts.push('acidaemia with a normal PaCO2 and bicarbonate — check the numbers');
+      } else parts.push('a mild acidaemia from a PaCO2 at the top of normal (' + pc.toFixed(0) + ') and a bicarbonate at the bottom (' + b.toFixed(0) + ') — a little respiratory and a little metabolic');
     } else if (ph > 7.45) {
       if (pc < 35 && b <= 26) parts.push('a respiratory alkalosis (hyperventilation; PaCO2 ' + pc.toFixed(0) + ')' + (b < 22 ? ', with some renal compensation' : ''));
       else if (b > 26) parts.push('a post-hypercapnic (metabolic) alkalosis: a chronic retainer ventilated to a PaCO2 of ' + pc.toFixed(0) + ' is left holding a bicarbonate of ' + b.toFixed(0) + ' — aim for his usual PaCO2 instead');
@@ -370,6 +372,46 @@
     }
     const ox = o.pao2 < 60 ? 'Hypoxaemia (PaO2 ' + o.pao2.toFixed(0) + ', SpO2 ' + Math.round(o.spo2 * 100) + '%) with an A–a gradient of ' + Math.max(0, o.aa).toFixed(0) + ' on FiO2 ' + o.fio2.toFixed(2) + (o.aa > 25 ? ': the lung (shunt or V/Q)' : ': hypoventilation or the inspired oxygen') + '.' : (o.pao2 > 150 ? 'Hyperoxia (PaO2 ' + o.pao2.toFixed(0) + '): the FiO2 can come down.' : 'Oxygenation adequate (PaO2 ' + o.pao2.toFixed(0) + ', SpO2 ' + Math.round(o.spo2 * 100) + '%; PaO2/FiO2 ' + o.pf.toFixed(0) + ').');
     return parts[0].charAt(0).toUpperCase() + parts[0].slice(1) + '. ' + ox;
+  }
+  /* ---- one cycle of the ventilator screen (or the monitor) for the case's mechanics, the settings and the model's result ---- */
+  function traces(p, s, o) {
+    const T = 60 / Math.max(2, o.rrTot), dt = 0.01, N = Math.round(T / dt);
+    const own = s.mode === 'o2' || s.mode === 'hfnc', tau = p.raw * p.crs / 1000;
+    const peep = o.peepSet, V0 = o.trappedMl / 1000, vtL = o.vt / 1000, ti = o.ti;
+    const t = [], paw = [], flow = [], vol = [], pmus = [];
+    const trig = o.spontRR > 0 && !own;   // the patient pulls the trigger
+    let V = V0;
+    for (let i = 0; i < N; i++) {
+      const tt = i * dt; t.push(tt);
+      let f = 0, pa = peep, pm = 0;
+      if (tt < ti) {
+        const u = tt / ti;
+        if (s.mode === 'vcac') { f = vtL / ti; pa = peep + o.autoPeep + (V - V0) / p.crs * 1000 + f * p.raw + (o.autoPeep > 0 && u < 0.25 ? 0 : 0); if (trig && u < 0.08) pa -= 1.5 * (1 - u / 0.08); }
+        else if (own) { pm = -o.pmus * Math.sin(Math.PI * u); const palv = o.autoPeep + (V - V0) / p.crs * 1000 - (-pm); f = Math.max(0, (-pm - (o.autoPeep + (V - V0) / p.crs * 1000)) / p.raw); pa = peep; }
+        else {
+          const target = (s.mode === 'pcac' ? s.pinsp : s.ps) + peep;
+          const palv = peep + o.autoPeep + (V - V0) / p.crs * 1000;
+          f = Math.max(0, (target + (o.pmus || 0) * Math.sin(Math.PI * u) - palv) / p.raw) * (1 - Math.exp(-tt / 0.07));
+          pa = peep + (target - peep) * Math.min(1, tt / 0.12); if (trig && u < 0.06) pa -= 1.2 * (1 - u / 0.06);
+          pm = -(o.pmus || 0) * Math.sin(Math.PI * u);
+        }
+        V += f * dt;
+        if (V - V0 > vtL) { V = V0 + vtL; }
+      } else {
+        const fe = -(V - 0) / tau; f = fe; V = Math.max(0, V + fe * dt);
+        pa = peep + (s.mode === 'vcac' || s.mode === 'pcac' || s.mode === 'psv' || s.mode === 'niv' ? 0 : 0);
+        if (own) pa = peep;
+      }
+      paw.push(pa); flow.push(f * 60); vol.push(V * 1000); pmus.push(pm);
+    }
+    const pmean = paw.reduce((a, b) => a + b, 0) / paw.length;
+    return { T: T, t: t, paw: paw, flow: flow, vol: vol, pmus: pmus, pmean: pmean, own: own };
+  }
+  /* the static pressure–volume curve of the respiratory system for the lungs panel: a sigmoid whose middle slope is the compliance */
+  function pvCurve(p) {
+    const vmax = p.crs * 32, k = 8, p0 = 18;   // the upper inflection near 28 cm H2O, where the plateau limit comes from
+    const f = (P) => vmax / (1 + Math.exp(-(P - p0) / k)) - vmax / (1 + Math.exp(p0 / k));
+    return { f: f, vmax: vmax, lip: p0 - 1.3 * k, uip: p0 + 1.3 * k };
   }
   function grade(c, out) {
     const tube = out.mode === 'vcac' || out.mode === 'pcac' || out.mode === 'psv', sup = tube || out.mode === 'niv';
@@ -482,6 +524,6 @@
     { title: 'Reading the screen', ids: ['vent_waves'] },
     { title: 'Practice', ids: ['vent_sim'] }
   ];
-  root.PFT_VENT = { topics: T, groups: GROUPS, SETTINGS: SETTINGS, MODES: MODES, WAVES: WAVES, wave: wave, CASES: CASES, PBW: PBW, mech: mech, gas: gas, grade: grade, verdict: verdict, acidBase: acidBase, SED: SED, SUPPORTED: SUPPORTED };
+  root.PFT_VENT = { topics: T, groups: GROUPS, SETTINGS: SETTINGS, MODES: MODES, WAVES: WAVES, wave: wave, CASES: CASES, PBW: PBW, mech: mech, gas: gas, grade: grade, verdict: verdict, acidBase: acidBase, traces: traces, pvCurve: pvCurve, SED: SED, SUPPORTED: SUPPORTED };
   if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_VENT;
 })(typeof window !== 'undefined' ? window : globalThis);

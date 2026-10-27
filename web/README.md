@@ -116,8 +116,15 @@ verdicts, the starting NIV and ventilator settings, and the targets with advice 
 ventilator or to any supported mode), `mech` (pressures, auto-PEEP, delivered volume for pressure-driven breaths), `gas`
 (a fixed-point iteration of the patient's drive, the delivered breaths, dead space, PaCO2, pH with the bicarbonate now or
 after a day, oxygenation from a recruitable shunt plus a V/Q admixture, the venous gas, the circulation under PEEP),
-`acidBase` (the reading in words), `grade`/`verdict`. `ui_4h_vent.js` draws the mode matrix, the glossary, the waveform
-viewer and the simulator (`VS` holds the case, the plan, the settings and the chart). The nodule module (`src/nodules.js`, testable in node): `mayo`, `va`, `brock` are the published equations; `vdt` the
+`acidBase` (the reading in words), `grade`/`verdict`, `traces(p, s, out)` (one cycle of pressure, flow, volume and muscle
+pressure for the screen, from the equation of motion with the model's rate, auto-PEEP and effort) and `pvCurve(p)` (the
+respiratory system's sigmoid static curve with the compliance as its mid-slope and inflections near 8 and 28 cm H2O).
+`ui_4h_vent.js` draws the mode matrix, the glossary, the waveform viewer and the simulator (`VS` holds the case, the plan,
+the settings, the patient overrides `pOver` from the sliders, the model output and the chart; `vsRefresh` recomputes the
+gases, the tiles, the lungs and the P–V panel on any change without rebuilding the inputs; `vsDrawScreen` paints the
+canvas each animation frame at the displayed size — the cycle repeated across an 8 s window behind a sweeping cursor —
+and `vsAnimateLungs` scales the lung pair about the apices by the volume above FRC and drops the diaphragm with it; the
+frame loop stops when the screen leaves the document). The nodule module (`src/nodules.js`, testable in node): `mayo`, `va`, `brock` are the published equations; `vdt` the
 doubling time; `fleischner(q)` and `lungRads(q)` return the guideline's step for a nodule described by setting, type,
 mean diameter, solid component, status (baseline / new / growing / stable), multiplicity and patient risk.
 

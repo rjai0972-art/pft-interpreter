@@ -81,7 +81,7 @@ and the single-file browser version (`PFT_Interpreter_standalone.html`) always w
 - Code signing is optional and not set up. For Windows add a signing certificate to the build; for Mac add an Apple Developer ID and notarization.
   Until then the first-launch steps above are needed.
 
-## How the reading is built (version 7.9)
+## How the reading is built (version 7.10)
 
 The rules layer computes every measurement state before any wording is chosen (ERS/ATS 2022 z-scores and the LLN;
 a reviewed adult phrase catalog anchored to the ERS/ATS 2022, ATS/ERS 2019, ERS/ATS 2023, ERS/ATS 2017, ERS 2019 and
@@ -231,8 +231,22 @@ secretions) with what you see and what to do; and a simulator of eight patients 
 exacerbation, ARDS, near-fatal asthma, DKA with aspiration, cardiogenic oedema, opioid overdose, brain injury, obesity
 hypoventilation): read the presentation and the gases, triage the level of support (oxygen, high-flow, NIV, the tube)
 and get the verdict with its reasoning, set the mask or the ventilator (mode, volume, rate, flow or Ti, PEEP, FiO2,
-inspiratory pressure or support, sedation), apply it and read the arterial and venous gases an hour later and a day
-later (alveolar ventilation and dead space set the PaCO2, the bicarbonate and the kidney the pH, shunt and V/Q and
-PEEP the PaO2, time constants the auto-PEEP, the pressure in the chest the cardiac output), with an acid–base reading
-in words, the mechanics and the circulation, the case's own targets grading the plan with advice, and a chart of
-the gases as the plan changes.
+inspiratory pressure or support, sedation) and read the arterial and venous gases an hour later and a day later
+(alveolar ventilation and dead space set the PaCO2, the bicarbonate and the kidney the pH, shunt and V/Q and PEEP the
+PaO2, time constants the auto-PEEP, the pressure in the chest the cardiac output), with an acid–base reading in words,
+the mechanics and the circulation, the case's own targets grading the plan with advice, and a chart of the gases you
+record as the plan changes. Everything updates live as a setting is changed, on a ventilator screen beside the
+settings: the pressure, flow and volume of the current breaths sweep across it from the equation of motion (a square
+flow with its peak-to-plateau gap in volume control, a square pressure with a decelerating flow in pressure modes, the
+expiratory flow that never reaches zero when gas is trapped), with the numbers a ventilator shows (peak, plateau, set
+and auto-PEEP, mean pressure, expired volume and minute volume, total and spontaneous rate, I:E, FiO2, SpO2, EtCO2,
+static compliance) and its alarms (high pressure, plateau over 30, auto-PEEP, low minute volume, apnoea, desaturation,
+hypotension); on oxygen or high-flow the screen is a bedside monitor with the patient's own effort instead of an airway
+pressure. Below it a pair of lungs breathes with the traces — the diaphragm descends, the bases fill, the colour follows
+the saturation — and wears the disease: hatching as the compliance falls, airless patches for the shunt (fewer as PEEP
+recruits), thick spastic bronchi for the resistance, a hyperinflated chest in emphysema, a tube, a mask or a cannula at
+the top; a pressure–volume panel shows where the breath sits on the respiratory system's sigmoid curve (the breath from
+PEEP to the plateau, red past the upper inflection); and a patient panel with sliders for the lungs themselves —
+compliance, resistance, shunt, recruitability, alveolar dead space, bicarbonate, drive, a stiff chest wall — so the
+disease can be changed under the same settings and the screen, the lungs and the gases followed (stiffen the lung and
+the plateau climbs; narrow the airway and the time constant lengthens; add shunt and the PaO2 falls whatever the FiO2).
