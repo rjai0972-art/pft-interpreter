@@ -81,7 +81,7 @@ and the single-file browser version (`PFT_Interpreter_standalone.html`) always w
 - Code signing is optional and not set up. For Windows add a signing certificate to the build; for Mac add an Apple Developer ID and notarization.
   Until then the first-launch steps above are needed.
 
-## How the reading is built (version 7.10)
+## How the reading is built (version 7.11)
 
 The rules layer computes every measurement state before any wording is chosen (ERS/ATS 2022 z-scores and the LLN;
 a reviewed adult phrase catalog anchored to the ERS/ATS 2022, ATS/ERS 2019, ERS/ATS 2023, ERS/ATS 2017, ERS 2019 and
@@ -249,4 +249,26 @@ the top; a pressure–volume panel shows where the breath sits on the respirator
 PEEP to the plateau, red past the upper inflection); and a patient panel with sliders for the lungs themselves —
 compliance, resistance, shunt, recruitability, alveolar dead space, bicarbonate, drive, a stiff chest wall — so the
 disease can be changed under the same settings and the screen, the lungs and the gases followed (stiffen the lung and
-the plateau climbs; narrow the airway and the time constant lengthens; add shunt and the PaO2 falls whatever the FiO2).
+the plateau climbs; narrow the airway and the time constant lengthens; add shunt and the PaO2 falls whatever the FiO2). "ECMO" is the sixth area: what extracorporeal support is and is not (the history, the vocabulary, VV against VA,
+the trials — CESAR, EOLIA, PRONECMO, REST, ECLS-SHOCK, ARREST/INCEPTION, LEVOECMO, RATE — and the ELSO, ESICM and ATS
+guidance); the circuit part by part, drawn on a patient with the blood coloured by its saturation and the flow moving
+through the tubing, with the pressures (drainage, pre- and post-membrane, ΔP) and the oxygenator check; the cannulation
+configurations (femoro-jugular, dual-lumen, femoro-femoral, peripheral VA with the distal perfusion catheter, axillary and
+central return, V-AV, V-PA) with sizes, flows and tip positions; VV physiology (the flow-to-output ratio, recirculation
+and its signs, the hypoxaemia algorithm, sweep and CO2, lung rest, targets); VA physiology (afterload, pulse pressure, LV
+distension and venting, the mixing zone and Harlequin syndrome, the first hour, targets); selection (EOLIA/ELSO criteria,
+contraindications, RESP and SAVE, cardiogenic shock, ECPR and accidental hypothermia); daily management (anticoagulation
+targets and monitoring, product thresholds, the labs and what they mean, the rest of the patient, the rounds checklist);
+complications and the rehearsed emergencies (air, pump failure, decannulation, suck-down, oxygenator failure, tamponade,
+limb ischaemia, ICH); liberation (the VV sweep-off trial and the VA flow-down trial with the Aissaoui echo criteria, and
+the two mistakes); a circuit lab — a model of an adult on VV or VA ECMO in which the pump speed earns a flow against what
+the drainage gives, the membrane sets the post-oxygenator gas, the ratio of circuit flow to cardiac output and the
+recirculation set the arterial saturation, the sweep sets the PaCO2, and on VA the retrograde flow meets the native
+ejection in the aorta so the right radial and the femoral gases differ and the ventricle pays for the afterload (sliders
+for the circuit and the patient, a console with the pressures and alarms, gas panels at the drainage, after the membrane
+and in the patient, twelve presets); and fourteen bedside troubleshooting scenarios (chatter, recirculation, high-output
+hypoxaemia, a failing membrane, air in the line, Harlequin, LV distension, the cold leg, VA and VV weaning, bleeding, a
+stopped pump, haemolysis, referral) with four options each, a verdict with the physiology, the sequence the team would
+follow, and a button that loads the problem and then the fix into the lab. `extras/` holds a reworked Anki deck
+(`ECMO_Anki_Deck_v2.apkg`, 103 notes / 237 cards, cloze and basic, tagged by topic, built by `build_ecmo_anki.py` with no
+dependencies) and a bedside reference PDF generated from the same content (`build_ecmo_reference.js`).

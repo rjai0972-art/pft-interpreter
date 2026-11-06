@@ -124,7 +124,18 @@ the settings, the patient overrides `pOver` from the sliders, the model output a
 gases, the tiles, the lungs and the P–V panel on any change without rebuilding the inputs; `vsDrawScreen` paints the
 canvas each animation frame at the displayed size — the cycle repeated across an 8 s window behind a sweeping cursor —
 and `vsAnimateLungs` scales the lung pair about the apices by the volume above FRC and drops the diaphragm with it; the
-frame loop stops when the screen leaves the document). The nodule module (`src/nodules.js`, testable in node): `mayo`, `va`, `brock` are the published equations; `vdt` the
+frame loop stops when the screen leaves the document). ECMO (`src/ecmo.js`, testable in node, loads after physio.js): the topics and groups, `CONFIGS`,
+`DRAIN`/`RETURN` (cannula capacities), `pump(p, s)` (the flow a speed earns against the drainage, suck-down and chatter,
+the three pressures and ΔP), `membrane(p, s, preO2, preCO2)` (post-membrane PO2 and PCO2 from the FdO2, the sweep-to-flow
+ratio and the membrane's condition, with a transfer cap), `runVV` (recirculation, the effective-flow mix into the
+pulmonary artery, the native lung's shunt, a Fick iteration for the venous content, a CO2 balance between the membrane
+and the native alveolar ventilation), `runVA` (native ejection against the afterload of the circuit's pressure, MAP from
+the SVR, LVEDP and distension, a branch-by-branch mixing zone along the aorta so each territory has its own gas, limb
+risk), `alarms`, `PRESETS`/`preset(id)` and `SCENARIOS`. `ui_4i_ecmo.js` draws the circuit on a patient (`ecSvg`: blood
+coloured by saturation, CSS-animated flow and impeller, chatter, clots, the mixing zone, the devices), the configurations
+gallery, the lab (`ECS` state; `ecRefresh` redraws the drawing, the console and the gas panels on any change) and the
+scenarios (`ECS.answers`). `extras/build_ecmo_anki.py` writes the Anki deck straight into the collection.anki2 schema;
+`extras/build_ecmo_reference.js` renders chosen blocks of `ecmo.js` to a PDF with Playwright. The nodule module (`src/nodules.js`, testable in node): `mayo`, `va`, `brock` are the published equations; `vdt` the
 doubling time; `fleischner(q)` and `lungRads(q)` return the guideline's step for a nodule described by setting, type,
 mean diameter, solid component, status (baseline / new / growing / stable), multiplicity and patient risk.
 

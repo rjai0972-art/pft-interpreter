@@ -16,7 +16,7 @@ const uniqN = (a) => a.filter((x, i) => a.indexOf(x) === i).length;
 
   // ---- areas
   await page.locator('.vw[data-view="learn"]').click(); await page.waitForSelector('.learn-body');
-  ok(await page.locator('#learn-cat option').count() === 5, 'Learn offers five areas');
+  ok(await page.locator('#learn-cat option').count() === 6, 'Learn offers six areas');
   ok(await page.locator('.learn-body').getAttribute('data-cat') === 'pft', 'PFT interpretation is the default area');
   const nPft = await page.locator('.ln-btn').count();
   ok(nPft >= 20, 'the PFT area keeps its topics (' + nPft + ')');
@@ -470,6 +470,61 @@ const uniqN = (a) => a.filter((x, i) => a.indexOf(x) === i).length;
   await page.evaluate(() => window.__pft.setMode('learn', { topic: 'vent_waves' })); await page.waitForTimeout(300);
   ok(await page.locator('[data-vs-screen]').count() === 0, 'leaving the simulator takes the screen away (the frame loop stops with it)');
 
+  // ---- ECMO: the pages, the circuit lab and the scenarios
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'ecmo_intro' })); await page.waitForSelector('.learn-body[data-topic="ecmo_intro"]');
+  ok(await page.locator('#learn-cat').inputValue() === 'ecmo' && await page.locator('.ln-btn[data-topic]').count() === 11 && /ECLS-SHOCK/.test(await txt('.learn-body')), 'the ECMO area: eleven topics, the trials on the first page');
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'ecmo_circuit' })); await page.waitForSelector('[data-ecmocircuit]');
+  ok(await page.locator('[data-ecmocircuit] .ec-num').count() === 6 && await page.locator('[data-ecmocircuit] .ec-flow').count() >= 3 && await page.locator('[data-ecmocircuit] .ec-tag').count() >= 5, 'the circuit page: six numbered parts, animated flow on the tubing, the pressures tagged');
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'ecmo_cannulation' })); await page.waitForSelector('[data-ecmoconfigs]');
+  ok(await page.locator('[data-cfg]').count() === 8 && await page.locator('[data-cfg="vpa"] .ec-cfgline').count() >= 2, 'eight cannulation configurations drawn');
+  // the lab: VV
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'ecmo_lab' })); await page.waitForSelector('[data-ecmolab]');
+  const ecCell = (label) => page.evaluate((l) => { const c = Array.from(document.querySelectorAll('[data-ecmolab] [data-ec-cell]')).filter(x => x.getAttribute('data-ec-cell') === l)[0]; return c ? parseFloat(c.querySelector('b').textContent) : NaN; }, label);
+  const ecTile = (n) => page.evaluate((n) => { const t = document.querySelector('[data-ecmolab] [data-tile="' + n + '"]'); return t ? { v: parseFloat(t.querySelector('.vsc-v').textContent), alarm: t.classList.contains('alarm') } : null; }, n);
+  const postPO2 = () => page.evaluate(() => parseFloat(document.querySelector('[data-ec-gas="post"] [data-ec-cell="PO2"] b').textContent));
+  ok(await page.locator('[data-ec-mode="vv"][aria-checked="true"]').count() === 1 && (await ecTile('Flow')).v > 4 && (await ecCell('SaO2')) >= 88 && (await ecCell('PaCO2')) > 30 && (await ecCell('PaCO2')) < 45 && (await postPO2()) > 400 && await page.locator('[data-ec-alarms="0"]').count() === 1, 'the lab opens on a good VV run: flow 4.6, SaO2 in the 90s, PaCO2 in the 30s, post-membrane PO2 above 400, no alarms');
+  const sa0 = await ecCell('SaO2'), pc0 = await ecCell('PaCO2');
+  await page.locator('[data-ec="sweep"]').fill('6'); await page.waitForTimeout(150);
+  ok((await ecCell('PaCO2')) < pc0 - 10 && Math.abs((await ecCell('SaO2')) - sa0) <= 2, 'more sweep: the PaCO2 falls and the saturation does not move');
+  await page.locator('[data-ec="rpm"]').fill('2200'); await page.waitForTimeout(150);
+  ok((await ecTile('Flow')).v < 2.6 && (await ecCell('SaO2')) < sa0 - 8 && (await ecTile('Qeff / CO')).alarm, 'less speed: less flow, a smaller share of the output, the saturation falls and the ratio alarms');
+  await page.selectOption('[data-ec-preset]', 'vv_recirc'); await page.waitForTimeout(250);
+  ok((await ecTile('SvO2 (drainage)')).v >= 75 && (await ecTile('SvO2 (drainage)')).alarm && (await ecCell('SaO2')) < sa0 - 4 && /Recirculation|recirculation/.test(await txt('[data-ec-note]')) && await page.locator('[data-ec-config] option:checked').evaluate(e => e.value) === 'ff', 'the recirculation preset: femoro-femoral, bright drainage blood with a falling patient');
+  await page.selectOption('[data-ec-preset]', 'vv_chatter'); await page.waitForTimeout(250);
+  ok(await page.locator('[data-ecmolab] .ec-chatter').count() === 1 && (await ecTile('P drain')).v < -70 && (await ecTile('Flow')).alarm && /Drainage insufficiency/.test(await txt('[data-ec-alarms]')), 'the chatter preset: the drainage line shakes, the pressure dives, the console alarms');
+  await page.locator('[data-ec="cvp"]').fill('12'); await page.waitForTimeout(150);
+  ok(await page.locator('[data-ecmolab] .ec-chatter').count() === 0 && (await ecTile('Flow')).v > 4, 'volume restores the drainage');
+  await page.selectOption('[data-ec-preset]', 'vv_oxyfail'); await page.waitForTimeout(250);
+  ok((await postPO2()) < 200 && (await ecTile('ΔP')).alarm && await page.locator('[data-ecmolab] .ec-clot').count() >= 3 && /membrane failing/.test(await txt('[data-ec-alarms]')), 'the failing membrane: post-membrane PO2 under 200, ΔP alarm, clots drawn in the fibres');
+  // the lab: VA
+  await page.locator('[data-ec-mode="va"]').click(); await page.waitForSelector('[data-ec-mode="va"][aria-checked="true"]');
+  ok(await page.locator('[data-ec-unload]').count() === 1 && await page.locator('[data-ec="contr"]').count() === 1 && await page.locator('[data-ec="co"]').count() === 0 && await page.locator('[data-ecmolab] .ec-dpc').count() === 1 && await page.locator('[data-ecmolab] [data-mix]').count() === 1, 'VA: contractility and unloading controls, a distal perfusion catheter and the mixing zone drawn');
+  ok((await ecCell('Femoral PaO2')) > 300 && (await ecCell('Right radial PaO2')) > 60 && (await ecCell('Right radial PaO2')) < (await ecCell('Femoral PaO2')) && (await ecCell('MAP')) >= 65 && (await ecCell('Pulse pressure')) >= 10, 'cardiogenic shock on peripheral VA: the femoral gas is circuit blood, the right radial a native mixture, MAP restored');
+  await page.selectOption('[data-ec-preset]', 'va_harlequin'); await page.waitForTimeout(250);
+  const rr = await ecCell('Right radial PaO2'), fem = await ecCell('Femoral PaO2');
+  ok(rr < 60 && fem > 150 && /Differential hypoxaemia/.test(await txt('[data-ec-alarms]')) && parseFloat(await page.locator('[data-ecmolab] [data-mix]').getAttribute('data-mix')) > 3, 'Harlequin: right radial PaO2 ' + rr + ', femoral ' + fem + ', the mixing zone in the arch');
+  await page.selectOption('[data-ec-config]', 'ce'); await page.waitForSelector('[data-ec-config] option[value="ce"]:checked', { state: 'attached' }); await page.waitForTimeout(250);
+  ok(Math.abs((await ecCell('Right radial PaO2')) - (await ecCell('Femoral PaO2'))) < 2 && await page.locator('[data-ecmolab] [data-mix]').count() === 0, 'central return: one blend for the whole aorta, no mixing zone');
+  await page.selectOption('[data-ec-preset]', 'va_distension'); await page.waitForTimeout(250);
+  ok((await ecCell('LVEDP')) > 20 && (await ecCell('Pulse pressure')) < 10 && /closed/.test(await page.locator('[data-ec-cell="Aortic valve"] b').innerText()) && /LV distension/.test(await txt('[data-ec-alarms]')) && await page.locator('[data-ecmolab] .ec-oedema').count() >= 3, 'the distended ventricle: LVEDP over 20, no pulse pressure, a closed valve, oedema drawn in the lungs');
+  const lvedp0 = await ecCell('LVEDP');
+  await page.selectOption('[data-ec-unload]', 'impella'); await page.waitForTimeout(250);
+  ok((await ecCell('LVEDP')) < lvedp0 - 6 && await page.locator('[data-ecmolab] .ec-impella').count() === 1 && !/LV distension/.test(await txt('[data-ec-alarms]')), 'an Impella empties it: LVEDP down, the device drawn through the valve, the alarm gone');
+  await page.selectOption('[data-ec-preset]', 'va_wean'); await page.waitForTimeout(250);
+  ok((await ecTile('Flow')).v < 2.2 && (await ecCell('MAP')) >= 60 && (await ecCell('Pulse pressure')) > 20 && (await ecCell('Native output')) > 2, 'the flow-down trial: 1.9 L/min of support, the native heart holds the pressure');
+  // the scenarios
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'ecmo_cases' })); await page.waitForSelector('[data-ecmocases]');
+  ok(await page.locator('[data-ec-case]').count() === 14 && await page.locator('[data-ec-opt]').count() === 4 && await page.locator('[data-ec-open="chatter"]').count() === 1, 'fourteen scenarios; the first open with four options');
+  await page.locator('[data-ec-opt="up"]').click(); await page.waitForSelector('[data-ec-verdict="wrong"]');
+  ok(await page.locator('.ec-best').count() === 1 && await page.locator('.ec-opt.isbest').count() === 1 && await page.locator('.ec-fix li').count() === 5 && await page.locator('[data-ec-score="0/1"]').count() === 1, 'a wrong answer: the verdict, the best move shown, the sequence, the score');
+  await page.locator('[data-ec-case="recirc"]').click(); await page.waitForSelector('[data-ec-open="recirc"]');
+  await page.locator('[data-ec-opt="reposition"]').click(); await page.waitForSelector('[data-ec-verdict="best"]');
+  ok(await page.locator('[data-ec-score="1/2"]').count() === 1 && await page.locator('[data-ec-case="recirc"].ec-done.best').count() === 1 && await page.locator('[data-ec-case="chatter"].ec-done.wrong').count() === 1, 'the tabs remember the verdicts');
+  await page.locator('[data-ec-showlab="vv_recirc"]').click(); await page.waitForSelector('[data-ecmolab]');
+  ok((await ecTile('SvO2 (drainage)')).v >= 75 && await page.locator('[data-ec-config] option:checked').evaluate(e => e.value) === 'ff', '“Show in the lab” opens the lab with the scenario’s circuit');
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'ecmo_cases' })); await page.waitForSelector('[data-ecmocases]');
+  ok(await page.locator('[data-ec-score="1/2"]').count() === 1, 'the answers survive leaving and returning');
+
   // ---- conduction and the ECG
   await page.evaluate(() => window.__pft.setMode('learn', { topic: 'ecglab' })); await page.waitForSelector('.ecg-lab[data-ecg="normal"]');
   ok(await page.locator('#learn-cat').inputValue() === 'ecg' && (await page.locator('#learn-cat option').allInnerTexts()).some(t => /Cardiac conduction/.test(t)), 'a third Learn area: cardiac conduction & ECG');
@@ -514,7 +569,7 @@ const uniqN = (a) => a.filter((x, i) => a.indexOf(x) === i).length;
 
   // ---- lung nodules and screening
   await page.evaluate(() => window.__pft.setMode('learn', { topic: 'nodules' })); await page.waitForSelector('[data-nod-risk]');
-  ok(await page.locator('#learn-cat').inputValue() === 'cancer' && await page.locator('#learn-cat option').count() === 5, 'a fourth Learn area: lung nodules & cancer screening');
+  ok(await page.locator('#learn-cat').inputValue() === 'cancer' && await page.locator('#learn-cat option').count() === 6, 'a fourth Learn area: lung nodules & cancer screening');
   ok(/Fleischner/.test(await txt('.learn-body')) && /Lung-RADS/.test(await txt('.learn-body')) && /Brock/.test(await txt('.learn-body')) && await page.locator('.learn-body table').count() >= 4, 'the nodule page carries the Fleischner, Lung-RADS and model tables');
   ok(await page.locator('[data-nod-risk] [data-model]').count() === 3 && /17%/.test(await txt('[data-nod-risk] [data-model="mayo"]')), 'three probability models computed for the default case (Mayo 17%): ' + await txt('[data-nod-risk-out]'));
   await page.locator('[data-nod-risk] [data-nod="size"]').fill('20'); await page.locator('[data-nod-risk] [data-nod="spic"]').check(); await page.waitForTimeout(80);
