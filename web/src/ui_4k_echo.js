@@ -105,7 +105,7 @@ function echoAtlasFig() {
       h('h4', { class: 'eh-title', text: (i + 1) + '. ' + v.title }),
       h('div', { class: 'eh-card-grid' }, [
         h('div', { class: 'eh-card-torso' }, [ehTorso(EH.viewParams(v.id), { caption: EH.WINDOWS[v.win].title + ' window' }), h('p', { class: 'fine', text: 'Marker ' + v.rot + '°' + (v.tilt ? ', tilt ' + v.tilt + '°' : '') + (v.rock ? ', rock ' + v.rock + '°' : '') + '; depth ' + v.depth + ' cm' })]),
-        h('div', { class: 'eh-card-img' }, [cv, ehOwnSlot(v)]),
+        h('div', { class: 'eh-card-img' }, [cv, ehrAtlasSlot(v), ehOwnSlot(v)]),
         h('div', { class: 'eh-card-text' }, [h('p', { class: 'eh-how' }, [h('b', { text: 'How: ' }), v.how]), list('What is in it', v.see), list('What to measure', v.measure), list('Pitfalls', v.pitfalls),
           h('div', { class: 'ec-labbtns' }, [h('button', { type: 'button', class: 'btn sm', 'data-eh-open': v.id, text: 'Obtain it in the lab →', onclick: () => { EHS.target = v.id; const q = EH.viewParams(v.id); Object.assign(EHS, { win: q.win, rot: q.rot + 35, tilt: q.tilt + 12, rock: q.rock, dx: q.dx, dz: q.dz, depth: q.depth }); setMode('learn', { topic: 'echo_lab' }); } })])])
       ])
@@ -239,9 +239,183 @@ function echoQuizFig() {
     h('figcaption', { text: 'Views are drawn slightly off-axis at random, as they are at the bedside; the outlined structure is one of the chambers or vessels; the heart may be normal or one of the lab’s pathologies.' })
   ]);
 }
+
+/* ===== v8.2: the real volume — a 3-D apical acquisition resliced in the browser ===== */
+const EHR = { vol: null, loading: false, cbs: [], W: 220, H: 260, half: 80, depth: 160, loops: [] };
+const EHR_MAP = { a4c: 'a4c', a5c: 'a5c', a2c: 'a2c', a3c: 'a3c', psax_mv: 'sax_mv', psax_pm: 'sax_pm' };
+function ehrData() { return typeof PFT_ECHOREAL !== 'undefined' ? PFT_ECHOREAL : window.PFT_ECHOREAL; }
+function ehrView(id) { const d = ehrData(); return d ? d.views.filter(v => v.id === id)[0] : null; }
+/* decode the mosaics into one Uint8Array per phase (x fastest, then y, then z) */
+function ehrLoad(cb) {
+  const d = ehrData(); if (!d) return;
+  if (EHR.vol) { if (cb) cb(); return; }
+  if (cb) EHR.cbs.push(cb);
+  if (EHR.loading) return; EHR.loading = true;
+  const X = d.dims[0], Y = d.dims[1], Z = d.dims[2], vols = [];
+  let n = 0;
+  d.frames.forEach((src, k) => {
+    const im = new Image();
+    im.onload = () => {
+      const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d'); x.drawImage(im, 0, 0);
+      const px = x.getImageData(0, 0, im.width, im.height).data, v = new Uint8Array(X * Y * Z);
+      for (let z = 0; z < Z; z++) { const tx = (z % d.cols) * X, ty = Math.floor(z / d.cols) * Y; for (let y = 0; y < Y; y++) { const row = ((ty + y) * im.width + tx) * 4, o = (z * Y + y) * X; for (let i = 0; i < X; i++) v[o + i] = px[row + i * 4]; } }
+      vols[k] = v; n++;
+      if (n === d.frames.length) { EHR.vol = vols; EHR.loading = false; const cbs = EHR.cbs; EHR.cbs = []; cbs.forEach(f => f()); }
+    };
+    im.src = src;
+  });
+}
+/* one plane of the volume at a fractional phase: a rectangular (lateral, depth) grid masked to the pyramid; or a C-plane (x, y) at depth c */
+function ehrPlane(p, phaseF, W, H) {
+  const d = ehrData(), vols = EHR.vol, out = new Uint8ClampedArray(W * H); if (!d || !vols) return out;
+  const X = d.dims[0], Y = d.dims[1], Z = d.dims[2], sx = d.sp[0], sy = d.sp[1], sz = d.sp[2], ax = d.apex[0], ay = d.apex[1], az = d.apex[2];
+  const nP = vols.length, f0 = Math.floor(phaseF) % nP, f1 = (f0 + 1) % nP, w1 = phaseF - Math.floor(phaseF), w0 = 1 - w1, v0 = vols[f0], v1 = vols[f1];
+  const tanA = Math.tan((d.halfAngle || 36) * Math.PI / 180);
+  const samp = (vx, vy, vz) => {
+    if (vx < 0 || vy < 0 || vz < 0 || vx >= X - 1 || vy >= Y - 1 || vz >= Z - 1) return 0;
+    const x0 = vx | 0, y0 = vy | 0, z0 = vz | 0, fx = vx - x0, fy = vy - y0, fz = vz - z0;
+    const i000 = (z0 * Y + y0) * X + x0, i100 = i000 + 1, i010 = i000 + X, i110 = i010 + 1, i001 = i000 + X * Y, i101 = i001 + 1, i011 = i001 + X, i111 = i011 + 1;
+    const tri = (v) => ((v[i000] * (1 - fx) + v[i100] * fx) * (1 - fy) + (v[i010] * (1 - fx) + v[i110] * fx) * fy) * (1 - fz) + ((v[i001] * (1 - fx) + v[i101] * fx) * (1 - fy) + (v[i011] * (1 - fx) + v[i111] * fx) * fy) * fz;
+    return w1 ? tri(v0) * w0 + tri(v1) * w1 : tri(v0);
+  };
+  if (p.c !== undefined) {
+    const half = p.half || 75;
+    for (let j = 0; j < H; j++) { const my = -half + 2 * half * j / (H - 1); for (let i = 0; i < W; i++) { const mx = -half + 2 * half * i / (W - 1); out[j * W + i] = samp((ax + mx) / sx, (ay + my) / sy, (az + p.c) / sz); } }
+    return out;
+  }
+  const phi = (p.phi || 0) * Math.PI / 180, tau = (p.tau || 0) * Math.PI / 180, depth = p.depth || EHR.depth, half = p.half || EHR.half;
+  const ux = Math.cos(phi), uy = Math.sin(phi), wx = -Math.sin(phi) * Math.sin(tau), wy = Math.cos(phi) * Math.sin(tau), wz = Math.cos(tau);
+  for (let j = 0; j < H; j++) {
+    const dd = depth * j / (H - 1), lim = dd * tanA + 1;
+    for (let i = 0; i < W; i++) {
+      const l = -half + 2 * half * i / (W - 1); if (Math.abs(l) > lim) { out[j * W + i] = 0; continue; }
+      out[j * W + i] = samp((ax + l * ux + dd * wx) / sx, (ay + l * uy + dd * wy) / sy, (az + dd * wz) / sz);
+    }
+  }
+  return out;
+}
+function ehrPaint(cv, gray, W, H, opts) {
+  opts = opts || {};
+  const ctx = cv.getContext('2d'), off = ehrPaint.off || (ehrPaint.off = document.createElement('canvas'));
+  off.width = W; off.height = H; const octx = off.getContext('2d'), data = octx.createImageData(W, H);
+  for (let i = 0; i < W * H; i++) { const g = gray[i]; data.data[i * 4] = g; data.data[i * 4 + 1] = g; data.data[i * 4 + 2] = g; data.data[i * 4 + 3] = 255; }
+  octx.putImageData(data, 0, 0);
+  const dpr = Math.min(2, window.devicePixelRatio || 1), cw = cv.clientWidth || 320, ch = Math.round(cw * H / W);
+  if (cv.width !== Math.round(cw * dpr) || cv.height !== Math.round(ch * dpr)) { cv.width = Math.round(cw * dpr); cv.height = Math.round(ch * dpr); }
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.imageSmoothingEnabled = true;
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, cw, ch); ctx.drawImage(off, 0, 0, cw, ch);
+  const sx = cw / W, sy = ch / H;
+  if (opts.labels && opts.view && opts.view.labels) {
+    ctx.font = '600 11px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineWidth = 3; ctx.lineJoin = 'round';
+    opts.view.labels.forEach(L => {
+      let x, y;
+      if (opts.view.c !== undefined) { const half = opts.view.half || 75; x = (L[1] + half) / (2 * half) * (W - 1) * sx; y = (L[2] + half) / (2 * half) * (H - 1) * sy; }
+      else { x = (L[1] + EHR.half) / (2 * EHR.half) * (W - 1) * sx; y = L[2] / EHR.depth * (H - 1) * sy; }
+      ctx.strokeStyle = 'rgba(0,0,0,0.85)'; ctx.strokeText(L[0], x, y); ctx.fillStyle = '#ffe28a'; ctx.fillText(L[0], x, y);
+    });
+  }
+  // the chrome: depth marks for a B-plane, a scale for a C-plane, the title
+  ctx.fillStyle = '#8fa7b8'; ctx.font = '10px system-ui, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  if (opts.view && opts.view.c !== undefined) { const half = opts.view.half || 75; const pxcm = 10 / (2 * half) * (W - 1) * sx; ctx.fillRect(6, ch - 10, pxcm * 2, 2); ctx.fillText('2 cm', 6, ch - 14); ctx.fillText('C-plane at ' + opts.view.c + ' mm', 6, 12); }
+  else { for (let dcm = 5; dcm * 10 < EHR.depth; dcm += 5) { const y = dcm * 10 / EHR.depth * (H - 1) * sy; ctx.fillText(dcm + ' cm', 6, y + 3); ctx.fillRect(2, y, 3, 1); } }
+  if (opts.title) { ctx.fillStyle = '#f6efd6'; ctx.font = '600 11px system-ui, sans-serif'; ctx.textAlign = 'right'; ctx.fillText(opts.title, cw - 6, ch - 6); }
+  if (opts.phaseText) { ctx.fillStyle = '#8fa7b8'; ctx.font = '10px system-ui, sans-serif'; ctx.textAlign = 'right'; ctx.fillText(opts.phaseText, cw - 6, 12); }
+}
+/* a self-contained real loop: a canvas, play/pause, a frame scrubber; `getView` returns the plane to draw each frame */
+function ehrLoop(getView, opts) {
+  opts = opts || {};
+  const d = ehrData(), W = opts.W || EHR.W, H = opts.H || EHR.H;
+  const cv = h('canvas', { class: 'eh-canvas ehr-canvas', width: 320, height: Math.round(320 * H / W), 'aria-label': opts.aria || 'Real echo loop' });
+  const st = { playing: opts.playing !== false, t0: performance.now(), frame: 0, timer: 0, labels: opts.labels !== false, alive: true };
+  const scrub = h('input', { type: 'range', min: 0, max: 100, step: 1, value: 0, class: 'ehr-scrub', 'aria-label': 'Frame', oninput: (e) => { st.playing = false; play.textContent = '▶'; st.frame = +e.target.value / 100; draw(); } });
+  const play = h('button', { type: 'button', class: 'btn sm', 'data-ehr-play': '1', text: st.playing ? '❚❚' : '▶', onclick: () => { st.playing = !st.playing; play.textContent = st.playing ? '❚❚' : '▶'; if (st.playing) { st.t0 = performance.now() - st.frame * d.period * 1000; tick(); } } });
+  const labId = uid('ehrl');
+  const lab = h('label', { class: 'chk-inline', for: labId }, [h('input', { type: 'checkbox', id: labId, checked: st.labels, 'data-ehr-labels': '1', onchange: (e) => { st.labels = e.target.checked; draw(); } }), 'Labels']);
+  const draw = () => {
+    if (!cv.isConnected && st.started) { st.alive = false; return; }
+    const view = getView(); if (!view) return;
+    if (!EHR.vol) { const ctx = cv.getContext('2d'); ctx.fillStyle = '#000'; ctx.fillRect(0, 0, cv.width, cv.height); ctx.fillStyle = '#9aa0a8'; ctx.font = '13px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('loading the real volume…', cv.width / 2, cv.height / 2); return; }
+    const phaseF = st.frame * d.phases, Wv = view.c !== undefined ? 200 : W, Hv = view.c !== undefined ? 200 : H;
+    ehrPaint(cv, ehrPlane(view, phaseF, Wv, Hv), Wv, Hv, { labels: st.labels, view: view, title: opts.title === undefined ? (view.name || '') : opts.title, phaseText: Math.round(st.frame * 100) + '% of the cycle' });
+  };
+  const tick = () => {
+    if (!st.alive) return;
+    if (!cv.isConnected) { if (st.started) { st.alive = false; return; } }
+    else st.started = true;
+    if (st.playing) { st.frame = ((performance.now() - st.t0) / 1000 / d.period) % 1; scrub.value = String(Math.round(st.frame * 100)); draw(); }
+    st.timer = setTimeout(tick, 70);
+  };
+  ehrLoad(() => draw());
+  const wrap = h('div', { class: 'ehr-loop', 'data-ehr-loop': opts.id || '1' }, [cv, h('div', { class: 'ehr-ctl' }, [play, scrub, lab])]);
+  requestAnimationFrame(() => { draw(); tick(); });
+  wrap.ehr = { draw: draw, state: st };
+  return wrap;
+}
+/* the atlas card's real picture for a view, if the volume holds it */
+function ehrAtlasSlot(view) {
+  const rid = EHR_MAP[view.id], d = ehrData();
+  if (!d || !rid) return h('p', { class: 'fine ehr-none', 'data-ehr-none': view.id, text: 'No real loop for this view: the real volume is an apical acquisition, and this window is not inside it. Add your own still above.' });
+  const rv = ehrView(rid);
+  return h('div', { class: 'ehr-slot', 'data-ehr-slot': view.id }, [h('h5', { text: 'The real thing' }), ehrLoop(() => rv, { id: view.id, aria: rv.name + ', a real loop' }), h('p', { class: 'fine', text: rv.note })]);
+}
+/* the real scanning lab: rotate and tilt a plane through the volume, or a C-plane at a chosen depth, against a target view */
+const EHRL = { phi: 25, tau: 0, c: 72, mode: 'b', target: 'a4c', loop: null };
+function ehrPhiHint(dphi) { return Math.abs(dphi) <= 10 ? '' : 'Rotate ' + Math.abs(Math.round(dphi)) + '° ' + (dphi > 0 ? 'counter-clockwise' : 'clockwise') + ' (the marker ' + (dphi > 0 ? 'toward the left shoulder' : 'toward the right hip') + ').'; }
+function ehrScore() {
+  const t = ehrView(EHRL.target); if (!t) return { score: 0, obtained: false, hints: [] };
+  if (t.c !== undefined) {
+    if (EHRL.mode !== 'c') return { score: 20, obtained: false, hints: ['A short axis is a C-plane across the beam: switch the plane to “across the beam” and set the depth.'] };
+    const dc = t.c - EHRL.c, sc = Math.max(0, Math.round(100 - Math.abs(dc) * 2.5));
+    return { score: sc, obtained: Math.abs(dc) <= 6, hints: Math.abs(dc) <= 6 ? [] : ['Move the plane ' + Math.abs(dc) + ' mm ' + (dc > 0 ? 'deeper (toward the base)' : 'shallower (toward the apex)') + '.'] };
+  }
+  if (EHRL.mode !== 'b') return { score: 20, obtained: false, hints: ['A long-axis view is a plane along the beam: switch the plane to “along the beam”, then rotate.'] };
+  let dphi = ((t.phi - EHRL.phi) % 180 + 270) % 180 - 90; const dtau = t.tau - EHRL.tau;
+  const sc = Math.max(0, Math.round(100 - Math.abs(dphi) * 1.2 - Math.abs(dtau) * 2.5));
+  const hints = []; const hp = ehrPhiHint(dphi); if (hp) hints.push(hp);
+  if (Math.abs(dtau) > 5) hints.push('Tilt ' + Math.abs(Math.round(dtau)) + '° ' + (dtau < 0 ? 'anteriorly (the tail down, toward the bed)' : 'posteriorly (the tail up)') + '.');
+  return { score: sc, obtained: Math.abs(dphi) <= 10 && Math.abs(dtau) <= 5, hints: hints };
+}
+function ehrLabRefresh() {
+  const box = document.querySelector('[data-ehr-score]'); if (!box) return;
+  const sc = ehrScore(), t = ehrView(EHRL.target);
+  box.textContent = ''; box.className = 'eh-score' + (sc.obtained ? ' got' : ''); box.setAttribute('data-ehr-got', String(sc.obtained)); box.setAttribute('data-ehr-scoreval', String(sc.score));
+  box.appendChild(h('div', { class: 'eh-score-n', text: sc.score + ' / 100' }));
+  box.appendChild(h('div', { class: 'eh-score-t', text: sc.obtained ? 'Obtained: ' + t.name : 'Target: ' + t.name }));
+  if (sc.hints.length) box.appendChild(h('ul', { class: 'eh-hints' }, sc.hints.map(x => h('li', { 'data-ehr-hint': '1', text: x }))));
+  const rd = document.querySelector('[data-ehr-readout]'); if (rd) rd.textContent = EHRL.mode === 'b' ? 'Plane along the beam · rotation ' + EHRL.phi + '° · tilt ' + EHRL.tau + '°' : 'Plane across the beam at ' + EHRL.c + ' mm';
+  document.querySelectorAll('[data-ehr-mode]').forEach(b => b.setAttribute('aria-checked', String(b.getAttribute('data-ehr-mode') === EHRL.mode)));
+  if (EHRL.loop && EHRL.loop.ehr) EHRL.loop.ehr.draw();
+}
+function ehrCurrentView() {
+  const t = ehrView(EHRL.target);
+  if (EHRL.mode === 'c') return { c: EHRL.c, name: '', labels: t && t.c !== undefined && Math.abs(t.c - EHRL.c) <= 6 ? t.labels : null, half: 75 };
+  const near = (ehrData().views || []).filter(v => v.c === undefined && Math.abs((((v.phi - EHRL.phi) % 180) + 270) % 180 - 90) <= 10 && Math.abs(v.tau - EHRL.tau) <= 6)[0];
+  return { phi: EHRL.phi, tau: EHRL.tau, name: near ? near.name : '', labels: near ? near.labels : null };
+}
+function echoRealLabFig() {
+  const d = ehrData();
+  if (!d) return h('figure', { class: 'an-fig', 'data-echoreal': '1' }, [h('p', { class: 'fine', text: 'The real volume did not load in this build.' })]);
+  const loop = ehrLoop(ehrCurrentView, { id: 'lab', title: '', aria: 'The real volume, resliced' }); EHRL.loop = loop;
+  const sl = (key, label, min, max, step, unit) => { const id = uid('ehr'); const val = h('span', { class: 'odc-val', text: EHRL[key] + unit }); return h('label', { class: 'odc-sl', for: id, 'data-ehr-row': key }, [h('span', { class: 'nod-l', text: label }), h('input', { type: 'range', id: id, min: min, max: max, step: step, value: EHRL[key], 'data-ehr': key, oninput: (e) => { EHRL[key] = +e.target.value; val.textContent = EHRL[key] + unit; ehrLabRefresh(); } }), val]); };
+  const modes = h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Plane' }, [['b', 'Along the beam (long axes)'], ['c', 'Across the beam (short axes)']].map(m => h('button', { type: 'button', class: 'ch', role: 'radio', 'data-ehr-mode': m[0], 'aria-checked': String(EHRL.mode === m[0]), text: m[1], onclick: () => { EHRL.mode = m[0]; ehrLabRefresh(); } })));
+  const targets = h('select', { 'data-ehr-target': '1', 'aria-label': 'Target view', onchange: (e) => { EHRL.target = e.target.value; ehrLabRefresh(); } }, d.views.map(v => h('option', { value: v.id, text: v.name, selected: v.id === EHRL.target })));
+  const controls = h('div', { class: 'odc-ctrls ehr-ctrls' }, [modes, sl('phi', 'Rotate the marker', 0, 179, 1, '°'), sl('tau', 'Tilt the beam', -20, 20, 1, '°'), sl('c', 'Depth of the short-axis plane', 40, 120, 1, ' mm'),
+    h('div', { class: 'ec-labbtns' }, [h('button', { type: 'button', class: 'btn sm', 'data-ehr-scramble': '1', text: 'Scramble', onclick: () => { EHRL.phi = Math.floor(Math.random() * 180); EHRL.tau = Math.round(Math.random() * 24 - 12); EHRL.c = 40 + Math.floor(Math.random() * 80); EHRL.mode = Math.random() < 0.5 ? 'b' : 'c'; const f = document.querySelector('[data-echoreal]'); if (f) f.replaceWith(echoRealLabFig()); } }),
+      h('button', { type: 'button', class: 'btn sm quiet', 'data-ehr-snap': '1', text: 'Snap to the target', onclick: () => { const t = ehrView(EHRL.target); if (t.c !== undefined) { EHRL.mode = 'c'; EHRL.c = t.c; } else { EHRL.mode = 'b'; EHRL.phi = t.phi; EHRL.tau = t.tau; } const f = document.querySelector('[data-echoreal]'); if (f) f.replaceWith(echoRealLabFig()); } })])]);
+  const score = h('div', { class: 'eh-score', 'data-ehr-score': '1' });
+  const fig = h('figure', { class: 'an-fig eh-fig ehr-lab', 'data-echoreal': '1' }, [
+    h('div', { class: 'ehr-grid' }, [h('div', { class: 'ehr-left' }, [loop, h('p', { class: 'fine', 'data-ehr-readout': '1' })]), h('div', { class: 'ec-right' }, [h('label', { class: 'ehr-tgt' }, ['Target view ', targets]), score, controls])]),
+    h('figcaption', { text: d.credit + ' The probe is fixed at the apex (that is where the volume was acquired), so there is no window to choose and no sliding: rotate the marker and tilt the beam for the long axes, or cut across the beam at a depth for the short axes.' })
+  ]);
+  setTimeout(ehrLabRefresh, 0);
+  return fig;
+}
+
 function echoWidget(kind) {
   if (kind === 'echoatlas') return echoAtlasFig();
   if (kind === 'echolab') return echoLabFig();
   if (kind === 'echoquiz') return echoQuizFig();
+  if (kind === 'echoreal') return echoRealLabFig();
+  if (kind === 'echolog') return typeof echoLogFig === 'function' ? echoLogFig() : null;
   return null;
 }

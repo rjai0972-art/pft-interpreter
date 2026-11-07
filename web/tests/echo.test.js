@@ -6,7 +6,7 @@ const W = 256, H = 208;
 const regs = (view, path, over) => { const p = Object.assign(E.viewParams(view), over || {}, { model: E.build(path || 'normal') }); const r = E.render(p, W, H, 0.7, {}); const o = {}; E.regions(r, W, H).forEach(x => { o[x.name] = x; }); return o; };
 const f = (o, n) => o[n] ? o[n].frac * 100 : 0;
 // ---- content
-ok(Object.keys(E.topics).length === 8 && E.groups.length === 3 && E.groups.reduce((n, g) => n + g.ids.length, 0) === 8, 'eight topics in three groups');
+ok(Object.keys(E.topics).length === 9 && E.groups.length === 3 && E.groups.reduce((n, g) => n + g.ids.length, 0) === 9, 'nine topics in three groups');
 ok(['echo_intro', 'echo_views', 'echo_anatomy', 'echo_assess', 'echo_shock', 'echo_lung', 'echo_lab', 'echo_quiz'].every(id => E.topics[id] && E.topics[id].blocks.length > 0), 'every topic has blocks');
 ok(E.topics.echo_views.blocks.some(b => b.widget === 'echoatlas') && E.topics.echo_lab.blocks.some(b => b.widget === 'echolab') && E.topics.echo_quiz.blocks.some(b => b.widget === 'echoquiz'), 'the three widgets sit in their topics');
 const txt = JSON.stringify(E.topics) + JSON.stringify(E.VIEWS);

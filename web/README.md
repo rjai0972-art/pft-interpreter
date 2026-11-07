@@ -9,6 +9,7 @@ node build_catalog.js   # catalog/pft_phrases.json -> src/engine_1a_catalog.js (
 node build.js           # dist/engine.js, dist/ui.js, dist/PulmCritDaddy_standalone.html
 node build_desktop.js   # ../app/index.html
 node tests/engine.test.js && node tests/catalog.test.js      # engine rules, handoff fixtures
+node tests/physio.test.js; node tests/vent.test.js; node tests/ecmo.test.js; node tests/drips.test.js; node tests/echo.test.js; node tests/monitor.test.js; node tests/real.test.js   # the Learn models (hemo.test.js needs physio.js required first)
 node tests/e2e6.js; node tests/e2e7.js; node tests/e2e2.js; node tests/e2e3.js; node tests/e2e4.js; node tests/e2e_fuzz.js   # browser (Playwright)
 ```
 
@@ -180,7 +181,38 @@ closeness with movement hints. `ui_4k_echo.js`: `ehPaint` (upscales a render int
 and an outline around one structure), `ehTorso` (the chest with the windows, the probe and its marker), `echoAtlasFig`
 (a card per view with a render, the torso, the text and an own-image slot in localStorage `pcd.echo.own.<view>`),
 `echoLabFig` (`EHS` state; a frame loop at ~10 fps while beating; `ehRefresh` redraws the torso and the score) and
-`echoQuizFig` (`EHQ`: a random view ± a few degrees, a random heart, three questions). The nodule module (`src/nodules.js`, testable in node): `mayo`, `va`, `brock` are the published equations; `vdt` the
+`echoQuizFig` (`EHQ`: a random view ± a few degrees, a random heart, three questions). v8.2: `src/echo_real.js` is
+generated (scratch script `echo_build.py`) from the SlicerHeart "Mitral" 4-D volume — nine phases downsampled 1.5×,
+each a JPEG mosaic of its 139 depth slices, with the volume dimensions, spacing, apex position, period and `views`
+(plane parameters φ/τ for the long axes, a depth `c` for the C-plane short axes, labels in plane millimetres);
+`ui_4k_echo.js` decodes the mosaics into `Uint8Array` volumes (`ehrLoad`), reslices any plane with trilinear
+sampling and phase blending (`ehrPlane`), paints it with labels and chrome (`ehrPaint`), runs a loop with play/scrub
+(`ehrLoop`), adds a real slot to the atlas cards (`ehrAtlasSlot`, `EHR_MAP` from model view ids to real view ids) and
+the real lab (`echoRealLabFig`, state `EHRL`, scoring `ehrScore`). `src/ct_real.js` is generated (`ct_build.py`) from
+the 3D Slicer CT-chest and CTA-cardio NRRDs: HU encoded piecewise into 8 bits (−1000…−200 → 0…60, −200…300 →
+60…235, 300…1500 → 235…255), each slice a JPEG data URL with its level from the carina and hand-placed labels
+`[name, x, y, r]` in picture pixels; `ui_4f_ct.js` decodes a slice into grey values once (`crPixels`), windows it
+through a 256-entry LUT per draw (`crLut`, `crDecode`), draws leader-line labels in side margins or numbers on
+narrow screens, and runs the quiz (`CR` state; selectors `[data-ctreal] [data-cr-series] [data-cr-win] [data-cr-z]
+[data-cr-preset] [data-cr-item] [data-cr-hover] [data-crq-start]`). The logbook logic lives in `src/echo.js` as
+`PFT_ECHO.LOG` (`derive`, `qualifies`, `counters`, `csv`, `candidateCsv`, `packetHtml`, `merge`, `search`, `blank`,
+`CERT`), tested in node; `ui_4n_echolog.js` keeps records in localStorage `pcd.echolog.v1` and images in IndexedDB
+`pcd-echolog` (store `images`, localStorage fallback `pcd.echolog.img.v1`), state `ELS`, selectors `[data-echolog]
+[data-el-tab] [data-el-form] [data-el=…] [data-el-m=…] [data-el-der=…] [data-el-qual] [data-el-save] [data-el-table]
+[data-el-row] [data-el-open] [data-el-edit] [data-el-delete] [data-el-restore] [data-el-count] [data-el-csv]
+[data-el-nbe] [data-el-packet] [data-el-backup]`. Bedside monitoring (`src/monitor.js`, standalone, testable in
+node): thirteen topics in four groups; the models — `artTrue` (a radial waveform from SBP/DBP/HR with a PPV
+modulation), `artMeasured` (a second-order oscillator with natural frequency `fn` and damping `zeta`, semi-implicit
+Euler at 1 ms, an optional fast flush to 300 mmHg), `artStats`, `ART_FAULTS`, `artVerdict`, `flushAnalysis`; `capno`
+with `CAPNO_SHAPES` (twelve patterns); `cvp` with `CVP_SHAPES` and `ecgAt`; `icp`, `icpTrend` with `ICP_SHAPES`;
+and the pulse-contour screen (`PC_SCENARIOS`, `pcModel` — a Starling curve, an SVV that depends on the tidal volume
+and the rhythm, a device bias after a tone change — `pcTest` for PLR/bolus/tidal-volume challenge, `pcValidity`).
+`ui_4m_monitor.js`: `monTrace` (a sweeping monitor trace from value functions), the five labs (`monArtFig`,
+`monCapnoFig`, `monCvpFig`, `monIcpFig`, `monScreenFig`; state `MNS`; selectors `[data-monart] [data-ma-fault]
+[data-ma-flush] [data-ma-reveal] [data-ma-verdict] [data-ma-quiz] [data-ma-ans] [data-moncapno] [data-mc-shape]
+[data-mc-quiz] [data-mc-opt] [data-moncvp] [data-mv-shape] [data-mv-vent] [data-monicp] [data-mi-shape] [data-mi-map]
+[data-monscreen] [data-ms-case] [data-ms-test] [data-ms-result] [data-ms-opt] [data-ms-verdict] [data-ms-tile]
+[data-ms-cond]`). The nodule module (`src/nodules.js`, testable in node): `mayo`, `va`, `brock` are the published equations; `vdt` the
 doubling time; `fleischner(q)` and `lungRads(q)` return the guideline's step for a nodule described by setting, type,
 mean diameter, solid component, status (baseline / new / growing / stable), multiplicity and patient risk.
 

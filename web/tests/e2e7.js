@@ -17,7 +17,7 @@ const near = (a, b, t) => Math.abs(a - b) <= t;
 
   // ---- areas
   await page.locator('.vw[data-view="learn"]').click(); await page.waitForSelector('.learn-body');
-  ok(await page.locator('#learn-cat option').count() === 9, 'Learn offers nine areas');
+  ok(await page.locator('#learn-cat option').count() === 10, 'Learn offers ten areas');
   ok(await page.locator('.learn-body').getAttribute('data-cat') === 'pft', 'PFT interpretation is the default area');
   const nPft = await page.locator('.ln-btn').count();
   ok(nPft >= 20, 'the PFT area keeps its topics (' + nPft + ')');
@@ -623,7 +623,7 @@ const near = (a, b, t) => Math.abs(a - b) <= t;
   // ---- echo & POCUS
   await page.evaluate(() => window.__pft.setMode('learn', { topic: 'echo_views' })); await page.waitForSelector('[data-echoatlas="11"]');
   await page.waitForTimeout(800);
-  ok(await page.locator('#learn-cat').inputValue() === 'echo' && await page.locator('.ln-btn[data-topic]').count() === 8 && await page.locator('[data-eh-view]').count() === 11 && await page.locator('[data-eh-view] canvas').count() === 11 && await page.locator('[data-eh-file]').count() === 11, 'the echo area: eight topics; eleven view cards, each rendered with a slot for your own image');
+  ok(await page.locator('#learn-cat').inputValue() === 'echo' && await page.locator('.ln-btn[data-topic]').count() === 9 && await page.locator('[data-eh-view]').count() === 11 && await page.locator('[data-eh-view] canvas.eh-atlascv').count() === 11 && await page.locator('[data-eh-file]').count() === 11, 'the echo area: nine topics; eleven view cards, each rendered with a slot for your own image');
   ok(await page.evaluate(() => { const c = document.querySelector('[data-eh-view="plax"] canvas'); const ctx = c.getContext('2d'); const d = ctx.getImageData(0, 0, c.width, c.height).data; let bright = 0; for (let i = 0; i < d.length; i += 16) if (d[i] > 150) bright++; return bright > 200; }), 'the PLAX card is painted (bright walls on a black sector)');
   await page.locator('[data-eh-open="a4c"]').click(); await page.waitForSelector('[data-echolab]');
   ok(await page.locator('[data-eh-target] option:checked').evaluate(e => e.value) === 'a4c' && await page.locator('[data-eh-win="apical"][aria-checked="true"]').count() === 1 && await page.locator('[data-eh-got="false"]').count() === 1 && await page.locator('[data-eh-hint]').count() >= 1, '“Obtain it in the lab” opens the lab at the apical window, off-axis, with hints');
@@ -652,6 +652,107 @@ const near = (a, b, t) => Math.abs(a - b) <= t;
   ok(right === 4 && (await page.locator('[data-eh-q="1"] [data-eh-opt]').count() === 4 || await page.locator('[data-eh-q="2"] [data-eh-opt]').count() === 4), 'answering opens the next question');
   for (let i = 1; i < 3; i++) { if (await page.locator('[data-eh-q="' + i + '"] [data-eh-opt]').count()) { await page.locator('[data-eh-q="' + i + '"] [data-eh-opt]').first().click(); await page.waitForTimeout(250); } }
   ok(await page.locator('[data-eh-next]').count() === 1 && /of \d right/.test(await txt('[data-eh-qscore]')), 'a round completes with the score and a next picture');
+
+  // ---- v8.2: the real CT stack inside the CT topic
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'ct' })); await page.waitForSelector('[data-ctreal]');
+  await page.waitForTimeout(900);
+  ok(await page.locator('[data-cr-series]').count() === 4 && await page.locator('[data-cr-series="chest"][aria-selected="true"]').count() === 1 && /Carina/.test(await txt('[data-cr-level]')) && await page.locator('[data-cr-preset]').count() >= 11, 'the real CT: four series, opens on the carina of the chest stack with eleven labelled levels');
+  ok(await page.locator('[data-cr-item]').count() >= 10 && (await page.locator('[data-cr-item]').allInnerTexts()).some(t => /Ascending aorta/.test(t)), 'the carina level lists its labels');
+  await page.locator('.cr-canvas').scrollIntoViewIfNeeded(); await page.waitForTimeout(200);
+  const crBox = await page.locator('.cr-canvas').boundingBox();
+  await page.mouse.move(crBox.x + (150 + 222) * crBox.width / 748, crBox.y + 122 * crBox.height / 326); await page.waitForTimeout(250);
+  ok(await txt('[data-cr-hover]') === 'Ascending aorta', 'hovering the ascending aorta on the real slice names it');
+  await page.locator('[data-cr-win="lung"]').click(); await page.waitForTimeout(200);
+  ok(await page.evaluate(() => { const c = document.querySelector('.cr-canvas'); const d = c.getContext('2d').getImageData(200, 150, 120, 100).data; let mid = 0, n = 0; for (let i = 0; i < d.length; i += 16) { n++; if (d[i] > 40 && d[i] < 140) mid++; } return mid / n; }) > 0.5, 'the lung window turns the right lung from black to textured grey on the real pixels');
+  await page.locator('[data-cr-series="cta"]').click(); await page.waitForSelector('[data-cr-series="cta"][aria-selected="true"]');
+  await page.waitForTimeout(600);
+  ok(/four chambers/.test(await txt('[data-cr-level]')) && await page.locator('[data-cr-preset]').count() >= 7, 'the cardiac CTA opens on its four-chamber level');
+  await page.locator('[data-crq-start]').click(); await page.waitForSelector('[data-crq="on"]');
+  ok(/Tap:/.test(await txt('[data-crq]')), 'the quiz on the real slices asks for a structure');
+  await page.locator('[data-crq-stop]').click(); await page.waitForTimeout(100);
+  await page.locator('[data-cr-series="sag"]').click(); await page.waitForTimeout(500);
+  ok(/Sagittal/.test(await txt('[data-cr-level]')) && await page.locator('[data-cr-preset]').count() === 2, 'the sagittal reformats carry two labelled planes');
+
+  // ---- v8.2: the real echo volume in the atlas and the real lab
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'echo_views' })); await page.waitForSelector('[data-ehr-slot="a4c"]');
+  await page.waitForTimeout(3500);
+  ok(await page.locator('[data-ehr-slot]').count() === 6 && await page.locator('[data-ehr-none]').count() === 5, 'six atlas cards carry a real loop; the other five say why not');
+  ok(await page.evaluate(() => { const c = document.querySelector('[data-ehr-slot="a4c"] canvas'); const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let bright = 0; for (let i = 0; i < d.length; i += 16) if (d[i] > 120) bright++; return bright > 200; }), 'the real four-chamber loop has drawn');
+  await page.locator('[data-ehr-slot="a4c"] [data-ehr-play]').click(); await page.waitForTimeout(200);
+  ok(await txt('[data-ehr-slot="a4c"] [data-ehr-play]') === '▶', 'the loop pauses');
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'echo_lab' })); await page.waitForSelector('[data-echoreal]');
+  await page.waitForTimeout(1200);
+  ok(await page.locator('[data-ehr-target] option').count() === 7 && await page.locator('[data-ehr-got="false"]').count() === 1 && /Rotate/.test(await txt('[data-ehr-hint]')), 'the real lab: seven targets, starts off-axis with a rotation hint');
+  await page.locator('[data-ehr-snap]').click(); await page.waitForSelector('[data-ehr-got="true"]');
+  ok(/Obtained: Apical four-chamber/.test(await txt('[data-ehr-score]')), 'snapping to the target obtains the real four-chamber');
+  await page.selectOption('[data-ehr-target]', 'sax_pm'); await page.waitForTimeout(200);
+  ok(/across the beam/.test(await txt('[data-ehr-hint]')), 'a short-axis target asks for the C-plane');
+  await page.locator('[data-ehr-mode="c"]').click(); await page.locator('[data-ehr="c"]').fill('72'); await page.locator('[data-ehr="c"]').dispatchEvent('input'); await page.waitForTimeout(400);
+  ok(await page.locator('[data-ehr-got="true"]').count() === 1 && /Plane across the beam at 72 mm/.test(await txt('[data-ehr-readout]')), 'the papillary C-plane at 72 mm is obtained');
+
+  // ---- v8.2: the echo logbook
+  await page.evaluate(() => { try { localStorage.removeItem('pcd.echolog.v1'); } catch (e) {} window.__pft.setMode('learn', { topic: 'echo_log' }); }); await page.waitForSelector('[data-el-form]');
+  ok(await page.locator('[data-el-count]').count() === 5 && /0 \/ 150/.test(await txt('[data-el-count="tte"]')) && await page.locator('[data-el-m]').count() === 21, 'the logbook: five counters, twenty-one measurement fields');
+  await page.locator('[data-el="indication"]').fill('Shock — fluid responsive?');
+  for (const kv of [['lvotD', '2.0'], ['lvotVti', '20'], ['hr', '80'], ['trv', '3'], ['rap', '8']]) { await page.locator('[data-el-m="' + kv[0] + '"]').fill(kv[1]); }
+  await page.waitForTimeout(200);
+  ok(/62\.8 mL/.test(await txt('[data-el-der="sv"]')) && /5 L\/min/.test(await txt('[data-el-der="co"]')) && /44 mmHg/.test(await txt('[data-el-der="rvsp"]')) && /will count toward the TTE/.test(await txt('[data-el-qual]')), 'the derived numbers appear as you type: SV 62.8 mL, CO 5 L/min, RVSP 44');
+  await page.locator('[data-el="synthetic"]').check(); await page.waitForTimeout(100);
+  ok(/Will not count: practice/.test(await txt('[data-el-qual]')), 'a practice study is flagged as not counting');
+  await page.locator('[data-el="synthetic"]').uncheck();
+  await page.locator('[data-el-save]').click(); await page.waitForSelector('[data-el-table="1"]');
+  ok(/Saved EC-/.test(await txt('[data-el-msg]')) && /1 \/ 150/.test(await txt('[data-el-count="tte"]')) && await txt('[data-el-count="all"] .el-v') === '1', 'saving moves to the log and counts the study');
+  const code = await page.locator('[data-el-row]').first().getAttribute('data-el-row');
+  await page.locator('[data-el-open="' + code + '"]').click(); await page.waitForSelector('[data-el-view]');
+  ok(/Counts toward the TTE target/.test(await txt('[data-el-view]')) && /SV 62\.8 mL/.test(await txt('[data-el-view]')), 'the study card shows the derived numbers');
+  await page.locator('[data-el-close]').click(); await page.locator('[data-el-delete="' + code + '"]').click(); await page.waitForTimeout(200);
+  ok(await page.locator('[data-el-table="0"]').count() === 1 && await txt('[data-el-count="all"] .el-v') === '0', 'a soft delete hides the study and uncounts it');
+  await page.locator('[data-el-fdeleted]').check(); await page.waitForTimeout(200); await page.locator('[data-el-restore="' + code + '"]').click(); await page.waitForTimeout(200);
+  ok(await txt('[data-el-count="all"] .el-v') === '1', 'restore brings it back');
+  await page.locator('[data-el-tab="export"]').click(); await page.waitForSelector('[data-el-csv]');
+  ok(await page.locator('[data-el-nbe]').count() === 2 && await page.locator('[data-el-backup]').count() === 1 && /26 January 2027/.test(await txt('.el-cert')), 'the export tab: CSV, the NBE lists, the packet, backup and restore, the certification dates');
+  await page.evaluate(() => { try { localStorage.removeItem('pcd.echolog.v1'); } catch (e) {} });
+
+  // ---- v8.2: bedside monitoring
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'mon_art' })); await page.waitForSelector('[data-monart]');
+  ok(await page.locator('#learn-cat').inputValue() === 'monitor' && await page.locator('.ln-btn[data-topic]').count() === 13 && await page.locator('[data-ma-fault]').count() === 7, 'the monitoring area: thirteen topics; the arterial lab offers seven states of the line');
+  ok(await page.locator('[data-ma-verdict="optimal"]').count() === 1 && await txt('[data-ms-tile="ABP"] .vsc-v') === '120/70', 'the ideal line shows 120/70');
+  await page.locator('[data-ma-fault="bubble"]').click(); await page.waitForSelector('[data-ma-verdict="overdamped"]');
+  const abp = await txt('[data-ms-tile="ABP"] .vsc-v');
+  ok(+abp.split('/')[0] < 112 && +abp.split('/')[1] > 72 && /slurred/.test(await txt('.mon-analysis')), 'an air bubble: overdamped, systolic low, diastolic high');
+  await page.locator('[data-ma-flush]').click(); await page.waitForTimeout(100);
+  ok(/fast-flush test running/.test(await txt('.vsc-mode')), 'the fast-flush test runs');
+  await page.locator('[data-ma-quiz]').click(); await page.waitForSelector('[data-ma-ans]');
+  await page.locator('[data-ma-ans="optimal"]').click(); await page.waitForSelector('[data-ma-result]');
+  ok(/Right|No —/.test(await txt('[data-ma-result]')), 'the line quiz gives a verdict');
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'mon_capno' })); await page.waitForSelector('[data-moncapno]');
+  ok(await page.locator('[data-mc-shape]').count() === 12, 'twelve capnogram shapes');
+  await page.locator('[data-mc-shape="rebreath"]').click(); await page.waitForSelector('[data-mc-note="rebreath"]');
+  ok(/baseline never reaches zero/.test(await txt('[data-mc-note]')) && await page.locator('[data-ms-tile="FiCO2"].alarm').count() === 1, 'rebreathing: the note and the inspired CO2 alarm');
+  await page.locator('[data-mc-quiz]').click(); await page.waitForSelector('[data-mc-opt]');
+  ok(await page.locator('[data-mc-opt]').count() === 4 && await page.locator('[data-mc-shape]').count() === 0, 'the capnography quiz hides the shape names');
+  await page.locator('[data-mc-opt]').first().click(); await page.waitForSelector('[data-mc-verdict]');
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'mon_cvp' })); await page.waitForSelector('[data-moncvp]');
+  await page.locator('[data-mv-shape="tamp"]').click(); await page.waitForSelector('[data-mv-note="tamp"]');
+  ok(/absent y descent/.test(await txt('[data-mv-note]')) && await txt('[data-ms-tile="y descent"] .vsc-v') === 'absent', 'tamponade: the y descent is absent');
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'mon_icp' })); await page.waitForSelector('[data-monicp]');
+  await page.locator('[data-mi-shape="lowcomp"]').click(); await page.waitForSelector('[data-mi-note="lowcomp"]');
+  ok(/P2 towers over P1/.test(await txt('[data-mi-note]')) && /compliance lost/.test(await txt('[data-ms-tile="P2 : P1"]')), 'reduced compliance: P2 > P1 named');
+  await page.locator('[data-mi-map]').fill('60'); await page.locator('[data-mi-map]').dispatchEvent('input'); await page.waitForTimeout(100);
+  ok(await txt('[data-ms-tile="CPP"] .vsc-v') === '42', 'the CPP tile follows the MAP slider (60 − 18 = 42)');
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'mon_screen' })); await page.waitForSelector('[data-monscreen]');
+  ok(await page.locator('[data-ms-case]').count() === 7 && await page.locator('[data-ms-valid="true"]').count() === 1 && /conditions met/.test(await txt('[data-ms-cond]')), 'seven screen scenarios; the first meets the conditions');
+  await page.locator('[data-ms-case="af"]').click(); await page.waitForSelector('[data-ms-open="af"]');
+  ok(await page.locator('[data-ms-valid="false"]').count() === 1 && /irregular rhythm/.test(await txt('[data-ms-cond]')) && await page.locator('[data-ms-tile="SVV"].alarm').count() === 1, 'atrial fibrillation: the SVV tile alarms and the condition is named');
+  await page.locator('[data-ms-test="plr"]').click(); await page.waitForSelector('[data-ms-result="plr"]');
+  ok(/Not preload-responsive/.test(await txt('[data-ms-result]')), 'the PLR in AF is negative');
+  await page.locator('[data-ms-opt="plr"]').click(); await page.waitForSelector('[data-ms-verdict="best"]');
+  ok(/1\/1/.test(await page.locator('[data-ms-score]').getAttribute('data-ms-score')), 'the best move scores');
+  await page.locator('[data-ms-case="rv"]').click(); await page.waitForSelector('[data-ms-open="rv"]');
+  await page.locator('[data-ms-test="bolus"]').click(); await page.waitForSelector('[data-ms-result="bolus"]');
+  ok(/descending limb/.test(await txt('[data-ms-result]')) && /−|-\d/.test(await txt('[data-ms-result]')), 'a bolus to the failing RV lowers the stroke volume');
+  await page.evaluate(() => window.__pft.setMode('home')); await page.waitForSelector('[data-home]');
+  ok(await page.locator('[data-home-tile="monitor"]').count() === 1 && await page.locator('[data-home-lab="mon_screen"]').count() === 1, 'the home page has the monitoring tile and its lab chip');
 
   // ---- conduction and the ECG
   await page.evaluate(() => window.__pft.setMode('learn', { topic: 'ecglab' })); await page.waitForSelector('.ecg-lab[data-ecg="normal"]');
@@ -697,7 +798,7 @@ const near = (a, b, t) => Math.abs(a - b) <= t;
 
   // ---- lung nodules and screening
   await page.evaluate(() => window.__pft.setMode('learn', { topic: 'nodules' })); await page.waitForSelector('[data-nod-risk]');
-  ok(await page.locator('#learn-cat').inputValue() === 'cancer' && await page.locator('#learn-cat option').count() === 9, 'a fourth Learn area: lung nodules & cancer screening');
+  ok(await page.locator('#learn-cat').inputValue() === 'cancer' && await page.locator('#learn-cat option').count() === 10, 'a fourth Learn area: lung nodules & cancer screening');
   ok(/Fleischner/.test(await txt('.learn-body')) && /Lung-RADS/.test(await txt('.learn-body')) && /Brock/.test(await txt('.learn-body')) && await page.locator('.learn-body table').count() >= 4, 'the nodule page carries the Fleischner, Lung-RADS and model tables');
   ok(await page.locator('[data-nod-risk] [data-model]').count() === 3 && /17%/.test(await txt('[data-nod-risk] [data-model="mayo"]')), 'three probability models computed for the default case (Mayo 17%): ' + await txt('[data-nod-risk-out]'));
   await page.locator('[data-nod-risk] [data-nod="size"]').fill('20'); await page.locator('[data-nod-risk] [data-nod="spic"]').check(); await page.waitForTimeout(80);
@@ -825,7 +926,7 @@ const near = (a, b, t) => Math.abs(a - b) <= t;
   await ctx.close();
   const m = await browser.newContext({ viewport: { width: 400, height: 800 }, hasTouch: true, isMobile: true });
   const mp = await m.newPage(); await mp.goto(FILE); await mp.waitForSelector('[data-home]'); await mp.evaluate(() => window.__pft.setMode('case')); await mp.waitForSelector('#top');
-  for (const t of ['tree', 'stations', 'vq', 'sedation', 'airway']) {
+  for (const t of ['tree', 'stations', 'vq', 'sedation', 'airway', 'mon_art', 'mon_screen', 'echo_log']) {
     await mp.evaluate((tt) => window.__pft.setMode('learn', { topic: tt }), t); await mp.waitForSelector('.learn-body[data-topic="' + t + '"]');
     ok(await mp.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1), 'phone: no horizontal overflow on ' + t);
   }

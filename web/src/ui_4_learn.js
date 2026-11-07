@@ -11,6 +11,7 @@ const LEARN_CATS = [
   { id: 'hemo', title: 'Haemodynamics & the right heart', topics: window.PFT_HEMO.topics, groups: window.PFT_HEMO.groups },
   { id: 'drips', title: 'ICU infusions: pressors, sedation, paralysis', topics: window.PFT_DRIPS.topics, groups: window.PFT_DRIPS.groups },
   { id: 'echo', title: 'Echo & POCUS', topics: window.PFT_ECHO.topics, groups: window.PFT_ECHO.groups },
+  { id: 'monitor', title: 'Bedside monitoring', topics: window.PFT_MONITOR.topics, groups: window.PFT_MONITOR.groups },
   { id: 'ecg', title: 'Cardiac conduction & ECG', topics: ECG.topics, groups: ECG.groups },
   { id: 'cancer', title: 'Lung nodules & cancer screening', topics: NOD.topics, groups: NOD.groups }
 ];
@@ -95,7 +96,7 @@ function eduBlocks(id, topic) {
     if (b.table) { out.push(eduTable(b.table)); }
     if (b.note) out.push(h('p', { class: 'fine', text: b.note }));
     if (b.fig) { const f = eduFig(b.fig); if (f) out.push(f); }
-    if (b.widget) { const w = anatWidget(b.widget) || ecgWidget(b.widget) || nodWidget(b.widget) || ctWidget(b.widget) || physWidget(b.widget) || ventWidget(b.widget) || ecmoWidget(b.widget) || hemoWidget(b.widget) || dripWidget(b.widget, b) || echoWidget(b.widget); if (w) out.push(w); }
+    if (b.widget) { const w = anatWidget(b.widget) || ecgWidget(b.widget) || nodWidget(b.widget) || ctWidget(b.widget) || physWidget(b.widget) || ventWidget(b.widget) || ecmoWidget(b.widget) || hemoWidget(b.widget) || dripWidget(b.widget, b) || echoWidget(b.widget) || monWidget(b.widget); if (w) out.push(w); }
     if (b.links) out.push(h('ul', { class: 'edu-links' }, b.links.map(l => h('li', {}, [h('a', { href: l[1], target: '_blank', rel: 'noopener noreferrer', text: l[0] }), l[2] ? h('span', { class: 'fine', text: ' — ' + l[2] }) : null]))));
   });
   return out;

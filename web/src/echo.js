@@ -377,7 +377,7 @@
   ] };
 
   T.echo_views = { title: 'The windows and the views', kicker: 'Where the probe goes, which way the marker points, what fills the screen, and what to measure in it', blocks: [
-    { p: 'Each card below is one standard view: the probe position and marker direction, the picture the simulator makes at that position with the structures labelled, the anatomy to find, the measurements the view is used for, and the mistakes that make it unreadable. The pictures are rendered from the same model as the scanning lab, so what you obtain there should look like what you see here. Add your own de-identified clips or stills to any card: they are kept on this device only.' },
+    { p: 'Each card below is one standard view: the probe position and marker direction, the picture the simulator makes at that position with the structures labelled, the anatomy to find, the measurements the view is used for, and the mistakes that make it unreadable. The drawn pictures are rendered from the same model as the scanning lab, so what you obtain there should look like what you see here; under each apical and short-axis card runs the real thing — a loop cut from a real 3-D acquisition. Add your own de-identified clips or stills to any card: they are kept on this device only.' },
     { widget: 'echoatlas' },
     { h: 'The sequence of a focused scan', ol: ['Parasternal long axis: LV size and function, the mitral and aortic valves, the LA, a posterior effusion.', 'Parasternal short axis at the papillary level: LV function by segment, the septal shape, the RV crescent.', 'Apical four-chamber: the four chambers, RV:LV, TAPSE, the valves on colour.', 'Subcostal four-chamber: the effusion, RA/RV collapse, the patient who has no other window.', 'Subcostal IVC: size and collapse.', 'Then the lungs (anterior and lateral zones) and, if the question needs it, the A5C for the LVOT VTI and the suprasternal for the arch.'] },
     { src: ['Mitchell C, et al. ASE comprehensive TTE examination guideline. J Am Soc Echocardiogr 2019;32:1–64.', 'Levitov A, et al. Guidelines for the appropriate use of bedside general and cardiac ultrasonography in the evaluation of critically ill patients — part II: cardiac ultrasonography (SCCM). Crit Care Med 2016;44:1206–27.'] }
@@ -457,6 +457,8 @@
   T.echo_lab = { title: 'The scanning lab', kicker: 'A probe on a modelled chest: slide, rotate, tilt and rock until the view appears — then name what you see', blocks: [
     { p: 'A three-dimensional model of the heart in the chest — two ventricles, two atria, the valves, the aorta from root to descending, the pulmonary artery, the caval veins through the liver, the pericardium — scanned by a probe you control: choose the window, slide the footprint, rotate the marker, tilt the beam across the heart and rock it within the plane. The sector is painted as a B-mode image with speckle, the heart beats, the IVC breathes, and the labels can be switched on to name every structure. Pick a target view and the score tells you how close you are, with a hint for the movement that would get you there; pick a pathology to see what a dilated ventricle, an effusion or an empty IVC look like from every window.' },
     { widget: 'echolab' },
+    { h: 'The real volume', p: 'The same movements on a real heart: a three-dimensional apical acquisition from a real patient, resliced in the browser. Rotate the marker through the four-, two- and three-chamber planes, tilt into the five-chamber, or cut across the beam at any depth for the short axes — the papillary muscles, the mitral fish mouth. The labels appear when the plane is close to a standard view; the score and the hints work as in the model lab.' },
+    { widget: 'echoreal' },
     { note: 'A model, not a patient: the anatomy is simplified (no coronary sinus, no pulmonary veins, no ribs or lung shadowing), the speckle is synthetic, and the probe movements are idealised. What transfers is the geometry — which way to turn, which way to tilt, what should appear where — and the labelled anatomy.' }
   ] };
 
@@ -465,12 +467,130 @@
     { widget: 'echoquiz' }
   ] };
 
+  /* ---------------------------------------------------------------- the case logbook: pure logic (storage and the form live in the interface) */
+  const LOG = {};
+  LOG.VIEWS = VIEWS.map(v => [v.id, v.title]).concat([['lung', 'Lung ultrasound'], ['other', 'Other / off-axis']]);
+  LOG.SETTINGS = ['ICU', 'Emergency department', 'Operating theatre', 'Ward / rapid response', 'Cath lab', 'Other'];
+  LOG.EFFUSION = ['none', 'trivial', 'small', 'moderate', 'large'];
+  LOG.FIELDS = [
+    ['lvidd', 'LVIDd', 'cm', 'LV internal diameter, end-diastole (PLAX)'], ['lvids', 'LVIDs', 'cm', 'LV internal diameter, end-systole'], ['epss', 'EPSS', 'mm', 'E-point septal separation'], ['lvef', 'LVEF (visual)', '%', 'eyeball or biplane'],
+    ['lvotD', 'LVOT diameter', 'cm', 'PLAX, zoomed, mid-systole'], ['lvotVti', 'LVOT VTI', 'cm', 'A5C pulsed-wave Doppler'], ['hr', 'Heart rate', '/min', 'at the time of the VTI'], ['height', 'Height', 'cm', 'for BSA (optional)'], ['weight', 'Weight', 'kg', 'for BSA (optional)'],
+    ['tapse', 'TAPSE', 'mm', 'M-mode, lateral tricuspid annulus'], ['sprime', 'RV S′', 'cm/s', 'tissue Doppler, lateral annulus'], ['rvlv', 'RV:LV ratio', '', 'end-diastolic, A4C'], ['trv', 'TR Vmax', 'm/s', 'CW Doppler'], ['rap', 'RAP estimate', 'mmHg', 'from the IVC: 3, 8 or 15'],
+    ['e', 'Mitral E', 'cm/s', 'PW at the leaflet tips'], ['a', 'Mitral A', 'cm/s', ''], ['eprime', 'e′ (average)', 'cm/s', 'tissue Doppler, septal/lateral'],
+    ['ivcMax', 'IVC maximum', 'cm', '1–2 cm from the RA'], ['ivcMin', 'IVC minimum', 'cm', ''], ['vtiBefore', 'VTI before PLR', 'cm', ''], ['vtiAfter', 'VTI after PLR', 'cm', '']
+  ];
+  LOG.code = function () { const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let c = 'EC-'; for (let i = 0; i < 5; i++) c += A[Math.floor(Math.random() * A.length)]; return c; };
+  const num = (v) => { const n = parseFloat(v); return isFinite(n) ? n : null; };
+  /* the derived measurements: stroke volume and output, RVSP, E/A and E/e′, the IVC indices, the PLR change */
+  LOG.derive = function (m) {
+    m = m || {}; const d = {};
+    const D = num(m.lvotD), vti = num(m.lvotVti), hr = num(m.hr), H = num(m.height), W = num(m.weight);
+    if (D) d.csa = Math.PI * Math.pow(D / 2, 2);
+    if (d.csa && vti) d.sv = d.csa * vti;
+    if (d.sv && hr) d.co = d.sv * hr / 1000;
+    if (H && W) d.bsa = Math.sqrt(H * W / 3600);
+    if (d.co && d.bsa) d.ci = d.co / d.bsa;
+    const trv = num(m.trv), rap = num(m.rap);
+    if (trv) d.rvsp = 4 * trv * trv + (rap === null ? 0 : rap);
+    const e = num(m.e), a = num(m.a), ep = num(m.eprime);
+    if (e && a) d.ea = e / a;
+    if (e && ep) d.ee = e / ep;
+    const mx = num(m.ivcMax), mn = num(m.ivcMin);
+    if (mx && mn !== null && mx > 0) { d.ivcCollapse = (mx - mn) / mx * 100; if (mn > 0) d.ivcDistend = (mx - mn) / mn * 100; }
+    const b = num(m.vtiBefore), af = num(m.vtiAfter);
+    if (b && af !== null && b > 0) d.plrDelta = (af - b) / b * 100;
+    const dd = num(m.lvidd), ds = num(m.lvids);
+    if (dd && ds !== null && dd > 0) { d.fs = (dd - ds) / dd * 100; d.efTeich = (Math.pow(dd, 3) - Math.pow(ds, 3)) / Math.pow(dd, 3) * 100; }
+    return d;
+  };
+  /* a study counts toward the TTE (or TEE) target when it is real, personally performed and interpreted, and marked complete */
+  LOG.qualifies = function (r) {
+    const why = [];
+    if (r.deleted) why.push('deleted');
+    if (r.synthetic) why.push('practice / synthetic');
+    if (!r.performed) why.push('not personally performed');
+    if (!r.interpreted) why.push('not personally interpreted');
+    if (!r.complete) why.push('marked incomplete');
+    return { ok: why.length === 0, tte: why.length === 0 && r.type === 'TTE', tee: why.length === 0 && r.type === 'TEE', why: why };
+  };
+  LOG.counters = function (list, now) {
+    now = now || new Date(); const ym = now.toISOString().slice(0, 7);
+    const live = list.filter(r => !r.deleted && !r.synthetic);
+    return { all: live.length, month: live.filter(r => (r.performedDate || '').slice(0, 7) === ym).length, tte: list.filter(r => LOG.qualifies(r).tte).length, tee: list.filter(r => LOG.qualifies(r).tee).length, practice: list.filter(r => !r.deleted && r.synthetic).length, deleted: list.filter(r => r.deleted).length, targetTte: 150, targetTee: 50 };
+  };
+  LOG.fmtDate = function (iso) { if (!iso) return ''; const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso); return m ? m[2] + '/' + m[3] + '/' + m[1] : iso; };
+  const esc = (v) => { v = v === undefined || v === null ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  LOG.CSV_COLS = ['code', 'type', 'performedDate', 'reviewDate', 'setting', 'indication', 'performed', 'interpreted', 'supervised', 'synthetic', 'complete', 'views', 'unobtainable', 'findings', 'limitations', 'diagnosis', 'response', 'reviewer', 'feedback', 'linkedTo', 'sv', 'co', 'ci', 'rvsp', 'ea', 'ee', 'ivcCollapse', 'plrDelta'];
+  LOG.csv = function (list) {
+    const rows = [LOG.CSV_COLS.concat(LOG.FIELDS.map(f => f[0])).join(',')];
+    list.forEach(r => {
+      const d = LOG.derive(r.m); const v = (x) => x === undefined || x === null ? '' : (typeof x === 'number' ? Math.round(x * 100) / 100 : x);
+      const base = [r.code, r.type, LOG.fmtDate(r.performedDate), LOG.fmtDate(r.reviewDate), r.setting, r.indication, r.performed ? 'yes' : 'no', r.interpreted ? 'yes' : 'no', r.supervised ? 'yes' : 'no', r.synthetic ? 'yes' : 'no', r.complete ? 'yes' : 'no', (r.views || []).join('; '), r.unobtainable, r.findings, r.limitations, r.diagnosis, r.response, r.reviewer, r.feedback, r.linkedTo, v(d.sv), v(d.co), v(d.ci), v(d.rvsp), v(d.ea), v(d.ee), v(d.ivcCollapse), v(d.plrDelta)];
+      rows.push(base.concat(LOG.FIELDS.map(f => v((r.m || {})[f[0]]))).map(esc).join(','));
+    });
+    return rows.join('\n');
+  };
+  /* the NBE candidate list: qualifying studies only, the columns the application form asks for */
+  LOG.candidates = function (list, type) { return list.filter(r => (type === 'TEE' ? LOG.qualifies(r).tee : LOG.qualifies(r).tte)).sort((a, b) => (a.performedDate || '').localeCompare(b.performedDate || '')); };
+  LOG.candidateCsv = function (list, type) {
+    const rows = ['#,case code,date performed,indication / clinical question,setting,role,key findings,diagnosis / clinical integration,reviewer,date reviewed,feedback'];
+    LOG.candidates(list, type).forEach((r, i) => rows.push([i + 1, r.code, LOG.fmtDate(r.performedDate), r.indication, r.setting, 'performed and interpreted', r.findings, r.diagnosis, r.reviewer, LOG.fmtDate(r.reviewDate), r.feedback].map(esc).join(',')));
+    return rows.join('\n');
+  };
+  const he = (v) => String(v === undefined || v === null ? '' : v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  /* a printable packet: one page per study with blank signature fields, no identifiers beyond the case code */
+  LOG.packetHtml = function (list, opts) {
+    opts = opts || {};
+    const pages = list.map(r => {
+      const d = LOG.derive(r.m), mrows = LOG.FIELDS.filter(f => (r.m || {})[f[0]] !== undefined && (r.m || {})[f[0]] !== '' && (r.m || {})[f[0]] !== null).map(f => '<tr><td>' + he(f[1]) + '</td><td>' + he((r.m || {})[f[0]]) + ' ' + he(f[2]) + '</td></tr>').join('');
+      const drows = [['Stroke volume', d.sv, 'mL'], ['Cardiac output', d.co, 'L/min'], ['Cardiac index', d.ci, 'L/min/m²'], ['RVSP', d.rvsp, 'mmHg'], ['E/A', d.ea, ''], ['E/e′', d.ee, ''], ['IVC collapsibility', d.ivcCollapse, '%'], ['PLR ΔVTI', d.plrDelta, '%']].filter(x => x[1] !== undefined).map(x => '<tr><td>' + x[0] + '</td><td>' + (Math.round(x[1] * 10) / 10) + ' ' + x[2] + '</td></tr>').join('');
+      const imgs = (opts.images && r.images ? r.images.map(id => opts.images[id]).filter(Boolean) : []).map(src => '<img src="' + src + '" alt="study image">').join('');
+      return '<section class="study"><h2>' + he(r.code) + ' <small>' + he(r.type) + ' · ' + he(LOG.fmtDate(r.performedDate)) + (r.synthetic ? ' · PRACTICE / SYNTHETIC — not for credit' : '') + '</small></h2>' +
+        '<table class="kv"><tr><td>Setting</td><td>' + he(r.setting) + '</td></tr><tr><td>Indication / clinical question</td><td>' + he(r.indication) + '</td></tr><tr><td>Role</td><td>' + (r.performed ? 'performed' : '') + (r.performed && r.interpreted ? ' and ' : '') + (r.interpreted ? 'interpreted' : '') + (r.supervised ? ' (supervised)' : '') + '</td></tr><tr><td>Views obtained</td><td>' + he((r.views || []).join(', ')) + '</td></tr><tr><td>Unobtainable</td><td>' + he(r.unobtainable) + '</td></tr><tr><td>Findings</td><td>' + he(r.findings) + '</td></tr><tr><td>Limitations</td><td>' + he(r.limitations) + '</td></tr><tr><td>Diagnosis and clinical integration</td><td>' + he(r.diagnosis) + '</td></tr><tr><td>Response to intervention</td><td>' + he(r.response) + '</td></tr>' + (r.linkedTo ? '<tr><td>Linked repeat of</td><td>' + he(r.linkedTo) + '</td></tr>' : '') + '</table>' +
+        (mrows ? '<h3>Measurements</h3><table class="kv">' + mrows + '</table>' : '') + (drows ? '<h3>Derived</h3><table class="kv">' + drows + '</table>' : '') + (imgs ? '<div class="imgs">' + imgs + '</div>' : '') +
+        '<table class="sig"><tr><td>Reviewer: ' + he(r.reviewer) + '</td><td>Date reviewed: ' + he(LOG.fmtDate(r.reviewDate)) + '</td></tr><tr><td>Feedback: ' + he(r.feedback) + '</td><td></td></tr><tr><td class="line">Trainee signature</td><td class="line">Reviewer signature</td></tr></table></section>';
+    }).join('');
+    return '<!doctype html><html><head><meta charset="utf-8"><title>Echo logbook packet</title><style>body{font:12px/1.4 system-ui,sans-serif;margin:24px;color:#111}h1{font-size:18px}h2{font-size:15px;margin:0 0 6px}h2 small{font-weight:400;color:#555}h3{font-size:12px;margin:10px 0 4px}.study{page-break-after:always;border-top:1px solid #999;padding-top:10px;margin-top:10px}table.kv{border-collapse:collapse;width:100%}table.kv td{border:1px solid #ccc;padding:3px 6px;vertical-align:top}table.kv td:first-child{width:28%;color:#444}table.sig{width:100%;margin-top:14px;border-collapse:collapse}table.sig td{padding:6px;width:50%}table.sig td.line{border-top:1px solid #000;padding-top:30px}.imgs img{max-width:220px;max-height:180px;margin:4px;border:1px solid #ccc}.cover p{max-width:70ch}@media print{.study{page-break-after:always}}</style></head><body>' +
+      '<div class="cover"><h1>Critical-care echocardiography logbook</h1><p>Generated ' + he(LOG.fmtDate(new Date().toISOString())) + ' · ' + list.length + ' studies' + (opts.title ? ' · ' + he(opts.title) : '') + '.</p><p>Each study is identified by a random case code only. No names, initials, record numbers, dates of birth or identifiable images are stored in this logbook; it is the trainee’s responsibility to keep it that way.</p></div>' + pages + '</body></html>';
+  };
+  /* a fresh record */
+  LOG.blank = function (today) {
+    return { code: LOG.code(), type: 'TTE', performedDate: today || new Date().toISOString().slice(0, 10), reviewDate: '', setting: 'ICU', indication: '', performed: true, interpreted: true, supervised: false, synthetic: false, complete: true, views: [], unobtainable: '', m: {}, findings: '', limitations: '', diagnosis: '', response: '', reviewer: '', feedback: '', linkedTo: '', images: [], notes: '', created: Date.now(), updated: Date.now(), deleted: false };
+  };
+  /* merging a backup: records by code, the newer 'updated' wins; returns the merged list and the counts */
+  LOG.merge = function (mine, theirs) {
+    const by = {}; mine.forEach(r => { by[r.code] = r; }); let added = 0, updated = 0;
+    (theirs || []).forEach(r => { if (!r || !r.code) return; const cur = by[r.code]; if (!cur) { by[r.code] = r; added++; } else if ((r.updated || 0) > (cur.updated || 0)) { by[r.code] = r; updated++; } });
+    return { list: Object.keys(by).map(k => by[k]), added: added, updated: updated };
+  };
+  LOG.search = function (list, f) {
+    f = f || {}; const q = (f.q || '').trim().toLowerCase();
+    return list.filter(r => {
+      if (!f.deleted && r.deleted) return false;
+      if (f.type && f.type !== 'all' && r.type !== f.type) return false;
+      if (f.month && (r.performedDate || '').slice(0, 7) !== f.month) return false;
+      if (f.practice === 'real' && r.synthetic) return false; if (f.practice === 'practice' && !r.synthetic) return false;
+      if (q) { const hay = [r.code, r.indication, r.findings, r.diagnosis, r.reviewer, r.setting, r.limitations, (r.views || []).join(' ')].join(' ').toLowerCase(); if (hay.indexOf(q) < 0) return false; }
+      return true;
+    }).sort((a, b) => (b.performedDate || '').localeCompare(a.performedDate || '') || (b.updated || 0) - (a.updated || 0));
+  };
+  LOG.CERT = {
+    nbe: 'NBE Critical Care Echocardiography (CCEeXAM): next examination Tuesday 26 January 2027; registration closes 22 December 2026. The certification pathway asks for 150 complete critical-care TTEs personally performed and interpreted, with TEE tracked separately (50 for the TEE pathway). Confirm the current dates and numbers on the NBE site before you plan around them.',
+    elso: 'ELSO adult ECMO certification (E-AEC) counts hours and cases outside fellowship training — fellowship ECMO hours are excluded. Keep your ECMO log separately from this echo log.',
+    discipline: 'Measurement discipline: TAPSE in mm, TR velocity in m/s, mitral E/A and e′ in cm/s, the LVOT diameter in cm; the derived numbers below are computed as you type.'
+  };
+  T.echo_log = { title: 'Your case logbook', kicker: 'A running, de-identified log of the studies you perform and interpret — values, images, review — toward the echo boards', blocks: [
+    { p: 'Every study you perform goes in here with its random case code, the date, the setting and the question, your role, the views you obtained and the ones you could not, the measurements (with stroke volume, cardiac output, RVSP, E/e′, the IVC indices and the PLR change computed as you type), your findings and your diagnosis, the reviewer’s feedback, and de-identified images. The dashboard counts what qualifies toward the 150 TTE (and 50 TEE) targets; the review log is searchable; and everything exports to CSV, a JSON backup and a printable packet with signature fields. It lives on this device only — back it up.' },
+    { widget: 'echolog' },
+    { note: 'Privacy: never enter a name, initials, a medical record number, a date of birth or any image that shows a patient identifier or a hospital label. The case code is random and is the only identifier; link a repeat study on the same patient to the earlier case code rather than describing the patient.' }
+  ] };
+
   const GROUPS = [
     { title: 'Start', ids: ['echo_intro', 'echo_views', 'echo_anatomy'] },
     { title: 'Reading it', ids: ['echo_assess', 'echo_shock', 'echo_lung'] },
-    { title: 'Practice', ids: ['echo_lab', 'echo_quiz'] }
+    { title: 'Practice', ids: ['echo_lab', 'echo_quiz', 'echo_log'] }
   ];
 
-  root.PFT_ECHO = { topics: T, groups: GROUPS, S: S, NAMES: NAMES, INTENSITY: INTENSITY, PATHOLOGY: PATHOLOGY, WINDOWS: WINDOWS, VIEWS: VIEWS, build: build, classify: classify, probe: probe, sector: sector, render: render, regions: regions, cycle: cycle, view: view, viewParams: viewParams, score: score, V: V };
+  root.PFT_ECHO = { topics: T, groups: GROUPS, LOG: LOG, S: S, NAMES: NAMES, INTENSITY: INTENSITY, PATHOLOGY: PATHOLOGY, WINDOWS: WINDOWS, VIEWS: VIEWS, build: build, classify: classify, probe: probe, sector: sector, render: render, regions: regions, cycle: cycle, view: view, viewParams: viewParams, score: score, V: V };
   if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_ECHO;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -336,4 +336,192 @@ function ctLab() {
   ctSetZ(CT.z, true);
   return fig;
 }
-function ctWidget(kind) { return kind === 'ct' ? ctLab() : null; }
+function ctWidget(kind) { return kind === 'ct' ? ctLab() : kind === 'ctreal' ? ctRealFig() : null; }
+
+/* ===== v8.2: the real thing — anonymised CT slices (3D Slicer sample data) windowed in the browser, with hand-placed labels ===== */
+const CR = { series: 0, i: 0, win: 'med', labels: true, mode: 'names', hl: -1, quiz: null, canvas: null, cache: {}, imgs: {} };
+const CR_WIN = { lung: [-600, 1500], med: [40, 400], bone: [400, 1800] };
+function crData() { return (typeof PFT_CTREAL !== 'undefined' ? PFT_CTREAL : (typeof window !== 'undefined' ? window.PFT_CTREAL : null)); }
+function crSeries() { const d = crData(); return d ? d.series[CR.series] : null; }
+function crSlice() { const s = crSeries(); return s ? s.slices[Math.max(0, Math.min(s.slices.length - 1, CR.i))] : null; }
+/* 8-bit pixel → HU, the inverse of the encoder in ct_build.py */
+function crDecode(v) { return v < 60 ? v / 60 * 800 - 1000 : v < 235 ? (v - 60) / 175 * 500 - 200 : (v - 235) / 20 * 1200 + 300; }
+function crLut() {
+  const k = CR.win; if (CR.cache[k]) return CR.cache[k];
+  const w = CR_WIN[k], lo = w[0] - w[1] / 2, lut = new Uint8ClampedArray(256);
+  for (let v = 0; v < 256; v++) lut[v] = Math.round(Math.max(0, Math.min(1, (crDecode(v) - lo) / w[1])) * 255);
+  CR.cache[k] = lut; return lut;
+}
+/* decoded grey values of a slice, kept once the image has loaded */
+function crPixels(sr, sl, cb) {
+  const key = sr.id + ':' + sl.z; if (CR.imgs[key]) return CR.imgs[key];
+  const im = new Image();
+  im.onload = () => { const c = document.createElement('canvas'); c.width = sr.w; c.height = sr.h; const x = c.getContext('2d'); x.drawImage(im, 0, 0, sr.w, sr.h); const d = x.getImageData(0, 0, sr.w, sr.h).data; const g = new Uint8Array(sr.w * sr.h); for (let i = 0; i < g.length; i++) g[i] = d[i * 4]; CR.imgs[key] = g; if (cb) cb(); };
+  im.src = sl.img; return null;
+}
+function crLabelsOf(sl) { return sl && sl.labels ? sl.labels : []; }
+function crDraw() {
+  const cv = CR.canvas, sr = crSeries(), sl = crSlice(); if (!cv || !sr || !sl) return;
+  const c = cv.getContext('2d'), W = cv.width, H = cv.height;
+  const g = crPixels(sr, sl, () => { if (crSlice() === sl) crDraw(); });
+  c.fillStyle = '#000'; c.fillRect(0, 0, W, H);
+  if (!g) { c.fillStyle = '#9a9a9a'; c.font = '14px system-ui, sans-serif'; c.textAlign = 'center'; c.fillText('loading…', W / 2, H / 2); return; }
+  const lut = crLut(), im = c.createImageData(sr.w, sr.h), d = im.data;
+  for (let i = 0, j = 0; i < g.length; i++, j += 4) { const v = lut[g[i]]; d[j] = d[j + 1] = d[j + 2] = v; d[j + 3] = 255; }
+  // the picture is drawn 1:1 into a canvas of the series size plus margins for the names
+  const m = CR.mode === 'names' ? crMargin() : 0, x0 = m;
+  const off = CR.off || (CR.off = document.createElement('canvas')); off.width = sr.w; off.height = sr.h; off.getContext('2d').putImageData(im, 0, 0);
+  c.drawImage(off, x0, 0);
+  const labs = crLabelsOf(sl);
+  // the highlighted structure
+  if (CR.hl >= 0 && labs[CR.hl]) { const L = labs[CR.hl]; c.beginPath(); c.arc(x0 + L[1], L[2], Math.max(8, L[3]), 0, Math.PI * 2); c.strokeStyle = 'rgba(242,193,78,0.95)'; c.lineWidth = 2; c.stroke(); }
+  if (CR.labels && !CR.quiz && labs.length) crPaintLabels(c, labs, x0, sr);
+  // the console text
+  c.font = '10.5px system-ui, sans-serif'; c.fillStyle = '#9aa0a8'; c.textAlign = 'left';
+  const wn = { lung: 'Lung window W1500 / L−600', med: 'Mediastinal window W400 / L40', bone: 'Bone window W1800 / L400' }[CR.win];
+  c.fillText(wn, x0 + 6, H - 6);
+  if (sr.plane === 'axial') { c.textAlign = 'right'; c.fillText((sl.mm > 0 ? '+' : sl.mm < 0 ? '−' : '') + Math.abs(sl.mm) + ' mm from the carina', x0 + sr.w - 6, 14); }
+  // the scale bar: 5 cm
+  const px = 50 / sr.mmpx; c.strokeStyle = '#d9d2bb'; c.lineWidth = 2; c.beginPath(); c.moveTo(x0 + sr.w - 8 - px, H - 10); c.lineTo(x0 + sr.w - 8, H - 10); c.stroke(); c.fillStyle = '#d9d2bb'; c.textAlign = 'right'; c.fillText('5 cm', x0 + sr.w - 8, H - 14);
+}
+function crMargin() { return 150; }
+function crPaintLabels(c, labs, x0, sr) {
+  if (CR.mode === 'numbers') {
+    labs.forEach((L, i) => { const x = x0 + L[1], y = L[2]; c.beginPath(); c.arc(x, y, 8, 0, Math.PI * 2); c.fillStyle = 'rgba(242,193,78,0.92)'; c.fill(); c.fillStyle = '#1a1200'; c.font = '700 10px system-ui, sans-serif'; c.textAlign = 'center'; c.fillText(String(i + 1), x, y + 3.6); });
+    return;
+  }
+  const H = c.canvas.height, m = crMargin(), fs = 11;
+  const left = [], right = [];
+  labs.forEach((L, i) => (L[1] < sr.w / 2 ? left : right).push(i));
+  const place = (arr, side) => {
+    arr.sort((a, b) => labs[a][2] - labs[b][2]);
+    const ys = arr.map(i => labs[i][2]), step = fs * 1.3;
+    for (let i = 1; i < ys.length; i++) if (ys[i] < ys[i - 1] + step) ys[i] = ys[i - 1] + step;
+    const over = ys.length ? ys[ys.length - 1] - (H - 8) : 0; if (over > 0) for (let i = 0; i < ys.length; i++) ys[i] -= over;
+    for (let i = ys.length - 2; i >= 0; i--) if (ys[i] > ys[i + 1] - step) ys[i] = ys[i + 1] - step;
+    arr.forEach((idx, k) => {
+      const L = labs[idx], ax = x0 + L[1], ay = L[2], tx = side < 0 ? 6 : x0 + sr.w + m - 6, ex = side < 0 ? m - 4 : x0 + sr.w + 4;
+      c.font = fs + 'px system-ui, sans-serif';
+      c.beginPath(); c.moveTo(ex, ys[k] - fs * 0.35); c.lineTo(ax, ay); c.strokeStyle = idx === CR.hl ? '#f2c14e' : 'rgba(242,193,78,0.7)'; c.lineWidth = idx === CR.hl ? 1.6 : 0.9; c.stroke();
+      c.beginPath(); c.arc(ax, ay, 2, 0, Math.PI * 2); c.fillStyle = '#f2c14e'; c.fill();
+      c.textAlign = side < 0 ? 'left' : 'right'; c.fillStyle = idx === CR.hl ? '#fff3c4' : '#e8e1c8';
+      let t = L[0]; while (c.measureText(t).width > m - 10 && t.length > 4) t = t.slice(0, -2); if (t !== L[0]) t = t.replace(/[\s·]+$/, '') + '…';
+      c.fillText(t, tx, ys[k]);
+    });
+  };
+  place(left, -1); place(right, 1);
+}
+function crHit(px, py) {
+  const sl = crSlice(), labs = crLabelsOf(sl); let best = -1, bd = 1e9;
+  labs.forEach((L, i) => { const d = Math.hypot(px - L[1], py - L[2]); const r = Math.max(10, L[3] * 1.15); if (d <= r && d / r < bd) { bd = d / r; best = i; } });
+  return best;
+}
+function crSet(i, keepQuiz) {
+  const sr = crSeries(); if (!sr) return;
+  CR.i = Math.max(0, Math.min(sr.slices.length - 1, i)); CR.hl = -1;
+  const sl = document.querySelector('[data-cr-z]'); if (sl && +sl.value !== CR.i) sl.value = CR.i;
+  const rd = document.querySelector('[data-cr-level]'); if (rd) rd.textContent = crLevelName();
+  document.querySelectorAll('[data-cr-preset]').forEach(b => b.classList.toggle('on', +b.getAttribute('data-cr-preset') === CR.i));
+  crDraw();
+  if (!keepQuiz && CR.quiz && !CR.quiz.done) { const s = crSlice(); if (!s.labels || !s.labels.some(L => L[0] === CR.quiz.name)) crQuizNext(); }
+  crList();
+}
+function crLevelName() {
+  const sr = crSeries(), sl = crSlice(); if (!sl) return '';
+  const pos = sr.plane === 'axial' ? ((sl.mm > 0 ? '+' : sl.mm < 0 ? '−' : '') + Math.abs(sl.mm) + ' mm from the carina') : (sr.plane === 'cor' ? 'coronal' : 'sagittal') + ' plane ' + (CR.i + 1) + ' of ' + sr.slices.length;
+  return (sl.level ? sl.level + ' · ' : (sr.plane === 'axial' ? 'between labelled levels · ' : '')) + pos;
+}
+function crList() {
+  const box = document.querySelector('[data-cr-list]'); if (!box) return;
+  box.textContent = '';
+  const sl = crSlice(), labs = crLabelsOf(sl);
+  if (CR.quiz) { box.appendChild(crQuizBox()); return; }
+  if (!labs.length) { box.appendChild(h('p', { class: 'fine', text: 'No labels on this slice — the labelled levels are the chips above (and the ticks on the slider). Scroll on to read the anatomy between them yourself.' })); return; }
+  if (!CR.labels) { box.appendChild(h('p', { class: 'fine', text: 'Labels hidden — hover or tap a structure to name it.' })); return; }
+  box.appendChild(h('ol', { class: 'ct-list' + (CR.mode === 'numbers' ? ' num' : '') }, labs.map((L, i) => h('li', { 'data-cr-item': i, class: i === CR.hl ? 'hl' : '', text: L[0], onmouseenter: () => crHover(i), onmouseleave: () => crHover(-1) }))));
+}
+function crHover(i) {
+  if (i === CR.hl) return; CR.hl = i; crDraw();
+  const sl = crSlice(), labs = crLabelsOf(sl);
+  const rd = document.querySelector('[data-cr-hover]'); if (rd) rd.textContent = i >= 0 && labs[i] ? labs[i][0] : '';
+  document.querySelectorAll('[data-cr-item]').forEach(li => li.classList.toggle('hl', +li.getAttribute('data-cr-item') === i));
+}
+/* the quiz: a labelled slice is chosen, a structure named, the learner taps it */
+function crQuizStart() { CR.quiz = { n: 0, score: 0, done: false, tries: 0, wrong: '', name: '', last: '' }; crQuizNext(); }
+function crQuizNext() {
+  const q = CR.quiz, sr = crSeries(); if (!q || !sr) return;
+  const pool = sr.slices.map((s, i) => s.labels ? i : -1).filter(i => i >= 0); if (!pool.length) return;
+  const cur = crSlice();
+  const si = cur.labels && Math.random() < 0.5 ? CR.i : pool[Math.floor(Math.random() * pool.length)];
+  const labs = sr.slices[si].labels; let L; do { L = labs[Math.floor(Math.random() * labs.length)]; } while (labs.length > 1 && L[0] === q.last);
+  q.name = L[0]; q.last = L[0]; q.tries = 0; q.done = false; q.wrong = ''; q.n++;
+  if (si !== CR.i) crSet(si, true); else { CR.hl = -1; crDraw(); crList(); }
+}
+function crQuizBox() {
+  const q = CR.quiz;
+  return h('div', { class: 'an-drill on', 'data-crq': q.done ? 'done' : 'on' }, [
+    h('p', {}, [h('span', { class: 'lbl', text: 'Tap: ' }), h('b', { text: q.name }), ' ', h('span', { class: 'fine', text: 'Question ' + q.n + ' · score ' + q.score })]),
+    q.done ? h('p', { class: 'an-found', text: 'Correct' + (q.tries > 1 ? ' (after ' + q.tries + ' taps).' : '.') }) : (q.wrong ? h('p', { class: 'an-wrong', text: 'That is the ' + q.wrong.toLowerCase() + '. Try again.' }) : null),
+    h('div', { class: 'an-drill-acts' }, [h('button', { type: 'button', class: 'btn sm', 'data-crq-next': '1', text: q.done ? 'Next' : 'Skip', onclick: crQuizNext }), h('button', { type: 'button', class: 'btn sm quiet', 'data-crq-stop': '1', text: 'Stop the quiz', onclick: () => { CR.quiz = null; crDraw(); crList(); } })])
+  ]);
+}
+function crTap(i) {
+  const q = CR.quiz, labs = crLabelsOf(crSlice());
+  if (!q || q.done) return;
+  q.tries++;
+  if (i >= 0 && labs[i] && labs[i][0] === q.name) { q.done = true; q.score += q.tries === 1 ? 1 : 0; q.wrong = ''; CR.hl = i; crDraw(); }
+  else q.wrong = i >= 0 && labs[i] ? labs[i][0] : 'nothing labelled';
+  crList();
+}
+function crSizeCanvas() {
+  const cv = CR.canvas, sr = crSeries(); if (!cv || !sr) return;
+  const m = CR.mode === 'names' ? crMargin() : 0;
+  cv.width = sr.w + 2 * m; cv.height = sr.h; cv.style.aspectRatio = cv.width + ' / ' + cv.height;
+}
+function crCanvas() {
+  if (CR.canvas) return CR.canvas;
+  const cv = document.createElement('canvas'); cv.className = 'cr-canvas'; cv.setAttribute('tabindex', '0'); cv.setAttribute('role', 'img'); cv.setAttribute('aria-label', 'Axial CT section (real scan)');
+  const pos = (e) => { const r = cv.getBoundingClientRect(); const m = CR.mode === 'names' ? crMargin() : 0; return [(e.clientX - r.left) * cv.width / r.width - m, (e.clientY - r.top) * cv.height / r.height]; };
+  cv.addEventListener('pointermove', (e) => { const p = pos(e); crHover(crHit(p[0], p[1])); });
+  cv.addEventListener('pointerleave', () => crHover(-1));
+  cv.addEventListener('click', (e) => { const p = pos(e); crTap(crHit(p[0], p[1])); });
+  cv.addEventListener('wheel', (e) => { e.preventDefault(); crSet(CR.i + (e.deltaY > 0 ? -1 : 1)); }, { passive: false });
+  cv.addEventListener('keydown', (e) => { if (e.key === 'ArrowUp' || e.key === 'PageUp') { e.preventDefault(); crSet(CR.i + (e.key === 'PageUp' ? 5 : 1)); } else if (e.key === 'ArrowDown' || e.key === 'PageDown') { e.preventDefault(); crSet(CR.i - (e.key === 'PageDown' ? 5 : 1)); } });
+  let rt = 0; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { if (!cv.isConnected) return; const r = cv.getBoundingClientRect(), m = r.width < 560 ? 'numbers' : 'names'; if (m !== CR.mode) { CR.mode = m; crSizeCanvas(); crDraw(); crList(); } }, 120); });
+  CR.canvas = cv; return cv;
+}
+function crPickSeries(k) {
+  const d = crData(); if (!d) return;
+  CR.series = k; CR.quiz = null; CR.hl = -1;
+  const sr = d.series[k];
+  // start on the first labelled level of an axial series (its carina), the labelled plane of a reformat
+  const first = sr.slices.findIndex(s => s.labels && (sr.plane !== 'axial' || /Carina|four chambers/i.test(s.level || '')));
+  CR.i = first >= 0 ? first : 0;
+  crSizeCanvas();
+  const host = document.querySelector('[data-ctreal]'); if (host) { const fresh = ctRealFig(true); host.replaceWith(fresh); }
+}
+function ctRealFig(keepState) {
+  const d = crData();
+  if (!d) return h('figure', { class: 'an-fig', 'data-ctreal': '1' }, [h('p', { class: 'fine', text: 'The real CT slices did not load in this build.' })]);
+  if (!keepState) { CR.series = 0; CR.quiz = null; CR.hl = -1; const sr = d.series[0]; const first = sr.slices.findIndex(s => s.labels && /Carina/.test(s.level || '')); CR.i = first >= 0 ? first : 0; }
+  const sr = d.series[CR.series];
+  const cv = crCanvas(); crSizeCanvas();
+  const tabs = h('div', { class: 'seg cr-tabs', role: 'tablist', 'aria-label': 'Series' }, d.series.map((s, k) => h('button', { type: 'button', class: 'ch', role: 'tab', 'data-cr-series': s.id, 'aria-selected': String(k === CR.series), text: s.title, onclick: () => crPickSeries(k) })));
+  const wins = h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Window' }, [['lung', 'Lung'], ['med', 'Mediastinal'], ['bone', 'Bone']].map(w => h('button', { type: 'button', class: 'ch', role: 'radio', 'data-cr-win': w[0], 'aria-checked': String(CR.win === w[0]), text: w[1], onclick: (e) => { CR.win = w[0]; e.target.parentElement.querySelectorAll('[data-cr-win]').forEach(b => b.setAttribute('aria-checked', String(b.getAttribute('data-cr-win') === w[0]))); crDraw(); } })));
+  const labId = uid('crl');
+  const opts = h('div', { class: 'an-3d-modes ct-opts' }, [wins,
+    h('label', { class: 'chk-inline', for: labId }, [h('input', { type: 'checkbox', id: labId, checked: CR.labels, 'data-cr-labels': '1', onchange: (e) => { CR.labels = e.target.checked; crDraw(); crList(); } }), 'Labels']),
+    CR.quiz ? null : h('button', { type: 'button', class: 'btn sm', 'data-crq-start': '1', text: 'Quiz: find the structure', onclick: () => { crQuizStart(); } })]);
+  const slider = h('input', { type: 'range', min: 0, max: sr.slices.length - 1, step: 1, value: CR.i, 'data-cr-z': '1', 'aria-label': 'Slice', class: 'ct-slider', list: 'cr-ticks-' + sr.id, oninput: (e) => crSet(+e.target.value) });
+  const ticks = h('datalist', { id: 'cr-ticks-' + sr.id }, sr.slices.map((s, i) => s.labels ? h('option', { value: String(i), label: s.level }) : null));
+  const presets = h('div', { class: 'ct-presets' }, sr.slices.map((s, i) => s.labels ? h('button', { type: 'button', class: 'ch' + (i === CR.i ? ' on' : ''), 'data-cr-preset': i, text: s.level, onclick: () => crSet(i) }) : null));
+  const stage = h('div', { class: 'ct-stage cr-stage' }, [cv, h('div', { class: 'ct-hover', 'data-cr-hover': '1' })]);
+  const up = sr.plane === 'axial' ? '▲ Up' : (sr.plane === 'cor' ? '▲ Back' : '▲ Left'), down = sr.plane === 'axial' ? '▼ Down' : (sr.plane === 'cor' ? '▼ Front' : '▼ Right');
+  const levelRow = h('div', { class: 'ct-level' }, [h('button', { type: 'button', class: 'btn sm quiet', 'data-cr-up': '1', text: up, onclick: () => crSet(CR.i + 1) }), slider, ticks, h('button', { type: 'button', class: 'btn sm quiet', 'data-cr-down': '1', text: down, onclick: () => crSet(CR.i - 1) }), h('span', { class: 'ct-levelname', 'data-cr-level': '1', text: crLevelName() })]);
+  const list = h('div', { class: 'ct-listbox', 'data-cr-list': '1' });
+  const fig = h('figure', { class: 'an-fig ct-lab cr-lab', 'data-ctreal': '1', 'data-cr-n': sr.slices.length }, [tabs, h('p', { class: 'fine cr-note', text: sr.note }), opts, stage, levelRow, presets, list,
+    h('figcaption', { text: d.credit + ' Scroll with the slider, the wheel or ↑ ↓; hover or tap a labelled structure to name it; switch the window as on the console; hide the labels or start the quiz to test yourself.' })]);
+  setTimeout(() => { if (!cv.isConnected) return; const r = cv.getBoundingClientRect(); const m = r.width < 560 ? 'numbers' : 'names'; if (m !== CR.mode) { CR.mode = m; crSizeCanvas(); } crSet(CR.i, true); }, 0);
+  crSet(CR.i, true);
+  return fig;
+}

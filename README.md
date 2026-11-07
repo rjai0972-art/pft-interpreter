@@ -81,7 +81,7 @@ and the single-file browser version (`PulmCritDaddy_standalone.html`) always wor
 - Code signing is optional and not set up. For Windows add a signing certificate to the build; for Mac add an Apple Developer ID and notarization.
   Until then the first-launch steps above are needed.
 
-## How the reading is built (version 8.1)
+## How the reading is built (version 8.2)
 
 The rules layer computes every measurement state before any wording is chosen (ERS/ATS 2022 z-scores and the LLN;
 a reviewed adult phrase catalog anchored to the ERS/ATS 2022, ATS/ERS 2019, ERS/ATS 2023, ERS/ATS 2017, ERS 2019 and
@@ -135,7 +135,7 @@ report builds on the right as values are entered (below the form on narrower scr
 optional wording, differentials, prompts and the heads-up list beneath it. Two themes, linen and charcoal, in neutral
 tones.
 
-The app opens on a home page: a tile for each area (Interpret, the case bank, and every Learn area) with its topics and the labs as chips, a resume link to the page last visited, and the version. Learn has nine areas, chosen from a dropdown above the topic list. "PFT interpretation" is the reading-room curriculum
+The app opens on a home page: a tile for each area (Interpret, the case bank, and every Learn area) with its topics and the labs as chips, a resume link to the page last visited, and the version. Learn has ten areas, chosen from a dropdown above the topic list. "PFT interpretation" is the reading-room curriculum
 (the logic, each test, reference equations, change over time, the phrase catalog and worked examples). "Anatomy,
 physiology & bronchoscopy" runs like a course and opens with a start page that maps it. Anatomy first: the lungs
 (lobes, fissures, the hilum and RALS, the pleura and where a needle is safe, the diaphragm and its openings, the two
@@ -311,6 +311,36 @@ tilt and rock from four windows, painted as a B-mode sector with speckle and the
 structure, eight hearts (normal, dilated LV, dilated RV, effusion, tamponade, hypovolaemia, LVH, pleural effusion), a
 target view with a score and movement hints; a views atlas rendered from the same model with a slot on each card for
 your own de-identified image (kept in the browser only); and a quiz that draws new pictures every round (which view,
-which structure, what is wrong). `extras/` holds a reworked Anki deck
+which structure, what is wrong). Version 8.2 adds the real thing beside the drawn: under each apical and
+short-axis atlas card runs a loop cut from a real three-dimensional transthoracic acquisition (the SlicerHeart
+"Mitral" sample volume, nine phases of the cycle, resliced in the browser along any plane), with labels; the scanning
+lab gains a real-volume mode (rotate the marker through the four-, two- and three-chamber planes, tilt into the
+five-chamber, or cut across the beam at any depth for the short axes, with the same scoring and hints); and the CT
+anatomy topic gains a stack of real anonymised slices — the 3D Slicer CT-chest (non-contrast, 59 axial slices from
+the lung bases to the thoracic inlet) and CTA-cardio (contrast, 28 slices) sample data sets plus coronal and sagittal
+reformats — windowed in the browser from the real pixels (lung, mediastinal, bone), scrollable, with hand-placed
+labels on key levels, hover-to-name and a find-the-structure quiz. The echo area also gets a case logbook for the
+boards: each study with a random case code (no identifiers), the date, the setting and the clinical question, your
+role (performed, interpreted, supervised), a practice flag that excludes it from the counts, the views obtained and
+the components not obtainable, twenty-one measurements with stroke volume, cardiac output and index, RVSP, E/A, E/e′,
+the IVC indices and the passive-leg-raise change computed as you type, findings, limitations, diagnosis and clinical
+integration, the reviewer and the feedback, a linked repeat study, and de-identified images (resized, stored in
+IndexedDB); a dashboard (all scans, this month, TTE candidates / 150, TEE / 50); a searchable, filterable review log
+with edit and soft delete; and exports — CSV, the NBE candidate lists, a JSON backup that restores by merging, and a
+printable packet with signature fields. "Bedside monitoring" is the tenth area: what a number is worth; the arterial
+line (set-up, zero and level, the fast-flush test, natural frequency and damping, the waveform, PPV/SPV and the
+tidal-volume challenge, the vasoconstriction trap, troubleshooting) with a lab that passes a true pressure through
+a modelled catheter–tubing–transducer system (seven states of the line, the fast flush, a build-your-own ζ and fn, a
+diagnose-the-line quiz); CVP and its waves (a, c, v, x, y against the ECG; TR, cannon waves, tamponade, constriction,
+Kussmaul) with a waveform lab and quiz; the pulmonary artery catheter's pitfalls; oesophageal, bladder and airway
+pressures; ICP (EVD and microtransducers, the P1/P2/P3 waveform, Lundberg waves, the open drain) with a lab and a
+30-minute trend; pulse-contour devices (FloTrac/Vigileo and the HemoSphere with HPI, PiCCO and transpulmonary
+thermodilution, LiDCO, the finger cuff, bioreactance, oesophageal Doppler — set-up, every number on the screen,
+when each lies, troubleshooting) with a haemodynamic-screen lab of seven scenarios (early sepsis, AF, spontaneous
+breathing, low tidal volume, RV failure, a pressor change, the resuscitated patient) that lets you run a passive leg
+raise, a bolus or a tidal-volume challenge before choosing; venous oximetry, lactate and the CO2 gap; pulse oximetry
+(the physics, the dyshaemoglobins, skin pigmentation, the plethysmogram); NIRS; capnography (the phases, the shapes —
+shark fin, curare cleft, rebreathing, cardiogenic oscillations, oesophageal intubation, loss of output, ROSC — CPR,
+the gradient) with a lab of twelve patterns and a quiz; and processed EEG and train-of-four. `extras/` holds a reworked Anki deck
 (`ECMO_Anki_Deck_v2.apkg`, 103 notes / 237 cards, cloze and basic, tagged by topic, built by `build_ecmo_anki.py` with no
 dependencies) and a bedside reference PDF generated from the same content (`build_ecmo_reference.js`).
