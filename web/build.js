@@ -17,6 +17,7 @@ const frag = tpl
   .replace('/*HEARTLUNG*/', () => safe(rd('src/heartlung.js')))
   .replace('/*VENT*/', () => safe(rd('src/vent.js')))
   .replace('/*ECMO*/', () => safe(rd('src/ecmo.js')))
+  .replace('/*HEMO*/', () => safe(rd('src/hemo.js')))
   .replace('/*EXAMPLES*/', () => safe(rd('src/examples.js')))
   .replace('/*THREE*/', () => '/* three.js r147 — MIT License, (c) 2010-2022 three.js authors (vendor/three.LICENSE) */\n' + safe(rd('vendor/three.min.js')))
   .replace('/*UI*/', () => safe(rd('dist/ui.js')));
@@ -29,5 +30,5 @@ const i = frag.indexOf('</style>') + '</style>'.length;
 const headPart = frag.slice(0, i), bodyPart = frag.slice(i);
 const doc = '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n<meta name="color-scheme" content="light dark">\n' +
   headPart + '\n</head>\n<body>\n' + bodyPart + '\n</body>\n</html>\n';
-fs.writeFileSync(path.join(__dirname, 'dist/PFT_Interpreter_standalone.html'), doc);
+fs.writeFileSync(path.join(__dirname, 'dist/PulmCritDaddy_standalone.html'), doc);
 console.log('fragment', frag.length, 'standalone', doc.length);

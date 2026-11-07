@@ -2,7 +2,7 @@
 // page, the column stays on screen while the page scrolls, it is never printed, and it moves below the form on narrow screens.
 const { chromium } = require('/opt/npm-tools/node_modules/playwright');
 const path = require('path');
-const FILE = process.env.PFT_URL || ('file://' + path.join(__dirname, '..', 'dist', 'PFT_Interpreter_standalone.html'));
+const FILE = process.env.PFT_URL || ('file://' + path.join(__dirname, '..', 'dist', 'PulmCritDaddy_standalone.html'));
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.log('FAIL', m); } };
 async function loadExample(page, i) {
@@ -16,7 +16,7 @@ async function loadExample(page, i) {
   const ctx = await browser.newContext({ viewport: { width: 1360, height: 860 }, permissions: ['clipboard-read', 'clipboard-write'] });
   const page = await ctx.newPage();
   const errs = []; page.on('pageerror', e => errs.push(String(e)));
-  await page.goto(FILE); await page.waitForSelector('#top');
+  await page.goto(FILE); await page.waitForSelector('[data-home]'); await page.evaluate(() => window.__pft.setMode('case')); await page.waitForSelector('#top');
 
   ok(await page.locator('#pv').isVisible(), 'report column visible on the first screen at 1360 px');
   ok(/as values are entered/.test(await page.locator('#pv').innerText()), 'empty state explains itself');
@@ -84,7 +84,7 @@ async function loadExample(page, i) {
   await ctx.close();
 
   const m = await browser.newContext({ viewport: { width: 400, height: 800 }, colorScheme: 'dark', hasTouch: true, isMobile: true });
-  const mp = await m.newPage(); await mp.goto(FILE); await mp.waitForSelector('#top');
+  const mp = await m.newPage(); await mp.goto(FILE); await mp.waitForSelector('[data-home]'); await mp.evaluate(() => window.__pft.setMode('case')); await mp.waitForSelector('#top');
   await loadExample(mp, 0);
   ok(await mp.locator('#pv').isVisible() && (await mp.locator('#pv').boundingBox()).y > (await mp.locator('#main').boundingBox()).y + 100, 'phone: report below the form');
   ok(await mp.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1), 'phone: no horizontal scroll');

@@ -2,21 +2,22 @@
 // station map and quiz, the V/Q sandbox, the lidocaine running total, and the simplified prior-study columns.
 const { chromium } = require('/opt/npm-tools/node_modules/playwright');
 const path = require('path');
-const FILE = process.env.PFT_URL || ('file://' + path.join(__dirname, '..', 'dist', 'PFT_Interpreter_standalone.html'));
+const FILE = process.env.PFT_URL || ('file://' + path.join(__dirname, '..', 'dist', 'PulmCritDaddy_standalone.html'));
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.log('FAIL', m); } };
 const uniqN = (a) => a.filter((x, i) => a.indexOf(x) === i).length;
+const near = (a, b, t) => Math.abs(a - b) <= t;
 (async () => {
   const browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist'] });
   const ctx = await browser.newContext({ viewport: { width: 1360, height: 900 } });
   const page = await ctx.newPage();
   const errs = []; page.on('pageerror', e => errs.push(String(e)));
-  await page.goto(FILE); await page.waitForSelector('#top');
+  await page.goto(FILE); await page.waitForSelector('[data-home]'); await page.evaluate(() => window.__pft.setMode('case')); await page.waitForSelector('#top');
   const txt = async (sel) => (await page.locator(sel).first().textContent()) || '';
 
   // ---- areas
   await page.locator('.vw[data-view="learn"]').click(); await page.waitForSelector('.learn-body');
-  ok(await page.locator('#learn-cat option').count() === 6, 'Learn offers six areas');
+  ok(await page.locator('#learn-cat option').count() === 7, 'Learn offers seven areas');
   ok(await page.locator('.learn-body').getAttribute('data-cat') === 'pft', 'PFT interpretation is the default area');
   const nPft = await page.locator('.ln-btn').count();
   ok(nPft >= 20, 'the PFT area keeps its topics (' + nPft + ')');
@@ -524,6 +525,72 @@ const uniqN = (a) => a.filter((x, i) => a.indexOf(x) === i).length;
   ok((await ecTile('SvO2 (drainage)')).v >= 75 && await page.locator('[data-ec-config] option:checked').evaluate(e => e.value) === 'ff', '“Show in the lab” opens the lab with the scenario’s circuit');
   await page.evaluate(() => window.__pft.setMode('learn', { topic: 'ecmo_cases' })); await page.waitForSelector('[data-ecmocases]');
   ok(await page.locator('[data-ec-score="1/2"]').count() === 1, 'the answers survive leaving and returning');
+  // the guided scenarios inside the lab
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'ecmo_lab' })); await page.waitForSelector('[data-ecmolab] [data-ec-guide]');
+  ok(await page.locator('[data-ec-guide] option').count() === 11 && await page.locator('[data-ec-guide-panel="free"]').count() === 1 && await page.locator('[data-ec-gopt]').count() === 0, 'the lab opens in free play with ten guided scenarios on offer');
+  await page.selectOption('[data-ec-guide]', 'lab_recirc'); await page.waitForSelector('[data-ec-guide-panel="lab_recirc"]');
+  ok(await page.locator('[data-ec-gopt]').count() === 4 && (await ecCell('SO2')) >= 75 && await page.locator('[data-ec-config] option:checked').evaluate(e => e.value) === 'ff' && /Recirculation|recirculation/.test(await txt('[data-ec-alarms]')) && (await ecTile('Flow')).v > 4, 'the recirculation case loads its circuit: femoro-femoral, a bright drainage, the alarm, four moves');
+  const spo2Before = await ecCell('SaO2');
+  await page.locator('[data-ec-gopt="rpm"]').click(); await page.waitForSelector('[data-ec-gverdict="poor"]');
+  ok((await ecTile('Speed')).v === 4000 && await page.locator('[data-ec-gafter="poor"] td.hm-moved').count() >= 2 && await page.locator('[data-ec-gbest]').count() === 1 && await page.locator('[data-ec-gopt]').count() === 0, 'a poor move turns the speed to 4,000 on the console, tabulates what moved, and offers the best move instead');
+  await page.locator('[data-ec-gbest]').click(); await page.waitForSelector('[data-ec-gstep="1"]:not(.done)');
+  ok(await page.locator('[data-ec-config] option:checked').evaluate(e => e.value) === 'fj' && (await ecTile('Speed')).v === 3500 && (await ecCell('SaO2')) > spo2Before + 5 && await page.locator('[data-ec-gafter="best"]').count() === 1 && await page.locator('[data-ec-gopt]').count() === 4, 'undone and the best move applied: femoro-jugular, the speed back, the saturation up, the second step open');
+  await page.locator('[data-ec-gopt="sweep2"]').click(); await page.waitForSelector('[data-ec-gdone]');
+  ok((await ecTile('Sweep')).v > 2.5 && (await ecCell('PaCO2')) < 42 && await page.locator('[data-ec-gscore="0/1"]').count() === 1 && await page.locator('[data-ec-gnext]').count() === 1, 'the sweep clears the CO2, the case is done, the score counts it');
+  await page.locator('[data-ec-gnext]').click(); await page.waitForSelector('[data-ec-guide-panel="lab_chatter"]');
+  ok(await page.locator('[data-ecmolab] .ec-chatter').count() === 1 && (await ecTile('P drain')).v < -75, 'the next scenario: the chattering line');
+  await page.locator('[data-ec-gopt="down"]').click(); await page.waitForSelector('[data-ec-gverdict="best"]');
+  ok(await page.locator('[data-ecmolab] .ec-chatter').count() === 0 && (await ecTile('Speed')).v === 2700, 'speed down: the line is quiet on the drawing');
+  await page.selectOption('[data-ec-guide]', 'lab_distension'); await page.waitForSelector('[data-ec-guide-panel="lab_distension"]');
+  ok(await page.locator('[data-ec-mode="va"][aria-checked="true"]').count() === 1 && (await ecCell('Pulse pressure')) < 5 && /LV distension/.test(await txt('[data-ec-alarms]')), 'a VA case switches the lab to VA: the distended ventricle');
+  await page.locator('[data-ec-gopt="impella"]').click(); await page.waitForSelector('[data-ec-gverdict="best"]');
+  ok(await page.locator('[data-ecmolab] .ec-impella').count() === 1 && !/LV distension/.test(await txt('[data-ec-alarms]')) && await page.locator('[data-ec-unload] option:checked').evaluate(e => e.value) === 'impella', 'the Impella move draws the device and clears the alarm');
+  await page.selectOption('[data-ec-guide]', ''); await page.waitForSelector('[data-ec-guide-panel="free"]');
+  ok(await page.locator('[data-ecmolab] .ec-impella').count() === 1, 'back to free play with the dials where the scenario left them');
+
+  // ---- haemodynamics: the catheterised heart, the monitor, the lab, the scenarios
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'hemo_intro' })); await page.waitForSelector('.learn-body[data-topic="hemo_intro"]');
+  ok(await page.locator('#learn-cat').inputValue() === 'hemo' && await page.locator('.ln-btn[data-topic]').count() === 10 && /Guyton/.test(await txt('.learn-body')), 'the haemodynamics area: ten topics, venous return on the first page');
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'hemo_swan' })); await page.waitForSelector('[data-hemoswan]');
+  ok(await page.locator('[data-hemoswan] .hm-heart').count() === 1 && await page.locator('[data-hemoswan] .hm-cath').count() === 1 && await page.locator('[data-hemoswan] .hm-tag').count() === 7 && await page.locator('[data-hemoswan] .hm-trace').count() === 4 && await page.locator('[data-hemoswan] .hm-wave').count() >= 12, 'the catheter page: the heart with the catheter, seven pressure tags, four traces with their waves labelled');
+  ok(/PA 23\/10 \(14\)/.test(await txt('[data-hemoswan] .hm-tag[data-tag="pa"]')) && /PAOP 8/.test(await txt('[data-hemoswan] .hm-tag[data-tag="paop"]')), 'normal numbers on the tags');
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'hemo_lab' })); await page.waitForSelector('[data-hemolab]');
+  const hmCell = (label) => page.evaluate((l) => { const c = Array.from(document.querySelectorAll('[data-hemolab] [data-hm-cell]')).filter(x => x.getAttribute('data-hm-cell') === l)[0]; return c ? parseFloat(c.querySelector('b').textContent) : NaN; }, label);
+  ok(await page.locator('[data-hemolab] [data-hm]').count() === 15 && await page.locator('[data-hemolab] [data-hm-tx]').count() === 18 && await page.locator('[data-hemolab] [data-hm-device]').count() === 3 && await page.locator('[data-hemolab] [data-hm-pos]').count() === 5 && await page.locator('[data-hemolab] canvas').count() === 1, 'the lab: fifteen sliders (PEEP hidden while breathing), eighteen treatments, three devices, five ports, the monitor');
+  ok(near(await hmCell('CI'), 3.0, 0.4) && near(await hmCell('PAOP'), 8, 3) && near(await hmCell('TPG'), 6, 3) && near(await hmCell('TAPSE'), 25, 4) && await page.locator('[data-hemolab] [data-hm-sig="ok"]').count() === 1 && await page.locator('[data-hemolab] [data-hm-pos="pa"][aria-selected="true"]').count() === 1, 'the normal patient: CI 3, wedge 8, TPG 6, TAPSE 25, the tip in the PA');
+  await page.selectOption('[data-hm-preset]', 'lv'); await page.waitForSelector('[data-hemolab] [data-hm-sig="lv"]');
+  ok((await hmCell('CI')) < 2.2 && (await hmCell('PAOP')) > 18 && await page.locator('[data-hemolab] [data-hm-cell="PAOP"].bad').count() === 1 && await page.locator('[data-hemolab] [data-hm-flag="cpo"]').count() === 1 && /IV: cold and wet/.test(await txt('[data-hemolab] .hm-sig-q')), 'LV shock: low index, high wedge in red, the CPO flag, Forrester IV');
+  await page.locator('[data-hemolab] [data-hm-pos="paop"]').click(); await page.waitForSelector('[data-hemolab] [data-hm-pos="paop"][aria-selected="true"]');
+  ok(await page.locator('[data-hemolab] .hm-balloon.up').count() === 1 && await page.locator('[data-hemolab] .hm-tag.on[data-tag="paop"]').count() === 1, 'wedged: the balloon up, the wedge tag lit');
+  await page.locator('[data-hemolab] .hm-tag[data-tag="ra"]').click(); await page.waitForSelector('[data-hemolab] [data-hm-pos="ra"][aria-selected="true"]');
+  ok(await page.locator('[data-hemolab] .hm-balloon.up').count() === 0, 'a click on the RA tag moves the catheter back');
+  const w0 = await hmCell('PAOP'), ci0 = await hmCell('CI');
+  await page.locator('[data-hemolab] [data-hm-tx="dobut"]').click(); await page.waitForSelector('[data-hemolab] [data-hm-note]');
+  ok((await hmCell('CI')) > ci0 + 0.3 && (await hmCell('PAOP')) < w0 - 3 && /Dobutamine/.test(await txt('[data-hm-note]')), 'dobutamine in LV shock: the index up, the wedge down, the note says what it did');
+  await page.locator('[data-hemolab] [data-hm-device="iabp"]').click(); await page.waitForSelector('[data-hemolab] [data-hm-device="iabp"][aria-pressed="true"]');
+  ok(await page.locator('[data-hemolab] .hm-iabp').count() === 1, 'the balloon pump drawn in the aorta');
+  await page.selectOption('[data-hm-preset]', 'tamponade'); await page.waitForSelector('[data-hemolab] [data-hm-sig="tamponade"]');
+  ok(await page.locator('[data-hemolab] .hm-peri.tamp').count() === 1 && await page.locator('[data-hemolab] [data-hm-flag="equal"]').count() === 1 && Math.abs((await hmCell('RA')) - (await hmCell('PAOP'))) < 5, 'tamponade: the pericardium drawn full, the equalisation flag');
+  await page.locator('[data-hemolab] [data-hm-tx="tap"]').click(); await page.waitForSelector('[data-hemolab] [data-hm-sig="ok"]');
+  ok((await hmCell('CI')) > 2.5 && await page.locator('[data-hemolab] .hm-peri.tamp').count() === 0, 'the tap: output restored, the pericardium drawn empty');
+  await page.selectOption('[data-hm-preset]', 'ecmodist'); await page.waitForSelector('[data-hemolab] [data-hm-sig="ecmodist"]');
+  ok(await page.locator('[data-hemolab] .hm-ecmo-ret').count() === 1 && await page.locator('[data-hemolab] .hm-valve.shut').count() === 1 && (await hmCell('Pulse pressure')) < 10, 'VA ECMO drawn, the aortic valve marked shut, no pulse pressure');
+  await page.locator('[data-hemolab] [data-hm-vent="ppv"]').click(); await page.waitForSelector('[data-hemolab] [data-hm="peep"]');
+  ok(await page.locator('[data-hemolab] [data-hm]').count() === 16, 'ventilated: the PEEP slider appears');
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'hemo_cases' })); await page.waitForSelector('[data-hemocases]');
+  ok(await page.locator('[data-hm-case]').count() === 11 && await page.locator('[data-hm-a1]').count() === 4 && await page.locator('[data-hm-a2]').count() === 0 && await page.locator('[data-hm-reveal]').count() === 0, 'eleven patients; the first open with four diagnoses and the catheter still hidden');
+  await page.locator('[data-hm-a1="hypo"]').click(); await page.waitForSelector('[data-hm-v1="wrong"]');
+  ok(await page.locator('[data-hm-reveal]').count() === 1 && await page.locator('[data-hm-rev]').count() === 13 && await page.locator('[data-hm-a2]').count() === 4 && await page.locator('.ec-opt.isbest').count() === 1, 'a wrong diagnosis: the verdict, the catheter numbers revealed, the move question opens');
+  await page.locator('[data-hm-a2="fluid"]').click(); await page.waitForSelector('[data-hm-v2="wrong"]');
+  ok(await page.locator('[data-hm-after]').count() === 1 && await page.locator('[data-hm-after] th').count() >= 12 && await page.locator('[data-hm-after] td.hm-moved').count() >= 6 && await page.locator('.ec-best').count() === 1 && await page.locator('[data-hm-score="0/1"]').count() === 1 && await page.locator('[data-hm-showlab="lv"]').count() === 1, 'the move: the before/after/best table with the moved numbers marked, the best move explained, the score');
+  await page.locator('[data-hm-case="pe"]').click(); await page.waitForSelector('[data-hm-open="pe"]');
+  await page.locator('[data-hm-a1="obstructive"]').click(); await page.waitForSelector('[data-hm-v1="best"]');
+  await page.locator('[data-hm-a2="lysis"]').click(); await page.waitForSelector('[data-hm-v2="best"]');
+  ok(await page.locator('[data-hm-score="1/2"]').count() === 1 && await page.locator('[data-hm-case="pe"].ec-done.best').count() === 1 && await page.locator('[data-hm-after] th').count() >= 12 && await page.locator('[data-hm-after] thead th').count() === 3, 'the best move: two columns only, the tab marked');
+  await page.locator('[data-hm-showlab="pe"]').click(); await page.waitForSelector('[data-hemolab] [data-hm-sig="obstructive"]');
+  ok((await hmCell('PVR')) > 5 && /Sudden collapse/.test(await txt('[data-hm-note]')), '“Open in the lab” loads the scenario’s patient');
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'hemo_cases' })); await page.waitForSelector('[data-hemocases]');
+  ok(await page.locator('[data-hm-score="1/2"]').count() === 1, 'the answers survive leaving and returning');
 
   // ---- conduction and the ECG
   await page.evaluate(() => window.__pft.setMode('learn', { topic: 'ecglab' })); await page.waitForSelector('.ecg-lab[data-ecg="normal"]');
@@ -569,7 +636,7 @@ const uniqN = (a) => a.filter((x, i) => a.indexOf(x) === i).length;
 
   // ---- lung nodules and screening
   await page.evaluate(() => window.__pft.setMode('learn', { topic: 'nodules' })); await page.waitForSelector('[data-nod-risk]');
-  ok(await page.locator('#learn-cat').inputValue() === 'cancer' && await page.locator('#learn-cat option').count() === 6, 'a fourth Learn area: lung nodules & cancer screening');
+  ok(await page.locator('#learn-cat').inputValue() === 'cancer' && await page.locator('#learn-cat option').count() === 7, 'a fourth Learn area: lung nodules & cancer screening');
   ok(/Fleischner/.test(await txt('.learn-body')) && /Lung-RADS/.test(await txt('.learn-body')) && /Brock/.test(await txt('.learn-body')) && await page.locator('.learn-body table').count() >= 4, 'the nodule page carries the Fleischner, Lung-RADS and model tables');
   ok(await page.locator('[data-nod-risk] [data-model]').count() === 3 && /17%/.test(await txt('[data-nod-risk] [data-model="mayo"]')), 'three probability models computed for the default case (Mayo 17%): ' + await txt('[data-nod-risk-out]'));
   await page.locator('[data-nod-risk] [data-nod="size"]').fill('20'); await page.locator('[data-nod-risk] [data-nod="spic"]').check(); await page.waitForTimeout(80);
@@ -696,7 +763,7 @@ const uniqN = (a) => a.filter((x, i) => a.indexOf(x) === i).length;
   // ---- phone: the widgets fit
   await ctx.close();
   const m = await browser.newContext({ viewport: { width: 400, height: 800 }, hasTouch: true, isMobile: true });
-  const mp = await m.newPage(); await mp.goto(FILE); await mp.waitForSelector('#top');
+  const mp = await m.newPage(); await mp.goto(FILE); await mp.waitForSelector('[data-home]'); await mp.evaluate(() => window.__pft.setMode('case')); await mp.waitForSelector('#top');
   for (const t of ['tree', 'stations', 'vq', 'sedation', 'airway']) {
     await mp.evaluate((tt) => window.__pft.setMode('learn', { topic: tt }), t); await mp.waitForSelector('.learn-body[data-topic="' + t + '"]');
     ok(await mp.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1), 'phone: no horizontal overflow on ' + t);

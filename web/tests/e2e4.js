@@ -2,7 +2,7 @@
 // suggested additions (review-only wording), prior-study comparability flags, and the phrase catalog in Learn.
 const { chromium } = require('/opt/npm-tools/node_modules/playwright');
 const path = require('path');
-const FILE = process.env.PFT_URL || ('file://' + path.join(__dirname, '..', 'dist', 'PFT_Interpreter_standalone.html'));
+const FILE = process.env.PFT_URL || ('file://' + path.join(__dirname, '..', 'dist', 'PulmCritDaddy_standalone.html'));
 let fails = 0, passes = 0;
 const openCard = (page, id) => page.evaluate((id) => { const el = document.getElementById(id); if (el && !el.open) el.open = true; }, id);
 async function loadExample(page, i) {
@@ -20,7 +20,7 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
   const errs = [];
   page.on('pageerror', e => errs.push('pageerror: ' + e.message));
   page.on('console', m => { if (m.type() === 'error' && !/fonts\.g|ERR_|Failed to load resource/.test(m.text())) errs.push('console: ' + m.text()); });
-  await page.goto(FILE);
+  await page.goto(FILE); await page.waitForSelector('[data-home]'); await page.evaluate(() => window.__pft.setMode('case'));
   await page.waitForSelector('#top');
 
   // COPD example: suggestions and wording level

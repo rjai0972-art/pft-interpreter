@@ -1,7 +1,7 @@
 /* Round-2 features: (i) pop-ups, Learn, 6MWD trend, look-for tips, case bank, mobile. */
 const { chromium } = require('/opt/npm-tools/node_modules/playwright');
 const path = require('path');
-const FILE = process.env.PFT_URL || ('file://' + path.join(__dirname, '..', 'dist', 'PFT_Interpreter_standalone.html'));
+const FILE = process.env.PFT_URL || ('file://' + path.join(__dirname, '..', 'dist', 'PulmCritDaddy_standalone.html'));
 const SHOTS = path.join(__dirname, '..', 'shots2');
 let fails = 0, passes = 0;
 async function loadExample(page, i, tap) {
@@ -22,7 +22,7 @@ const tickAll = async (pg) => { const keys = await pg.locator('[data-test-on]').
   const errs = [];
   page.on('pageerror', e => errs.push('pageerror: ' + e.message));
   page.on('console', m => { if (m.type() === 'error' && !/fonts\.g|ERR_|Failed to load resource/.test(m.text())) errs.push('console: ' + m.text()); });
-  await page.goto(FILE);
+  await page.goto(FILE); await page.waitForSelector('[data-home]'); await page.evaluate(() => window.__pft.setMode('case'));
   await page.waitForSelector('#top');
 
   /* ---------------- (i) pop-ups ---------------- */
@@ -49,7 +49,7 @@ const tickAll = async (pg) => { const keys = await pg.locator('[data-test-on]').
   await page.keyboard.press('Escape');
   ok(await pop.isHidden(), 'Esc closes');
   await ibTest.click(); await page.waitForTimeout(100);
-  await page.locator('h1').click();
+  await page.locator('header.top').click({ position: { x: 420, y: 12 } });
   ok(await pop.isHidden(), 'outside click closes');
   // keyboard: focus previews, Enter pins and moves focus into the pop-up
   await ibTest.focus(); await page.waitForTimeout(150);
@@ -188,7 +188,7 @@ const tickAll = async (pg) => { const keys = await pg.locator('[data-test-on]').
   await item.locator('.rt[data-rate="n"]').click();
   ok(await item.locator('.rt[data-rate="n"]').getAttribute('aria-pressed') === 'false', 'rating toggles off');
   await page.evaluate((id) => { localStorage.setItem('pft.feedback.v1', JSON.stringify((() => { const o = {}; o[id] = { title: 't', by: { a: 'n', b: 'n', c: 'n' } }; o['__alert'] = { title: 'x', by: { a: 'n', b: 'n', c: 'n', d: 'n' } }; return o; })())); }, nid);
-  await page.reload(); await page.waitForSelector('#top');
+  await page.reload(); await page.waitForSelector('[data-home]'); await page.evaluate(() => window.__pft.setMode('case')); await page.waitForSelector('#top');
   await loadExample(page, 6);
   await page.locator('#headsup').evaluate(e => { e.open = true; });
   ok(await page.locator('#headsup > .hu-item[data-id="' + nid + '"]').count() === 0, 'a note rated not useful three times moves out of the main list');
@@ -284,7 +284,7 @@ const tickAll = async (pg) => { const keys = await pg.locator('[data-test-on]').
   await m.addInitScript(() => { try { localStorage.setItem('pft.wording.v1', JSON.stringify('std')); } catch (e) {} });
   const mp = await m.newPage();
   const merrs = []; mp.on('pageerror', e => merrs.push(e.message));
-  await mp.goto(FILE); await mp.waitForSelector('#top');
+  await mp.goto(FILE); await mp.waitForSelector('[data-home]'); await mp.evaluate(() => window.__pft.setMode('case')); await mp.waitForSelector('#top');
   const ov = async (label) => { const o = await mp.evaluate(() => ({ sw: document.documentElement.scrollWidth, iw: window.innerWidth })); ok(o.sw <= o.iw + 1, 'no horizontal overflow at 400px: ' + label + ' (' + o.sw + ' vs ' + o.iw + ')'); };
   await ov('empty page');
   // spirometry is on the page by default

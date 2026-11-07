@@ -19,7 +19,7 @@ function makeMock(opts) {
       if (src.indexOf("'.ex'") !== -1) return true;
       if (src.indexOf('.interp li') !== -1) return 7;
       if (src.indexOf("'#doc'") !== -1) return true;
-      return { title: 'PFT Interpreter', tiles: 12, storageOk: true, storagePrevious: null, origin: 'pft://app' };
+      return { title: 'PulmCrit Daddy', tiles: 12, storageOk: true, storagePrevious: null, origin: 'pft://app' };
     }
     print(o) { this.printed.push(o); }
     async printToPDF(o) { this.pdfs++; this.pdfOpts = o; return Buffer.from('%PDF-fake'); }
@@ -37,7 +37,7 @@ function makeMock(opts) {
   const sessionListeners = {};
   const electron = {
     app: {
-      name: 'PFT Interpreter', isPackaged: !!opts.packaged, dock: opts.mac ? { setIcon() {} } : undefined,
+      name: 'PulmCrit Daddy', isPackaged: !!opts.packaged, dock: opts.mac ? { setIcon() {} } : undefined,
       getVersion() { return '3.0.0'; }, getPath(n) { return n === 'userData' ? userData : os.tmpdir(); },
       requestSingleInstanceLock() { return opts.noLock ? false : true; },
       quit() { calls.quits++; }, exit(c) { calls.exitCode = c; }, whenReady() { return ready; },

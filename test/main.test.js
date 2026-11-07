@@ -34,7 +34,7 @@ const rq = (u) => ({ url: u });
     const r = await handler(rq('pft://app/index.html'));
     assert.strictEqual(r.status, 200); assert(/text\/html/.test(r.headers.get('content-type')));
     assert(/default-src 'none'/.test(r.headers.get('content-security-policy'))); assert.strictEqual(r.headers.get('cache-control'), 'no-store');
-    const body = await r.text(); assert(/<title>PFT Interpreter<\/title>/.test(body)); assert(body.length > 300000);
+    const body = await r.text(); assert(/<title>PulmCrit Daddy<\/title>/.test(body)); assert(body.length > 300000);
   });
   await t('root path serves the page', async () => { const r = await handler(rq('pft://app/')); assert.strictEqual(r.status, 200); });
   await t('missing file is 404', async () => { const r = await handler(rq('pft://app/nope.js')); assert.strictEqual(r.status, 404); });
@@ -93,7 +93,7 @@ const rq = (u) => ({ url: u });
   await t('mac menu leads with the app menu and has no extra About item', () => {
     const M = loadMain({ platform: 'darwin', mac: true, packaged: true }); M.whenReady();
     return new Promise((r) => setTimeout(r, 20)).then(() => {
-      const tpl = M.calls.menu.template; assert.strictEqual(tpl[0].label, 'PFT Interpreter'); assert(tpl[0].submenu.some((i) => i.role === 'about'));
+      const tpl = M.calls.menu.template; assert.strictEqual(tpl[0].label, 'PulmCrit Daddy'); assert(tpl[0].submenu.some((i) => i.role === 'about'));
       assert(!tpl.find((m) => m.label === 'View').submenu.some((i) => i.role === 'toggleDevTools'), 'no dev tools when packaged');
       assert(!tpl[tpl.length - 1].submenu.some((i) => /About/.test(i.label || '')));
       assert.strictEqual(M.calls.windows[0].options.icon, undefined);

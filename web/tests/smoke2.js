@@ -1,6 +1,6 @@
 const { chromium } = require('/opt/npm-tools/node_modules/playwright');
 const path = require('path');
-const FILE = 'file://' + path.join(__dirname, '..', 'dist', 'PFT_Interpreter_standalone.html');
+const FILE = 'file://' + path.join(__dirname, '..', 'dist', 'PulmCritDaddy_standalone.html');
 const OUT = path.join(__dirname, '..', 'shots2');
 (async () => {
   const browser = await chromium.launch();
@@ -9,7 +9,7 @@ const OUT = path.join(__dirname, '..', 'shots2');
   const errs = [];
   page.on('pageerror', e => errs.push('pageerror: ' + e.message));
   page.on('console', m => { if (m.type() === 'error' && !/fonts\.g|ERR_|Failed to load resource/.test(m.text())) errs.push('console: ' + m.text()); });
-  await page.goto(FILE);
+  await page.goto(FILE); await page.waitForSelector('[data-home]'); await page.evaluate(() => window.__pft.setMode('case'));
   await page.waitForSelector('.tgrid');
   await page.screenshot({ path: OUT + '/a1_tests.png' });
   // info button on a test

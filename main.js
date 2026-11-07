@@ -1,5 +1,5 @@
 'use strict';
-/* PFT Interpreter desktop shell.
+/* PulmCrit Daddy desktop shell.
    The whole app is one offline page (app/index.html). This file only gives it a window, a stable address for its
    stored data, a menu, printing and a few guard rails. Nothing here talks to the network. */
 const { app, BrowserWindow, Menu, shell, dialog, protocol, session, nativeTheme, screen } = require('electron');
@@ -149,10 +149,11 @@ function showStorageInfo() {
 function showAbout() {
   dialog.showMessageBox(win || undefined, {
     type: 'info',
-    title: 'About PFT Interpreter',
-    message: 'PFT Interpreter ' + app.getVersion(),
-    detail: 'Pulmonary function test interpretation using the ERS/ATS 2022 z-score and lower-limit-of-normal approach, ' +
-      'with Annals ATS 2025 phrasing and GLI reference equations.\n\nRuns fully offline.',
+    title: 'About PulmCrit Daddy',
+    message: 'PulmCrit Daddy ' + app.getVersion(),
+    detail: 'Pulmonary and critical care, in one place: PFT interpretation (ERS/ATS 2022 z-score / LLN, Annals ATS 2025 phrasing, ' +
+      'GLI reference equations), a Learn section with anatomy, physiology, bronchoscopy, mechanical ventilation, ECMO, haemodynamics, ' +
+      'the ECG and lung nodules, and interactive labs and scenarios.\n\nRuns fully offline. Formerly PFT Interpreter.',
     buttons: ['OK']
   }).catch(function () { /* ignore */ });
 }
@@ -174,7 +175,7 @@ function buildMenu() {
   template.push({ label: 'View', submenu: view });
   template.push({ role: 'windowMenu' });
   const help = [{ label: 'Where is my data kept?', click: showStorageInfo }];
-  if (!IS_MAC) help.push({ type: 'separator' }, { label: 'About PFT Interpreter', click: showAbout });
+  if (!IS_MAC) help.push({ type: 'separator' }, { label: 'About PulmCrit Daddy', click: showAbout });
   template.push({ role: 'help', submenu: help });
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 }
@@ -197,6 +198,7 @@ function runSmoke(w) {
       const wc = w.webContents;
       out.url = wc.getURL();
       out.page = await wc.executeJavaScript('(function(){' +
+        "try{if(window.__pft&&window.__pft.setMode)window.__pft.setMode('case');}catch(e){}" +   // the app opens on its home page; the checks below look at the interpreter
         "var r={title:document.title,h1:(document.querySelector('h1')||{}).textContent||'',tiles:document.querySelectorAll('.tgrid > *').length," +
         "origin:location.origin,secureContext:window.isSecureContext,engine:typeof window.PFT,education:typeof window.PFT_EDU};" +
         "try{var k='pft.smoke',prev=localStorage.getItem(k);localStorage.setItem(k,String(Date.now()));r.storagePrevious=prev;r.storageOk=true;}" +
@@ -224,7 +226,7 @@ function createWindow() {
   const st = loadWindowState();
   const opts = {
     width: st.width, height: st.height, minWidth: 420, minHeight: 520, show: false,
-    title: 'PFT Interpreter',
+    title: 'PulmCrit Daddy',
     backgroundColor: nativeTheme.shouldUseDarkColors ? '#0D171C' : '#EDF1F2',
     webPreferences: {
       contextIsolation: true, nodeIntegration: false, sandbox: true, spellcheck: false,
@@ -244,7 +246,7 @@ function createWindow() {
     if (!isAppUrl(url)) { event.preventDefault(); openExternalSafe(url); }
   });
   win.webContents.on('did-fail-load', function (_e, code, desc, url, isMainFrame) {
-    if (isMainFrame && code !== -3) dialog.showErrorBox('PFT Interpreter could not load', desc + ' (' + code + ')\n' + url);
+    if (isMainFrame && code !== -3) dialog.showErrorBox('PulmCrit Daddy could not load', desc + ' (' + code + ')\n' + url);
   });
   if (SMOKE_OUT) runSmoke(win);
   win.loadURL(START_URL);
@@ -262,12 +264,25 @@ function hardenSession() {
   });
 }
 
+/* The app was called "PFT Interpreter" until version 8: computers that installed it before keep their case bank in a
+   folder of that name. Carry the folder over to the new name (or keep using it) so nothing is lost. Must run before ready. */
+function migrateUserData() {
+  try {
+    if (typeof app.setPath !== 'function' || typeof app.getPath !== 'function') return;
+    const base = app.getPath('appData');
+    if (!base) return;
+    const oldDir = path.join(base, 'PFT Interpreter'), newDir = path.join(base, 'PulmCrit Daddy');
+    if (fs.existsSync(oldDir) && !fs.existsSync(newDir)) {
+      try { fs.renameSync(oldDir, newDir); } catch (e) { app.setPath('userData', oldDir); }
+    }
+  } catch (e) { /* keep the default location */ }
+}
 function start() {
   protocol.handle(SCHEME, serveApp);
   hardenSession();
   app.setAboutPanelOptions({
-    applicationName: 'PFT Interpreter', applicationVersion: app.getVersion(), version: '',
-    copyright: 'ERS/ATS 2022 z-score / LLN interpretation. Runs fully offline.'
+    applicationName: 'PulmCrit Daddy', applicationVersion: app.getVersion(), version: '',
+    copyright: 'Pulmonary and critical care: interpret, learn, simulate. Runs fully offline.'
   });
   if (IS_MAC && app.dock && !app.isPackaged && fs.existsSync(path.join(APP_DIR, 'icon.png'))) {
     try { app.dock.setIcon(path.join(APP_DIR, 'icon.png')); } catch (e) { /* development nicety only */ }
@@ -284,6 +299,7 @@ if (!app.requestSingleInstanceLock()) {
     if (win && !win.isDestroyed()) { if (win.isMinimized()) win.restore(); win.focus(); }
   });
   app.on('window-all-closed', function () { if (!IS_MAC) app.quit(); });
+  migrateUserData();
   app.whenReady().then(start);
 }
 

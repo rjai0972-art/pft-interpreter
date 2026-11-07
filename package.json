@@ -1,9 +1,9 @@
 {
   "name": "pft-interpreter",
-  "productName": "PFT Interpreter",
-  "version": "7.11.0",
-  "description": "Pulmonary function test interpretation (ERS/ATS 2022, z-score / LLN) with Learn pages, 6MWD trend and a local case bank.",
-  "author": "PFT Interpreter",
+  "productName": "PulmCrit Daddy",
+  "version": "8.0.0",
+  "description": "PulmCrit Daddy: PFT interpretation (ERS/ATS 2022, z-score / LLN), a Learn section (anatomy, physiology, bronchoscopy, ventilation, ECMO, haemodynamics, ECG, nodules) with interactive labs and scenarios, and a local case bank. Formerly PFT Interpreter.",
+  "author": "PulmCrit Daddy",
   "license": "UNLICENSED",
   "private": true,
   "main": "main.js",
@@ -20,8 +20,8 @@
   },
   "build": {
     "appId": "app.pftinterpreter.desktop",
-    "productName": "PFT Interpreter",
-    "copyright": "PFT Interpreter",
+    "productName": "PulmCrit Daddy",
+    "copyright": "PulmCrit Daddy",
     "directories": {
       "output": "dist",
       "buildResources": "build"
@@ -39,7 +39,7 @@
       "identity": null,
       "hardenedRuntime": false,
       "gatekeeperAssess": false,
-      "artifactName": "PFT-Interpreter-${version}-mac-${arch}.${ext}",
+      "artifactName": "PulmCrit-Daddy-${version}-mac-${arch}.${ext}",
       "target": [
         {
           "target": "dmg",
@@ -58,7 +58,7 @@
       ]
     },
     "dmg": {
-      "title": "PFT Interpreter ${version}"
+      "title": "PulmCrit Daddy ${version}"
     },
     "win": {
       "icon": "build/icon.png",
@@ -84,10 +84,10 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "deleteAppDataOnUninstall": false,
-      "artifactName": "PFT-Interpreter-Setup-${version}-win-${arch}.${ext}"
+      "artifactName": "PulmCrit-Daddy-Setup-${version}-win-${arch}.${ext}"
     },
     "portable": {
-      "artifactName": "PFT-Interpreter-Portable-${version}-win-${arch}.${ext}"
+      "artifactName": "PulmCrit-Daddy-Portable-${version}-win-${arch}.${ext}"
     }
   }
 }

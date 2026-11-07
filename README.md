@@ -1,4 +1,4 @@
-# PFT Interpreter: desktop app for Windows and Mac
+# PulmCrit Daddy: desktop app for Windows and Mac
 
 The same interpreter you have been using in the browser (ERS/ATS 2022, z-score / LLN, Learn pages, 6MWD trend, case bank),
 in its own window. It runs fully offline and never contacts the internet. Your case bank stays on the computer it was saved on.
@@ -29,7 +29,7 @@ The page runs entirely in the visitor's browser. It stores nothing on GitHub and
    paste in the contents of `build-on-github.yml` from this folder, and commit.
 3. Open the **Actions** tab, choose **Build desktop apps**, then **Run workflow**.
 4. After about 10 minutes the run turns green and the repository's front page shows a new entry under **Releases** (right-hand side).
-   Open it and download the files you need, for example `PFT-Interpreter-3.0.0-mac-arm64.dmg` and `PFT-Interpreter-Setup-3.0.0-win-x64.exe`.
+   Open it and download the files you need, for example `PulmCrit-Daddy-3.0.0-mac-arm64.dmg` and `PulmCrit-Daddy-Setup-3.0.0-win-x64.exe`.
    The release notes also hold the build machines' self-test of each app (it launches the built app, checks it loads, stores data and
    blocks network access, and prints a PDF).
 
@@ -47,26 +47,26 @@ The Mac app has to be built on a Mac (or on GitHub), and the Windows app on Wind
 ## Step 2. Install
 
 **Windows.** Two files come out. Use whichever suits the computer.
-- `PFT-Interpreter-Setup-...exe` installs for your own user account only, so it does not need administrator rights. It adds Start menu and desktop shortcuts.
-- `PFT-Interpreter-Portable-...exe` is a single file you can run from anywhere, including a USB drive. Nothing is installed.
+- `PulmCrit-Daddy-Setup-...exe` installs for your own user account only, so it does not need administrator rights. It adds Start menu and desktop shortcuts.
+- `PulmCrit-Daddy-Portable-...exe` is a single file you can run from anywhere, including a USB drive. Nothing is installed.
 
 The first time, Windows SmartScreen may say "Windows protected your PC" because the app is not code-signed. Choose **More info**, then **Run anyway**.
 
-**Mac.** Open the `.dmg` and drag **PFT Interpreter** into **Applications**.
+**Mac.** Open the `.dmg` and drag **PulmCrit Daddy** into **Applications**.
 - Choose `...-mac-arm64.dmg` for Macs with Apple silicon (M1 or later) and `...-mac-x64.dmg` for Intel Macs. Apple menu > About This Mac shows which you have.
 - The app is not notarized by Apple (that needs a paid Apple developer account), so the first launch is blocked. Fix it once.
   On macOS 15 (Sequoia) and later: double-click the app, click **Done** on the warning, then open **System Settings > Privacy & Security**,
-  scroll down and click **Open Anyway** next to PFT Interpreter, and confirm. On macOS 14 and earlier: right-click the app, choose **Open**, then **Open** again.
+  scroll down and click **Open Anyway** next to PulmCrit Daddy, and confirm. On macOS 14 and earlier: right-click the app, choose **Open**, then **Open** again.
 - If macOS says the app "is damaged", run this once in Terminal and open it again:
-  `xattr -cr "/Applications/PFT Interpreter.app"`
+  `xattr -cr "/Applications/PulmCrit Daddy.app"`
 
 Hospital or other managed computers may block unsigned installers. In that case the portable Windows file may still run,
-and the single-file browser version (`PFT_Interpreter_standalone.html`) always works.
+and the single-file browser version (`PulmCritDaddy_standalone.html`) always works.
 
 ## Your data
 
 - The case bank, reviews, heads-up ratings and window size are stored on this computer in the app's data folder
-  (Mac: `~/Library/Application Support/PFT Interpreter`, Windows: `%APPDATA%\PFT Interpreter`).
+  (Mac: `~/Library/Application Support/PulmCrit Daddy`, Windows: `%APPDATA%\PulmCrit Daddy`).
 - Uninstalling does not delete it. Installing a newer version over the old one keeps it.
 - It is separate from the browser version: cases saved in the browser are not visible here. In the browser use Case bank > Export, then here use Case bank > Import.
 - Back up with Case bank > Export now and then. Do not type patient identifiers into free-text fields.
@@ -81,7 +81,7 @@ and the single-file browser version (`PFT_Interpreter_standalone.html`) always w
 - Code signing is optional and not set up. For Windows add a signing certificate to the build; for Mac add an Apple Developer ID and notarization.
   Until then the first-launch steps above are needed.
 
-## How the reading is built (version 7.11)
+## How the reading is built (version 8.0)
 
 The rules layer computes every measurement state before any wording is chosen (ERS/ATS 2022 z-scores and the LLN;
 a reviewed adult phrase catalog anchored to the ERS/ATS 2022, ATS/ERS 2019, ERS/ATS 2023, ERS/ATS 2017, ERS 2019 and
@@ -135,7 +135,7 @@ report builds on the right as values are entered (below the form on narrower scr
 optional wording, differentials, prompts and the heads-up list beneath it. Two themes, linen and charcoal, in neutral
 tones.
 
-Learn has five areas, chosen from a dropdown above the topic list. "PFT interpretation" is the reading-room curriculum
+The app opens on a home page: a tile for each area (Interpret, the case bank, and every Learn area) with its topics and the labs as chips, a resume link to the page last visited, and the version. Learn has seven areas, chosen from a dropdown above the topic list. "PFT interpretation" is the reading-room curriculum
 (the logic, each test, reference equations, change over time, the phrase catalog and worked examples). "Anatomy,
 physiology & bronchoscopy" runs like a course and opens with a start page that maps it. Anatomy first: the lungs
 (lobes, fissures, the hilum and RALS, the pleura and where a needle is safe, the diaphragm and its openings, the two
@@ -269,6 +269,25 @@ for the circuit and the patient, a console with the pressures and alarms, gas pa
 and in the patient, twelve presets); and fourteen bedside troubleshooting scenarios (chatter, recirculation, high-output
 hypoxaemia, a failing membrane, air in the line, Harlequin, LV distension, the cold leg, VA and VV weaning, bleeding, a
 stopped pump, haemolysis, referral) with four options each, a verdict with the physiology, the sequence the team would
-follow, and a button that loads the problem and then the fix into the lab. `extras/` holds a reworked Anki deck
+follow, and a button that loads the problem and then the fix into the lab. Inside the lab, ten guided scenarios go the
+other way round: a patient's presentation, the gases the lab computes from that state, and the question of the next best
+step (recirculation, chatter, a hyperdynamic patient, a failing membrane, a CO2 problem, Harlequin, LV distension, the
+cold leg, VA and VV weaning), several steps deep; the move chosen actually turns the dials — the circuit, the console
+and the gas panels answer, a before/after table marks what moved, and a wrong turn can be undone and the best move
+applied instead. "Haemodynamics & the right heart" is the seventh area: pressure, flow and resistance (Guyton's venous
+return, Ohm's law for the two circulations), the pulmonary artery catheter (ports, the route, each chamber's waveform and
+what the wedge really measures, the waves and their diseases, thermodilution and Fick, the evidence), preload,
+afterload, contractility and rate (the pressure–volume loop, Ees/Ea coupling), the derived numbers with their thresholds
+(CI, SVR, PVR, TPG, DPG, PAPi, CPO, RAP:PAOP, SvO2, DO2/VO2), the pulmonary circulation and the ESC/ERS 2022 PH
+classes, shock by the numbers (the signatures of each type, Forrester, SCAI), the right ventricle (RV–PA coupling,
+TAPSE, TAPSE/PASP, RV:LV, RV infarct, massive PE, the vasoactive drugs table), echo as the haemodynamic monitor; a
+Swan–Ganz lab — a model of the whole circulation (venous return, two ventricles with end-diastolic and end-systolic
+relations, the pericardium, the valves, the two vascular beds, the devices) drawn as a heart with the catheter threaded
+from the jugular through the right heart into a branch of the pulmonary artery, with pressure tags on every chamber, a
+bedside monitor that plays the selected port's waveform with the ECG and the respiratory swing, sliders for the heart,
+the circulation, the valves, the blood and the ventilator, treatment buttons that apply what each drug or device does,
+fifteen presets, and a panel that computes everything the sheet would and names the signature; and eleven bedside shock
+scenarios (name the shock, see the catheter numbers, choose the first move, and watch the model recompute the numbers
+after your move and after the best one). `extras/` holds a reworked Anki deck
 (`ECMO_Anki_Deck_v2.apkg`, 103 notes / 237 cards, cloze and basic, tagged by topic, built by `build_ecmo_anki.py` with no
 dependencies) and a bedside reference PDF generated from the same content (`build_ecmo_reference.js`).

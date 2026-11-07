@@ -1,13 +1,13 @@
 const { chromium } = require('/opt/npm-tools/node_modules/playwright');
 const path = require('path');
-const FILE = 'file://' + path.join(__dirname, '..', 'dist', 'PFT_Interpreter_standalone.html');
+const FILE = 'file://' + path.join(__dirname, '..', 'dist', 'PulmCritDaddy_standalone.html');
 const OUT = path.join(__dirname, '..', 'shots3');
 (async () => {
   const browser = await chromium.launch();
   for (const scheme of ['light', 'dark']) {
     const ctx = await browser.newContext({ viewport: { width: 1100, height: 900 }, colorScheme: scheme });
     const page = await ctx.newPage();
-    await page.goto(FILE); await page.waitForSelector('.tgrid');
+    await page.goto(FILE); await page.waitForSelector('[data-home]'); await page.evaluate(() => window.__pft.setMode('case')); await page.waitForSelector('.tgrid');
     const names = await page.evaluate(() => window.PFT_EXAMPLES.EXAMPLES.map(e => e.name));
     await page.locator('.ex').first().click();
     await page.waitForSelector('#doc');

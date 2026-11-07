@@ -1566,3 +1566,129 @@ body.has-pop { overflow: hidden; }
 .ec-labbtns { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
 .ec-score { margin: 0; font-size: 12.5px; color: var(--muted); }
 .ec-tags { margin: 0; }
+/* ---- v8.0: the home page */
+.brand { cursor: pointer; border-radius: 8px; } .brand:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.home { display: grid; gap: 18px; min-width: 0; }
+.home-hero { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); align-items: center; padding: 22px 22px 18px; border: 1px solid var(--line); border-radius: 16px; background: linear-gradient(135deg, var(--surface) 0%, var(--accent-soft) 100%); }
+@media (min-width: 760px) { .home-hero { grid-template-columns: minmax(0, 1.4fr) minmax(220px, 0.8fr); } }
+.home-hero h2 { font-family: var(--font-doc); font-size: clamp(28px, 4.5vw, 42px); font-weight: 600; letter-spacing: -0.02em; line-height: 1.05; margin: 2px 0 10px; text-wrap: balance; }
+.home-lead { font-size: 15px; max-width: 60ch; color: var(--ink-2); line-height: 1.5; }
+.home-cta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.home-hero-art { min-width: 0; }
+.home-art { width: 100%; max-width: 320px; height: auto; display: block; margin: 0 auto; }
+.ha-trachea { fill: none; stroke: var(--accent); stroke-width: 4; stroke-linecap: round; }
+.ha-lung { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2; transform-origin: 118px 58px; animation: ha-breathe 4.2s ease-in-out infinite; }
+@keyframes ha-breathe { 0%, 100% { transform: scale(0.96); } 45% { transform: scale(1.04); } }
+.ha-heart { fill: #d9534f; stroke: #a33a30; stroke-width: 1.5; transform-origin: 118px 102px; animation: ha-beat 0.9s ease-in-out infinite; }
+@keyframes ha-beat { 0%, 60%, 100% { transform: scale(1); } 20% { transform: scale(1.12); } 40% { transform: scale(1.04); } }
+.ha-trace { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 340; stroke-dashoffset: 340; animation: ha-draw 3s linear infinite; }
+@keyframes ha-draw { to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) { .ha-lung, .ha-heart, .ha-trace { animation: none; stroke-dashoffset: 0; } }
+.home-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr)); }
+.ht { border: 1px solid var(--line); border-radius: 14px; background: var(--surface); padding: 14px 14px 12px; display: grid; grid-template-columns: minmax(0, 1fr); grid-auto-flow: row; gap: 8px; align-content: start; cursor: pointer; min-width: 0; transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease; position: relative; }
+.ht:hover, .ht:focus-visible { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08); border-color: var(--accent); outline: none; }
+.ht:focus-visible { box-shadow: 0 0 0 3px var(--accent-soft); }
+.ht.tool { background: linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%); }
+.ht > * { grid-column: 1; min-width: 0; }
+.ht-head { display: flex; gap: 12px; align-items: center; }
+.ht-head h3 { font-size: 16px; font-weight: 600; margin: 0; line-height: 1.2; }
+.ht-badge { font-size: 11px; color: var(--muted); letter-spacing: 0.04em; }
+.ht-icon { width: 64px; height: 48px; flex: none; }
+.hi-line { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.hi-axis { fill: none; stroke: var(--line-2, var(--line)); stroke-width: 2; stroke-linecap: round; }
+.hi-fill { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+.hi-dot { fill: var(--accent); }
+.hi-anim, .hi-anim2 { stroke-dasharray: 200; stroke-dashoffset: 0; }
+.ht:hover .hi-anim { animation: hi-draw 1.1s ease-out; } .ht:hover .hi-anim2 { animation: hi-draw 1.1s ease-out 0.2s; }
+@keyframes hi-draw { from { stroke-dashoffset: 200; } to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) { .ht:hover .hi-anim, .ht:hover .hi-anim2 { animation: none; } }
+.ht-sub { margin: 0; font-size: 13px; color: var(--ink-2); line-height: 1.45; }
+.ht-links { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.ht-link { font-size: 12.5px; }
+.ht-go { font-size: 12.5px; color: var(--accent); font-weight: 600; margin-top: auto; }
+.home-labs h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin: 0 0 8px; }
+.home-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.home-chip { border: 1px solid var(--line); border-radius: 999px; padding: 5px 11px; background: var(--surface); font: inherit; font-size: 12.5px; cursor: pointer; color: var(--ink); }
+.home-chip:hover { border-color: var(--accent); color: var(--accent); }
+.home-foot { margin: 0; }
+
+/* ---- v8.0: haemodynamics — the catheterised heart, the monitor, the lab ---- */
+.hm-heart { width: 100%; max-width: 100%; height: auto; display: block; font-family: inherit; }
+.hm-peri { fill: rgba(200, 170, 130, 0.08); stroke: #b89b74; stroke-width: 3px; stroke-dasharray: 6 4; }
+.hm-peri.tamp { fill: rgba(222, 184, 80, 0.22); stroke: #c29a2b; stroke-dasharray: none; }
+.hm-peri.con { stroke: #7d6a52; stroke-width: 7px; stroke-dasharray: none; }
+.hm-vein { stroke: #4e7fb8; fill: none; stroke-linecap: round; }
+.hm-pa { stroke: #5a8dcf; fill: none; stroke-linecap: round; }
+.hm-pv, .hm-aorta { stroke: #d06a5a; fill: none; stroke-linecap: round; }
+.hm-ch { stroke: #8b3a2f; stroke-width: 2px; transition: d 0.2s; }
+.hm-ra, .hm-rv { fill: #a7c6ea; }
+.hm-la, .hm-lv { fill: #e9a89a; }
+.hm-ch:hover { filter: brightness(1.08); }
+.hm-septum { stroke: #8b3a2f; stroke-width: 6px; fill: none; stroke-linecap: round; }
+.hm-valve { stroke: #5c2a22; stroke-width: 3px; fill: none; stroke-linecap: round; }
+.hm-valve.leak { stroke: #c0392b; stroke-dasharray: 3 3; }
+.hm-valve.shut { stroke-width: 5px; }
+.hm-cath-shadow { fill: none; stroke: rgba(0, 0, 0, 0.18); stroke-width: 6px; stroke-linecap: round; stroke-linejoin: round; }
+.hm-cath { fill: none; stroke: #f4d35e; stroke-width: 3px; stroke-linecap: round; stroke-linejoin: round; }
+.hm-balloon { fill: #f4d35e; stroke: #8a6d00; stroke-width: 1.5px; }
+.hm-balloon.up { fill: #fff2a8; }
+.hm-artline { stroke: #d06a5a; stroke-width: 2px; stroke-dasharray: 4 3; fill: none; }
+.hm-artline.on { stroke: #f4d35e; stroke-width: 3px; stroke-dasharray: none; }
+.hm-iabp { fill: rgba(244, 211, 94, 0.6); stroke: #8a6d00; stroke-width: 1.5px; }
+.hm-impella { fill: none; stroke: #f4d35e; stroke-width: 3px; stroke-dasharray: 2 3; }
+.hm-ecmo-drain { fill: none; stroke: #4e7fb8; stroke-width: 7px; stroke-linecap: round; }
+.hm-ecmo-ret { fill: none; stroke: #d06a5a; stroke-width: 7px; stroke-linecap: round; }
+.hm-lbl { font-size: 15px; font-weight: 700; fill: #3a2a24; pointer-events: none; }
+.hm-small { font-size: 10.5px; font-weight: 600; fill: var(--muted); pointer-events: none; }
+.hm-small.warn { fill: #c0392b; }
+.hm-tag { cursor: pointer; }
+.hm-tag rect { fill: var(--surface); stroke: var(--line-strong); stroke-width: 1px; }
+.hm-tag text { font-size: 11.5px; font-weight: 600; fill: var(--ink); font-variant-numeric: tabular-nums; }
+.hm-tag.on rect { fill: #f4d35e; stroke: #8a6d00; }
+.hm-tag.on text { fill: #2a2000; }
+.hm-tag:hover rect { stroke: var(--accent); }
+.hm-heartbox { background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 6px; min-width: 0; }
+.hm-centre { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); min-width: 0; }
+.hm-screen { padding: 8px; }
+.hm-canvas { aspect-ratio: 600 / 252; }
+.hm-pos { margin-bottom: 6px; }
+.hm-pos .ch { display: grid; gap: 1px; text-align: center; padding: 5px 8px; }
+.hm-pos .ch b { font-size: 12px; }
+.hm-posv { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.hm-pos .ch[aria-selected="true"] .hm-posv { color: inherit; }
+.hm-controls { align-content: start; }
+.hm-treat { display: flex; flex-wrap: wrap; gap: 5px; }
+.hm-tx { border: 1px solid var(--line); border-radius: 999px; padding: 4px 9px; background: var(--surface); font: inherit; font-size: 12px; cursor: pointer; color: var(--ink); }
+.hm-tx:hover { border-color: var(--accent); color: var(--accent); }
+.hm-devices { display: flex; flex-wrap: wrap; gap: 6px; }
+.hm-devices .btn.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+.hm-sig { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--surface-2); }
+.hm-sig h5 { margin: 0 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.hm-sig-t { margin: 0 0 4px; font-size: 15px; }
+.hm-sig-q { margin: 4px 0; font-size: 13px; }
+.hm-flags { margin: 6px 0 0; padding-left: 18px; font-size: 12.5px; line-height: 1.45; }
+.hm-flags li { margin: 2px 0; }
+.hm-swan-grid { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (min-width: 820px) { .hm-swan-grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); } }
+.hm-traces { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); margin-top: 10px; }
+.hm-tracefig { margin: 0; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); padding: 4px; min-width: 0; }
+.hm-trace { width: 100%; height: auto; display: block; }
+.hm-tracepath { fill: none; stroke-width: 2px; }
+.hm-tracepath.ra { stroke: #3d7fd1; } .hm-tracepath.rv { stroke: #3d7fd1; } .hm-tracepath.pa { stroke: #c9962a; } .hm-tracepath.paop { stroke: #8b5fd1; }
+.hm-ecgpath { fill: none; stroke: #4d9d5c; stroke-width: 1.2px; }
+.hm-q { display: grid; gap: 8px; margin-top: 10px; }
+.hm-reveal { margin-top: 10px; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--surface-2); }
+.hm-reveal h5 { margin: 0 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.hm-numrow { display: grid; gap: 6px; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); }
+.hm-after td.hm-moved { font-weight: 700; color: var(--accent); }
+.hm-wave { font-size: 9.5px; font-weight: 700; fill: var(--ink); }
+
+/* ---- v8.0: guided scenarios inside the ECMO lab ---- */
+.ec-guide { border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); padding: 12px 14px; margin-bottom: 12px; display: grid; gap: 10px; min-width: 0; }
+.ec-guide-head { display: grid; gap: 6px 14px; grid-template-columns: minmax(0, 1fr); align-items: end; }
+@media (min-width: 760px) { .ec-guide-head { grid-template-columns: minmax(0, 420px) minmax(0, 1fr); } }
+.ec-look { margin: 0; font-size: 13px; line-height: 1.5; color: var(--muted); }
+.ec-gstep { display: grid; gap: 8px; border-top: 1px dashed var(--line); padding-top: 10px; }
+.ec-gresolve { border-top: 1px dashed var(--line); padding-top: 10px; }
+.ec-gdone { border-top: 1px dashed var(--line); padding-top: 10px; display: grid; gap: 8px; }
+.ec-gdone p { margin: 0; }

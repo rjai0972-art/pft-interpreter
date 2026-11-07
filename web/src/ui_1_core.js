@@ -30,7 +30,7 @@ function unitPrefs() { const u = prefGet('pft.units.v1'); const out = {}; if (u 
 let S = freshState();
 let R = P.interpret(S);
 let step = 'ctx';            // the section the page was last asked to show (for scrolling and the running report)
-let mode = 'case';           // 'case' | 'learn' | 'bank'
+let mode = 'home';           // 'home' | 'case' | 'learn' | 'bank'
 let learnTopic = 'basics', learnTerm = '';
 let widgets = [];            // paint callbacks for the currently rendered step
 let toastTimer = null, newTimer = null, newArmed = false;
@@ -162,7 +162,7 @@ function renderViews() {
 }
 function setMode(m, opts) {
   mode = m; opts = opts || {};
-  if (m === 'learn') { if (opts.topic) learnTopic = opts.topic; learnTerm = opts.term || ''; }
+  if (m === 'learn') { if (opts.topic) learnTopic = opts.topic; learnTerm = opts.term || ''; rememberVisit(learnTopic); }
   render(); window.scrollTo(0, 0);
   const mm = $('main'); if (mm) mm.focus({ preventScroll: true });
   if (m === 'learn' && learnTerm) { const el = document.getElementById('term-' + learnTerm); if (el) { if (el.tagName === 'DETAILS') el.open = true; el.scrollIntoView({ block: 'start' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1600); } }
@@ -1209,7 +1209,8 @@ function render() {
   closePop();
   widgets = [];
   const main = $('main'); main.textContent = '';
-  if (mode === 'learn') stepLearn();
+  if (mode === 'home') stepHome();
+  else if (mode === 'learn') stepLearn();
   else if (mode === 'bank') stepBank();
   else {
     main.appendChild(topCard());
@@ -1243,6 +1244,8 @@ function wireHeader() {
     const cur = SECKEY[step] || step;
     document.querySelectorAll('#pv .sec').forEach(el => el.classList.toggle('cur', el.getAttribute('data-sec') === cur));
   });
+  const brand = document.querySelector('.brand');
+  if (brand) { brand.setAttribute('role', 'link'); brand.setAttribute('tabindex', '0'); brand.title = 'Home'; brand.addEventListener('click', () => setMode('home')); brand.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMode('home'); } }); }
   document.querySelectorAll('.vw').forEach(v => v.addEventListener('click', () => {
     const m = v.getAttribute('data-view');
     if (m === 'case') { mode = 'case'; render(); window.scrollTo(0, 0); const mm = $('main'); if (mm) mm.focus({ preventScroll: true }); }

@@ -1,12 +1,12 @@
-# PFT Interpreter — web source
+# PulmCrit Daddy — web source
 
 The app is one self-contained HTML page (`vendor/three.min.js`, three.js r147 under the MIT license, is inlined for the 3D airway model in Learn). `src/` holds the engine (four parts plus the generated phrase catalog), the
-interface, the glossary, the Learn text (`education.js` for the PFT area, `anatomy.js` for the anatomy and bronchoscopy area with the bronchial tree, its 3D skeleton, the nodal stations and the segment table behind `ui_4b_anatomy.js` and `ui_4c_tree3d.js`, `ecg.js` for the conduction model and its scenarios behind `ui_4d_ecg.js`, `nodules.js` for the nodule guidelines, the probability models and the advisor behind `ui_4e_nodules.js`) and the worked examples; `build.js` assembles `dist/PFT_Interpreter_standalone.html`
+interface, the glossary, the Learn text (`education.js` for the PFT area, `anatomy.js` for the anatomy and bronchoscopy area with the bronchial tree, its 3D skeleton, the nodal stations and the segment table behind `ui_4b_anatomy.js` and `ui_4c_tree3d.js`, `ecg.js` for the conduction model and its scenarios behind `ui_4d_ecg.js`, `nodules.js` for the nodule guidelines, the probability models and the advisor behind `ui_4e_nodules.js`) and the worked examples; `build.js` assembles `dist/PulmCritDaddy_standalone.html`
 and `build_desktop.js` copies it to `../app/index.html`, which GitHub Pages serves and the desktop app loads.
 
 ```
 node build_catalog.js   # catalog/pft_phrases.json -> src/engine_1a_catalog.js (run after changing the catalog)
-node build.js           # dist/engine.js, dist/ui.js, dist/PFT_Interpreter_standalone.html
+node build.js           # dist/engine.js, dist/ui.js, dist/PulmCritDaddy_standalone.html
 node build_desktop.js   # ../app/index.html
 node tests/engine.test.js && node tests/catalog.test.js      # engine rules, handoff fixtures
 node tests/e2e6.js; node tests/e2e7.js; node tests/e2e2.js; node tests/e2e3.js; node tests/e2e4.js; node tests/e2e_fuzz.js   # browser (Playwright)
@@ -135,7 +135,29 @@ risk), `alarms`, `PRESETS`/`preset(id)` and `SCENARIOS`. `ui_4i_ecmo.js` draws t
 coloured by saturation, CSS-animated flow and impeller, chatter, clots, the mixing zone, the devices), the configurations
 gallery, the lab (`ECS` state; `ecRefresh` redraws the drawing, the console and the gas panels on any change) and the
 scenarios (`ECS.answers`). `extras/build_ecmo_anki.py` writes the Anki deck straight into the collection.anki2 schema;
-`extras/build_ecmo_reference.js` renders chosen blocks of `ecmo.js` to a PDF with Playwright. The nodule module (`src/nodules.js`, testable in node): `mayo`, `va`, `brock` are the published equations; `vdt` the
+`extras/build_ecmo_reference.js` renders chosen blocks of `ecmo.js` to a PDF with Playwright. `LABCASES` in `ecmo.js` are
+the guided lab scenarios: each has a starting patient and circuit (`p`, `s` over `PATIENT`/`SETTINGS`), the presentation,
+a `look` line, `steps` of four options `[id, label, verdict, reason, do(p, s)]` where `do` mutates the lab state, and a
+closing line; `ecGuide()` in `ui_4i_ecmo.js` renders them above the lab grid (`ECS.guide` holds the case, the step, the
+moves taken with their before/after tables, a snapshot to undo a non-best move, and the per-case results). Haemodynamics
+(`src/hemo.js`, testable in node after physio.js): `PATIENT` (Pms, venous resistance, each ventricle's contractility and
+stiffness, SVR, PVR, MR/TR grades, pericardial pressure, constriction, Hb, VO2, SaO2, BSA, ventilation and PEEP, the
+devices), `run(p)` (an outer bisection on RAP so that venous return (Pms − RAP)/Rv equals what the right heart and a
+circuit carry, an inner bisection on LVEDP so that the left heart passes what the right heart sends, and inside `loop`
+a bisection on MAP against the SVR and on PA systolic against the pulmonary compliance; the ventricles use an
+exponential EDPVR and a linear ESPVR with Ees, dilating as they fail; the pericardium subtracts from the transmural
+filling pressure; MR's regurgitant fraction grows with the pressure the ventricle ejects against; PEEP is read in part
+by the catheter and taken in part from the venous return; Fick for the SvO2) returning pressures, flows, SVR/PVR, TPG,
+DPG, PAPi, CPO, the ratios, the echo surrogates (TAPSE, RV:LV, TAPSE/PASP, LVOT VTI, Ea/Ees), `flags`, `signature`
+(the shock type), `forrester` and the PH class; `trace(o, pos, t)` synthesises the ECG, RA, RV, PA, wedge and arterial
+waveforms for a phase of the cycle (a, c, v waves, x and y descents, lost y in tamponade, dip-and-plateau in
+constriction, big v waves in MR/TR, IABP augmentation) and `breath(p, phase)` the respiratory swing; `INTERVENTIONS`
+(`[id, label, fn, note]`) and `apply(p, id)`; `PRESETS`/`preset(id)`; `SCENARIOS` (preset, story, the diagnosis
+question and the first-move question with verdicts). `ui_4j_hemo.js`: `hmHeartSvg` (the heart with the catheter path
+dashed to the selected port, pressure tags, the devices, chambers scaled by their volumes), `hmDrawMonitor` (a canvas
+sweep of the ECG and the selected port with the breath, pulsus paradoxus on the arterial trace in tamponade),
+`hmControls`/`hmNumbers`, `hemoSwanFig` (the static catheter page with four labelled traces), `hemoLabFig` (`HMS`
+state; `hmRefresh` redraws the heart, the monitor and the numbers) and `hemoCasesFig` (`HMS.cases`). The nodule module (`src/nodules.js`, testable in node): `mayo`, `va`, `brock` are the published equations; `vdt` the
 doubling time; `fleischner(q)` and `lungRads(q)` return the guideline's step for a nodule described by setting, type,
 mean diameter, solid component, status (baseline / new / growing / stable), multiplicity and patient risk.
 

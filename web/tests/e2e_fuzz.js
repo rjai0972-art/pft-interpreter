@@ -1,12 +1,12 @@
 const { chromium } = require('/opt/npm-tools/node_modules/playwright');
 const path = require('path');
-const FILE = process.env.PFT_URL || ('file://' + path.join(__dirname, '..', 'dist', 'PFT_Interpreter_standalone.html'));
+const FILE = process.env.PFT_URL || ('file://' + path.join(__dirname, '..', 'dist', 'PulmCritDaddy_standalone.html'));
 let seed = 12345; const rnd = () => (seed = (seed * 1664525 + 1013904223) % 4294967296) / 4294967296;
 const pick = (a) => a[Math.floor(rnd() * a.length)];
 (async () => {
   const browser = await chromium.launch(); const page = await browser.newPage({ viewport: { width: 1200, height: 900 } });
   const errs = []; page.on('pageerror', e => errs.push(e.message));
-  await page.goto(FILE); await page.waitForSelector('#top');
+  await page.goto(FILE); await page.waitForSelector('[data-home]'); await page.evaluate(() => window.__pft.setMode('case')); await page.waitForSelector('#top');
   let leaks = 0, rounds = 3;
   for (let r = 0; r < rounds; r++) {
     for (const k of await page.locator('[data-test-on]').evaluateAll(els => els.filter(e => !e.checked).map(e => e.getAttribute('data-test-on')))) { await page.locator('details.more-tests').evaluate(e => { e.open = true; }); await page.locator('[data-test-on="' + k + '"]').check(); }

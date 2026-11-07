@@ -3,12 +3,13 @@
    its dials, the console, the gas panels and the alarms) and the troubleshooting scenarios. */
 const EC = window.PFT_ECMO;
 /* the lab's state: the patient, the circuit, the preset note */
-const ECS = { p: null, s: null, out: null, note: '', title: '', answers: {}, open: '' };
+const ECS = { p: null, s: null, out: null, note: '', title: '', answers: {}, open: '', guide: { id: '', step: 0, chosen: [], snap: null, done: false, results: {} } };
+function ecGuideClear() { ECS.guide = Object.assign({}, ECS.guide, { id: '', step: 0, chosen: [], snap: null, done: false }); }
 function ecInit(mode) {
   const pr = EC.preset(mode === 'va' ? 'va_shock' : 'vv_run');
-  ECS.p = pr.p; ECS.s = pr.s; ECS.note = pr.note; ECS.title = pr.title;
+  ECS.p = pr.p; ECS.s = pr.s; ECS.note = pr.note; ECS.title = pr.title; ecGuideClear();
 }
-function ecLoad(id) { const pr = EC.preset(id); if (!pr) return; ECS.p = pr.p; ECS.s = pr.s; ECS.note = pr.note; ECS.title = pr.title; }
+function ecLoad(id) { const pr = EC.preset(id); if (!pr) return; ECS.p = pr.p; ECS.s = pr.s; ECS.note = pr.note; ECS.title = pr.title; ecGuideClear(); }
 function ecCompute() { if (!ECS.s) ecInit('vv'); ECS.p.vco2 = Math.round(ECS.p.vo2 * 0.82); ECS.out = EC.run(ECS.p, ECS.s); return ECS.out; }
 
 /* ---- colours: blood by its saturation, from venous purple to arterial red ---- */
@@ -286,9 +287,87 @@ function ecRefresh() {
   const con = fig.querySelector('[data-ec-conslot]'); if (con) { con.textContent = ''; con.appendChild(ecConsole()); }
   const gas = fig.querySelector('[data-ec-gasslot]'); if (gas) { gas.textContent = ''; gas.appendChild(ecGases()); }
 }
+/* ---- the guided scenarios inside the lab: a presentation, the gases the model makes, the next best step — and the chosen move turns the dials ---- */
+function ecGuideCase() { return EC.LABCASES.filter(c => c.id === ECS.guide.id)[0] || null; }
+function ecGuideLoad(id) {
+  const c = EC.LABCASES.filter(x => x.id === id)[0];
+  ECS.guide = { id: id, step: 0, chosen: [], snap: null, done: false, results: ECS.guide.results || {} };
+  if (!c) return;
+  ECS.p = Object.assign({}, EC.PATIENT, c.p); ECS.s = Object.assign({}, EC.SETTINGS[c.mode], c.s);
+  ECS.title = c.title; ECS.note = c.look;
+}
+function ecSnap() { return { p: Object.assign({}, ECS.p), s: Object.assign({}, ECS.s), out: ECS.out }; }
+function ecGuideKeys(vv) {
+  return vv ? [['Flow', (o) => o.flow.toFixed(1) + ' L/min'], ['Drainage P', (o) => o.pump.pDrain.toFixed(0)], ['ΔP', (o) => o.pump.dP.toFixed(0)], ['Pre-membrane SO2', (o) => Math.round(o.preSat * 100) + '%'], ['Post-membrane PO2', (o) => o.postO2.toFixed(0)], ['PaO2 / SpO2', (o) => o.pao2.toFixed(0) + ' / ' + o.spo2 + '%'], ['PaCO2', (o) => o.paco2.toFixed(0)], ['pH', (o) => o.ph.toFixed(2)], ['SvO2', (o) => Math.round(o.svo2 * 100) + '%'], ['Effective flow', (o) => Math.round(o.flowRatio * 100) + '% of CO'], ['Lactate', (o) => o.lactate]]
+    : [['Flow', (o) => o.flow.toFixed(1) + ' L/min'], ['Drainage P', (o) => o.pump.pDrain.toFixed(0)], ['Pre-membrane SO2', (o) => Math.round(o.preSat * 100) + '%'], ['Post-membrane PO2', (o) => o.postO2.toFixed(0)], ['Right radial PaO2', (o) => o.rrO2.toFixed(0)], ['Femoral PaO2', (o) => o.femO2.toFixed(0)], ['PaCO2 (radial)', (o) => o.paco2RR.toFixed(0)], ['MAP', (o) => String(o.map)], ['Pulse pressure', (o) => String(o.pp)], ['LVEDP', (o) => String(o.lvedp)], ['Aortic valve', (o) => o.avOpens ? 'opens' : 'closed'], ['Limb', (o) => o.limbRisk + ' risk'], ['SvO2', (o) => Math.round(o.svo2 * 100) + '%'], ['Lactate', (o) => o.lactate]];
+}
+function ecGuideApply(c, step, op) {
+  const pp = Object.assign({}, ECS.p), ss = Object.assign({}, ECS.s);
+  op[4](pp, ss); ECS.p = pp; ECS.s = ss; ECS.note = op[1]; ecCompute();
+}
+function ecGuide() {
+  const g = ECS.guide, c = ecGuideCase();
+  const selId = uid('ec');
+  const sel = h('label', { class: 'nod-f', for: selId }, [h('span', { class: 'nod-l', text: 'Guided scenario' }), h('select', { id: selId, 'data-ec-guide': '1', onchange: (e) => { if (e.target.value) { ecGuideLoad(e.target.value); } else { ecGuideClear(); } render(); } },
+    [h('option', { value: '', text: '— free play: turn the dials yourself —' })].concat(EC.LABCASES.map(x => h('option', { value: x.id, selected: x.id === g.id, text: (g.results[x.id] ? (g.results[x.id] === 'best' ? '✓ ' : '• ') : '') + (x.mode === 'vv' ? 'VV · ' : 'VA · ') + x.title }))))]);
+  const done = Object.keys(g.results).length, best = Object.keys(g.results).filter(k => g.results[k] === 'best').length;
+  const score = h('p', { class: 'ec-score', 'data-ec-gscore': best + '/' + done, text: done ? done + ' of ' + EC.LABCASES.length + ' worked, ' + best + ' with every move best' : EC.LABCASES.length + ' guided scenarios: a patient, the gases the lab computes, and the next best step — your choice turns the dials' });
+  if (!c) return h('div', { class: 'ec-guide', 'data-ec-guide-panel': 'free' }, [h('div', { class: 'ec-guide-head' }, [sel, score])]);
+  const VERD = { best: 'Best', reasonable: 'Reasonable', poor: 'Poor', wrong: 'Wrong' };
+  const vv = c.mode === 'vv';
+  const kids = [h('div', { class: 'ec-guide-head' }, [sel, score]),
+    h('p', { class: 'ec-who' }, [h('b', { text: c.title + '. ' }), c.who]),
+    h('p', { class: 'ec-look' }, [h('b', { text: 'Read the lab: ' }), c.look])];
+  // the steps already taken
+  g.chosen.forEach((ch, i) => {
+    const st = c.steps[i], op = st.options.filter(o => o[0] === ch.id)[0], bestOp = st.options.filter(o => o[2] === 'best')[0];
+    kids.push(h('div', { class: 'ec-gstep done', 'data-ec-gstep': String(i) }, [h('p', { class: 'ec-q', text: (i + 1) + ' · ' + st.q }),
+      h('div', { class: 'vs-verdict ' + op[2], 'data-ec-gverdict': op[2] }, [h('b', { text: VERD[op[2]] + ' — ' + op[1] + '. ' }), op[3], op[2] !== 'best' ? h('p', { class: 'ec-best' }, [h('b', { text: 'The best move — ' + bestOp[1] + ': ' }), bestOp[3]]) : null]),
+      ch.table]));
+  });
+  if (g.done) {
+    kids.push(h('div', { class: 'ec-gdone', 'data-ec-gdone': '1' }, [h('p', {}, [h('b', { text: 'Done. ' }), c.done]), h('div', { class: 'ec-labbtns' }, [
+      h('button', { type: 'button', class: 'btn sm', 'data-ec-gnext': '1', text: 'Next scenario →', onclick: () => { const i = EC.LABCASES.indexOf(c); ecGuideLoad(EC.LABCASES[(i + 1) % EC.LABCASES.length].id); render(); } }),
+      h('button', { type: 'button', class: 'lnk', 'data-ec-grestart': '1', text: 'Start this one again', onclick: () => { ecGuideLoad(c.id); render(); } }),
+      h('span', { class: 'fine', text: 'The dials stay where the scenario left them: keep turning them.' })])]));
+  } else {
+    const st = c.steps[g.step], i = g.step;
+    const rot = (EC.LABCASES.indexOf(c) + i) % st.options.length, opts = st.options.slice(rot).concat(st.options.slice(0, rot));
+    const pending = g.snap;   // a move chosen but not yet resolved (not best): show its result and the way forward
+    if (!pending) {
+      kids.push(h('div', { class: 'ec-gstep', 'data-ec-gstep': String(i) }, [h('p', { class: 'ec-q', text: (i + 1) + ' · ' + st.q }),
+        h('div', { class: 'ec-options' }, opts.map(op => h('button', { type: 'button', class: 'ec-opt', 'data-ec-gopt': op[0], onclick: () => {
+          const before = ecSnap(); ecGuideApply(c, st, op);
+          const after = ECS.out, keys = ecGuideKeys(vv);
+          const table = h('div', { class: 'tbl-wrap' }, [h('table', { class: 'edu-tbl hm-after', 'data-ec-gafter': op[2] }, [h('thead', {}, [h('tr', {}, [h('th', { text: '' }), h('th', { text: 'Before' }), h('th', { text: 'After: ' + op[1].split(':')[0].slice(0, 48) })])]),
+            h('tbody', {}, keys.map(k => { const a = k[1](before.out), b = k[1](after); return h('tr', {}, [h('th', { scope: 'row', text: k[0] }), h('td', { text: a }), h('td', { class: a !== b ? 'hm-moved' : '', text: b })]); }))])]);
+          g.chosen.push({ id: op[0], table: table });
+          if (op[2] === 'best') { g.step += 1; if (g.step >= c.steps.length) { g.done = true; g.results[c.id] = g.chosen.every(x => c.steps[g.chosen.indexOf(x)].options.filter(o => o[0] === x.id)[0][2] === 'best') ? 'best' : 'done'; } }
+          else g.snap = before;
+          render();
+        } }, [h('span', { class: 'ec-opt-t', text: op[1] })])))]));
+    } else {
+      const bestOp = st.options.filter(o => o[2] === 'best')[0];
+      kids.push(h('div', { class: 'ec-labbtns ec-gresolve' }, [
+        h('button', { type: 'button', class: 'btn sm', 'data-ec-gbest': '1', text: 'Undo, apply the best move (' + bestOp[1].split(':')[0].slice(0, 40) + ') and continue →', onclick: () => {
+          ECS.p = pending.p; ECS.s = pending.s; ecCompute(); const before = ecSnap(); ecGuideApply(c, st, bestOp);
+          const keys = ecGuideKeys(vv), after = ECS.out;
+          const table = h('div', { class: 'tbl-wrap' }, [h('table', { class: 'edu-tbl hm-after', 'data-ec-gafter': 'best' }, [h('thead', {}, [h('tr', {}, [h('th', { text: '' }), h('th', { text: 'Before' }), h('th', { text: 'After: ' + bestOp[1].split(':')[0].slice(0, 48) })])]),
+            h('tbody', {}, keys.map(k => { const a = k[1](before.out), b = k[1](after); return h('tr', {}, [h('th', { scope: 'row', text: k[0] }), h('td', { text: a }), h('td', { class: a !== b ? 'hm-moved' : '', text: b })]); }))])]);
+          g.chosen[g.chosen.length - 1].bestTable = table;
+          g.chosen[g.chosen.length - 1].table.appendChild(h('p', { class: 'fine', text: 'And after the best move instead:' })); g.chosen[g.chosen.length - 1].table.appendChild(table);
+          g.snap = null; g.step += 1; if (g.step >= c.steps.length) { g.done = true; g.results[c.id] = 'done'; }
+          render();
+        } }),
+        h('span', { class: 'fine', text: 'The lab shows your move’s result now; the best move replaces it when you continue.' })]));
+    }
+  }
+  return h('div', { class: 'ec-guide', 'data-ec-guide-panel': c.id }, kids);
+}
 function ecmoLabFig() {
   ecCompute();
   const fig = h('figure', { class: 'an-fig ec-fig ec-lab', 'data-ecmolab': '1' }, [
+    ecGuide(),
     h('div', { class: 'ec-lab-grid' }, [
       ecControls(),
       h('div', { class: 'ec-draw', 'data-ec-draw': '1' }, [ecSvg(ECS.out, ECS.s, ECS.p)]),

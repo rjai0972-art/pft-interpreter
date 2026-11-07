@@ -1,13 +1,13 @@
 const { chromium } = require('/opt/npm-tools/node_modules/playwright');
 const path = require('path');
-const FILE = 'file://' + path.join(__dirname, '..', 'dist', 'PFT_Interpreter_standalone.html');
+const FILE = 'file://' + path.join(__dirname, '..', 'dist', 'PulmCritDaddy_standalone.html');
 const OUT = path.join(__dirname, '..', 'shots2');
 (async () => {
   const browser = await chromium.launch();
   for (const scheme of ['light', 'dark']) {
     const ctx = await browser.newContext({ viewport: { width: 1100, height: 900 }, colorScheme: scheme });
     const page = await ctx.newPage();
-    await page.goto(FILE); await page.waitForSelector('.tgrid');
+    await page.goto(FILE); await page.waitForSelector('[data-home]'); await page.evaluate(() => window.__pft.setMode('case')); await page.waitForSelector('.tgrid');
     await page.evaluate(() => {
       const st = window.__pft.state;
       st.tests.sixmw = true; st.ctx.date = '2026-10-05'; st.ctx.age = '63'; st.ctx.sex = 'F';

@@ -1,7 +1,7 @@
 // v6 smoke: the single page, screenshots, page errors.
 const { chromium } = require('/opt/npm-tools/node_modules/playwright');
 const path = require('path');
-const FILE = 'file://' + path.join(__dirname, '..', 'dist', 'PFT_Interpreter_standalone.html');
+const FILE = 'file://' + path.join(__dirname, '..', 'dist', 'PulmCritDaddy_standalone.html');
 (async () => {
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: 1380, height: 900 } });
@@ -10,7 +10,7 @@ const FILE = 'file://' + path.join(__dirname, '..', 'dist', 'PFT_Interpreter_sta
   const errs = [];
   page.on('pageerror', e => errs.push('pageerror: ' + e.message));
   page.on('console', m => { if (m.type() === 'error' && !/fonts\.g|ERR_|Failed to load resource/.test(m.text())) errs.push('console: ' + m.text()); });
-  await page.goto(FILE);
+  await page.goto(FILE); await page.waitForSelector('[data-home]'); await page.evaluate(() => window.__pft.setMode('case'));
   await page.waitForSelector('#top');
   await page.screenshot({ path: 'shots/v6_01_empty.png', fullPage: true });
   await page.selectOption('#qs', { label: 'Full PFT' });

@@ -46,7 +46,8 @@
     const target = fd * 673 * 0.72;                                    // a new membrane brings PO2 near 480 on 100% oxygen
     let postO2 = s.sweep <= 0 ? preO2 : preO2 + eff * (target - preO2);
     let cPre = content(p.hb, preO2), cPost = content(p.hb, postO2);
-    const cap = (65 * Math.min(Q, rated)) * (0.25 + 0.75 * fn) * (0.3 + 0.7 * fd);   // mL O2/min the membrane can hand over (adult PMP: ~450 at 7 L/min)
+    const grad = Math.pow(clamp((1 - satOf(preO2)) / 0.35, 0.5, 2.2), 0.7);     // a more desaturated inlet gives the membrane a bigger gradient to work with
+    const cap = (65 * Math.min(Q, rated)) * grad * (0.25 + 0.75 * fn) * (0.3 + 0.7 * fd);   // mL O2/min the membrane can hand over (adult PMP: ~450 at 7 L/min, inlet 65%)
     let transfer = Q * 10 * (cPost - cPre);
     if (transfer > cap) { transfer = cap; cPost = cPre + cap / (10 * Q); postO2 = po2FromContent(p.hb, cPost); }
     // CO2 follows the sweep-to-blood-flow ratio; a clotted membrane clears less
@@ -692,7 +693,7 @@
   ] };
 
   T.ecmo_lab = { title: 'The circuit lab', kicker: 'A patient on the pump: turn the dials and watch the gases at every port', blocks: [
-    { p: 'A model of an adult on VV or VA ECMO. The circuit on the left is the one from the circuit page, with the blood coloured by its saturation; the console shows the flow the pump actually achieves against the drainage, the three pressures and the membrane’s gradient; the gas panels show the blood at the drainage, after the membrane, and in the patient — on VA at the right radial artery and at the femoral artery, because they differ. Change the pump speed, the sweep, the FdO2, the membrane’s condition, the cannulas; change the patient — heart, lungs, haemoglobin, demand, volume — and see which number moves. The presets set up the troubles from the scenarios page.' },
+    { p: 'A model of an adult on VV or VA ECMO. The circuit on the left is the one from the circuit page, with the blood coloured by its saturation; the console shows the flow the pump actually achieves against the drainage, the three pressures and the membrane’s gradient; the gas panels show the blood at the drainage, after the membrane, and in the patient — on VA at the right radial artery and at the femoral artery, because they differ. Change the pump speed, the sweep, the FdO2, the membrane’s condition, the cannulas; change the patient — heart, lungs, haemoglobin, demand, volume — and see which number moves. The presets set up the troubles from the scenarios page. The guided scenarios at the top of the lab go the other way: a patient’s presentation, the gases the lab computes from it, and the question of the next best step — the move you choose turns the dials, the circuit and the gases answer, and a before/after table keeps the score; a wrong turn can be undone and the best move applied instead.' },
     { widget: 'ecmolab' },
     { h: 'The rules the lab plays by', ul: [
       'Pump: the speed asks for a flow (about 1.9 L/min per 1,000 rpm above 1,000); the drainage gives what the cannula and the venous reservoir allow (a 25 Fr cannula about 6 L/min at a CVP of 8); past that the vessel collapses, the flow falls and swings (chatter) and the drainage pressure dives. Return pressure is the return cannula’s resistance × flow (plus the arterial pressure on VA); the membrane’s ΔP rises with flow and with clot.',
@@ -714,6 +715,150 @@
     { title: 'The patient', ids: ['ecmo_select', 'ecmo_daily', 'ecmo_complications', 'ecmo_wean'] },
     { title: 'Practice', ids: ['ecmo_lab', 'ecmo_cases'] }
   ];
-  root.PFT_ECMO = { topics: T, groups: GROUPS, CONFIGS: CONFIGS, DRAIN: DRAIN, RETURN: RETURN, PATIENT: PATIENT, SETTINGS: SETTINGS, PRESETS: PRESETS, preset: preset, SCENARIOS: SCENARIOS, run: run, runVV: runVV, runVA: runVA, pump: pump, membrane: membrane, alarms: alarms, satOf: satOf, po2Of: po2Of, content: content, po2FromContent: po2FromContent, BRANCH: BRANCH };
+  /* ================================================================== the guided lab cases ================================================================== */
+  /* a presentation and the gases the lab computes from the state; each step asks for the next best move and the chosen move actually turns the dials */
+  const LABCASES = [
+    { id: 'lab_recirc', title: 'Hypoxaemic on full flow', mode: 'vv', s: { config: 'ff', recirc: 0.45, rpm: 3500, sweep: 1.5 }, p: { shunt: 0.6 },
+      who: 'Day 1 of VV ECMO for bacterial ARDS, cannulated femoro-femoral in the emergency department at 03:00. Flow 4.8 L/min on 3,500 rpm, sweep 1.5, FdO2 1.0. SpO2 has drifted from 92% to 86% over the morning; the drainage line is bright red. Ventilator at rest settings, PEEP 12.',
+      look: 'Read the three gases: the drainage (pre-membrane) saturation is high for a hypoxaemic patient, the post-membrane PO2 is fine, the effective flow is well under 60% of the cardiac output.',
+      steps: [
+        { q: 'Next best step?', options: [
+          ['reposition', 'Reposition the cannulas: pull the drainage tip back towards the IVC–RA junction, or convert the return to the internal jugular (femoro-jugular)', 'best', 'A bright drainage line with a high pre-membrane saturation and a desaturating patient is recirculation: the return jet is being drawn straight back into the drainage. Separate the tips (10–15 cm) or change the geometry; the effective flow — not the console flow — is what oxygenates.', (p, s) => { s.config = 'fj'; s.recirc = 0.15; }],
+          ['rpm', 'Increase the pump speed to 4,000 rpm', 'poor', 'More flow with the tips where they are mostly recirculates — the fraction rises with the flow when the tips are close — and the drainage pressure falls; the patient gains little.', (p, s) => { s.rpm = 4000; s.recirc = Math.min(0.7, s.recirc + 0.1); }],
+          ['sweep', 'Increase the sweep to 6 L/min', 'wrong', 'Sweep governs CO2, not oxygenation: the post-membrane blood is already fully saturated. The PaCO2 falls, the PaO2 does not move.', (p, s) => { s.sweep = 6; }],
+          ['fdo2', 'Turn the FdO2 up', 'wrong', 'It is already 1.0: the membrane is doing its job (post-membrane PO2 near 480). The oxygen is leaving the circuit and coming straight back in.', (p, s) => { s.fdo2 = 1; }]] },
+        { q: 'The tips are apart; the drainage line is dark again and the SpO2 is 96%. The PaCO2 is 52 with a pH of 7.29 on rest settings. Next?', options: [
+          ['sweep2', 'Increase the sweep to 2.5–3 L/min', 'best', 'CO2 removal is the sweep’s job: a modest rise clears the PaCO2 to the low 40s without changing the ventilator, which stays at rest settings — the whole point of the run.', (p, s) => { s.sweep = 2.6; }],
+          ['vent', 'Increase the ventilator rate and tidal volume', 'wrong', 'The lung is on ECMO to rest; driving it harder to clear CO2 undoes that. The membrane removes CO2 at the turn of a dial.', (p, s) => { p.va = p.va + 1.5; }],
+          ['rpm2', 'Increase the pump speed', 'poor', 'Flow helps oxygenation; CO2 clearance follows the sweep-to-flow ratio, so more flow at the same sweep clears little more CO2 and costs drainage pressure.', (p, s) => { s.rpm = s.rpm + 300; }],
+          ['bicarb', 'Give bicarbonate', 'wrong', 'The acidosis is respiratory; bicarbonate makes more CO2 and treats a number, not the cause.', (p, s) => { p.hco3 = p.hco3 + 3; }]] }
+      ], done: 'Two dials, two problems: the geometry for the oxygen, the sweep for the CO2. The console flow never told you about the recirculation — the drainage colour and the pre-membrane saturation did.' },
+
+    { id: 'lab_chatter', title: 'The line that shakes', mode: 'vv', s: { rpm: 3800 }, p: { cvp: 3 },
+      who: 'Day 3 of VV ECMO for influenza ARDS, femoro-jugular. Net −3 L over 24 h on a furosemide infusion to dry the lungs. The drainage line jumps with every cough; the flow swings between 4.5 and 2.8 L/min and the console alarms “low flow”. 3,800 rpm; drainage pressure −140 mm Hg; SpO2 88 → 83%; CVP 3.',
+      look: 'Watch the console: the drainage pressure is far past −100 and the flow the pump achieves is below what the speed asks for; the drainage line is drawn shaking.',
+      steps: [
+        { q: 'First move?', options: [
+          ['down', 'Turn the speed down, 100 rpm at a time, until the line settles', 'best', 'Chatter is the cannula sucking against a collapsing cava: the pump demands more than the vein can give. Lower the demand first — the flow often improves as the swings stop — then find the cause.', (p, s) => { s.rpm = 2700; }],
+          ['fluid', 'Give a litre of crystalloid', 'reasonable', 'This patient is probably dry (CVP 3 after −3 L) and volume is part of the answer — but not before the speed comes down, and not as the reflex for every chatter: a litre into ARDS lungs on a drying day is a day lost.', (p, s) => { p.cvp = 8; }],
+          ['up', 'Turn the speed up to recover the flow', 'wrong', 'More suction on a collapsed vein: the chatter worsens, the drainage pressure dives further, the flow falls, and the red cells shear.', (p, s) => { s.rpm = 4200; }],
+          ['clamp', 'Clamp and check the circuit for air', 'poor', 'Air in the drainage line is a different emergency (an open connector, a cracked pigtail); a rhythmic swing with coughing, a deep negative pressure and a low CVP is the cava, not air.', (p, s) => {}]] },
+        { q: 'At 2,700 rpm the line is quiet, the drainage pressure −45, the flow steady at 3.2 L/min — but the SpO2 is 88% and the patient needs the flow. Next?', options: [
+          ['fluid2', '500 mL of crystalloid, then bring the speed back up slowly', 'best', 'The vessel needs filling before the pump can draw more: a measured bolus restores the reservoir, and the speed goes back up only as far as the line stays quiet. Then the reason for the chatter (the diuresis) is corrected in the fluid plan.', (p, s) => { p.cvp = 8; s.rpm = 3600; }],
+          ['bigger', 'Exchange for a larger drainage cannula', 'poor', 'The limit here is the venous reservoir, not the cannula: a bigger cannula sucks the same empty vein, and an exchange is a bleed and a risk for a problem a bolus fixes.', (p, s) => { s.drain = 29; }],
+          ['sweep', 'Increase the sweep', 'wrong', 'Sweep is for CO2; the problem is flow and oxygenation.', (p, s) => { s.sweep = s.sweep + 2; }],
+          ['fio2', 'Turn the ventilator FiO2 to 1.0', 'poor', 'The native lung is shunting; FiO2 helps little and costs oxygen toxicity. The oxygenation lives in the circuit flow.', (p, s) => { p.fio2 = 1; }]] }
+      ], done: 'Speed down, then fill, then speed up: the order matters because the pump cannot create venous return, only take it.' },
+
+    { id: 'lab_highco', title: 'Septic, hyperdynamic, still blue', mode: 'vv', s: { rpm: 3600, sweep: 4 }, p: { co: 9, vo2: 400, vco2: 330, hb: 8.5, shunt: 0.65 },
+      who: 'Day 5 of VV ECMO for ARDS, now with a new ventilator-associated pneumonia and septic shock. Temperature 39.6, HR 130, cardiac output 9 L/min by echo. Circuit flow 4.9 L/min on 3,600 rpm, sweep 4, FdO2 1.0, post-membrane PO2 480. SpO2 87%, Hb 8.5, lactate 4.',
+      look: 'The membrane is working (post-membrane blood fully saturated) but the flow is less than half the cardiac output: most of the venous blood bypasses the circuit and goes through a shunting lung.',
+      steps: [
+        { q: 'Next best step?', options: [
+          ['flow', 'More circuit flow: upsize or add a second drainage cannula and run 6 L/min', 'best', 'On VV the arterial saturation is set by the ratio of circuit flow to cardiac output (≥ 60% keeps the SpO2 above 88–90%). With the output at 9 L/min the circuit must deliver 5.5–6; one 25 Fr drainage cannula cannot, so a second drainage or a 29–31 Fr is the physiological answer.', (p, s) => { s.drain = 31; s.rpm = 4400; }],
+          ['hb', 'Transfuse to a haemoglobin of 10', 'reasonable', 'Each gram carries oxygen: at a fixed saturation the delivery rises with the haemoglobin, and the mixed venous saturation improves. It helps the delivery, not the saturation — the number the team is staring at.', (p, s) => { p.hb = 10; }],
+          ['cool', 'Treat the fever and the agitation: paracetamol, cooling, deeper sedation, a β-blocker if tolerated', 'reasonable', 'Lowering VO2 and the cardiac output raises the circuit’s share of the venous return and the SpO2; part of the answer in every hyperdynamic patient on VV, and the sepsis is treated regardless. It cannot deliver what a second cannula can.', (p, s) => { p.co = 7.5; p.vo2 = 320; p.vco2 = 260; }],
+          ['sweep', 'Increase the sweep to 8', 'wrong', 'The post-membrane PO2 is already 480: the limit is how much blood reaches the membrane, not what the membrane does to it.', (p, s) => { s.sweep = 8; }]] },
+        { q: 'A second drainage cannula is in; the flow is 6.5 L/min and the SpO2 94%. Lactate still 4, SvO2 at the drainage 57%. Next?', options: [
+          ['hb2', 'Transfuse to a haemoglobin of 10 and treat the sepsis (source, antibiotics, pressors)', 'best', 'The saturation is acceptable; the delivery is still short for a septic patient consuming 400 mL/min. Content is haemoglobin × saturation: with the flow maximal, the haemoglobin is the lever left — and the sepsis is the disease.', (p, s) => { p.hb = 10; }],
+          ['flow2', 'Push the flow to 7.5 L/min', 'poor', 'Past the rated flow the membrane’s transfer falls, the drainage pressure rises and haemolysis begins; the gain in saturation is small.', (p, s) => { s.rpm = 5000; }],
+          ['fio2', 'Ventilator FiO2 to 1.0', 'poor', 'A shunting lung lifts the PaO2 a little; it does not fix delivery.', (p, s) => { p.fio2 = 1; }],
+          ['wean', 'Begin weaning the sweep', 'wrong', 'The patient is septic and hypoxaemic; the circuit is carrying the oxygenation. This is not a weaning day.', (p, s) => { s.sweep = 1; }]] }
+      ], done: 'Flow-to-output ratio, then content: the two numbers that decide delivery on VV. A membrane with blood coming out at 480 was never the problem.' },
+
+    { id: 'lab_oxyfail', title: 'A membrane giving up', mode: 'vv', s: { oxy: 0.6 }, p: {},
+      who: 'Day 12 of VV ECMO. Over 48 h the SpO2 has fallen from 95% to 90% on unchanged settings and the PaCO2 has crept up to 47; the perfusionist reports the ΔP across the membrane has climbed from 27 to 75 mm Hg, the post-membrane PO2 has fallen from 480 to under 100, and there is a fibrin sheen on the inlet. Platelets 60, D-dimer rising, plasma free haemoglobin 80 mg/dL.',
+      look: 'Read the post-membrane gas and the console: a post-membrane PO2 under 200 on an FdO2 of 1.0 with a rising ΔP is the membrane, not the patient; the membrane is drawn with clot in the fibres.',
+      steps: [
+        { q: 'Next best step?', options: [
+          ['change', 'Change the oxygenator (circuit change or membrane swap), with the team and the primed spare at the bedside', 'best', 'A failing membrane does not recover: the PO2 falls, the ΔP rises, the consumptive coagulopathy and the haemolysis follow. Planned exchange within hours, while the patient can still tolerate a minute off support, beats an emergency change at 3 a.m.', (p, s) => { s.oxy = 1; }],
+          ['fdo2', 'Increase the FdO2', 'wrong', 'It is already 1.0. The membrane surface is what is lost; more oxygen in the gas phase cannot reach the blood across clot.', (p, s) => { s.fdo2 = 1; }],
+          ['rpm', 'Increase the flow', 'poor', 'More blood through a clotted membrane: the ΔP climbs further, the haemolysis worsens, the transfer barely improves.', (p, s) => { s.rpm = s.rpm + 400; }],
+          ['heparin', 'Increase the heparin', 'poor', 'Anticoagulation prevents the next clot; it does not clear this one, and the platelets are already 60. The membrane is the answer.', (p, s) => {}]] }
+      ], done: 'The membrane’s own gas tells you when it is failing: post-membrane PO2 under 200–300 on an FdO2 of 1.0, a rising ΔP, a rising plasma free haemoglobin. Change it on your terms.' },
+
+    { id: 'lab_co2', title: 'Acidotic on a quiet lung', mode: 'vv', s: { sweep: 1, rpm: 3400 }, p: { vco2: 330, vo2: 290, va: 1.0 },
+      who: 'Hour 6 of VV ECMO for ARDS with a plateau pressure of 34 before cannulation. The ventilator is now at rest settings: tidal volume 3 mL/kg, rate 10, PEEP 14, driving pressure 10. Gas: pH 7.11, PaCO2 78, PaO2 78, SpO2 95%. The circuit: flow 4.6 L/min, sweep 1, FdO2 1.0.',
+      look: 'The patient gas shows a respiratory acidosis with an acceptable PaO2: the oxygenation is fine at this flow, the CO2 is not — look at the sweep-to-flow ratio.',
+      steps: [
+        { q: 'Next best step?', options: [
+          ['sweep', 'Increase the sweep to 2.5 L/min and recheck the gas in 20 minutes, then step again if needed', 'best', 'CO2 clearance is the sweep’s: the post-membrane PCO2 falls as e^(−0.4 × sweep/flow), so going from 1 to 2.5 L/min on a flow of 4.6 clears most of the load. Raise it in steps — a fall in PaCO2 of more than 20 mm Hg in the first hour is a cerebral risk.', (p, s) => { s.sweep = 2.5; }],
+          ['vent', 'Raise the ventilator rate to 24 and the tidal volume to 6 mL/kg', 'wrong', 'That is the ventilation the ECMO was started to avoid: driving pressure and mechanical power go back up in a lung that is already injured.', (p, s) => { p.va = 3.5; }],
+          ['rpm', 'Increase the pump speed', 'poor', 'More flow at the same sweep changes the ratio the wrong way; CO2 clearance barely moves and the drainage pressure falls.', (p, s) => { s.rpm = 3900; }],
+          ['bicarb', 'Bicarbonate 100 mmol', 'wrong', 'The acidosis is respiratory; bicarbonate is CO2 in disguise and the pH will not hold.', (p, s) => { p.hco3 = 28; }]] }
+      ], done: 'Oxygen is the flow’s, CO2 is the sweep’s — the two are independent dials, and the ventilator stays at rest.' },
+
+    { id: 'lab_harlequin', title: 'Blue on the right, pink on the left', mode: 'va', s: {}, p: { contr: 0.6, shunt: 0.55, fio2: 0.5 },
+      who: 'Day 4 of peripheral VA ECMO for post-infarction cardiogenic shock. The heart is recovering — pulse pressure 35, LVEF 35% — but the lungs have flooded: FiO2 0.5, PEEP 8, bilateral infiltrates. The right radial line reads a PaO2 of 48 with a saturation of 84%; the femoral line downstream of the return cannula reads 310. The right hand is dusky; NIRS over the right forehead has fallen.',
+      look: 'Two patient gases: right radial (the brain and the coronaries) and femoral; the mixing zone is drawn on the aorta — the recovering heart is pushing hypoxaemic blood from the lungs into the arch while the circuit perfuses the lower body.',
+      steps: [
+        { q: 'Next best step?', options: [
+          ['vent', 'Treat the lung: FiO2 up, PEEP up, diurese, treat the pneumonia — and watch the right radial gas', 'reasonable', 'Right in principle: the hypoxaemic blood comes from the native lung, so improving the lung improves the arch. It is slow, and often insufficient when the heart keeps recovering faster than the lung.', (p, s) => { p.fio2 = 0.8; p.shunt = 0.45; }],
+          ['config', 'Change the configuration: add a venous return limb (V-AV) or move the arterial return to the axillary artery or central', 'best', 'Harlequin (north–south) syndrome: the only cure is to oxygenate the blood the heart ejects or to deliver circuit blood to the arch. V-AV sends oxygenated blood into the right atrium so the lungs’ output is oxygenated; an axillary or central return puts the mixing zone proximal to the brain.', (p, s) => { s.config = 'ax'; }],
+          ['up', 'Increase the circuit flow', 'poor', 'More retrograde flow pushes the mixing zone a little higher, but the heart is recovering and the lungs are the problem; raising the flow also loads the ventricle and shuts the valve you want open.', (p, s) => { s.rpm = s.rpm + 400; }],
+          ['down', 'Reduce the circuit flow to let the heart take over', 'wrong', 'The heart ejects hypoxaemic blood: less circuit flow moves the mixing zone down and makes the whole body as blue as the arm.', (p, s) => { s.rpm = s.rpm - 500; }]] }
+      ], done: 'On peripheral VA the right radial artery is the only gas that counts for the brain. Harlequin is diagnosed by where you sample, and cured by where you return.' },
+
+    { id: 'lab_distension', title: 'A perfect pressure, a silent ventricle', mode: 'va', s: { rpm: 3700 }, p: { contr: 0.08, cvp: 12, shunt: 0.3 },
+      who: 'Hour 10 of peripheral VA ECMO for fulminant myocarditis, 4.9 L/min on 3,700 rpm. MAP 80 on no pressors, lactate clearing. The arterial trace is flat — pulse pressure 2 mm Hg. Echo: a dilated LV with no ejection, the aortic valve motionless, smoke in the cavity; pink frothy secretions from the tube; the chest film is whiting out.',
+      look: 'The console says all is well; the patient gas is fine. Look at the ventricle in the drawing (swollen with its filling pressure) and the pulse pressure: the LVEDP is above 20 and the valve is closed.',
+      steps: [
+        { q: 'Next best step?', options: [
+          ['impella', 'Vent the ventricle: Impella (ECPELLA), or an atrial septostomy or surgical vent where that is the local option', 'best', 'The circuit has restored the pressure and shut the valve: blood arriving in the left heart has nowhere to go, the LVEDP climbs, the lungs flood, the cavity clots. A microaxial pump empties the ventricle into the aorta; the pulse returns, the oedema clears.', (p, s) => { s.unload = 'impella'; s.rpm = 3400; }],
+          ['iabp', 'Insert an IABP', 'reasonable', 'A balloon pump adds some pulsatility and lowers the afterload — a modest vent, a reasonable first step while the Impella is arranged, rarely enough on its own for a ventricle this silent.', (p, s) => { s.unload = 'iabp'; }],
+          ['ino', 'Start dobutamine to get the valve opening', 'reasonable', 'An inotrope can open the valve when the ventricle has some reserve; with an EF under 10% it buys little and costs arrhythmia and oxygen demand. Part of the plan, together with a lower flow, not the whole of it.', (p, s) => { p.contr = 0.2; }],
+          ['rpm', 'Increase the flow for the oedema', 'wrong', 'More flow raises the aortic pressure and closes the valve more firmly; the oedema is from the ventricle that cannot empty, not from the perfusion.', (p, s) => { s.rpm = 4100; }]] },
+        { q: 'The Impella is in at P6; the aortic valve opens again and the LVEDP has fallen from 26 to 14. The circuit flow is still 4.6 L/min. Next?', options: [
+          ['flowdown', 'Reduce the circuit flow to the lowest that perfuses (lactate, SvO2, MAP) and keep the Impella working', 'best', 'ECPELLA is a partnership: the circuit for the perfusion, the microaxial pump for the ventricle. Lower circuit flow means lower afterload and more native ejection — the direction of recovery — while the Impella keeps the ventricle empty.', (p, s) => { s.rpm = 2900; }],
+          ['flowup', 'Keep the flow high for safety', 'poor', 'The high flow is what loaded the ventricle; now that it is vented, the flow should come down to what the perfusion needs.', (p, s) => {}],
+          ['stopimp', 'Remove the Impella now that the ventricle is empty', 'wrong', 'The ventricle is empty because of the Impella; remove it and the distension returns.', (p, s) => { s.unload = 'none'; }],
+          ['fluid', 'Give volume for the lower LVEDP', 'wrong', 'The LVEDP was the problem. A low filling pressure on ECPELLA is the goal, not a deficit.', (p, s) => { p.cvp = p.cvp + 4; }]] }
+      ], done: 'On VA, a good pressure and a clear lactate can hide a dying ventricle. The pulse pressure and the echo — not the console — tell you.' },
+
+    { id: 'lab_limb', title: 'A cold white foot', mode: 'va', s: { dpc: false, ret: 19 }, p: { contr: 0.2, shunt: 0.25, cvp: 12 },
+      who: 'Hour 3 of peripheral VA ECMO after ECPR, 19 Fr arterial cannula in the right femoral artery placed in a hurry, no distal perfusion catheter. The right foot is white and cold, no Doppler signal at the dorsalis pedis, the calf is soft. Flow 4.4 L/min, MAP 75.',
+      look: 'The console shows nothing wrong — the circuit does not know about the leg. The drawing shows the cannula filling the femoral artery with no distal perfusion catheter; the limb-risk line in the gases panel is the only number that moves.',
+      steps: [
+        { q: 'Next best step?', options: [
+          ['dpc', 'Place a distal perfusion catheter (6–8 Fr antegrade into the superficial femoral artery) from the circuit’s arterial limb — now', 'best', 'The arterial cannula occludes the femoral artery; without a distal perfusion catheter the leg is ischaemic from the first minute. An antegrade DPC placed within hours prevents the compartment syndrome, the fasciotomy and the amputation; many centres place it at cannulation.', (p, s) => { s.dpc = true; }],
+          ['down', 'Reduce the circuit flow', 'poor', 'Less flow does not reopen an occluded artery; it reduces the perfusion the circuit exists to provide.', (p, s) => { s.rpm = s.rpm - 400; }],
+          ['heparin', 'Increase the anticoagulation', 'wrong', 'The leg is ischaemic from obstruction, not thrombosis; heparin does not perfuse a limb past a cannula.', (p, s) => {}],
+          ['downsize', 'Exchange for a 15 Fr arterial cannula', 'reasonable', 'A smaller cannula leaves more lumen around it and is the right size for a small artery — but the exchange is a bleed and a delay, and a 15 Fr cannula costs return pressure at this flow; the DPC is the direct answer and can be added to any cannula.', (p, s) => { s.ret = 15; s.dpc = true; }]] }
+      ], done: 'Check the leg every hour (Doppler, NIRS); a DPC at cannulation is the policy that prevents the question.' },
+
+    { id: 'lab_vawean', title: 'Is the heart ready?', mode: 'va', s: { rpm: 3300 }, p: { contr: 0.7, shunt: 0.15, fio2: 0.4, vo2: 230, vco2: 190 },
+      who: 'Day 6 of VA ECMO for myocarditis. Pulse pressure 45, LVEF 40% on echo, LVOT VTI 14 cm at full flow, lactate normal, no pressors, lungs clear on FiO2 0.4. The team asks whether the circuit can come out.',
+      look: 'A recovering heart on a circuit still running full flow: the pulse pressure is wide and the native ejection is drawn. The question is what happens when the circuit stops helping.',
+      steps: [
+        { q: 'Next best step?', options: [
+          ['trial', 'A flow-down trial: reduce the circuit flow stepwise to 1–1.5 L/min over 30–60 minutes with echo at each step (LVOT VTI > 10–12 cm, LVEF > 20–25%, TDSa > 6 cm/s, MAP held, lactate stable)', 'best', 'Readiness on VA is tested by withdrawing the support, not by numbers at full flow: at minimal flow the heart carries the circulation or it does not. Anticoagulation is kept up during the low-flow period; the sweep stays on.', (p, s) => { s.rpm = 2000; }],
+          ['sweepoff', 'Turn the sweep off and watch', 'wrong', 'That is the VV test. On VA, blood with the sweep off returns to the artery unoxygenated — the patient desaturates — and it says nothing about the heart.', (p, s) => { s.sweep = 0; }],
+          ['decan', 'Decannulate now on the echo', 'wrong', 'The echo at full flow is the echo of an unloaded heart; the trial exists because that picture flatters.', (p, s) => { s.rpm = 1200; }],
+          ['ino', 'Start milrinone first', 'reasonable', 'Low-dose inodilator support for the trial and the first days off is common practice; it is a companion to the trial, not a substitute.', (p, s) => { p.contr = 0.8; }]] },
+        { q: 'At 1.5 L/min: MAP 72, pulse pressure 48, VTI 16 cm, lactate 1.1, SvO2 66%. Next?', options: [
+          ['decan2', 'Decannulate in the operating room or with vascular repair of the arteriotomy; low-dose inotrope and close observation for 48 h', 'best', 'The heart has carried the circulation at minimal support: the trial is passed. The arterial cannula comes out with the artery repaired (or closed with a device), the venous cannula with pressure; the leg and the pressure are watched. (The lab keeps the trial flow: it has no “off”.)', (p, s) => {}],
+          ['back', 'Return to full flow and repeat tomorrow', 'poor', 'Every day on the circuit is bleeding, infection and limb risk; a passed trial is a decision, not a rehearsal.', (p, s) => { s.rpm = 3300; }],
+          ['hold', 'Stay at 1.5 L/min overnight', 'wrong', 'Low flow for hours clots the circuit and the cannula; a trial is minutes, then a decision.', (p, s) => {}],
+          ['sweep', 'Stop the sweep and leave the flow', 'wrong', 'Unoxygenated circuit blood into the artery; still the VV test, still wrong on VA.', (p, s) => { s.sweep = 0; }]] }
+      ], done: 'VA weaning is a flow trial under echo; VV weaning is a sweep-off trial. The two tests are not interchangeable.' },
+
+    { id: 'lab_vvwean', title: 'Is the lung ready?', mode: 'vv', s: { rpm: 3200, sweep: 1 }, p: { shunt: 0.15, va: 3.8, fio2: 0.4, vo2: 250, vco2: 200 },
+      who: 'Day 9 of VV ECMO for ARDS. Chest film clearing, compliance 45 mL/cm H2O, FiO2 0.4 and PEEP 10 on the ventilator with a driving pressure of 11; PaO2 186 and PaCO2 32 on a sweep of 1 and a flow of 4 L/min. The team asks whether the lung can carry itself.',
+      look: 'The native lung is doing more of the work (the ventilator’s share of the CO2 and the oxygen is larger); the circuit flow is still 4 L/min with a low sweep.',
+      steps: [
+        { q: 'Next best step?', options: [
+          ['sweepoff', 'A sweep-off trial: turn the sweep to zero with the flow kept, and watch the gas and the work of breathing for 1–4 hours on acceptable ventilator settings', 'best', 'On VV the circuit contributes oxygen and CO2 removal through the sweep; with the sweep off the circuit is a bystander and the gas is the lung’s alone. If the PaO2 and the PaCO2 hold on lung-protective settings (FiO2 ≤ 0.5–0.6, PEEP ≤ 10–12, driving pressure under 15) the patient is ready.', (p, s) => { s.sweep = 0; }],
+          ['flowdown', 'Reduce the flow to 1.5 L/min', 'wrong', 'That is the VA trial. On VV, low flow clots the circuit and the oxygenation falls before you learn anything about the lung; the flow stays, the sweep goes.', (p, s) => { s.rpm = 1800; }],
+          ['decan', 'Decannulate on the chest film', 'wrong', 'The film does not breathe. Take the circuit out of the gas exchange first, then decide.', (p, s) => { s.sweep = 0; s.rpm = 1500; }],
+          ['fdo2', 'Reduce the FdO2 to 0.5', 'poor', 'A partial step that leaves the CO2 removal in place; a clean sweep-off trial answers the question in one move.', (p, s) => { s.fdo2 = 0.5; }]] },
+        { q: 'Four hours with the sweep off: PaO2 103, PaCO2 47, pH 7.34, respiratory rate 22, no distress, driving pressure 11. Next?', options: [
+          ['decan2', 'Decannulate at the bedside (venous cannulas, pressure and a purse-string), stop the heparin an hour before, watch for bleeding and air', 'best', 'The trial is passed on protective settings: the lung carries the gas exchange. Venous decannulation is a bedside procedure; the sites are compressed and the patient watched. (The lab keeps the sweep-off state: it has no “off”.)', (p, s) => {}],
+          ['back', 'Sweep back to 1 and repeat tomorrow', 'poor', 'A passed trial is the decision; another day on the circuit is another day of bleeding and infection risk.', (p, s) => { s.sweep = 1; }],
+          ['hold', 'Leave the sweep off for another day', 'poor', 'A circuit running with no gas exchange is a clotting risk for no information; the trial is hours, not days.', (p, s) => {}],
+          ['vent', 'Increase the PEEP to be safe before decannulation', 'wrong', 'The trial was passed at these settings; raising them hides the answer you just got.', (p, s) => { p.va = p.va + 1; }]] }
+      ], done: 'The sweep-off trial: the circuit stays, its gas exchange stops, the lung shows what it can do. Then the cannulas come out.' }
+  ];
+
+  root.PFT_ECMO = { topics: T, groups: GROUPS, CONFIGS: CONFIGS, DRAIN: DRAIN, RETURN: RETURN, PATIENT: PATIENT, SETTINGS: SETTINGS, PRESETS: PRESETS, preset: preset, SCENARIOS: SCENARIOS, LABCASES: LABCASES, run: run, runVV: runVV, runVA: runVA, pump: pump, membrane: membrane, alarms: alarms, satOf: satOf, po2Of: po2Of, content: content, po2FromContent: po2FromContent, BRANCH: BRANCH };
   if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_ECMO;
 })(typeof window !== 'undefined' ? window : globalThis);

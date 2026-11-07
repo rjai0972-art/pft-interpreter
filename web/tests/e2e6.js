@@ -5,7 +5,7 @@ const { chromium } = require('/opt/npm-tools/node_modules/playwright');
 const path = require('path');
 const fs = require('fs'), http = require('http');
 // served over http: Chromium drops a file:// page's localStorage on reload now and then, which made the theme check flaky
-const HTML = fs.readFileSync(path.join(__dirname, '..', 'dist', 'PFT_Interpreter_standalone.html'));
+const HTML = fs.readFileSync(path.join(__dirname, '..', 'dist', 'PulmCritDaddy_standalone.html'));
 const server = http.createServer((req, res) => { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); res.end(HTML); });
 let FILE = process.env.PFT_URL || '';
 let fails = 0, passes = 0;
@@ -31,7 +31,7 @@ let pageRef = null;
   const errs = [];
   page.on('pageerror', e => errs.push('pageerror: ' + e.message));
   page.on('console', m => { if (m.type() === 'error' && !/fonts\.g|ERR_|Failed to load resource/.test(m.text())) errs.push('console: ' + m.text()); });
-  await page.goto(FILE); await page.waitForSelector('#top');
+  await page.goto(FILE); await page.waitForSelector('[data-home]'); await page.evaluate(() => window.__pft.setMode('case')); await page.waitForSelector('#top');
   const pv = (key) => page.locator('#pv .sec[data-sec="' + key + '"]').innerText();
   const state = () => page.evaluate(() => window.__pft.state);
   const today = await page.evaluate(() => { const d = new Date(), p = (n) => (n < 10 ? '0' : '') + n; return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); });
@@ -246,7 +246,7 @@ let pageRef = null;
   ok(/rgb\(31, 30, 27\)/.test(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)), 'charcoal background');
   ok(await page.evaluate(() => localStorage.getItem('pft.theme.v1')) === '"dark"', 'the theme is written to storage');
   await page.waitForTimeout(300);   // let the storage service commit the preference before the page goes away
-  await page.reload(); await page.waitForSelector('#top');
+  await page.reload(); await page.waitForSelector('[data-home]'); await page.evaluate(() => window.__pft.setMode('case')); await page.waitForSelector('#top');
   const remembered = await page.waitForFunction(() => document.documentElement.getAttribute('data-theme') === 'dark', null, { timeout: 4000 }).then(() => true, () => false);   // the boot script applies the saved theme once it runs
   ok(remembered, 'theme remembered');
   await page.locator('#theme').click();
@@ -281,7 +281,7 @@ let pageRef = null;
   await m.addInitScript(() => { try { localStorage.setItem('pft.wording.v1', JSON.stringify('std')); } catch (e) {} });
   const mp = await m.newPage();
   const merrs = []; mp.on('pageerror', e => merrs.push(e.message));
-  await mp.goto(FILE); await mp.waitForSelector('#top');
+  await mp.goto(FILE); await mp.waitForSelector('[data-home]'); await mp.evaluate(() => window.__pft.setMode('case')); await mp.waitForSelector('#top');
   const checkOverflow = async (label) => { const o = await mp.evaluate(() => ({ sw: document.documentElement.scrollWidth, iw: window.innerWidth })); ok(o.sw <= o.iw + 1, 'no horizontal overflow at 400px: ' + label); };
   await checkOverflow('empty');
   await loadExample(mp, 0);
