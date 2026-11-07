@@ -81,7 +81,7 @@ and the single-file browser version (`PulmCritDaddy_standalone.html`) always wor
 - Code signing is optional and not set up. For Windows add a signing certificate to the build; for Mac add an Apple Developer ID and notarization.
   Until then the first-launch steps above are needed.
 
-## How the reading is built (version 8.0)
+## How the reading is built (version 8.1)
 
 The rules layer computes every measurement state before any wording is chosen (ERS/ATS 2022 z-scores and the LLN;
 a reviewed adult phrase catalog anchored to the ERS/ATS 2022, ATS/ERS 2019, ERS/ATS 2023, ERS/ATS 2017, ERS 2019 and
@@ -135,7 +135,7 @@ report builds on the right as values are entered (below the form on narrower scr
 optional wording, differentials, prompts and the heads-up list beneath it. Two themes, linen and charcoal, in neutral
 tones.
 
-The app opens on a home page: a tile for each area (Interpret, the case bank, and every Learn area) with its topics and the labs as chips, a resume link to the page last visited, and the version. Learn has seven areas, chosen from a dropdown above the topic list. "PFT interpretation" is the reading-room curriculum
+The app opens on a home page: a tile for each area (Interpret, the case bank, and every Learn area) with its topics and the labs as chips, a resume link to the page last visited, and the version. Learn has nine areas, chosen from a dropdown above the topic list. "PFT interpretation" is the reading-room curriculum
 (the logic, each test, reference equations, change over time, the phrase catalog and worked examples). "Anatomy,
 physiology & bronchoscopy" runs like a course and opens with a start page that maps it. Anatomy first: the lungs
 (lobes, fissures, the hilum and RALS, the pleura and where a needle is safe, the diaphragm and its openings, the two
@@ -288,6 +288,29 @@ bedside monitor that plays the selected port's waveform with the ECG and the res
 the circulation, the valves, the blood and the ventilator, treatment buttons that apply what each drug or device does,
 fifteen presets, and a panel that computes everything the sheet would and names the signature; and eleven bedside shock
 scenarios (name the shock, see the catheter numbers, choose the first move, and watch the model recompute the numbers
-after your move and after the best one). `extras/` holds a reworked Anki deck
+after your move and after the best one). "ICU infusions: pressors, sedation, paralysis" is the eighth area: the
+receptors and the rules of titration (units, the arithmetic, the norepinephrine-equivalent dose, access and
+extravasation, the order of questions at the bedside); then a reference card for every drip — vasopressors
+(norepinephrine, epinephrine, vasopressin, phenylephrine, dopamine, angiotensin II, methylene blue), inotropes
+(dobutamine, milrinone, isoproterenol, levosimendan), vasodilators and antiarrhythmics (nitroglycerin, nitroprusside,
+nicardipine, clevidipine, esmolol, labetalol, amiodarone), sedatives (propofol, dexmedetomidine, midazolam, ketamine,
+lorazepam), analgesics (fentanyl, hydromorphone, morphine, remifentanil), neuromuscular blockers (cisatracurium,
+rocuronium, vecuronium, succinylcholine) and the other drips (insulin, heparin, bicarbonate, tranexamic acid) — each
+with its receptors, start / titration / usual / maximum dose and ceiling, bolus, onset and half-life, concentrations,
+indications, monitoring, contraindications, limitations and the landmark trials (SOAP II, VASST, VANISH, ATHOS-3,
+SEPSISPAM, the 65 trial, CENSER, CLOVERS/CLASSIC, ANDROMEDA-SHOCK-2, OptimaCC, DOREMI, LeoPARDS, SPICE III, MENDS2,
+MIDEX/PRODEX, SEDCOM, DahLIA, A2B, ABC, NONSEDA, ACURASYS, ROSE, NICE-SUGAR, BICAR-ICU, CRASH-2, HALT-IT, STRESS-L …)
+and the guidelines (SSC 2026, PADIS 2018, SCCM NMB 2016); a drip calculator (dose ↔ rate with the arithmetic shown, a
+drawn infusion pump, the titration ladder, a norepinephrine-equivalent dose panel); and eleven bedside scenarios. "Echo
+& POCUS" is the ninth: the machine and the probe, the windows and the eleven standard views (PLAX, PSAX at the aortic,
+mitral and papillary levels, A4C/A5C/A2C/A3C, subcostal four-chamber and IVC, suprasternal) each with how to obtain it,
+what is in it, what to measure and the pitfalls, the anatomy on the screen, the assessments (LV, RV, pericardium, IVC,
+valves) with their numbers, echo in shock (RUSH), lung ultrasound (BLUE); a scanning lab — a three-dimensional model of
+the heart, great vessels, pericardium, liver and caval veins in a curved chest, scanned by a probe you slide, rotate,
+tilt and rock from four windows, painted as a B-mode sector with speckle and the beating cycle, with labels for every
+structure, eight hearts (normal, dilated LV, dilated RV, effusion, tamponade, hypovolaemia, LVH, pleural effusion), a
+target view with a score and movement hints; a views atlas rendered from the same model with a slot on each card for
+your own de-identified image (kept in the browser only); and a quiz that draws new pictures every round (which view,
+which structure, what is wrong). `extras/` holds a reworked Anki deck
 (`ECMO_Anki_Deck_v2.apkg`, 103 notes / 237 cards, cloze and basic, tagged by topic, built by `build_ecmo_anki.py` with no
 dependencies) and a bedside reference PDF generated from the same content (`build_ecmo_reference.js`).

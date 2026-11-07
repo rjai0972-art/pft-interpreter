@@ -17,7 +17,7 @@ const near = (a, b, t) => Math.abs(a - b) <= t;
 
   // ---- areas
   await page.locator('.vw[data-view="learn"]').click(); await page.waitForSelector('.learn-body');
-  ok(await page.locator('#learn-cat option').count() === 7, 'Learn offers seven areas');
+  ok(await page.locator('#learn-cat option').count() === 9, 'Learn offers nine areas');
   ok(await page.locator('.learn-body').getAttribute('data-cat') === 'pft', 'PFT interpretation is the default area');
   const nPft = await page.locator('.ln-btn').count();
   ok(nPft >= 20, 'the PFT area keeps its topics (' + nPft + ')');
@@ -592,6 +592,67 @@ const near = (a, b, t) => Math.abs(a - b) <= t;
   await page.evaluate(() => window.__pft.setMode('learn', { topic: 'hemo_cases' })); await page.waitForSelector('[data-hemocases]');
   ok(await page.locator('[data-hm-score="1/2"]').count() === 1, 'the answers survive leaving and returning');
 
+  // ---- ICU infusions
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'drips_vaso' })); await page.waitForSelector('[data-dripref="vaso"]');
+  ok(await page.locator('#learn-cat').inputValue() === 'drips' && await page.locator('.ln-btn[data-topic]').count() === 10 && await page.locator('[data-dr-card]').count() === 7 && await page.locator('[data-dr-card="norepi"].open').count() === 1 && await page.locator('[data-dr-card="vaso"].open').count() === 0, 'the infusions area: ten topics; seven vasopressor cards with norepinephrine open');
+  ok(/SOAP II/.test(await txt('[data-dr-card="norepi"]')) && /0\.05 mcg\/kg\/min/.test(await txt('[data-dr-card="norepi"] [data-dr-cell="Start"]')) && /1 mcg\/kg\/min/.test(await txt('[data-dr-card="norepi"] [data-dr-cell="Max"]')), 'the norepinephrine card: start 0.05, max 1, SOAP II');
+  await page.locator('[data-dr-toggle="vaso"]').click(); await page.waitForSelector('[data-dr-card="vaso"].open');
+  ok(/VASST/.test(await txt('[data-dr-card="vaso"]')) && /0\.03/.test(await txt('[data-dr-card="vaso"] [data-dr-cell="Start"]')) && /fixed/i.test(await txt('[data-dr-card="vaso"] [data-dr-cell="Titrate"]')), 'vasopressin opens: a fixed 0.03 U/min, VASST');
+  await page.locator('[data-dr-all]').click(); await page.waitForTimeout(100);
+  ok(await page.locator('[data-dr-card].open').count() === 7, 'open all');
+  await page.locator('[data-dr-card="angio"] [data-dr-calc]').click(); await page.waitForSelector('[data-dripcalc="angio"]');
+  ok(/ng\/kg\/min/.test(await txt('[data-dr-pump]')) && /20/.test(await txt('[data-dr-pump] [data-dr-dose]')), '“Open in the calculator” loads angiotensin II at 20 ng/kg/min');
+  await page.selectOption('[data-dr-drug]', 'norepi'); await page.waitForSelector('[data-dripcalc="norepi"]');
+  await page.locator('[data-dr-kg]').fill('80'); await page.locator('[data-dr-kg]').dispatchEvent('change'); await page.waitForTimeout(100);
+  await page.locator('[data-dr-dosein]').fill('0.1'); await page.locator('[data-dr-dosein]').dispatchEvent('change'); await page.waitForTimeout(100);
+  ok(/^30/.test(await txt('[data-dr-pump] [data-dr-rate]')) && /0\.1 × 80 kg × 60 min ÷ 16/.test(await txt('[data-dr-formula]')), 'norepinephrine 0.1 mcg/kg/min at 80 kg and 16 mcg/mL = 30 mL/h, with the arithmetic shown');
+  await page.locator('[data-dr-ratein]').fill('60'); await page.locator('[data-dr-ratein]').dispatchEvent('change'); await page.waitForTimeout(100);
+  ok(/^0\.2/.test(await txt('[data-dr-pump] [data-dr-dose]')) && await page.locator('[data-dr-ladder] tr.dr-now').count() === 1, 'rate to dose: 60 mL/h = 0.2 mcg/kg/min; the ladder marks the step');
+  await page.locator('[data-dr-dosein]').fill('2'); await page.locator('[data-dr-dosein]').dispatchEvent('change'); await page.waitForTimeout(100);
+  ok(/ABOVE MAX/.test(await txt('[data-dr-pump]')), 'a dose above the ceiling alarms on the pump');
+  await page.locator('[data-dr-vis="vaso"]').fill('0.04'); await page.locator('[data-dr-vis="vaso"]').dispatchEvent('change'); await page.waitForTimeout(100);
+  ok(/NEE 0\.40/.test(await txt('[data-dr-nee]')), 'the vasopressor load: norepinephrine 0.3 + vasopressin 0.04 = NEE 0.40');
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'drips_cases' })); await page.waitForSelector('[data-dripcases]');
+  ok(await page.locator('[data-dr-case]').count() === 11 && await page.locator('[data-dr-opt]').count() === 4, 'eleven drip scenarios, four options');
+  await page.locator('[data-dr-opt="dopa"]').click(); await page.waitForSelector('[data-dr-verdict="wrong"]');
+  ok(await page.locator('.ec-opt.isbest').count() === 1 && /What happened/.test(await txt('[data-dr-verdict]')) && await page.locator('[data-dr-score="0/1"]').count() === 1, 'a wrong answer: the best move and the outcome shown, the score kept');
+  await page.locator('[data-dr-case="ards"]').click(); await page.waitForSelector('[data-dr-open="ards"]');
+  await page.locator('[data-dr-opt="cis"]').click(); await page.waitForSelector('[data-dr-verdict="best"]');
+  ok(await page.locator('[data-dr-score="1/2"]').count() === 1, 'the paralytic for the fighting ARDS is best');
+
+  // ---- echo & POCUS
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'echo_views' })); await page.waitForSelector('[data-echoatlas="11"]');
+  await page.waitForTimeout(800);
+  ok(await page.locator('#learn-cat').inputValue() === 'echo' && await page.locator('.ln-btn[data-topic]').count() === 8 && await page.locator('[data-eh-view]').count() === 11 && await page.locator('[data-eh-view] canvas').count() === 11 && await page.locator('[data-eh-file]').count() === 11, 'the echo area: eight topics; eleven view cards, each rendered with a slot for your own image');
+  ok(await page.evaluate(() => { const c = document.querySelector('[data-eh-view="plax"] canvas'); const ctx = c.getContext('2d'); const d = ctx.getImageData(0, 0, c.width, c.height).data; let bright = 0; for (let i = 0; i < d.length; i += 16) if (d[i] > 150) bright++; return bright > 200; }), 'the PLAX card is painted (bright walls on a black sector)');
+  await page.locator('[data-eh-open="a4c"]').click(); await page.waitForSelector('[data-echolab]');
+  ok(await page.locator('[data-eh-target] option:checked').evaluate(e => e.value) === 'a4c' && await page.locator('[data-eh-win="apical"][aria-checked="true"]').count() === 1 && await page.locator('[data-eh-got="false"]').count() === 1 && await page.locator('[data-eh-hint]').count() >= 1, '“Obtain it in the lab” opens the lab at the apical window, off-axis, with hints');
+  await page.locator('[data-eh-snap]').click(); await page.waitForSelector('[data-eh-got="true"]');
+  await page.waitForTimeout(500);
+  ok(/LV/.test(await txt('[data-eh-seen]')) && /RV/.test(await txt('[data-eh-seen]')) && /LA/.test(await txt('[data-eh-seen]')) && await page.locator('[data-eh-score="100"]').count() === 1, 'the target obtained: all four chambers on the screen, score 100');
+  await page.locator('[data-eh="rot"]').fill('40'); await page.locator('[data-eh="rot"]').dispatchEvent('input'); await page.waitForTimeout(300);
+  ok(await page.locator('[data-eh-got="false"]').count() === 1 && /Rotate the marker 40° clockwise/.test(await txt('[data-eh-hint]')), 'rotating 40° loses the view and the hint says to rotate back clockwise');
+  await page.locator('[data-eh="rot"]').fill('0'); await page.locator('[data-eh="rot"]').dispatchEvent('input'); await page.waitForTimeout(200);
+  await page.locator('[data-eh="tilt"]').fill('20'); await page.locator('[data-eh="tilt"]').dispatchEvent('input'); await page.waitForTimeout(300);
+  ok(/Tilt/.test(await txt('[data-eh-hint]')), 'a tilt error gives a tilt hint');
+  await page.locator('[data-eh-win="subcostal"]').click(); await page.waitForSelector('[data-eh-win="subcostal"][aria-checked="true"]');
+  await page.waitForTimeout(400);
+  ok(/liver/i.test(await txt('[data-eh-seen]')) && /subcostal window/i.test(await txt('[data-eh-hint]')) === false && await page.locator('[data-eh-probe]').count() === 1, 'the subcostal window: the liver appears; the probe is drawn on the torso');
+  await page.selectOption('[data-eh-path]', 'eff'); await page.waitForSelector('[data-eh-pathnote]');
+  await page.waitForTimeout(500);
+  ok(/effusion/i.test(await txt('[data-eh-seen]')) && /echo-free band/.test(await txt('[data-eh-pathnote]')), 'the effusion heart: an effusion on the screen and the note');
+  await page.locator('[data-eh-labels]').click(); await page.waitForTimeout(300);
+  await page.locator('[data-eh-beat]').click(); await page.waitForTimeout(300);
+  ok(await page.locator('[data-eh-labels]').isChecked() === false && await page.locator('[data-eh-beat]').isChecked() === false, 'labels and the beat can be switched off');
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'echo_quiz' })); await page.waitForSelector('[data-echoquiz]');
+  await page.waitForTimeout(400);
+  ok(await page.locator('[data-eh-q="0"] [data-eh-opt]').count() === 4 && await page.locator('[data-eh-q="1"]').count() === 0, 'the quiz: four views offered, the structure question waits');
+  const right = await page.evaluate(() => { const o = Array.from(document.querySelectorAll('[data-eh-q="0"] [data-eh-opt]')); return o.length; });
+  await page.locator('[data-eh-q="0"] [data-eh-opt]').first().click(); await page.waitForSelector('[data-eh-q="0"] [data-eh-verdict]');
+  ok(right === 4 && (await page.locator('[data-eh-q="1"] [data-eh-opt]').count() === 4 || await page.locator('[data-eh-q="2"] [data-eh-opt]').count() === 4), 'answering opens the next question');
+  for (let i = 1; i < 3; i++) { if (await page.locator('[data-eh-q="' + i + '"] [data-eh-opt]').count()) { await page.locator('[data-eh-q="' + i + '"] [data-eh-opt]').first().click(); await page.waitForTimeout(250); } }
+  ok(await page.locator('[data-eh-next]').count() === 1 && /of \d right/.test(await txt('[data-eh-qscore]')), 'a round completes with the score and a next picture');
+
   // ---- conduction and the ECG
   await page.evaluate(() => window.__pft.setMode('learn', { topic: 'ecglab' })); await page.waitForSelector('.ecg-lab[data-ecg="normal"]');
   ok(await page.locator('#learn-cat').inputValue() === 'ecg' && (await page.locator('#learn-cat option').allInnerTexts()).some(t => /Cardiac conduction/.test(t)), 'a third Learn area: cardiac conduction & ECG');
@@ -636,7 +697,7 @@ const near = (a, b, t) => Math.abs(a - b) <= t;
 
   // ---- lung nodules and screening
   await page.evaluate(() => window.__pft.setMode('learn', { topic: 'nodules' })); await page.waitForSelector('[data-nod-risk]');
-  ok(await page.locator('#learn-cat').inputValue() === 'cancer' && await page.locator('#learn-cat option').count() === 7, 'a fourth Learn area: lung nodules & cancer screening');
+  ok(await page.locator('#learn-cat').inputValue() === 'cancer' && await page.locator('#learn-cat option').count() === 9, 'a fourth Learn area: lung nodules & cancer screening');
   ok(/Fleischner/.test(await txt('.learn-body')) && /Lung-RADS/.test(await txt('.learn-body')) && /Brock/.test(await txt('.learn-body')) && await page.locator('.learn-body table').count() >= 4, 'the nodule page carries the Fleischner, Lung-RADS and model tables');
   ok(await page.locator('[data-nod-risk] [data-model]').count() === 3 && /17%/.test(await txt('[data-nod-risk] [data-model="mayo"]')), 'three probability models computed for the default case (Mayo 17%): ' + await txt('[data-nod-risk-out]'));
   await page.locator('[data-nod-risk] [data-nod="size"]').fill('20'); await page.locator('[data-nod-risk] [data-nod="spic"]').check(); await page.waitForTimeout(80);

@@ -157,7 +157,30 @@ question and the first-move question with verdicts). `ui_4j_hemo.js`: `hmHeartSv
 dashed to the selected port, pressure tags, the devices, chambers scaled by their volumes), `hmDrawMonitor` (a canvas
 sweep of the ECG and the selected port with the breath, pulsus paradoxus on the arterial trace in tamponade),
 `hmControls`/`hmNumbers`, `hemoSwanFig` (the static catheter page with four labelled traces), `hemoLabFig` (`HMS`
-state; `hmRefresh` redraws the heart, the monitor and the numbers) and `hemoCasesFig` (`HMS.cases`). The nodule module (`src/nodules.js`, testable in node): `mayo`, `va`, `brock` are the published equations; `vdt` the
+state; `hmRefresh` redraws the heart, the monitor and the numbers) and `hemoCasesFig` (`HMS.cases`). ICU infusions
+(`src/drips.js`, standalone, testable in node): `DRUGS` (id, name, cls, rec, unit, wb, conc [[label, units/mL]],
+dose {start, step, interval, usual, max, ceiling, bolus}, onset, ind, mon, contra, limits, trials [[name, year,
+message]]), `CLASSES`, `drug(id)`, `rateFor(dose, unit, kg, concPerMl)` / `doseFor(rate, …)` / `unitInfo(unit)`,
+`nee(doses)` (the norepinephrine-equivalent dose), `SCENARIOS`; `ui_4l_drips.js`: `dripRefFig(cls)` (expandable cards;
+`DRS.open`), `dripCalcFig` (`DRS.calc`: drug, bag, custom concentration, weight, dose ↔ rate, the pump, the ladder;
+`DRS.vis` for the NEE panel) and `dripCasesFig` (`DRS.cases`). Echo (`src/echo.js`, standalone, testable in node):
+`build(pathologyId | overrides)` makes the model (the heart frame a/n1/n2 from an apex and a base in body coordinates
+x = left, y = depth, z = superior; the LV as cavity + epicardial ellipsoids with an annulus; the RV as an in-plane-rotated
+ellipsoid minus the LV epicardium — a crescent from the outflow to the inflow; the atria; funnel-shaped mitral and
+tricuspid leaflets that open with the cycle; the aortic root with its three cusps, the ascending aorta, arch and
+descending aorta as a tube path; the pulmonary artery, IVC with a hepatic vein, SVC; the pericardium as a band around
+the epicardial union, with an effusion; a liver ellipsoid with a diaphragm band; a curved chest wall `skinY(x)`);
+`classify(m, x, y, z, t)` returns the structure at a point for a phase of the cycle (`cycle(t)`); `probe(params)` turns
+{win, dx, dz, rot, tilt, rock} into a position and a beam/lateral/normal frame (rot about the beam from a tangent basis
+toward the patient's left, tilt about the lateral axis, rock about the plane normal); `sector(W, H, depth)` caches the
+per-pixel polar grid; `render(params, W, H, t)` paints intensities with hashed speckle and depth attenuation into typed
+arrays and returns the ids; `regions(res, W, H)` gives each structure's pixel count and centroid; `VIEWS` holds the
+eleven canonical probe parameters with tolerances and the teaching text; `score(params, viewId)` returns a 0–100
+closeness with movement hints. `ui_4k_echo.js`: `ehPaint` (upscales a render into a canvas, draws labels at centroids
+and an outline around one structure), `ehTorso` (the chest with the windows, the probe and its marker), `echoAtlasFig`
+(a card per view with a render, the torso, the text and an own-image slot in localStorage `pcd.echo.own.<view>`),
+`echoLabFig` (`EHS` state; a frame loop at ~10 fps while beating; `ehRefresh` redraws the torso and the score) and
+`echoQuizFig` (`EHQ`: a random view ± a few degrees, a random heart, three questions). The nodule module (`src/nodules.js`, testable in node): `mayo`, `va`, `brock` are the published equations; `vdt` the
 doubling time; `fleischner(q)` and `lungRads(q)` return the guideline's step for a nodule described by setting, type,
 mean diameter, solid component, status (baseline / new / growing / stable), multiplicity and patient risk.
 
