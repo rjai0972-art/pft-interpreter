@@ -690,6 +690,36 @@ const near = (a, b, t) => Math.abs(a - b) <= t;
   await page.locator('[data-ehr-mode="c"]').click(); await page.locator('[data-ehr="c"]').fill('72'); await page.locator('[data-ehr="c"]').dispatchEvent('input'); await page.waitForTimeout(400);
   ok(await page.locator('[data-ehr-got="true"]').count() === 1 && /Plane across the beam at 72 mm/.test(await txt('[data-ehr-readout]')), 'the papillary C-plane at 72 mm is obtained');
 
+  // ---- v8.3: the heart in 3-D — the atlas panel follows the card, the lab's follows the sliders, the real lab paints the real picture
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'echo_views' })); await page.waitForSelector('[data-h3-atlas]');
+  await page.waitForTimeout(2500);
+  ok(await page.locator('[data-h3-atlas] .h3-canvas').count() === 1 && /1\. Parasternal long axis/.test(await txt('[data-h3-title]')) && await page.locator('[data-h3-atlas][data-h3-current="plax"]').count() === 1 && await page.locator('[data-eh-3d]').count() === 11 && await page.locator('[data-eh-atlaslink]').count() === 11, 'the atlas opens with the 3-D heart on the first view; every card has a “Show in 3-D” button and a POCUS Atlas link');
+  ok(await page.evaluate(() => { const i = document.querySelector('[data-h3-atlas] .h3-panel').inst; return i && i.build.done >= 1 && i.meshes.lv.mesh.geometry.index.count > 3000 && i.meshes.rv && i.meshes.ao && i.rings.mv && i.plane.visible && i.hasImage; }), 'the model is meshed (LV wall > 1000 triangles), the valve rings exist and the picture is on the plane');
+  await page.locator('[data-eh-3d="a4c"]').click(); await page.waitForTimeout(900);
+  ok(/5\. Apical four-chamber/.test(await txt('[data-h3-title]')) && await page.locator('[data-h3-atlas][data-h3-current="a4c"]').count() === 1 && await page.locator('.eh-card.h3-on[data-eh-view="a4c"]').count() === 1 && await page.evaluate(() => { const i = document.querySelector('[data-h3-atlas] .h3-panel').inst; return i.params.win === 'apical' && i.target.fan === 45; }), '“Show in 3-D” moves the plane to the apical window and marks the card');
+  await page.evaluate(() => document.querySelector('[data-eh-view="sc4"]').scrollIntoView({ block: 'center' })); await page.waitForTimeout(1200);
+  ok(await page.locator('[data-h3-atlas][data-h3-current="sc4"]').count() === 1 && /Subcostal/.test(await txt('[data-h3-title]')), 'scrolling to the subcostal card moves the plane with it');
+  await page.locator('[data-h3-atlas] [data-h3-opt="cut"]').click(); await page.waitForTimeout(300);
+  ok(await page.evaluate(() => { const i = document.querySelector('[data-h3-atlas] .h3-panel').inst; return !i.opts.cut && i.meshes.lv.mat.transparent && i.meshes.lv.mat.clippingPlanes.length === 0 && !i.meshes.lv.cap.visible; }), 'turning the cut-away off makes the walls translucent and drops the caps');
+  await page.locator('[data-h3-atlas] [data-h3-opt="cut"]').click(); await page.locator('[data-h3-atlas] [data-h3-opt="screen"]').click(); await page.waitForTimeout(1200);
+  ok(await page.evaluate(() => { const i = document.querySelector('[data-h3-atlas] .h3-panel').inst; return i.opts.cut && !i.opts.screen && i.meshes.lv.mat.clippingPlanes.length === 1 && i.camera.up.y > 0.99; }), 'cut-away back on; head-up re-aims the camera with the head up');
+  // a clip of your own on a card, with its credit
+  const gif = Buffer.from('R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==', 'base64');
+  await page.locator('[data-eh-file="plax"]').setInputFiles({ name: 'atlas-plax.gif', mimeType: 'image/gif', buffer: gif }); await page.waitForSelector('[data-eh-own="plax"] .eh-ownimg');
+  await page.locator('[data-eh-credit="plax"]').fill('The POCUS Atlas (CC BY-NC 4.0)'); await page.locator('[data-eh-credit="plax"]').dispatchEvent('change'); await page.waitForSelector('[data-eh-creditline="plax"]');
+  ok(/POCUS Atlas/.test(await txt('[data-eh-creditline="plax"]')) && await page.locator('[data-eh-own="plax"] img.eh-ownimg').count() === 1 && await page.locator('[data-eh-clear="plax"]').count() === 1, 'a GIF added to the PLAX card is shown with its credit line');
+  await page.locator('[data-eh-clear="plax"]').click(); await page.waitForTimeout(400);
+  ok(await page.locator('[data-eh-own="plax"] .eh-ownimg').count() === 0, 'and can be removed');
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'echo_lab' })); await page.waitForSelector('[data-eh-3d] .h3-canvas');
+  await page.waitForTimeout(1500);
+  await page.locator('[data-eh="tilt"]').fill('20'); await page.locator('[data-eh="tilt"]').dispatchEvent('input'); await page.waitForTimeout(400);
+  ok(await page.evaluate(() => { const i = document.querySelector('[data-eh-3d] .h3-panel').inst; return i.params.tilt === 20 && i.hasImage && i.extT !== null && i.target.title.length > 3 && i.target.fan === 45; }), 'the lab’s 3-D heart takes the sliders and the live picture');
+  await page.locator('[data-echoreal]').scrollIntoViewIfNeeded(); await page.waitForSelector('[data-ehr-3d] .h3-canvas');
+  await page.locator('[data-ehr-mode="b"]').click(); await page.waitForTimeout(2500);
+  ok(await page.evaluate(() => { const i = document.querySelector('[data-ehr-3d] .h3-panel').inst; return i.target && i.target.fan === 36 && i.hasImage; }), 'the real lab paints the real plane on the model heart');
+  await page.locator('[data-ehr-mode="c"]').click(); await page.waitForTimeout(600);
+  ok(await page.evaluate(() => { const i = document.querySelector('[data-ehr-3d] .h3-panel').inst; return i.target.square === true && i.target.fan === 0; }), 'a short axis becomes a square plane across the beam');
+
   // ---- v8.2: the echo logbook
   await page.evaluate(() => { try { localStorage.removeItem('pcd.echolog.v1'); } catch (e) {} window.__pft.setMode('learn', { topic: 'echo_log' }); }); await page.waitForSelector('[data-el-form]');
   ok(await page.locator('[data-el-count]').count() === 5 && /0 \/ 150/.test(await txt('[data-el-count="tte"]')) && await page.locator('[data-el-m]').count() === 21, 'the logbook: five counters, twenty-one measurement fields');

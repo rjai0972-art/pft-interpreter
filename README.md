@@ -81,7 +81,7 @@ and the single-file browser version (`PulmCritDaddy_standalone.html`) always wor
 - Code signing is optional and not set up. For Windows add a signing certificate to the build; for Mac add an Apple Developer ID and notarization.
   Until then the first-launch steps above are needed.
 
-## How the reading is built (version 8.2)
+## How the reading is built (version 8.3)
 
 The rules layer computes every measurement state before any wording is chosen (ERS/ATS 2022 z-scores and the LLN;
 a reviewed adult phrase catalog anchored to the ERS/ATS 2022, ATS/ERS 2019, ERS/ATS 2023, ERS/ATS 2017, ERS 2019 and
@@ -319,7 +319,20 @@ five-chamber, or cut across the beam at any depth for the short axes, with the s
 anatomy topic gains a stack of real anonymised slices — the 3D Slicer CT-chest (non-contrast, 59 axial slices from
 the lung bases to the thoracic inlet) and CTA-cardio (contrast, 28 slices) sample data sets plus coronal and sagittal
 reformats — windowed in the browser from the real pixels (lung, mediastinal, bone), scrollable, with hand-placed
-labels on key levels, hover-to-name and a find-the-structure quiz. The echo area also gets a case logbook for the
+labels on key levels, hover-to-name and a find-the-structure quiz. Version 8.3 makes the real loops sharp — the
+volume is stored at the acquisition's full resolution (224 × 176 × 208 voxels, WebP mosaics) and the plane goes
+through the scanner's display processing (an unsharp mask, a noise floor, a little gain; a "Processed" switch shows
+the raw interpolation) — and adds the heart in three dimensions: the model's chambers, walls, valves, great vessels,
+caval veins, liver and any effusion meshed by marching cubes for twelve phases of the cycle, beating, with the probe
+on the chest, the beam's outline, the echo picture painted onto the scan plane and the half of the heart between you
+and the plane cut away (solid cut faces), so the cross-section you are looking at is the one on the screen; drag to
+turn, wheel to zoom, "Screen up" to hold the picture the way the screen does or head-up for the patient's frame. In
+the views atlas the panel stays at the top and its plane follows the card you scroll to (or "Show in 3-D" on any
+card); in the scanning lab it follows the sliders and the live picture; in the real-volume lab the real picture is
+painted on the plane you have cut through the model heart. Each atlas card now links to The POCUS Atlas
+(thepocusatlas.com, CC BY-NC 4.0) and its "Add your own image or clip" slot takes a GIF, MP4 or WebM as well as a
+still, with a credit line — so a clip saved from the Atlas (or your own de-identified loop) sits under the view it
+shows, kept on the device only. The echo area also gets a case logbook for the
 boards: each study with a random case code (no identifiers), the date, the setting and the clinical question, your
 role (performed, interpreted, supervised), a practice flag that excludes it from the counts, the views obtained and
 the components not obtainable, twenty-one measurements with stroke volume, cardiac output and index, RVSP, E/A, E/e′,

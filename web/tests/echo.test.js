@@ -62,4 +62,19 @@ const off = E.score(Object.assign(E.viewParams('a4c'), { rot: 30 }), 'a4c'); ok(
 const far = E.score(Object.assign(E.viewParams('a4c'), { win: 'psl' }), 'a4c'); ok(!far.obtained && far.score < 60 && /apical window/.test(far.hints[0]), 'the wrong window is the first hint');
 const tl = E.score(Object.assign(E.viewParams('plax'), { tilt: 15 }), 'plax'); ok(!tl.obtained && /Tilt/.test(tl.hints[0]), 'a tilt error gives a tilt hint');
 const nearly = E.score(Object.assign(E.viewParams('plax'), { rot: 140, tilt: 3 }), 'plax'); ok(nearly.obtained && nearly.score >= 90, 'within tolerance counts as obtained');
+// ---- v8.3: the implicit fields that the 3-D view meshes
+const mN = E.build('normal'), F0 = E.fields(mN, 0), F3 = E.fields(mN, 0.3);
+ok(F0.parts.map(p => p.id).join(',') === 'lv,rv,la,ra,ao,pa,cavae,liver' && F0.rings.length === 3 && F0.parts.every(p => typeof p.f === 'function' && p.box.lo.length === 3 && p.box.hi.every((x, i) => x > p.box.lo[i])), 'eight parts with boxes and three valve rings for the normal heart');
+ok(E.fields(E.build('eff'), 0).parts.some(p => p.id === 'eff' && p.kind === 'fluid') && E.fields(E.build('normal'), 0, { liver: false }).parts.every(p => p.id !== 'liver'), 'an effusion adds a fluid part; the liver can be left out');
+ok(F0.parts.filter(p => p.static).map(p => p.id).join() === 'liver' && Math.abs(F3.k - E.cycle(0.3)) < 1e-9 && F3.rings[0].open < F0.rings[0].open && F3.rings[2].open > F0.rings[2].open, 'the liver is static; the mitral ring closes and the aortic ring opens as the cycle contracts');
+(function () {
+  let agree = 0, n = 0, seed = 7; const rnd = () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
+  for (let i = 0; i < 6000; i++) {
+    const x = -8 + rnd() * 19, y = 1 + rnd() * 13, z = -12 + rnd() * 22, c = E.classify(mN, x, y, z, 0.3);
+    const wall = F3.parts[0].f(x, y, z) < 0 || F3.parts[1].f(x, y, z) < 0; n++; if (wall === (c === 4 || c === 8)) agree++;
+  }
+  ok(agree / n > 0.97, 'the LV and RV wall fields agree with classify() on ' + (agree / n * 100).toFixed(1) + '% of random points');
+})();
+ok(F0.parts[0].f(mN.lvc[0], mN.lvc[1], mN.lvc[2]) > 0 && F0.parts[0].f(mN.apex[0], mN.apex[1], mN.apex[2]) < 0.6 && F0.parts[6].f(mN.ivcPath[1][0] + 1.0 * 0 + 1.1, mN.ivcPath[1][1], mN.ivcPath[1][2]) < 0, 'the LV centre is cavity, the apex is near the wall, the IVC wall sits a radius out from its path');
+ok(F0.parts.every(p => p.f(0, 0.5, 0) > 0), 'nothing is inside the chest wall');
 console.log('echo ' + pass + ' passed, ' + fail + ' failed');

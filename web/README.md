@@ -182,13 +182,40 @@ and an outline around one structure), `ehTorso` (the chest with the windows, the
 (a card per view with a render, the torso, the text and an own-image slot in localStorage `pcd.echo.own.<view>`),
 `echoLabFig` (`EHS` state; a frame loop at ~10 fps while beating; `ehRefresh` redraws the torso and the score) and
 `echoQuizFig` (`EHQ`: a random view ± a few degrees, a random heart, three questions). v8.2: `src/echo_real.js` is
-generated (scratch script `echo_build.py`) from the SlicerHeart "Mitral" 4-D volume — nine phases downsampled 1.5×,
-each a JPEG mosaic of its 139 depth slices, with the volume dimensions, spacing, apex position, period and `views`
+generated (scratch script `echo_build.py`) from the SlicerHeart "Mitral" 4-D volume — nine phases (v8.3: at the
+acquisition's full 224 × 176 × 208 resolution, each a WebP mosaic of its 208 depth slices; v8.2 stored them
+downsampled 1.5× as JPEG), with the volume dimensions, spacing, apex position, period and `views`
 (plane parameters φ/τ for the long axes, a depth `c` for the C-plane short axes, labels in plane millimetres);
 `ui_4k_echo.js` decodes the mosaics into `Uint8Array` volumes (`ehrLoad`), reslices any plane with trilinear
 sampling and phase blending (`ehrPlane`), paints it with labels and chrome (`ehrPaint`), runs a loop with play/scrub
-(`ehrLoop`), adds a real slot to the atlas cards (`ehrAtlasSlot`, `EHR_MAP` from model view ids to real view ids) and
-the real lab (`echoRealLabFig`, state `EHRL`, scoring `ehrScore`). `src/ct_real.js` is generated (`ct_build.py`) from
+(`ehrLoop`; v8.3: planes are sampled at 300 × 360 (C-planes 260²), `ehrEnhance` applies an unsharp mask, a noise
+floor, gain and gamma through a cached LUT, toggled by `EHR.sharpen` / `[data-ehr-sharp]`, and `ehrPlane` returns
+the pyramid mask as `out.mask`), adds a real slot to the atlas cards (`ehrAtlasSlot`, `EHR_MAP` from model view ids to
+real view ids) and the real lab (`echoRealLabFig`, state `EHRL`, scoring `ehrScore`). v8.3, the heart in 3-D:
+`PFT_ECHO.fields(model, t, opts)` writes the same geometry as `classify()` as implicit fields (negative inside), one
+part per structure (`lv` wall with papillary muscles, `rv` free wall, `la`, `ra`, `ao` with the descending aorta,
+`pa`, `cavae` with the hepatic vein and SVC, `eff` when there is an effusion, the static `liver`), each with its
+bounding box, plus the three valve rings (`mv`, `tv`, `av`: centre, axis, radius, opening); thin walls are thickened
+to `opts.minWall` (0.42 cm) so a mesh can hold them, and nothing is inside the chest wall. `ui_4o_heart3d.js`:
+`h3March` (marching cubes with shared edge vertices → an indexed `BufferGeometry` in scene coordinates, x right, y up,
+z toward the viewer = body x, z, −y), `h3Build` (a phase cache per heart, `H3.K` = 12 phases built in the background
+coarse-first, `H3.cell` 0.24 cm), `h3Create` (renderer with stencil, lights, the chest sheet and orientation labels,
+the probe with its marker, the beam outline, the picture plane as a `CanvasTexture` rebuilt when its size changes),
+`h3SetModel`, `h3SetProbe(inst, params, animate, aim)` (the plane from `PFT_ECHO.probe`; the canvas rectangle maps
+linearly onto the plane: pixel (i, j) ↔ P + ((j − 6)/scale)·d + ((i − W/2)/scale)·l), `h3SetPlaneSpec` (a plane given
+directly: P, d, l, rect, fan or a square), `h3SetImage(inst, gray, W, H, mask)`, `h3Aim` (camera on the +n side with
+up = −d when "Screen up", else the anterior side head-up), `h3Place` (the cut: a clipping plane that removes the half
+on the camera's side with hysteresis; stencil caps `h3StencilGroup`/`h3Cap` paint the cut faces of the solid parts;
+ghost mode when the cut is off), `h3Frame` (phase = nearest built, tweens for the plane and the aim, own picture at ~9
+fps when `ownImage`), `heart3dPanel(opts)` (the figure; `.inst` on the element). Hooks: the atlas (`EHS.atlas3d`,
+`ehAtlasShow`, `ehAtlasWatch` with an IntersectionObserver band in the middle of the viewport, `[data-h3-atlas]`
+`[data-h3-current]` `[data-eh-3d]`), the lab (`EHS.inst3d`; `ehRenderLive` hands over `res.img` + the sector mask
+and the phase as `inst.extT`; `ehRefresh` sets the probe), the real lab (`EHRL.inst3d`; `ehrSync3d` maps φ → the
+model's marker angle through the shared views (0→0, 100→60, 135→120, 180→180) and τ by the A5C pair; `ehrLoop`'s
+`onFrame`). Selectors `[data-h3] [data-h3-title] [data-h3-status] [data-h3-opt=screen|cut|image|beating|labels|spin]
+[data-eh-3d] [data-ehr-3d]`. The own-image slot (`ehOwnSlot`) now takes stills and clips (GIF, MP4, WebM ≤ 14 MB)
+with a credit, stored through the logbook's IndexedDB helpers under `atlas:<view>` (legacy localStorage still read),
+and links to The POCUS Atlas (`[data-eh-file] [data-eh-credit] [data-eh-creditline] [data-eh-clear] [data-eh-atlaslink]`). `src/ct_real.js` is generated (`ct_build.py`) from
 the 3D Slicer CT-chest and CTA-cardio NRRDs: HU encoded piecewise into 8 bits (−1000…−200 → 0…60, −200…300 →
 60…235, 300…1500 → 235…255), each slice a JPEG data URL with its level from the carina and hand-placed labels
 `[name, x, y, r]` in picture pixels; `ui_4f_ct.js` decodes a slice into grey values once (`crPixels`), windows it

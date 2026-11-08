@@ -197,6 +197,77 @@
     return S.TISSUE;
   }
 
+  /* ================================================================== the surfaces (v8.3) ==================================================================
+     The same geometry as classify(), written as implicit fields (negative inside) so the heart can be meshed for the 3-D
+     view: one part per structure, each with its bounding box in body coordinates. A field is a shape, not a distance —
+     a marching-cubes contour of it is the surface that classify() would paint. */
+  const tubeField = (p, path, radii) => { const d = tubeDist(p, path); const r = typeof radii === 'number' ? radii : radii[Math.min(radii.length - 1, d.i)]; return d.d - r; };
+  function fields(m, t, opts) {
+    opts = opts || {};
+    const o = m.o, k = cycle(t === undefined ? 0 : t), lv = m.lv, rv = m.rv, la = m.la, ra = m.ra;
+    const lvK = k * o.contr, rvK = k * o.rvContr;
+    const lvRa = lv.ra * (1 - 0.1 * lvK), lvRc = lv.rc * (1 - 0.3 * lvK);
+    const epiRa = lv.ra + lv.wall * 0.9, epiRc = lv.rc + lv.wall + 0.25 * lvK;
+    const laR = la.r.map((r, i) => r * (i === 0 ? 1 + 0.06 * k : 1 + 0.08 * k));
+    const raR = ra.r.map((r) => r * (1 + 0.07 * k) * (o.rvCollapse ? (1 - 0.3 * k) : 1));
+    const rvRb = rv.rb * (1 - 0.25 * rvK) * (o.rvCollapse ? (1 - 0.35 * (1 - k)) : 1), rvRc = rv.rc * (1 - 0.1 * rvK), rvRa = rv.ra * (1 - 0.08 * rvK);
+    const cps = Math.cos(rv.psi), sps = Math.sin(rv.psi);
+    const minWall = opts.minWall === undefined ? 0.42 : opts.minWall;   // thin walls are thickened a little so a mesh can hold them
+    const laW = Math.max(la.wall, minWall), raW = Math.max(ra.wall, minWall), rvW = Math.max(rv.wall, minWall), vesW = Math.max(0.18, minWall * 0.85);
+    const breath = o.ivcCol * Math.max(0, Math.sin(2 * Math.PI * (((t || 0) * 0.27) % 1)));
+    const ivcR = m.ivc.r * (1 - 0.8 * breath);
+    // heart-frame coordinates of a body point
+    const hf = (x, y, z) => { const hx = x - m.lvc[0], hy = y - m.lvc[1], hz = z - m.lvc[2]; return [hx * m.a[0] + hy * m.a[1] + hz * m.a[2], hx * m.n1[0] + hy * m.n1[1] + hz * m.n1[2], hx * m.n2[0] + hy * m.n2[1] + hz * m.n2[2]]; };
+    const lvEpi = (u, v, w) => Math.max(ell(u, v, w, epiRa, epiRc, epiRc) - 1, (lv.ann - 1.2) - u);
+    const lvEndo = (u, v, w) => Math.max(ell(u, v, w, lvRa, lvRc, lvRc) - 1, (lv.ann - 0.2) - u);
+    const laCav = (u, v, w) => ell(u - la.c[0], v - la.c[1], w - la.c[2], laR[0], laR[1], laR[2]) - 1;
+    const laOut = (u, v, w) => ell(u - la.c[0], v - la.c[1], w - la.c[2], laR[0] + laW, laR[1] + laW, laR[2] + laW) - 1;
+    const raCav = (u, v, w) => ell(u - ra.c[0], v - ra.c[1], w - ra.c[2], raR[0], raR[1], raR[2]) - 1;
+    const raOut = (u, v, w) => ell(u - ra.c[0], v - ra.c[1], w - ra.c[2], raR[0] + raW, raR[1] + raW, raR[2] + raW) - 1;
+    const rvFrame = (v, w) => [(v - rv.c[0]) * cps + (w - rv.c[1]) * sps, -(v - rv.c[0]) * sps + (w - rv.c[1]) * cps];
+    const rvCav = (u, v, w) => { const q = rvFrame(v, w); return Math.max(ell(u - 0.2, q[0], q[1], rvRa, rvRb, rvRc) - 1, (rv.ann - 0.2) - u, -lvEpi(u, v, w)); };
+    const rvOut = (u, v, w) => { const q = rvFrame(v, w); return Math.max(ell(u - 0.2, q[0], q[1], rvRa + rvW, rvRb + rvW, rvRc + rvW) - 1, (rv.ann - 0.9) - u); };
+    const aoLumen = (p) => tubeField(p, m.aortaPath, m.aortaR);
+    const daoLumen = (p) => Math.max(Math.hypot(p[0] - m.dao.c[0], p[1] - m.dao.c[1]) - m.dao.r, m.dao.z[0] - p[2], p[2] - m.dao.z[1]);
+    const paLumen = (p) => tubeField(p, m.paPath, m.pa.r);
+    const ivcLumen = (p) => Math.min(tubeField(p, m.ivcPath, ivcR), tubeField(p, m.hvPath, 0.4));
+    const svcLumen = (p) => tubeField(p, m.svcPath, 0.9);
+    const pap = (u, v, w) => { let best = 9; for (let i = 0; i < 2; i++) { const ang = (i === 0 ? 118 : 242) * D2R, pr = lvRc * 0.62; const d = ell(u - 0.6, v - pr * Math.cos(ang), w - pr * Math.sin(ang), 1.5, 0.5, 0.5) - 1; if (d < best) best = d; } return best; };
+    const band = (u, v, w, d) => Math.min(Math.max(ell(u, v, w, epiRa + d, epiRc + d, epiRc + d) - 1, (lv.ann - 1.2 - d) - u), (function () { const q = rvFrame(v, w); return Math.max(ell(u - 0.2, q[0], q[1], rvRa + rv.wall + d, rvRb + rv.wall + d, rvRc + rv.wall + d) - 1, (rv.ann - 0.9 - d) - u); })(), ell(u - la.c[0], v - la.c[1], w - la.c[2], laR[0] + la.wall + d, laR[1] + la.wall + d, laR[2] + la.wall + d) - 1, ell(u - ra.c[0], v - ra.c[1], w - ra.c[2], raR[0] + ra.wall + d, raR[1] + ra.wall + d, raR[2] + ra.wall + d) - 1);
+    // bounding boxes: a heart-frame box mapped to body axes
+    const hbox = (u0, u1, v0, v1, w0, w1) => { const lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity]; [u0, u1].forEach(u => [v0, v1].forEach(v => [w0, w1].forEach(w => { const p = m.h2b(u, v, w); for (let i = 0; i < 3; i++) { if (p[i] < lo[i]) lo[i] = p[i]; if (p[i] > hi[i]) hi[i] = p[i]; } }))); return { lo: lo, hi: hi }; };
+    const pbox = (path, r) => { const lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity]; path.forEach(p => { for (let i = 0; i < 3; i++) { if (p[i] - r < lo[i]) lo[i] = p[i] - r; if (p[i] + r > hi[i]) hi[i] = p[i] + r; } }); return { lo: lo, hi: hi }; };
+    const pad = (b, d) => ({ lo: b.lo.map(x => x - d), hi: b.hi.map(x => x + d) });
+    const union = (a, b) => ({ lo: a.lo.map((x, i) => Math.min(x, b.lo[i])), hi: a.hi.map((x, i) => Math.max(x, b.hi[i])) });
+    const parts = [];
+    parts.push({ id: 'lv', name: 'Left ventricle (wall and papillary muscles)', kind: 'wall', box: pad(hbox(lv.ann - 1.3, epiRa + 0.3, -epiRc - 0.3, epiRc + 0.3, -epiRc - 0.3, epiRc + 0.3), 0.2),
+      f: (x, y, z) => { const q = hf(x, y, z), u = q[0], v = q[1], w = q[2]; const shell = Math.max(lvEpi(u, v, w), -lvEndo(u, v, w), -laCav(u, v, w), -aoLumen([x, y, z]) - 0.05); return Math.min(shell, Math.max(pap(u, v, w), lvEpi(u, v, w))); } });
+    parts.push({ id: 'rv', name: 'Right ventricle (free wall)', kind: 'wall', box: pad(hbox(rv.ann - 1.0, rvRa + 0.5, rv.c[0] - rvRb - rvW - 0.3, rv.c[0] + rvRb + rvW + 0.3, rv.c[1] - rvRc - rvW - 0.3, rv.c[1] + rvRc + rvW + 0.3), 0.2),
+      f: (x, y, z) => { const q = hf(x, y, z), u = q[0], v = q[1], w = q[2]; return Math.max(rvOut(u, v, w), -rvCav(u, v, w), -lvEpi(u, v, w) + 0.02, -raCav(u, v, w), -paLumen([x, y, z]) - 0.05); } });
+    parts.push({ id: 'la', name: 'Left atrium', kind: 'wall', box: pad(hbox(la.c[0] - laR[0] - laW, la.c[0] + laR[0] + laW, la.c[1] - laR[1] - laW, la.c[1] + laR[1] + laW, la.c[2] - laR[2] - laW, la.c[2] + laR[2] + laW), 0.2),
+      f: (x, y, z) => { const q = hf(x, y, z), u = q[0], v = q[1], w = q[2]; return Math.max(laOut(u, v, w), -laCav(u, v, w), -lvEndo(u, v, w), -aoLumen([x, y, z]) - 0.05); } });
+    parts.push({ id: 'ra', name: 'Right atrium', kind: 'wall', box: pad(hbox(ra.c[0] - raR[0] - raW, ra.c[0] + raR[0] + raW, ra.c[1] - raR[1] - raW, ra.c[1] + raR[1] + raW, ra.c[2] - raR[2] - raW, ra.c[2] + raR[2] + raW), 0.2),
+      f: (x, y, z) => { const q = hf(x, y, z), u = q[0], v = q[1], w = q[2], p = [x, y, z]; return Math.max(raOut(u, v, w), -raCav(u, v, w), -rvCav(u, v, w), -ivcLumen(p) - 0.05, -svcLumen(p) - 0.05); } });
+    parts.push({ id: 'ao', name: 'Aorta', kind: 'vessel', box: pad(union(pbox(m.aortaPath, m.aortaR[0] + vesW), { lo: [m.dao.c[0] - m.dao.r - vesW, m.dao.c[1] - m.dao.r - vesW, Math.max(m.dao.z[0], opts.zMin === undefined ? -12 : opts.zMin)], hi: [m.dao.c[0] + m.dao.r + vesW, m.dao.c[1] + m.dao.r + vesW, m.dao.z[1] + 0.2] }), 0.2),
+      f: (x, y, z) => { const p = [x, y, z], q = hf(x, y, z); const lumen = Math.min(aoLumen(p), daoLumen(p)); return Math.max(lumen - vesW, -lumen, -lvEndo(q[0], q[1], q[2]) - 0.1); } });
+    parts.push({ id: 'pa', name: 'Pulmonary artery', kind: 'vessel', box: pad(pbox(m.paPath, m.pa.r + vesW), 0.2),
+      f: (x, y, z) => { const p = [x, y, z], q = hf(x, y, z); const lumen = paLumen(p); return Math.max(lumen - vesW, -lumen, -rvCav(q[0], q[1], q[2]) - 0.1); } });
+    parts.push({ id: 'cavae', name: 'Venae cavae and hepatic vein', kind: 'vessel', box: pad(union(union(pbox(m.ivcPath, ivcR + vesW), pbox(m.hvPath, 0.4 + vesW)), pbox(m.svcPath, 0.9 + vesW)), 0.2),
+      f: (x, y, z) => { const p = [x, y, z], q = hf(x, y, z); const lumen = Math.min(ivcLumen(p), svcLumen(p)); return Math.max(lumen - vesW, -lumen, -raCav(q[0], q[1], q[2]) - 0.1); } });
+    if (opts.zMin !== undefined) parts[6].box.lo[2] = Math.max(parts[6].box.lo[2], opts.zMin);
+    if (o.effusion > 0) parts.push({ id: 'eff', name: 'Pericardial effusion', kind: 'fluid', box: pad(hbox(lv.ann - 1.2 - o.effusion - 2.5, epiRa + o.effusion + 0.3, -epiRc - o.effusion - 2.2, epiRc + o.effusion + 2.2, -epiRc - o.effusion - 2.2, epiRc + o.effusion + 2.2), 0.3),
+      f: (x, y, z) => { const q = hf(x, y, z), u = q[0], v = q[1], w = q[2]; const e = o.effusion * (0.85 + 0.15 * Math.tanh(u)); return Math.max(band(u, v, w, e), -band(u, v, w, 0)); } });
+    if (opts.liver !== false) parts.push({ id: 'liver', name: 'Liver', kind: 'organ', box: { lo: [m.liver.c[0] - m.liver.r[0], m.liver.c[1] - m.liver.r[1], Math.max(m.liver.c[2] - m.liver.r[2], opts.zMin === undefined ? -12 : opts.zMin)], hi: [m.liver.c[0] + m.liver.r[0], m.liver.c[1] + m.liver.r[1], m.liver.c[2] + m.liver.r[2]] },
+      f: (x, y, z) => ell(x - m.liver.c[0], y - m.liver.c[1], z - m.liver.c[2], m.liver.r[0], m.liver.r[1], m.liver.r[2]) - 1 });
+    // nothing is drawn inside the chest wall (classify paints it WALL); the liver does not beat, so it is marked static
+    if (opts.chest !== false) parts.forEach(p => { const f0 = p.f; p.f = (x, y, z) => Math.max(f0(x, y, z), (skinY(x) + 1.3) - y); });
+    parts.forEach(p => { p.static = p.id === 'liver'; });
+    // the valve rings, as geometry the 3-D view can draw directly: centre, axis, radius (cm)
+    const mvC = m.h2b(lv.ann, 0, 0), tvC = m.h2b(rv.ann, rv.c[0], rv.c[1]), avC = V.add(m.ao.root, V.mul(m.ao.e, 0.37));
+    const rings = [{ id: 'mv', name: 'Mitral annulus', c: mvC, axis: m.a, r: lv.annR, open: 1 - lvK }, { id: 'tv', name: 'Tricuspid annulus', c: tvC, axis: m.a, r: rv.annR, open: 1 - rvK }, { id: 'av', name: 'Aortic valve', c: avC, axis: m.ao.e, r: m.aortaR[0], open: lvK }];
+    return { parts: parts, rings: rings, k: k, centre: m.lvc, apex: m.apex, base: m.base };
+  }
+
   /* ================================================================== the probe ================================================================== */
   const WINDOWS = {
     psl: { title: 'Parasternal', pos: [2.6, 0, 0.2], d: [0, 1, 0], note: 'Left sternal border, 3rd–4th interspace, patient in the left lateral decubitus.' },
@@ -379,6 +450,7 @@
   T.echo_views = { title: 'The windows and the views', kicker: 'Where the probe goes, which way the marker points, what fills the screen, and what to measure in it', blocks: [
     { p: 'Each card below is one standard view: the probe position and marker direction, the picture the simulator makes at that position with the structures labelled, the anatomy to find, the measurements the view is used for, and the mistakes that make it unreadable. The drawn pictures are rendered from the same model as the scanning lab, so what you obtain there should look like what you see here; under each apical and short-axis card runs the real thing — a loop cut from a real 3-D acquisition. Add your own de-identified clips or stills to any card: they are kept on this device only.' },
     { widget: 'echoatlas' },
+    { h: 'Real clips from an open library', p: 'The POCUS Atlas (thepocusatlas.com) is a free, open-access collection of real echo clips — normal views, colourised normal anatomy, LV and RV failure, tamponade, dissection, valve disease, the IVC, TEE — under a Creative Commons BY-NC 4.0 licence. The app cannot copy the clips in (they live on the Atlas’s own servers), but every card above links to the echo section, and any still or clip you save from it (right-click → save) can be added to the card with “Add your own image or clip”, where it is kept on this device with its credit.', links: [['The POCUS Atlas — echocardiography', 'https://www.thepocusatlas.com/echocardiography-2', 'free and open access medical education content, CC BY-NC 4.0'], ['The POCUS Atlas on YouTube', 'https://www.youtube.com/channel/UCrt3Hue8KWdkB7YyjcmmukQ', 'the clips as videos']] },
     { h: 'The sequence of a focused scan', ol: ['Parasternal long axis: LV size and function, the mitral and aortic valves, the LA, a posterior effusion.', 'Parasternal short axis at the papillary level: LV function by segment, the septal shape, the RV crescent.', 'Apical four-chamber: the four chambers, RV:LV, TAPSE, the valves on colour.', 'Subcostal four-chamber: the effusion, RA/RV collapse, the patient who has no other window.', 'Subcostal IVC: size and collapse.', 'Then the lungs (anterior and lateral zones) and, if the question needs it, the A5C for the LVOT VTI and the suprasternal for the arch.'] },
     { src: ['Mitchell C, et al. ASE comprehensive TTE examination guideline. J Am Soc Echocardiogr 2019;32:1–64.', 'Levitov A, et al. Guidelines for the appropriate use of bedside general and cardiac ultrasonography in the evaluation of critically ill patients — part II: cardiac ultrasonography (SCCM). Crit Care Med 2016;44:1206–27.'] }
   ] };
@@ -591,6 +663,6 @@
     { title: 'Practice', ids: ['echo_lab', 'echo_quiz', 'echo_log'] }
   ];
 
-  root.PFT_ECHO = { topics: T, groups: GROUPS, LOG: LOG, S: S, NAMES: NAMES, INTENSITY: INTENSITY, PATHOLOGY: PATHOLOGY, WINDOWS: WINDOWS, VIEWS: VIEWS, build: build, classify: classify, probe: probe, sector: sector, render: render, regions: regions, cycle: cycle, view: view, viewParams: viewParams, score: score, V: V };
+  root.PFT_ECHO = { topics: T, groups: GROUPS, LOG: LOG, S: S, NAMES: NAMES, INTENSITY: INTENSITY, PATHOLOGY: PATHOLOGY, WINDOWS: WINDOWS, VIEWS: VIEWS, build: build, classify: classify, probe: probe, sector: sector, render: render, regions: regions, cycle: cycle, view: view, viewParams: viewParams, score: score, fields: fields, skinY: skinY, V: V };
   if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_ECHO;
 })(typeof window !== 'undefined' ? window : globalThis);

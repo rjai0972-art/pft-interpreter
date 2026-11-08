@@ -1874,3 +1874,27 @@ body.has-pop { overflow: hidden; }
 .el-cert { margin-top: 10px; font-size: 13px; } .el-cert p { margin: 4px 0; }
 .el-views .chk-inline, .el-roles .chk-inline { white-space: normal; align-items: flex-start; line-height: 1.3; }
 .el-mgrid .el-field { align-content: start; }
+
+/* ===== v8.3: the heart in three dimensions ===== */
+.h3-panel { background: #1a1d24; border-radius: 12px; overflow: hidden; border: 2px solid #2a2f3a; min-width: 0; }
+.h3-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 7px 12px 5px; color: #ece8e0; font-size: 12.5px; }
+.h3-title { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.h3-status { color: #8fa7b8; font-size: 11.5px; white-space: nowrap; }
+.h3-canvas { display: block; width: 100%; touch-action: none; cursor: grab; outline: none; }
+.h3-canvas:active { cursor: grabbing; }
+.h3-ctl { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 7px 12px 9px; align-items: center; }
+.h3-ctl .chk-inline { color: #cfd6e0; }
+.h3-hint { margin-left: auto; color: #8fa7b8; }
+.h3-none { padding: 10px 12px; }
+.h3-none .fine { color: #cfd6e0; margin: 0; }
+.h3-sticky { position: sticky; top: 0; z-index: 6; background: var(--bg); padding: 6px 0 6px; margin: 0 0 12px; }
+.h3-caption { margin: 6px 0 0; }
+.eh-card.h3-on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.eh-3dslot { margin-top: 12px; min-width: 0; }
+.eh-3dslot h5 { margin: 0 0 6px; }
+.eh-3dslot > .fine { margin: 6px 0 0; }
+@media (max-height: 700px), (max-width: 700px) { .h3-sticky { position: static; } }
+.eh-ownclip { background: #000; }
+.eh-credit { margin-top: 6px; }
+.eh-creditline { margin: 4px 0 0; }
+.eh-ownctl .lnk.fine { margin-left: auto; }
