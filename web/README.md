@@ -215,7 +215,46 @@ model's marker angle through the shared views (0→0, 100→60, 135→120, 180�
 `onFrame`). Selectors `[data-h3] [data-h3-title] [data-h3-status] [data-h3-opt=screen|cut|image|beating|labels|spin]
 [data-eh-3d] [data-ehr-3d]`. The own-image slot (`ehOwnSlot`) now takes stills and clips (GIF, MP4, WebM ≤ 14 MB)
 with a credit, stored through the logbook's IndexedDB helpers under `atlas:<view>` (legacy localStorage still read),
-and links to The POCUS Atlas (`[data-eh-file] [data-eh-credit] [data-eh-creditline] [data-eh-clear] [data-eh-atlaslink]`). `src/ct_real.js` is generated (`ct_build.py`) from
+and links to The POCUS Atlas (`[data-eh-file] [data-eh-credit] [data-eh-creditline] [data-eh-clear] [data-eh-atlaslink]`).
+
+v8.4, the conduction bench: `src/conduction.js` (`PFT_COND`, node-testable; `tests/cond.test.js`) holds the general
+model — `REGIONS` (seven ventricular walls with a centre, a Purkinje direction, delivery time, duration, weight and the
+path that delivers them: `TREE`), `ATRIA`, directed spread `EDGES` (`muscle` crossings and the left `network` between
+the fascicle territories, with `SPREAD` factors for duration, magnitude and how much of the wavefront follows the
+spread direction), `INJ` (the ST vector of each wall), `FOCI`, `AP_SITES`; `defaults()` (every dial), `preset(id)`
+(29 presets as settings), `activate(cfg, origin)` (Purkinje delivery through the open elements with `ELEMENT_DELAY`
+60 ms per fully delayed element, blocked at ≥ 0.95; then relaxation over the edges, each region keeping its earliest
+route; the accessory pathway's `pre` region; the result in the shape ecg.js uses — `S.vent/atria` with t0, dur, dir,
+mag, via, from, late, isch, injury, mass — plus qrs, axis, pr, pre), `dipole(S, t, cfg, parts)` (activation, the ST
+plateau from injury/ischaemia, the T with lateness, ischaemia and strain), `strip(cfg, secs)` (the beats: sinus / AF /
+flutter / arrest, the AV modes, PVCs with a compensatory pause, pacing and VT taking over, escapes with overdrive
+suppression; each beat carries its own `seq`), `voltageAt(lead, st, T, parts)`, `stateAt(st, T)`, `measureLead` (Q
+by first deflection or a deep early negativity with a small R, R, S, terminal 40 ms, ST at J+60, T peak),
+`interpret(st)` (the reading lines and the per-lead measurements) and `elementStates(cfg)`. `ui_4q_conduct.js`:
+`CDS` state, `cdPanel(sel)` (the dials of the selected element; `[data-cd-panel=id] [data-cd-row=…]
+[data-cd-samode] [data-cd-avmode] [data-cd-focusmode] [data-cd-ap]`), `cdHeart` (the ECG lab's `heartFig` made
+clickable: `[data-cd-pick=element]`, with `.blocked .delayed .picked .infarct .injured .isch` states), `cdParts(st,
+lead)` (the stacked contributions, `[data-cd-part=id] [data-cd-sum=lead]`), `cdReading`, `cdReads`, `cdRefresh`
+(rAF-throttled recompute; `cdApply` swaps the paper, dial, reads, parts and reading in place), `conductionLab()`
+(`[data-condlab] [data-cd-presetsel] [data-cd-el] [data-cd-lead] [data-cd-reset] [data-cd-note] [data-cd-line=…]`).
+`ecgPaper(seq, bts, vfn)` and `ecgFrame` (`view.stateAt`, `view.vecAt`, `view.keepAv`) took optional callbacks so the
+ECG lab's paper, dial and animation serve both labs. The ECG Learn area merges `PFT_ECG` and `PFT_COND` topics.
+
+v8.4, drips on the circuit: `ecmo.js` `DRIPS` (ten agents: dose range, step, receptors and `fx` as `[Emax, ED50,
+Hill]` per effect — `svr`, `dil`, `contr`, `hr`, `ven`, `pvr` — plus lactate, arrhythmia and NEE weights),
+`vasoactive(drugs)` (the combined multipliers: constrictors multiply the SVR, dilators divide it; inotropy saturates
+through tanh; chronotropy adds; NEE = norepinephrine-equivalent), `applyDrugs(p, s)` (the patient the circuit sees:
+svr, contr ≤ 1.3, hr, cvp, pvr, and on VV the native output `coEff` = co × rate × contractility × afterload × an RV
+factor against the PVR). `runVV`/`runVA` take the raw patient and apply the drips first; outputs gain `hr`, `map`
+(VV too), `svr`, `pvr`, `cvp`, `coSet`, `fx`. `PATIENT` has `hr` 95 and `pvr` 1; VV presets start at `svr` 11; settings
+carry `drugs: {}`; six presets with drips; `alarms` read the heart rate, the arrhythmia risk, the VV MAP and the NEE.
+`ui_4i_ecmo.js`: `ecDripSlider`, `ecDoseFmt`, `ecDripReadout` (`[data-ec-drips] [data-ec-drip=id] [data-ec-dose=id]
+[data-ec-dripread] [data-ec-dripsoff]`), patient sliders `hr`, `pvr` (VV) and `svr` in both modes, MAP and HR tiles,
+MAP / heart rate / cardiac output / CVP cells on the VV patient panel.
+
+v8.4, the home: `HOME_SECTIONS` (clinic, bronch, icu, probe, record; `[data-home-section=id]`), `homeProgress`
+(`[data-home-progress] [data-home-prog=bank|log|nbe]` — the logbook counters through `ELOG.counters(elLoad())`),
+tiles `interpret`, `bank`, `log`, `boards` (`[data-home-tile=…]`), single-tile sections get `.home-grid.one`. `src/ct_real.js` is generated (`ct_build.py`) from
 the 3D Slicer CT-chest and CTA-cardio NRRDs: HU encoded piecewise into 8 bits (−1000…−200 → 0…60, −200…300 →
 60…235, 300…1500 → 235…255), each slice a JPEG data URL with its level from the carina and hand-placed labels
 `[name, x, y, r]` in picture pixels; `ui_4f_ct.js` decodes a slice into grey values once (`crPixels`), windows it

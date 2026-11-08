@@ -205,13 +205,29 @@ const EC_SLIDERS = {
     ['va', 'Native alveolar ventilation', 0, 6, 0.25, 'L/min', 'Lung-rest settings give 1–2 L/min; a weaning ventilator 4–5.'],
     ['cvp', 'Venous filling (CVP)', 1, 20, 1, 'mm Hg', 'The drainage’s reservoir: empty veins collapse around the cannula.'],
     ['hco3', 'Bicarbonate', 10, 40, 1, 'mmol/L', 'The metabolic side of the pH.'],
-    ['svr', 'Systemic vascular resistance', 8, 30, 1, 'mm Hg·min/L', 'VA: MAP = total flow × SVR (vasoplegia low, vasoconstriction high).']
+    ['svr', 'Systemic vascular resistance', 4, 30, 1, 'mm Hg·min/L', 'MAP = flow × SVR (vasoplegia low, vasoconstriction high); on VA the total flow, on VV the native output.'],
+    ['hr', 'Heart rate (baseline)', 50, 150, 5, '/min', 'Before the drips; the chronotropes add to it.'],
+    ['pvr', 'Pulmonary vascular resistance', 0.5, 4, 0.25, '× normal', 'VV: the right ventricle’s afterload — ARDS, hypoxia, hypercapnia and PEEP raise it; the output falls as it climbs.']
   ]
 };
+function ecDripSlider(D) {
+  const s = ECS.s, id = uid('ecd'); if (!s.drugs) s.drugs = {};
+  const val = h('span', { class: 'odc-val', text: (s.drugs[D.id] || 0) ? ecDoseFmt(D, s.drugs[D.id]) : 'off' });
+  return h('label', { class: 'odc-sl ec-drip' + ((s.drugs[D.id] || 0) > 0 ? ' on' : ''), for: id, title: D.rec, 'data-ec-drip': D.id }, [h('span', { class: 'nod-l', text: D.name + ' (' + D.unit + ')' }), h('input', { type: 'range', id: id, min: 0, max: D.max, step: D.step, value: s.drugs[D.id] || 0, 'data-ec-dose': D.id, oninput: (e) => { s.drugs[D.id] = +e.target.value; val.textContent = s.drugs[D.id] > 0 ? ecDoseFmt(D, s.drugs[D.id]) : 'off'; e.target.closest('label').classList.toggle('on', s.drugs[D.id] > 0); ecRefresh(); } }), val]);
+}
+function ecDoseFmt(D, v) { return (D.step < 0.1 ? (+v).toFixed(D.step < 0.02 ? 3 : 2) : String(+(+v).toFixed(2))).replace(/\.?0+$/, ''); }
+function ecDripReadout() {
+  const o = ECS.out, fx = o && o.fx; if (!fx) return h('p', { class: 'fine' });
+  const f2 = (x) => '×' + x.toFixed(2);
+  const vv = o.mode === 'vv';
+  return h('p', { class: 'fine ec-dripread', 'data-ec-dripread': '1' }, [
+    h('b', { text: 'What the drips do: ' }), 'SVR ' + f2(fx.svr) + ' · contractility ' + f2(fx.contr) + ' · heart rate ' + (fx.hr >= 0 ? '+' : '') + Math.round(fx.hr) + ' → ' + o.hr + '/min · venous tone ' + (fx.cvp >= 0 ? '+' : '') + fx.cvp.toFixed(1) + ' mm Hg · PVR ' + f2(fx.pvr) + (vv ? ' · native output ' + o.co.toFixed(1) + ' L/min (set ' + o.coSet + ')' : ' · native ejection ' + o.qn.toFixed(1) + ' L/min') + ' · MAP ' + o.map + ' · norepinephrine-equivalent ' + fx.nee.toFixed(2) + ' mcg/kg/min' + (fx.lactate > 0.3 ? ' · β-lactate' : '') + (fx.arr > 0.5 ? ' · arrhythmia risk' : '')
+  ]);
+}
 function ecFmt(k, v) {
   if (k === 'fdo2' || k === 'fio2') return (+v).toFixed(2);
   if (k === 'recirc' || k === 'shunt' || k === 'oxy' || k === 'contr') return Math.round(v * 100) + '%';
-  if (k === 'sweep' || k === 'co' || k === 'va') return (+v).toFixed(2).replace(/\.?0+$/, '');
+  if (k === 'sweep' || k === 'co' || k === 'va' || k === 'pvr') return (+v).toFixed(2).replace(/\.?0+$/, '');
   return String(v);
 }
 function ecSlider(group, sl) {
@@ -234,7 +250,8 @@ function ecControls() {
   const kinkId = uid('ec');
   const kink = h('label', { class: 'chk-inline', for: kinkId }, [h('input', { type: 'checkbox', id: kinkId, checked: !!s.kink, 'data-ec-kink': '1', onchange: (e) => { s.kink = e.target.checked; ecRefresh(); } }), 'Drainage kinked or tip malpositioned']);
   const circuitSliders = EC_SLIDERS.circuit.filter(sl => vv || sl[0] !== 'recirc').map(sl => ecSlider('circuit', sl));
-  const patientSliders = EC_SLIDERS.patient.filter(sl => (vv ? sl[0] !== 'contr' && sl[0] !== 'svr' : sl[0] !== 'co')).map(sl => ecSlider('patient', sl));
+  const patientSliders = EC_SLIDERS.patient.filter(sl => (vv ? sl[0] !== 'contr' : sl[0] !== 'co' && sl[0] !== 'pvr')).map(sl => ecSlider('patient', sl));
+  const dripSliders = EC.DRIPS.map(ecDripSlider);
   const vaExtras = [];
   if (!vv) {
     const unId = uid('ec');
@@ -247,6 +264,7 @@ function ecControls() {
     h('p', { class: 'fine ec-note', 'data-ec-note': '1', text: ECS.note }),
     h('h5', { text: 'The circuit' }), h('div', { class: 'odc-ctrls' }, [cfgSel, cfgNote].concat(circuitSliders, [h('div', { class: 'nod-grid' }, [drainSel, retSel]), kink], vaExtras)),
     h('h5', { text: 'The patient' }), h('div', { class: 'odc-ctrls' }, patientSliders),
+    h('h5', { text: 'Vasoactive drips' }), h('div', { class: 'odc-ctrls ec-drips', 'data-ec-drips': '1' }, dripSliders.concat([h('div', { 'data-ec-dripslot': '1' }, [ecDripReadout()]), h('button', { type: 'button', class: 'lnk', 'data-ec-dripsoff': '1', text: 'All drips off', onclick: () => { s.drugs = {}; render(); } })])),
     h('button', { type: 'button', class: 'lnk', 'data-ec-reset': '1', text: 'Reset to the default ' + (vv ? 'VV' : 'VA') + ' run', onclick: () => { ecInit(s.mode); render(); } })
   ]);
 }
@@ -257,7 +275,7 @@ function ecConsole() {
   const al = EC.alarms(o, s);
   const tiles = [['Flow', f1(o.flow), 'L/min', pm.chatter ? 'alarm' : ''], ['Speed', f0(s.rpm), 'rpm', ''], ['Sweep', ecFmt('sweep', s.sweep), 'L/min', ''], ['FdO2', s.fdo2.toFixed(2), '', ''],
     ['P drain', f0(pm.pDrain), 'mm Hg', pm.pDrain < -100 ? 'alarm' : ''], ['P pre', f0(pm.pPre), 'mm Hg', pm.pPre > 300 ? 'alarm' : ''], ['P post', f0(pm.pPost), 'mm Hg', pm.pPost > 300 ? 'alarm' : ''], ['ΔP', f0(pm.dP), 'mm Hg', pm.dP > 60 ? 'alarm' : ''],
-    ['SvO2 (drainage)', f0(o.preSat * 100), '%', o.mode === 'vv' && o.preSat > 0.75 && s.recirc > 0.2 ? 'alarm' : ''], ['O2 transfer', f0(o.transfer), 'mL/min', s.sweep > 0 && o.transfer < 100 ? 'alarm' : ''], ['Temp', '37.0', '°C', ''], [o.mode === 'vv' ? 'Qeff / CO' : 'Native output', o.mode === 'vv' ? f0(o.flowRatio * 100) + '%' : f1(o.qn) + ' L/min', '', o.mode === 'vv' && o.flowRatio < 0.55 ? 'alarm' : (o.mode === 'va' && o.distension ? 'alarm' : '')]];
+    ['SvO2 (drainage)', f0(o.preSat * 100), '%', o.mode === 'vv' && o.preSat > 0.75 && s.recirc > 0.2 ? 'alarm' : ''], ['O2 transfer', f0(o.transfer), 'mL/min', s.sweep > 0 && o.transfer < 100 ? 'alarm' : ''], ['MAP', f0(o.map), 'mm Hg', o.map < 60 ? 'alarm' : ''], ['HR', f0(o.hr), '/min', o.hr > 130 ? 'alarm' : ''], [o.mode === 'vv' ? 'Qeff / CO' : 'Native output', o.mode === 'vv' ? f0(o.flowRatio * 100) + '%' : f1(o.qn) + ' L/min', '', o.mode === 'vv' && o.flowRatio < 0.55 ? 'alarm' : (o.mode === 'va' && o.distension ? 'alarm' : '')]];
   return h('div', { class: 'vent-screen ec-console', 'data-ec-console': '1' }, [
     h('div', { class: 'vsc-head' }, [h('span', { class: 'vsc-mode', text: (o.mode === 'vv' ? 'V-V ' : 'V-A ') + (EC.CONFIGS[s.mode].filter(c => c[0] === s.config)[0] || [])[1] }), h('span', { class: 'vsc-brand', text: 'ECMO console' })]),
     h('div', { class: 'vsc-alarms' + (al.length ? ' on' : ''), 'data-ec-alarms': al.length }, [h('span', { text: al.length ? '⚠ ' + al.map(a => a.t).join(' · ') : 'No alarms' })]),
@@ -270,8 +288,8 @@ function ecGases() {
   const pre = h('div', { class: 'vs-gas ec-gas', 'data-ec-gas': 'pre' }, [h('h5', { text: 'Drainage (pre-membrane)' }), h('div', { class: 'vs-gasgrid' }, [ecCell('PO2', f0(o.preO2), 'mm Hg'), ecCell('SO2', pc(o.preSat)), ecCell('PCO2', f0(o.preCO2), 'mm Hg')])]);
   const post = h('div', { class: 'vs-gas ec-gas', 'data-ec-gas': 'post' }, [h('h5', { text: 'Post-membrane' }), h('div', { class: 'vs-gasgrid' }, [ecCell('PO2', f0(o.postO2), 'mm Hg', s.sweep > 0 && s.fdo2 > 0.9 && o.postO2 < 200 ? 'bad' : ''), ecCell('SO2', pc(o.postSat)), ecCell('PCO2', f0(o.postCO2), 'mm Hg'), ecCell('O2 transfer', f0(o.transfer), 'mL/min'), ecCell('CO2 removed', f0(o.vco2Membrane || (o.pump ? (o.preCO2 - o.postCO2) * o.flow * 4.5 : 0)), 'mL/min')])]);
   let pt;
-  if (vv) pt = h('div', { class: 'vs-gas ec-gas', 'data-ec-gas': 'pt' }, [h('h5', { text: 'Patient — arterial' }), h('div', { class: 'vs-gasgrid' }, [ecCell('PaO2', f0(o.pao2), 'mm Hg', o.pao2 < 55 ? 'bad' : ''), ecCell('SaO2', o.spo2 + '%', '', o.spo2 < 85 ? 'bad' : ''), ecCell('PaCO2', f0(o.paco2), 'mm Hg'), ecCell('pH', o.ph.toFixed(2), '', o.ph < 7.25 || o.ph > 7.55 ? 'bad' : ''), ecCell('SvO2', pc(o.svo2)), ecCell('DO2', f0(o.do2), 'mL/min'), ecCell('DO2 : VO2', o.do2vo2.toFixed(1), '', o.do2vo2 < 2.5 ? 'bad' : ''), ecCell('Lactate', o.lactate)]),
-    h('p', { class: 'fine', text: 'Effective flow ' + o.qeff.toFixed(1) + ' L/min = ' + Math.round(o.flowRatio * 100) + '% of a cardiac output of ' + p.co + ' (recirculation ' + Math.round(o.recirc * 100) + '%). The membrane removes ' + f0(o.vco2Membrane) + ' mL/min of CO2 and the native lung ' + f0(o.vco2Lung) + ' of the ' + p.vco2 + ' produced.' })]);
+  if (vv) pt = h('div', { class: 'vs-gas ec-gas', 'data-ec-gas': 'pt' }, [h('h5', { text: 'Patient — arterial' }), h('div', { class: 'vs-gasgrid' }, [ecCell('PaO2', f0(o.pao2), 'mm Hg', o.pao2 < 55 ? 'bad' : ''), ecCell('SaO2', o.spo2 + '%', '', o.spo2 < 85 ? 'bad' : ''), ecCell('PaCO2', f0(o.paco2), 'mm Hg'), ecCell('pH', o.ph.toFixed(2), '', o.ph < 7.25 || o.ph > 7.55 ? 'bad' : ''), ecCell('SvO2', pc(o.svo2)), ecCell('DO2', f0(o.do2), 'mL/min'), ecCell('DO2 : VO2', o.do2vo2.toFixed(1), '', o.do2vo2 < 2.5 ? 'bad' : ''), ecCell('Lactate', o.lactate), ecCell('MAP', f0(o.map), 'mm Hg', o.map < 60 ? 'bad' : ''), ecCell('Heart rate', f0(o.hr), '/min', o.hr > 130 ? 'bad' : ''), ecCell('Cardiac output', o.co.toFixed(1), 'L/min', o.co < 3.5 ? 'bad' : ''), ecCell('CVP', f0(o.cvp !== undefined ? o.cvp : p.cvp), 'mm Hg')]),
+    h('p', { class: 'fine', text: 'Effective flow ' + o.qeff.toFixed(1) + ' L/min = ' + Math.round(o.flowRatio * 100) + '% of a cardiac output of ' + o.co.toFixed(1) + (Math.abs(o.co - p.co) > 0.15 ? ' (set ' + p.co + ', changed by the drips and the right ventricle’s load)' : '') + ' (recirculation ' + Math.round(o.recirc * 100) + '%). The membrane removes ' + f0(o.vco2Membrane) + ' mL/min of CO2 and the native lung ' + f0(o.vco2Lung) + ' of the ' + p.vco2 + ' produced.' })]);
   else pt = h('div', { class: 'vs-gas ec-gas', 'data-ec-gas': 'pt' }, [h('h5', { text: 'Patient — where the blood came from' }), h('div', { class: 'vs-gasgrid' }, [
     ecCell('Right radial PaO2', f0(o.rrO2), 'mm Hg', o.rrO2 < 60 ? 'bad' : (o.rrO2 > 300 ? 'warn' : '')), ecCell('Right radial SaO2', pc(o.rrSat), '', o.rrSat < 0.88 ? 'bad' : ''), ecCell('Right radial PaCO2', f0(o.paco2RR), 'mm Hg'), ecCell('Right radial pH', o.phRR.toFixed(2)),
     ecCell('Femoral PaO2', f0(o.femO2), 'mm Hg', o.femO2 > 300 ? 'warn' : ''), ecCell('Femoral PaCO2', f0(o.paco2Fem), 'mm Hg'), ecCell('Coronary PO2', f0(o.corO2), 'mm Hg', o.corO2 < 60 ? 'bad' : ''), ecCell('SvO2', pc(o.svo2)),
@@ -286,6 +304,7 @@ function ecRefresh() {
   const draw = fig.querySelector('[data-ec-draw]'); if (draw) { draw.textContent = ''; draw.appendChild(ecSvg(ECS.out, ECS.s, ECS.p)); }
   const con = fig.querySelector('[data-ec-conslot]'); if (con) { con.textContent = ''; con.appendChild(ecConsole()); }
   const gas = fig.querySelector('[data-ec-gasslot]'); if (gas) { gas.textContent = ''; gas.appendChild(ecGases()); }
+  const dr = fig.querySelector('[data-ec-dripslot]'); if (dr) { dr.textContent = ''; dr.appendChild(ecDripReadout()); }
 }
 /* ---- the guided scenarios inside the lab: a presentation, the gases the model makes, the next best step — and the chosen move turns the dials ---- */
 function ecGuideCase() { return EC.LABCASES.filter(c => c.id === ECS.guide.id)[0] || null; }

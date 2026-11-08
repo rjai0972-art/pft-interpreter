@@ -1898,3 +1898,49 @@ body.has-pop { overflow: hidden; }
 .eh-credit { margin-top: 6px; }
 .eh-creditline { margin: 4px 0 0; }
 .eh-ownctl .lnk.fine { margin-left: auto; }
+
+/* ===== v8.4: the conduction bench ===== */
+.ecg-path.delayed { stroke: #d9822b; stroke-dasharray: 2 3; }
+.ecg-path.picked, .ecg-reg.picked { filter: drop-shadow(0 0 3px var(--accent)); }
+.ecg-reg.picked { stroke: var(--accent); stroke-width: 1.6; }
+.ecg-reg.infarct { fill: #c9c4c0 !important; }
+.ecg-reg.injured { stroke: #b3261e; stroke-width: 2; }
+.ecg-reg.isch { stroke: #d9822b; stroke-width: 1.6; stroke-dasharray: 3 2; }
+.ecg-lg.dly i { background: #d9822b; opacity: 0.6; }
+.cd-side { align-content: start; }
+.cd-panel { display: grid; gap: 6px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.cd-panel h5 { margin: 0 0 2px; }
+.cd-panel .odc-sl input[type=range] { width: 100%; }
+.cd-panel .fine { margin: 2px 0 0; }
+.cd-partsbox { display: grid; gap: 6px; }
+.cd-partsbox h5 { margin: 0; }
+.cd-parts { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.cd-parts-svg { display: block; width: 100%; min-width: 520px; height: auto; }
+.cd-parts-bg { fill: var(--ecg-paper); }
+.cd-qrs { fill: rgba(217, 130, 43, 0.1); }
+.cd-tick { stroke: var(--ecg-g5); stroke-width: 0.6; }
+.cd-base { stroke: var(--ecg-g1); stroke-width: 0.8; }
+.cd-part { fill: none; stroke-width: 1.4; }
+.cd-sum { fill: none; stroke: var(--ecg-ink); stroke-width: 1.8; }
+.cd-lab { font-size: 10.5px; font-weight: 600; }
+.cd-lab.strong { fill: var(--ecg-ink); font-size: 11.5px; }
+.cd-sub { font-size: 8.5px; fill: #8a6b5e; }
+.cd-reading { display: grid; gap: 5px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.cd-reading h5 { margin: 0 0 2px; }
+.cd-line { margin: 0; font-size: 13.5px; }
+.cd-note { margin: 0; }
+.ec-drip.on .nod-l { color: var(--accent); font-weight: 600; }
+.ec-dripread { margin: 4px 0 0; }
+
+/* ===== v8.4: the home as the fellow's guide ===== */
+.home-progress h3, .home-section .home-sec-head h3 { margin: 0; }
+.home-progress h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin: 0 0 8px; }
+.home-chip.static { cursor: default; color: var(--ink-2); }
+.home-chip.static:hover { border-color: var(--line); color: var(--ink-2); }
+.hp-resume { border-color: var(--accent); color: var(--accent); }
+.home-section { display: grid; gap: 10px; }
+.home-sec-head { display: flex; gap: 12px; align-items: flex-start; }
+.home-sec-head h3 { font-family: var(--font-doc); font-size: 20px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.15; }
+.home-sec-head .fine { margin: 2px 0 0; }
+.home-sec-n { flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #fff; font-weight: 700; font-size: 13px; display: grid; place-items: center; margin-top: 1px; }
+.home-grid.one > .ht { grid-column: 1 / -1; max-width: 600px; }

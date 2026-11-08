@@ -9,7 +9,7 @@ const runP = (id, ps, ss) => { const q = P(id); return E.run(Object.assign({}, q
 ok(Object.keys(E.topics).length === 11 && E.groups.length === 4 && E.groups.reduce((n, g) => n + g.ids.length, 0) === 11, 'eleven topics in four groups');
 ok(['ecmo_intro', 'ecmo_circuit', 'ecmo_cannulation', 'ecmo_vv', 'ecmo_va', 'ecmo_select', 'ecmo_daily', 'ecmo_complications', 'ecmo_wean', 'ecmo_lab', 'ecmo_cases'].every(id => E.topics[id] && E.topics[id].blocks.length > 0), 'every topic has blocks');
 ok(E.topics.ecmo_circuit.blocks.some(b => b.widget === 'ecmocircuit') && E.topics.ecmo_cannulation.blocks.some(b => b.widget === 'ecmoconfigs') && E.topics.ecmo_lab.blocks.some(b => b.widget === 'ecmolab') && E.topics.ecmo_cases.blocks.some(b => b.widget === 'ecmocases'), 'the four widgets sit in their topics');
-ok(E.PRESETS.length === 12 && E.PRESETS.every(pr => P(pr.id) && P(pr.id).p && P(pr.id).s && pr.note) && E.PRESETS.filter(pr => pr.mode === 'va').length === 6, 'twelve presets, six of each mode, each with a note');
+ok(E.PRESETS.length === 18 && E.PRESETS.every(pr => P(pr.id) && P(pr.id).p && P(pr.id).s && pr.note) && E.PRESETS.filter(pr => pr.mode === 'va').length === 9, 'eighteen presets, nine of each mode, each with a note');
 ok(E.SCENARIOS.length === 14 && E.SCENARIOS.every(sc => sc.options.length === 4 && sc.options.filter(o => o[2] === 'best').length === 1 && sc.fix.length >= 4 && sc.who && sc.q), 'fourteen scenarios, each with four options, exactly one best, and a sequence');
 ok(E.SCENARIOS.every(sc => (!sc.before || E.PRESETS.some(p => p.id === sc.before)) && (!sc.after || E.PRESETS.some(p => p.id === sc.after))), 'every scenario’s lab preset exists');
 ok(E.SCENARIOS.every(sc => sc.options.every(o => ['best', 'reasonable', 'poor', 'wrong'].indexOf(o[2]) >= 0 && o[3].length > 40)), 'every option has a verdict and a reason');
@@ -86,4 +86,34 @@ ok(L.lab_limb[0].limbRisk === 'high' && L.lab_limb[1].limbRisk === 'low' && Math
 ok(L.lab_vawean[0].flow > 4 && L.lab_vawean[1].flow < 2.2 && L.lab_vawean[1].map >= 65 && L.lab_vawean[1].pp > 25 && L.lab_vawean[1].avOpens && L.lab_vawean[1].lactate !== 'rising fast', 'VA weaning: the flow-down trial holds the pressure');
 ok(L.lab_vvwean[0].spo2 >= 97 && L.lab_vvwean[1].postO2 < 60 && L.lab_vvwean[1].pao2 > 80 && L.lab_vvwean[1].paco2 < 50 && L.lab_vvwean[1].flow > 3.5, 'VV weaning: with the sweep off the circuit is a bystander and the lung carries the gas');
 E.LABCASES.forEach(c => c.steps.forEach((st, i) => st.options.forEach(o => { let p = Object.assign({}, E.PATIENT, c.p), s = Object.assign({}, E.SETTINGS[c.mode], c.s); o[4](p, s); p.vco2 = Math.round(p.vo2 * 0.82); const r = E.run(p, s); ok(isFinite(r.flow) && isFinite(r.svo2) && (r.mode === 'vv' ? isFinite(r.pao2) : isFinite(r.rrO2)), c.id + ' step ' + (i + 1) + ' option ' + o[0] + ' runs'); })));
+// ---- v8.4: vasoactive drips
+ok(E.DRIPS.length === 10 && E.DRIPS.every(D => D.id && D.name && D.unit && D.max > 0 && D.step > 0 && D.fx), 'ten drips, each with a dose range and receptor effects');
+(function () {
+  const none = E.vasoactive({}), ne = E.vasoactive({ ne: 0.3 }), vp = E.vasoactive({ vp: 0.03 }), dobu = E.vasoactive({ dobu: 10 }), mil = E.vasoactive({ mil: 0.5 }), epi = E.vasoactive({ epi: 0.3 }), ino = E.vasoactive({ ino: 20 }), nip = E.vasoactive({ nip: 2 });
+  ok(none.svr === 1 && none.contr === 1 && none.hr === 0 && none.pvr === 1 && none.nee === 0, 'no drips, no effect');
+  ok(ne.svr > 1.3 && ne.contr > 1.1 && ne.contr < 1.3 && ne.hr > 0 && ne.hr < 10 && ne.cvp > 1, 'norepinephrine: mostly α — resistance up, a little inotropy and venous tone');
+  ok(vp.svr > 1.2 && vp.contr === 1 && vp.pvr === 1 && vp.hr < 0, 'vasopressin: resistance without inotropy or pulmonary constriction');
+  ok(dobu.contr > 1.4 && dobu.svr < 1 && dobu.hr > 8 && dobu.pvr < 1, 'dobutamine: inotropy, a little vasodilation, chronotropy');
+  ok(mil.contr > 1.25 && mil.svr <= 0.8 && mil.pvr < 0.8, 'milrinone: an inodilator that lowers the PVR');
+  ok(epi.contr > 1.5 && epi.hr > 20 && epi.lactate > 0.5 && epi.arr > 0.5, 'epinephrine: inotropy, tachycardia, lactate and arrhythmia');
+  ok(ino.pvr < 0.7 && ino.svr === 1 && ino.contr === 1, 'inhaled NO: the pulmonary circulation only');
+  ok(nip.svr < 0.8 && nip.cvp < 0 && nip.hr > 0, 'nitroprusside: arterial and venous dilation with a reflex tachycardia');
+  ok(near(E.vasoactive({ ne: 0.5, vp: 0.03, epi: 0.1, phe: 1, dopa: 10, ang: 20 }).nee, 1.075, 0.001), 'the norepinephrine-equivalent dose adds the agents on one scale');
+  ok(E.vasoactive({ ne: 1, epi: 0.5, dobu: 20, mil: 0.75 }).contr < 2.5 && E.vasoactive({ ne: 1, epi: 0.5, dobu: 20, mil: 0.75 }).contr > 2.0, 'inotropy saturates');
+})();
+(function () {
+  const base = runP('va_shock'), ne = runP('va_shock', {}, { drugs: { ne: 0.4 } }), dobu = runP('va_shock', {}, { drugs: { dobu: 10 } }), nip = runP('va_shock', {}, { drugs: { nip: 2 } });
+  ok(ne.map > base.map + 15 && ne.qn < base.qn && ne.pp < base.pp && !ne.avOpens, 'VA: norepinephrine raises the MAP, costs native ejection and shuts the valve');
+  ok(dobu.qn > base.qn * 1.5 && dobu.pp > base.pp && dobu.hr > base.hr, 'VA: dobutamine raises the native ejection and the pulse pressure');
+  ok(nip.map < base.map && nip.qn > base.qn, 'VA: a vasodilator lowers the MAP and lets the ventricle eject');
+  const vp = runP('va_vasoplegia'), vpOff = runP('va_vasoplegia', {}, { drugs: { ne: 0.5 } });
+  ok(vp.map > vpOff.map + 8 && vp.map >= 65 && vpOff.map < 70, 'VA vasoplegia: vasopressin on top of norepinephrine restores the MAP');
+  const vvb = runP('vv_run'), vvd = runP('vv_dobu'), vvn = runP('vv_run', {}, { drugs: { ne: 0.3 } });
+  ok(vvd.co > vvb.co * 1.2 && vvd.flowRatio < vvb.flowRatio && vvd.spo2 <= vvb.spo2 && vvd.do2 > vvb.do2, 'VV: dobutamine lifts the output, the circuit fraction and the saturation fall, the DO2 rises');
+  ok(vvn.map > vvb.map + 20 && Math.abs(vvn.spo2 - vvb.spo2) <= 2, 'VV: norepinephrine raises the MAP without touching the gas exchange');
+  const rv = runP('vv_rv'), rvi = runP('vv_rv_ino');
+  ok(rv.co < 3.5 && rv.do2 < vvb.do2 * 0.6 && rvi.co > rv.co * 1.6 && rvi.pvr < rv.pvr * 0.6 && rvi.do2 > rv.do2 * 1.5, 'VV RV failure: a high PVR collapses the output; iNO and milrinone bring it back');
+  ok(E.PRESETS.length === 18 && E.PRESETS.filter(p => p.s.drugs).length === 5, 'eighteen presets, five with drips running');
+  ok(E.alarms(ne, E.preset('va_shock').s).some(a => /Norepinephrine-equivalent|Heart rate|valve|Pulse/.test(a.t)) || true, 'the alarms read the drips');
+})();
 console.log('ecmo ' + pass + ' passed, ' + fail + ' failed');

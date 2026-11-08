@@ -720,6 +720,46 @@ const near = (a, b, t) => Math.abs(a - b) <= t;
   await page.locator('[data-ehr-mode="c"]').click(); await page.waitForTimeout(600);
   ok(await page.evaluate(() => { const i = document.querySelector('[data-ehr-3d] .h3-panel').inst; return i.target.square === true && i.target.fan === 0; }), 'a short axis becomes a square plane across the beam');
 
+  // ---- v8.4: the conduction bench — every element a dial, the leads as sums, the reading from the traces
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'conduction' })); await page.waitForSelector('[data-condlab]');
+  await page.waitForTimeout(400);
+  ok(await page.locator('[data-cd-presetsel] option').count() === 29 && await page.locator('[data-cd-el] option').count() === 20 && /Sinus rhythm 72/.test(await txt('[data-cd-line="Rhythm"]')) && /narrow/.test(await txt('[data-cd-line="QRS"]')) && await page.locator('[data-cd-part="sep"]').count() === 1 && await page.locator('[data-cd-sum="V1"]').count() === 1, 'the bench opens normal: 29 presets, 20 elements, a reading, and lead V1 drawn as the sum of its parts');
+  await page.selectOption('[data-cd-presetsel]', 'lbbb'); await page.waitForTimeout(500);
+  ok(/left bundle branch block pattern/.test(await txt('[data-cd-line="QRS"]')) && +(await page.getAttribute('[data-cd-reads] [data-cd-qrs]', 'data-cd-qrs')) >= 120 && await page.locator('.ecg-path.blocked[data-path="lbb"]').count() === 1 && await page.locator('[data-block="lbb"]:visible').count() === 1, 'LBBB preset: the reading finds the pattern from the traces, the left bundle is crossed on the heart');
+  await page.selectOption('[data-cd-presetsel]', 'normal'); await page.waitForTimeout(300);
+  await page.$eval('[data-cd-pick="rbb"]', e => e.dispatchEvent(new MouseEvent('click', { bubbles: true }))); await page.waitForTimeout(300);
+  ok(await page.locator('[data-cd-panel="rbb"]').count() === 1 && await page.locator('[data-cd-el]').inputValue() === 'rbb', 'clicking the right bundle on the heart selects it');
+  await page.$eval('[data-cd-panel="rbb"] input[type=range]', (e) => { e.value = '1'; e.dispatchEvent(new Event('input', { bubbles: true })); }); await page.waitForTimeout(500);
+  ok(/right bundle branch block pattern/.test(await txt('[data-cd-line="QRS"]')) && +(await page.getAttribute('[data-cd-reads] [data-cd-qrs]', 'data-cd-qrs')) >= 120 && /Your own settings/.test(await txt('[data-cd-note]')), 'blocking it writes an RBBB that the reading recognises');
+  await page.$eval('[data-cd-panel="rbb"] input[type=range]', (e) => { e.value = '0.5'; e.dispatchEvent(new Event('input', { bubbles: true })); }); await page.waitForTimeout(500);
+  ok(/incomplete right bundle/.test(await txt('[data-cd-line="QRS"]')) && await page.locator('.ecg-path.delayed[data-path="rbb"]').count() === 1, 'half a block is an incomplete RBBB and a dashed path');
+  await page.selectOption('[data-cd-lead]', 'V6'); await page.waitForTimeout(400);
+  ok(await page.locator('[data-cd-sum="V6"]').count() === 1 && await page.locator('[data-cd-part="rv"]').count() === 1, 'the parts panel follows the lead');
+  await page.selectOption('[data-cd-presetsel]', 'normal'); await page.selectOption('[data-cd-el]', 'lvi'); await page.waitForTimeout(300);
+  await page.$eval('[data-cd-panel="lvi"] [data-cd-row="injury"] input', (e) => { e.value = '0.8'; e.dispatchEvent(new Event('input', { bubbles: true })); }); await page.waitForTimeout(500);
+  ok(/II, III, aVF/.test(await txt('[data-cd-line="ST elevation"]')) && /inferior/.test(await txt('[data-cd-line="ST elevation"]')) && await page.locator('.ecg-reg.injured[data-region="lvi"]').count() === 1, 'injuring the inferior wall lifts the ST in II, III, aVF');
+  await page.selectOption('[data-cd-el]', 'av'); await page.waitForTimeout(200); await page.selectOption('[data-cd-avmode]', 'complete'); await page.waitForTimeout(500);
+  ok(/complete heart block/.test(await txt('[data-cd-line="Rhythm"]')) && /junctional escape/.test(await txt('[data-cd-line="Rhythm"]')), 'complete block at the node: a junctional escape and dissociated P waves');
+  await page.selectOption('[data-cd-presetsel]', 'vt'); await page.waitForTimeout(500);
+  ok(/ventricular tachycardia/.test(await txt('[data-cd-line="Rhythm"]')) && /ventricular origin/.test(await txt('[data-cd-line="QRS"]')), 'VT: wide complexes of ventricular origin with AV dissociation');
+  // ---- v8.4: drips on the circuit
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'ecmo_lab' })); await page.waitForSelector('[data-ecmolab]'); await page.waitForTimeout(300);
+  ok(await page.locator('[data-ec-drip]').count() === 10 && await page.locator('[data-ec-preset] option').count() === 19, 'ten drips with dials and eighteen presets');
+  await page.selectOption('[data-ec-preset]', 'va_pressor'); await page.waitForTimeout(500);
+  const qn0 = parseFloat(await txt('[data-ec-cell="Native output"] b'));
+  ok(/norepinephrine-equivalent 0\.40/.test(await txt('[data-ec-dripread]')) && /SVR ×1\.[4-7]/.test(await txt('[data-ec-dripread]')) && await page.locator('[data-ec-drip="ne"].on').count() === 1 && /MAP/.test(await txt('[data-tile="MAP"]')), 'the pressor preset: norepinephrine 0.4 shows its effects and the MAP on the console');
+  await page.$eval('[data-ec-dose="dobu"]', (e) => { e.value = '10'; e.dispatchEvent(new Event('input', { bubbles: true })); }); await page.waitForTimeout(500);
+  ok(parseFloat(await txt('[data-ec-cell="Native output"] b')) > qn0 + 0.3 && /contractility ×1\.[5-9]/.test(await txt('[data-ec-dripread]')), 'dobutamine on top raises the native ejection');
+  await page.locator('[data-ec-dripsoff]').click(); await page.waitForSelector('[data-ecmolab]'); await page.waitForTimeout(300);
+  ok(/norepinephrine-equivalent 0\.00/.test(await txt('[data-ec-dripread]')) && await page.locator('[data-ec-drip].on').count() === 0, 'all drips off');
+  await page.selectOption('[data-ec-preset]', 'vv_rv'); await page.waitForTimeout(500);
+  const coRv = parseFloat(await txt('[data-ec-cell="Cardiac output"] b'));
+  await page.$eval('[data-ec-dose="ino"]', (e) => { e.value = '20'; e.dispatchEvent(new Event('input', { bubbles: true })); }); await page.waitForTimeout(500);
+  ok(coRv < 3.5 && parseFloat(await txt('[data-ec-cell="Cardiac output"] b')) > coRv + 0.8 && /PVR ×0\.[4-7]/.test(await txt('[data-ec-dripread]')), 'VV RV failure: inhaled NO lowers the PVR and the output recovers');
+  // ---- v8.4: the home as the fellow's guide
+  await page.evaluate(() => window.__pft.setMode('home')); await page.waitForSelector('[data-home-section="icu"]');
+  ok(await page.locator('[data-home-section]').count() === 5 && await page.locator('[data-home-prog="nbe"]').count() === 1 && await page.locator('[data-home-tile="boards"]').count() === 1 && await page.locator('[data-home-tile="log"]').count() === 1 && await page.locator('[data-home-lab="conduction"]').count() === 1 && /fellow’s guide/.test(await txt('.home-hero .kicker')), 'the home page is the guide: five sections, the boards, the logbook, the bench');
+
   // ---- v8.2: the echo logbook
   await page.evaluate(() => { try { localStorage.removeItem('pcd.echolog.v1'); } catch (e) {} window.__pft.setMode('learn', { topic: 'echo_log' }); }); await page.waitForSelector('[data-el-form]');
   ok(await page.locator('[data-el-count]').count() === 5 && /0 \/ 150/.test(await txt('[data-el-count="tte"]')) && await page.locator('[data-el-m]').count() === 21, 'the logbook: five counters, twenty-one measurement fields');

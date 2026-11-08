@@ -9,7 +9,8 @@ function ecgScenario() { return ECG.SCENARIOS.filter(s => s.id === ECG_ST.scn)[0
 function ecgDeg(scn) { const p = scn.param; if (!p) return 0; const v = ECG_ST.deg[scn.id]; return v === undefined ? p.value : v; }
 
 /* ---- the twelve leads on paper: 3 × 4 at 2.5 s a column, then a 10-second strip of lead II */
-function ecgPaper(seq, bts) {
+function ecgPaper(seq, bts, vfn) {
+  const vAt = vfn || ((lead, T) => ECG.voltageAt(lead, seq, bts, T));
   const colW = 2.5 * 25 * ECG_PX, rowH = 32 * ECG_PX, left = 6, top = 6, W = left * 2 + 4 * colW, H = top * 2 + 4 * rowH;
   const svg = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, class: 'ecg-paper', width: W, height: H, role: 'img', 'aria-label': 'Twelve-lead ECG written by the model' });
   const pid = uid('eg');
@@ -24,7 +25,7 @@ function ecgPaper(seq, bts) {
   const xOf = (ms) => left + ms / 1000 * 25 * ECG_PX;
   const trace = (lead, t0, t1, baseY) => {
     let d = ''; const step = 4;
-    for (let t = t0; t <= t1; t += step) { const v = ECG.voltageAt(lead, seq, bts, t); const x = xOf(t), y = baseY - v * 10 * ECG_PX; d += (d ? ' L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1); }
+    for (let t = t0; t <= t1; t += step) { const v = vAt(lead, t); const x = xOf(t), y = baseY - v * 10 * ECG_PX; d += (d ? ' L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1); }
     return sv('path', { d: d, class: 'ecg-tr', 'data-lead': lead });
   };
   ECG.LAYOUT.forEach((row, r) => {
@@ -134,15 +135,15 @@ function ecgFrame() {
   const t = ECG_ST.t, x = v.paper.xOf(t);
   v.paper.cursor.setAttribute('x1', x); v.paper.cursor.setAttribute('x2', x);
   if (v.range && document.activeElement !== v.range) v.range.value = Math.round(t);
-  const st = ECG.stateAt(v.seq, v.bts, t);
+  const st = v.stateAt ? v.stateAt(t) : ECG.stateAt(v.seq, v.bts, t);
   Object.keys(v.heart.regions).forEach(id => {
     const s = st.regions[id] || 0, el = v.heart.regions[id];
     el.style.fill = s <= 0 ? '' : (s === 1 ? 'rgb(' + ECG_DEP.join(',') + ')' : ecgMix(Math.min(2, s)));
     el.classList.toggle('front', s > 0 && s < 1);
   });
   Object.keys(v.heart.paths).forEach(id => v.heart.paths[id].classList.toggle('on', !!st.paths[id]));
-  if (v.heart.blocks.av) v.heart.blocks.av.style.display = st.paths.avblock ? '' : 'none';
-  const d = ECG.dipole(v.seq.S, t - (v.curBeat(t) || -1e9));
+  if (v.heart.blocks.av && !v.keepAv) v.heart.blocks.av.style.display = st.paths.avblock ? '' : 'none';
+  const d = v.vecAt ? v.vecAt(t) : ECG.dipole(v.seq.S, t - (v.curBeat(t) || -1e9));
   v.dial.arrow.setAttribute('x2', v.dial.cx + d[0] * v.dial.sc); v.dial.arrow.setAttribute('y2', v.dial.cy + d[1] * v.dial.sc);
   v.timeEl.textContent = (t / 1000).toFixed(2) + ' s' + (st.paths.av ? ' · in the AV node' : (Object.keys(st.regions).some(k => st.regions[k] > 0 && st.regions[k] < 1) ? ' · depolarising' : ''));
   if (v.playBtn) { v.playBtn.textContent = ECG_ST.playing ? '❚❚ Pause' : '▶ Play'; v.playBtn.setAttribute('aria-pressed', String(ECG_ST.playing)); }

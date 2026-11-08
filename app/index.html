@@ -1908,6 +1908,52 @@ body.has-pop { overflow: hidden; }
 .eh-creditline { margin: 4px 0 0; }
 .eh-ownctl .lnk.fine { margin-left: auto; }
 
+/* ===== v8.4: the conduction bench ===== */
+.ecg-path.delayed { stroke: #d9822b; stroke-dasharray: 2 3; }
+.ecg-path.picked, .ecg-reg.picked { filter: drop-shadow(0 0 3px var(--accent)); }
+.ecg-reg.picked { stroke: var(--accent); stroke-width: 1.6; }
+.ecg-reg.infarct { fill: #c9c4c0 !important; }
+.ecg-reg.injured { stroke: #b3261e; stroke-width: 2; }
+.ecg-reg.isch { stroke: #d9822b; stroke-width: 1.6; stroke-dasharray: 3 2; }
+.ecg-lg.dly i { background: #d9822b; opacity: 0.6; }
+.cd-side { align-content: start; }
+.cd-panel { display: grid; gap: 6px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.cd-panel h5 { margin: 0 0 2px; }
+.cd-panel .odc-sl input[type=range] { width: 100%; }
+.cd-panel .fine { margin: 2px 0 0; }
+.cd-partsbox { display: grid; gap: 6px; }
+.cd-partsbox h5 { margin: 0; }
+.cd-parts { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.cd-parts-svg { display: block; width: 100%; min-width: 520px; height: auto; }
+.cd-parts-bg { fill: var(--ecg-paper); }
+.cd-qrs { fill: rgba(217, 130, 43, 0.1); }
+.cd-tick { stroke: var(--ecg-g5); stroke-width: 0.6; }
+.cd-base { stroke: var(--ecg-g1); stroke-width: 0.8; }
+.cd-part { fill: none; stroke-width: 1.4; }
+.cd-sum { fill: none; stroke: var(--ecg-ink); stroke-width: 1.8; }
+.cd-lab { font-size: 10.5px; font-weight: 600; }
+.cd-lab.strong { fill: var(--ecg-ink); font-size: 11.5px; }
+.cd-sub { font-size: 8.5px; fill: #8a6b5e; }
+.cd-reading { display: grid; gap: 5px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.cd-reading h5 { margin: 0 0 2px; }
+.cd-line { margin: 0; font-size: 13.5px; }
+.cd-note { margin: 0; }
+.ec-drip.on .nod-l { color: var(--accent); font-weight: 600; }
+.ec-dripread { margin: 4px 0 0; }
+
+/* ===== v8.4: the home as the fellow's guide ===== */
+.home-progress h3, .home-section .home-sec-head h3 { margin: 0; }
+.home-progress h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin: 0 0 8px; }
+.home-chip.static { cursor: default; color: var(--ink-2); }
+.home-chip.static:hover { border-color: var(--line); color: var(--ink-2); }
+.hp-resume { border-color: var(--accent); color: var(--accent); }
+.home-section { display: grid; gap: 10px; }
+.home-sec-head { display: flex; gap: 12px; align-items: flex-start; }
+.home-sec-head h3 { font-family: var(--font-doc); font-size: 20px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.15; }
+.home-sec-head .fine { margin: 2px 0 0; }
+.home-sec-n { flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #fff; font-weight: 700; font-size: 13px; display: grid; place-items: center; margin-top: 1px; }
+.home-grid.one > .ht { grid-column: 1 / -1; max-width: 600px; }
+
 </style>
 </head>
 <body>
@@ -6328,7 +6374,7 @@ function interpret(raw) {
 }
 
 const API = {
-  version: '8.3.0',
+  version: '8.4.0',
   catalogVersion: CATALOG.version,
   Z_LLN: Z_LLN, Z_ULN: Z_ULN, STYLES: STYLES,
   TESTS: TESTS, PRESETS: PRESETS, SCHEMA: SCHEMA, LOOPS: LOOPS, INDICATIONS: INDICATIONS, KIND_OPTS: KIND_OPTS, PRIOR_FIELDS: PRIOR_FIELDS, CUR_FIELDS: CUR_FIELDS, MAX_PRIORS: MAX_PRIORS, MAX_TREND: MAX_TREND,
@@ -9333,12 +9379,69 @@ if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_N
     return r;
   }
   function phOf(hco3, pco2) { return 6.1 + Math.log10(hco3 / (0.03 * Math.max(5, pco2))); }
+  function lactateWord(ratio, fx) {
+    const w = ratio < 2 ? 'rising fast' : (ratio < 2.5 ? 'rising' : (ratio < 3.5 ? 'stable' : 'clearing'));
+    return fx && fx.lactate > 0.3 ? w + ' (β-agonist lactate confounds it)' : w;
+  }
+
+  /* ================================================================== vasoactive drips (v8.4) ==================================================================
+     Each drug acts through its receptors with an Emax dose–response ([Emax, ED50, Hill]) on the systemic resistance (constrictors multiply it,
+     dilators divide it), the contractility, the heart rate, the venous tone (as mm Hg of CVP) and the pulmonary resistance; epinephrine
+     and dopamine also make lactate and arrhythmia. The effects are combined and then applied to the patient before the circuit runs. */
+  const DRIPS = [
+    { id: 'ne', name: 'Norepinephrine', unit: 'mcg/kg/min', max: 1, step: 0.02, rec: 'α1 ≫ β1', fx: { svr: [0.9, 0.25, 1.2], contr: [0.25, 0.15, 1], hr: [8, 0.3, 1], ven: [2.5, 0.3, 1], pvr: [0.3, 0.3, 1] }, lact: 0.25, arr: 0.2, nee: 1 },
+    { id: 'vp', name: 'Vasopressin', unit: 'U/min', max: 0.06, step: 0.01, rec: 'V1', fx: { svr: [0.7, 0.025, 1.5], hr: [-3, 0.02, 1], ven: [1, 0.02, 1] }, lact: 0, arr: 0, nee: 2.5 },
+    { id: 'epi', name: 'Epinephrine', unit: 'mcg/kg/min', max: 0.5, step: 0.02, rec: 'β1 = β2 ≥ α1', fx: { contr: [0.7, 0.08, 1], hr: [35, 0.12, 1], dil: [0.12, 0.04, 1.5], svr: [0.8, 0.3, 1.6], pvr: [0.2, 0.3, 1], ven: [1.5, 0.2, 1] }, lact: 1, arr: 0.7, nee: 1 },
+    { id: 'phe', name: 'Phenylephrine', unit: 'mcg/kg/min', max: 3, step: 0.1, rec: 'α1', fx: { svr: [0.8, 1.0, 1.2], hr: [-10, 1.0, 1], pvr: [0.25, 1.0, 1], ven: [2, 1.0, 1] }, lact: 0, arr: 0, nee: 0.1 },
+    { id: 'dopa', name: 'Dopamine', unit: 'mcg/kg/min', max: 20, step: 1, rec: 'D1 → β1 → α1 with the dose', fx: { contr: [0.4, 6, 1.2], hr: [25, 7, 1.2], svr: [0.6, 13, 2.2], ven: [1.5, 10, 1] }, lact: 0.3, arr: 0.8, nee: 0.01 },
+    { id: 'dobu', name: 'Dobutamine', unit: 'mcg/kg/min', max: 20, step: 0.5, rec: 'β1 > β2', fx: { contr: [0.8, 6, 1], hr: [18, 7, 1], dil: [0.22, 6, 1], pvr: [-0.15, 6, 1] }, lact: 0.2, arr: 0.4, nee: 0 },
+    { id: 'mil', name: 'Milrinone', unit: 'mcg/kg/min', max: 0.75, step: 0.125, rec: 'PDE-3 inhibitor (inodilator)', fx: { contr: [0.5, 0.3, 1], hr: [6, 0.3, 1], dil: [0.32, 0.3, 1], pvr: [-0.4, 0.25, 1] }, lact: 0, arr: 0.3, nee: 0 },
+    { id: 'ang', name: 'Angiotensin II', unit: 'ng/kg/min', max: 80, step: 5, rec: 'AT1', fx: { svr: [0.8, 30, 1.3], hr: [-2, 30, 1] }, lact: 0, arr: 0, nee: 0.01 },
+    { id: 'ino', name: 'Inhaled nitric oxide', unit: 'ppm', max: 40, step: 5, rec: 'pulmonary vasodilator', fx: { pvr: [-0.45, 10, 1.2] }, lact: 0, arr: 0, nee: 0 },
+    { id: 'nip', name: 'Nitroprusside', unit: 'mcg/kg/min', max: 5, step: 0.25, rec: 'NO donor (arterial and venous)', fx: { dil: [0.45, 1.5, 1], hr: [10, 1.5, 1], pvr: [-0.2, 1.5, 1], ven: [-2.5, 1.5, 1] }, lact: 0, arr: 0, nee: 0 }
+  ];
+  const emax = (d, k) => { if (!k || d <= 0) return 0; const n = k[2] || 1, x = Math.pow(d, n); return k[0] * x / (Math.pow(k[1], n) + x); };
+  function vasoactive(drugs) {
+    drugs = drugs || {};
+    const out = { svr: 1, contr: 1, hr: 0, cvp: 0, pvr: 1, lactate: 0, arr: 0, nee: 0, active: [] };
+    let con = 1, dil = 1, inot = 0, pvrUp = 1, pvrDown = 1;
+    DRIPS.forEach(D => {
+      const d = +drugs[D.id] || 0; if (d <= 0) return;
+      out.active.push(D.id);
+      con *= 1 + emax(d, D.fx.svr); dil *= 1 - emax(d, D.fx.dil);
+      inot += emax(d, D.fx.contr); out.hr += emax(d, D.fx.hr); out.cvp += emax(d, D.fx.ven);
+      const pv = emax(d, D.fx.pvr); if (pv > 0) pvrUp *= 1 + pv; else pvrDown *= 1 + pv;
+      out.lactate += D.lact * Math.min(1, d / (D.max * 0.5)); out.arr += D.arr * Math.min(1, d / (D.max * 0.6));
+      out.nee += D.nee * d;
+    });
+    out.svr = con * dil;
+    out.contr = 1 + 1.4 * Math.tanh(inot / 1.4);     // β-agonists and PDE inhibitors add, with a ceiling
+    out.pvr = pvrUp * pvrDown;
+    out.lactate = Math.min(1, out.lactate); out.arr = Math.min(1, out.arr);
+    return out;
+  }
+  /* the patient the circuit sees once the drips have acted: SVR, contractility, heart rate, venous filling and PVR */
+  function applyDrugs(p, s) {
+    const fx = vasoactive(s.drugs), hr0 = p.hr || 95;
+    const q = Object.assign({}, p);
+    q.svr = (p.svr || 16) * fx.svr;
+    q.contr = Math.min(1.3, (p.contr === undefined ? 0.25 : p.contr) * fx.contr);
+    q.hr = Math.round(hr0 + fx.hr);
+    q.cvp = clamp(p.cvp + fx.cvp, 0, 30);
+    q.pvr = Math.max(0.3, (p.pvr || 1) * fx.pvr);
+    // the native output on VV: what the heart does with its contractility, rate, afterload and the right ventricle's load
+    const hrF = clamp(Math.pow(q.hr / hr0, 0.3), 0.8, 1.25), contrF = Math.pow(fx.contr, 0.55), afterF = Math.pow(fx.svr, -0.2), rvF = 1 / (1 + 0.45 * Math.pow(Math.max(0, q.pvr - 1), 1.3));
+    q.coEff = (p.co || 6.5) * hrF * contrF * afterF * rvF;
+    q.fx = fx;
+    return q;
+  }
 
   /* ---------------- VV ---------------- */
-  function runVV(p, s) {
+  function runVV(p0, s) {
+    const p = applyDrugs(p0, s);
     const pm = pump(p, s), Q = pm.flow;
     const sS = Object.assign({}, s, { flow: Q });
-    const R = clamp(s.recirc, 0, 0.9), co = Math.max(0.5, p.co), Qeff = Math.min(Q * (1 - R), co * 0.98);
+    const R = clamp(s.recirc, 0, 0.9), co = Math.max(0.5, p.coEff), Qeff = Math.min(Q * (1 - R), co * 0.98);
     const c = co2Balance(p, sS, Q, Qeff, R, co);
     const paco2 = c.pa;
     const pAO2 = Math.max(0, PH.pao2(p.fio2, 760, paco2, 0.8));
@@ -9361,8 +9464,9 @@ if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_N
     const do2 = co * ca * 10, ratio = do2 / p.vo2;
     const pH = phOf(p.hco3, paco2);
     const flowRatio = Qeff / co;
-    const lactate = ratio < 2 ? 'rising fast' : (ratio < 2.5 ? 'rising' : (ratio < 3.5 ? 'stable' : 'clearing'));
-    return { mode: 'vv', pump: pm, flow: Q, qeff: Qeff, recirc: R, flowRatio: flowRatio, co: co,
+    const lactate = lactateWord(ratio, p.fx);
+    const map = Math.round(co * p.svr * Math.pow(5.5 / Math.max(1, co), 0.45) * 0.9);
+    return { mode: 'vv', pump: pm, flow: Q, qeff: Qeff, recirc: R, flowRatio: flowRatio, co: co, coSet: p0.co, map: map, hr: p.hr, pvr: p.pvr, svr: p.svr, cvp: p.cvp, fx: p.fx,
       preO2: preO2, preSat: spre, preCO2: c.pre, postO2: m.postO2, postSat: m.postSat, postCO2: c.post, transfer: m.transfer, vco2Membrane: c.removedM, vco2Lung: c.removedL,
       pao2: pao2, sao2: sao2, spo2: Math.round(sao2 * 100), paco2: paco2, ph: pH, pvO2: pvO2, svo2: svo2, cv: cv, ca: ca, do2: do2, do2vo2: ratio, lactate: lactate,
       pvco2: c.pv, cCap: cCap, pAO2: pAO2 };
@@ -9370,14 +9474,16 @@ if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_N
 
   /* ---------------- VA ---------------- */
   const BRANCH = [['coronary', 0.05], ['innominate', 0.12], ['lcarotid', 0.08], ['lsubclavian', 0.07], ['descending', 0.68]];
-  function runVA(p, s) {
+  function runVA(p0, s) {
+    const p = applyDrugs(p0, s);
     const pm = pump(p, s), Q = pm.flow;
     const sS = Object.assign({}, s, { flow: Q });
     const svr = p.svr || 16;
+    const hrF = clamp(Math.pow(p.hr / (p0.hr || 95), 0.3), 0.8, 1.25);
     // the native ejection: what the ventricle has, minus what the afterload of the retrograde flow takes; a device adds its own forward flow
     let qn = 0, map = 70, dev = 0;
     for (let i = 0; i < 30; i++) {
-      const qn0 = p.contr * 5.0;
+      const qn0 = p.contr * 5.0 * hrF;
       const after = Math.max(0, 1 - 0.011 * (map - 60));
       dev = s.unload === 'impella' ? 2.8 : 0;
       qn = Math.max(0, qn0 * after) + (s.unload === 'iabp' ? 0.25 * p.contr : 0);
@@ -9426,8 +9532,8 @@ if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_N
     const paco2RR = terr.innominate.fn * paco2Native + (1 - terr.innominate.fn) * paco2Circuit;
     const paco2Fem = terr.descending.fn * paco2Native + (1 - terr.descending.fn) * paco2Circuit;
     const limbRisk = s.config === 'pf' && !s.dpc ? (s.ret >= 17 ? 'high' : 'moderate') : 'low';
-    const lactate = ratio < 2 ? 'rising fast' : (ratio < 2.5 ? 'rising' : (ratio < 3.5 ? 'stable' : 'clearing'));
-    return { mode: 'va', pump: pm, flow: Q, qn: qn, qnTot: qnTot, qt: qt, map: Math.round(map), pp: pp, avOpens: avOpens, lvedp: Math.round(lvedp), distension: distension, oedema: oedema, shunt: shunt,
+    const lactate = lactateWord(ratio, p.fx);
+    return { mode: 'va', pump: pm, flow: Q, qn: qn, qnTot: qnTot, qt: qt, map: Math.round(map), pp: pp, avOpens: avOpens, lvedp: Math.round(lvedp), distension: distension, oedema: oedema, shunt: shunt, hr: p.hr, svr: p.svr, contrEff: p.contr, fx: p.fx,
       preO2: pvO2, preSat: satOf(pvO2), preCO2: c.pre, postO2: m.postO2, postSat: m.postSat, postCO2: c.post, transfer: m.transfer,
       rrO2: rr, rrSat: satOf(rr), femO2: fem, femSat: satOf(fem), corO2: cor, corSat: satOf(cor), lcO2: lc, lcSat: satOf(lc), mixing: mixing, harlequin: harlequin, central: central,
       paco2RR: paco2RR, paco2Fem: paco2Fem, phRR: phOf(p.hco3, paco2RR), phFem: phOf(p.hco3, paco2Fem), svo2: satOf(pvO2), pvO2: pvO2, do2: do2, do2vo2: ratio, lactate: lactate, limbRisk: limbRisk, terr: terr, cn: cn, nativePaO2: po2FromContent(p.hb, cn) };
@@ -9435,9 +9541,10 @@ if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_N
   function run(p, s) { return s.mode === 'va' ? runVA(p, s) : runVV(p, s); }
 
   /* the defaults and the presets (a patient and the circuit) */
-  const PATIENT = { hb: 10, vo2: 290, vco2: 240, co: 6.5, shunt: 0.6, fio2: 0.4, va: 1.5, cvp: 8, hco3: 24, contr: 0.25, svr: 16 };
-  const SETTINGS = { vv: { mode: 'vv', config: 'fj', rpm: 3400, sweep: 2.5, fdo2: 1, oxy: 1, drain: 25, ret: 21, recirc: 0.15, kink: false, unload: 'none', dpc: true },
-    va: { mode: 'va', config: 'pf', rpm: 3300, sweep: 2.5, fdo2: 1, oxy: 1, drain: 25, ret: 17, recirc: 0, kink: false, unload: 'none', dpc: true } };
+  const PATIENT = { hb: 10, vo2: 290, vco2: 240, co: 6.5, shunt: 0.6, fio2: 0.4, va: 1.5, cvp: 8, hco3: 24, contr: 0.25, svr: 16, hr: 95, pvr: 1 };
+  const VV_PATIENT = { svr: 11 };
+  const SETTINGS = { vv: { mode: 'vv', config: 'fj', rpm: 3400, sweep: 2.5, fdo2: 1, oxy: 1, drain: 25, ret: 21, recirc: 0.15, kink: false, unload: 'none', dpc: true, drugs: {} },
+    va: { mode: 'va', config: 'pf', rpm: 3300, sweep: 2.5, fdo2: 1, oxy: 1, drain: 25, ret: 17, recirc: 0, kink: false, unload: 'none', dpc: true, drugs: {} } };
   const PRESETS = [
     { id: 'vv_run', title: 'VV: a good run', mode: 'vv', p: {}, s: {}, note: 'Severe ARDS, circuit 4.6 L/min against a cardiac output of 6.5, sweep 2.5, lung at rest. SaO2 in the high 80s–low 90s is what VV buys; it is enough.' },
     { id: 'vv_recirc', title: 'VV: recirculation', mode: 'vv', p: {}, s: { config: 'ff', recirc: 0.45 }, note: 'Femoro-femoral tips too close (or a dual-lumen cannula rotated): the drainage draws back the bright blood it just returned — recirculation. Pre-oxygenator saturation climbs toward the post; the patient falls.' },
@@ -9450,11 +9557,17 @@ if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_N
     { id: 'va_distension', title: 'VA: a distended, silent ventricle', mode: 'va', p: { contr: 0.08, cvp: 12, shunt: 0.3 }, s: { rpm: 3700 }, note: 'Full flow, MAP 80, pulse pressure nil, the aortic valve never opens: blood keeps arriving in the left heart (bronchial, Thebesian, whatever the RV sends) and has nowhere to go. Smoke, oedema, thrombus. Vent it.' },
     { id: 'va_unloaded', title: 'VA + Impella (ECPELLA)', mode: 'va', p: { contr: 0.08, cvp: 10, shunt: 0.2 }, s: { rpm: 3400, unload: 'impella' }, note: 'The same ventricle with a microaxial pump emptying it into the aorta: the end-diastolic pressure falls, the lungs dry out, the aortic root is washed.' },
     { id: 'va_wean', title: 'VA: flow-down trial', mode: 'va', p: { contr: 0.7, shunt: 0.15, fio2: 0.4, vo2: 230, vco2: 190 }, s: { rpm: 2000, sweep: 2 }, note: 'Recovered contractility: flow turned down toward 1–1.5 L/min with the sweep kept on. If the MAP holds, the VTI is above 10 cm and the ventricle does not dilate, the pump has become optional.' },
-    { id: 'va_central', title: 'VA: central cannulation', mode: 'va', p: { contr: 0.6, shunt: 0.55, fio2: 0.5 }, s: { config: 'ce', rpm: 3300 }, note: 'Return into the ascending aorta: every branch receives the same mixture. The same sick lungs that made a Harlequin on peripheral VA are harmless here.' }
+    { id: 'va_central', title: 'VA: central cannulation', mode: 'va', p: { contr: 0.6, shunt: 0.55, fio2: 0.5 }, s: { config: 'ce', rpm: 3300 }, note: 'Return into the ascending aorta: every branch receives the same mixture. The same sick lungs that made a Harlequin on peripheral VA are harmless here.' },
+    { id: 'va_pressor', title: 'VA: norepinephrine 0.4 and a valve that stops opening', mode: 'va', p: { contr: 0.18, svr: 10, cvp: 12, shunt: 0.3 }, s: { drugs: { ne: 0.4 } }, note: 'A pressor on VA buys pressure by resistance, and the resistance is the ventricle’s afterload: MAP 75, pulse pressure nil, LVEDP climbing. Turn the norepinephrine down, add an inotrope or a vasodilator, and watch the valve.' },
+    { id: 'va_inodilator', title: 'VA: dobutamine and nitroprusside open the valve', mode: 'va', p: { contr: 0.12, cvp: 12, shunt: 0.3 }, s: { rpm: 3400, drugs: { dobu: 7.5, nip: 1 } }, note: 'The distended ventricle of the earlier preset with an inodilator and an arterial vasodilator: contractility up, afterload down, the valve opens every beat, the LVEDP falls — at the price of a lower MAP. The flow is turned down to what perfuses.' },
+    { id: 'va_vasoplegia', title: 'VA: vasoplegia at full flow — vasopressin', mode: 'va', p: { contr: 0.3, svr: 6, shunt: 0.3 }, s: { rpm: 3600, drugs: { ne: 0.5, vp: 0.03 } }, note: 'Six litres a minute and a MAP in the 50s: the resistance has gone (sepsis, post-bypass, the inflammatory circuit). More flow is not the answer to a resistance problem; norepinephrine and a second, non-catecholamine agent are. Compare with the vasopressin off.' },
+    { id: 'vv_dobu', title: 'VV: dobutamine lifts the output and the saturation falls', mode: 'vv', p: {}, s: { drugs: { dobu: 10 } }, note: 'The circuit is unchanged; the heart now pumps 8–9 L/min, so the circuit’s 4.6 is a smaller fraction of the venous return and the SaO2 falls — while the DO2 rises. On VV the saturation is not the patient.' },
+    { id: 'vv_rv', title: 'VV: the right ventricle fails against a high PVR', mode: 'vv', p: { pvr: 3, cvp: 14, co: 5.5 }, s: {}, note: 'ARDS lungs and a hypoxic, acidotic pulmonary circulation: the right ventricle cannot push 5.5 L/min through a resistance three times normal; the output falls, the CVP climbs, the DO2 falls. Try inhaled nitric oxide and milrinone from the drips panel, then correct the CO2 with the sweep.' },
+    { id: 'vv_rv_ino', title: 'VV: RV failure — iNO and milrinone', mode: 'vv', p: { pvr: 3, cvp: 14, co: 5.5 }, s: { sweep: 4, drugs: { ino: 20, mil: 0.375 } }, note: 'The same patient with the pulmonary resistance brought down: the right ventricle recovers its output, the CVP falls — and milrinone costs some systemic pressure, which may need a little norepinephrine.' }
   ];
   function preset(id) {
     const pr = PRESETS.filter(x => x.id === id)[0]; if (!pr) return null;
-    return { p: Object.assign({}, PATIENT, pr.p), s: Object.assign({}, SETTINGS[pr.mode], pr.s), note: pr.note, title: pr.title };
+    return { p: Object.assign({}, PATIENT, pr.mode === 'vv' ? VV_PATIENT : {}, pr.p), s: Object.assign({}, SETTINGS[pr.mode], { drugs: {} }, pr.s, { drugs: Object.assign({}, pr.s.drugs || {}) }), note: pr.note, title: pr.title };
   }
 
   /* what the monitors would be shouting */
@@ -9478,6 +9591,10 @@ if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_N
       if (o.limbRisk !== 'low') a.push({ k: 'limb', t: 'No distal perfusion catheter with a ' + s.ret + ' Fr femoral cannula — leg at risk' });
     }
     if (o.do2vo2 < 2.5) a.push({ k: 'pt', t: 'DO2:VO2 ' + o.do2vo2.toFixed(1) + ' — supply-limited, lactate ' + o.lactate });
+    if (o.hr > 130) a.push({ k: 'pt', t: 'Heart rate ' + o.hr + (o.fx && o.fx.hr > 10 ? ' — chronotropy from the drips' : '') });
+    if (o.fx && o.fx.arr > 0.5) a.push({ k: 'pt', t: 'Arrhythmia risk from the catecholamine load' });
+    if (o.mode === 'vv' && o.map < 60) a.push({ k: 'pt', t: 'MAP ' + o.map });
+    if (o.fx && o.fx.nee > 0.5) a.push({ k: 'pt', t: 'Norepinephrine-equivalent ' + o.fx.nee.toFixed(2) + ' mcg/kg/min — ask why (source, steroids, calcium, the circuit)' });
     return a;
   }
 
@@ -9938,7 +10055,14 @@ if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_N
       'Membrane: a new membrane on 100% oxygen returns blood at a PO2 near 480, falling as it clots or as the flow passes the rated 7 L/min; its oxygen transfer is capped near 65 mL/min per litre of flow (about 450 mL/min at the rated flow). CO2 leaves in proportion to the sweep-to-flow ratio (post-membrane PCO2 ≈ pre × e^(−0.4 × sweep/flow)).',
       'VV: effective flow = flow × (1 − recirculation); the drainage blood is venous blood plus the recirculated fraction; the pulmonary-arterial blood is the flow-weighted mix of circuit and venous blood; the native lung lifts the non-shunted part to its alveolar PO2 (FiO2 and the PaCO2); the venous content follows Fick from the arterial content, the output and the VO2 — iterated to a steady state. PaCO2 balances the body’s VCO2 against what the membrane and the native alveolar ventilation remove; pH from the bicarbonate.',
       'VA: the native ejection is the contractility’s 5 L/min minus what the afterload of the circuit’s pressure takes (and plus what an Impella pumps); MAP = (circuit + native) × SVR; LVEDP rises as the ventricle fails to eject and as the flow and the venous pressure rise, falls with a vent; above 20 with a closed valve the ventricle is distended and the lung floods (shunt rises). In the aorta the native blood takes the branches nearest the root in order — coronaries, innominate, left carotid, left subclavian, then the descending aorta — and the circuit’s blood supplies whatever is left, with a soft mixing zone; central or axillary return mixes at the root instead.',
-      'A model, not a patient: the directions and the orders of magnitude are right; the exact numbers are a teaching fiction.'] }
+      'Drips (v8.4): each vasoactive acts through its receptors with a dose–response on the systemic resistance, the contractility, the heart rate, the venous tone and the pulmonary resistance; the combined effect is applied to the patient before the circuit runs. On VA, resistance is pressure but also the ventricle’s afterload (the valve, the pulse pressure, the LVEDP); on VV a higher native output means a smaller circuit fraction (the SaO2 falls while the DO2 rises), and a right ventricle failing against a high PVR answers to iNO and milrinone, not to the sweep.',
+      'A model, not a patient: the directions and the orders of magnitude are right; the exact numbers are a teaching fiction.'] },
+    { h: 'Pressors and inotropes on the circuit', ul: [
+      'VA: the circuit gives flow; the pressure comes from flow × resistance. A pure vasoconstrictor (norepinephrine, vasopressin, phenylephrine, angiotensin II) raises the MAP at the same flow — and raises the afterload of a ventricle already working against the retrograde column: the pulse pressure narrows, the valve stays shut, the LVEDP climbs. Keep the MAP target modest (65–70), and when the ventricle is the problem reach for an inodilator (dobutamine, milrinone) or an arterial vasodilator, a vent, or less flow.',
+      'VA: vasoplegia (sepsis, post-cardiotomy, the inflammatory response to the circuit) is a resistance problem; more flow buys little. Norepinephrine first, vasopressin as the catecholamine-sparing second agent, angiotensin II or methylene blue as rescue; look for the cause.',
+      'VV: the heart does the pumping. Inotropes raise the output and therefore lower the fraction of the venous return the circuit sees — the saturation falls although nothing on the circuit changed. Read the DO2 and the lactate, not the SpO2. A pressor raises the MAP without touching the gas exchange.',
+      'VV: the right ventricle fails against the pulmonary resistance of ARDS (hypoxia, hypercapnia, acidosis, PEEP). Fix the gas (sweep, FiO2), then lower the PVR (inhaled nitric oxide, milrinone) and support the contractility (dobutamine, epinephrine); vasopressin keeps the systemic pressure without raising the PVR. The drainage improves as the CVP rises, which is not good news.',
+      'Dosing: the norepinephrine-equivalent dose adds the agents on one scale (norepinephrine 1:1, epinephrine 1:1, phenylephrine ÷10, dopamine ÷100, vasopressin × 2.5 per U/min, angiotensin II ÷100); above 0.5 mcg/kg/min ask why rather than how much more. Epinephrine and dopamine make lactate and arrhythmia; dobutamine and milrinone drop the pressure; milrinone accumulates in renal failure.'] }
   ] };
 
   T.ecmo_cases = { title: 'Troubleshooting at the bedside', kicker: 'Fourteen calls from the nurse, the perfusionist or the monitor', blocks: [
@@ -10097,7 +10221,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_N
       ], done: 'The sweep-off trial: the circuit stays, its gas exchange stops, the lung shows what it can do. Then the cannulas come out.' }
   ];
 
-  root.PFT_ECMO = { topics: T, groups: GROUPS, CONFIGS: CONFIGS, DRAIN: DRAIN, RETURN: RETURN, PATIENT: PATIENT, SETTINGS: SETTINGS, PRESETS: PRESETS, preset: preset, SCENARIOS: SCENARIOS, LABCASES: LABCASES, run: run, runVV: runVV, runVA: runVA, pump: pump, membrane: membrane, alarms: alarms, satOf: satOf, po2Of: po2Of, content: content, po2FromContent: po2FromContent, BRANCH: BRANCH };
+  root.PFT_ECMO = { topics: T, groups: GROUPS, CONFIGS: CONFIGS, DRAIN: DRAIN, RETURN: RETURN, PATIENT: PATIENT, SETTINGS: SETTINGS, PRESETS: PRESETS, preset: preset, DRIPS: DRIPS, vasoactive: vasoactive, applyDrugs: applyDrugs, SCENARIOS: SCENARIOS, LABCASES: LABCASES, run: run, runVV: runVV, runVA: runVA, pump: pump, membrane: membrane, alarms: alarms, satOf: satOf, po2Of: po2Of, content: content, po2FromContent: po2FromContent, BRANCH: BRANCH };
   if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_ECMO;
 })(typeof window !== 'undefined' ? window : globalThis);
 
@@ -12458,6 +12582,434 @@ if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_N
     CAPNO_SHAPES: CAPNO_SHAPES, capno: capno, CVP_SHAPES: CVP_SHAPES, cvp: cvp, ecgAt: ecgAt, ICP_SHAPES: ICP_SHAPES, icp: icp, icpTrend: icpTrend, PC_SCENARIOS: PC_SCENARIOS, pcModel: pcModel, pcTest: pcTest, pcValidity: pcValidity };
   if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_MONITOR;
 })(typeof window !== 'undefined' ? window : globalThis);
+
+/* PulmCrit Daddy — Learn: the conduction system, element by element (v8.4).
+   The ECG lab in ecg.js plays scripted scenarios. This model is the general case: every element of the conduction
+   system is a dial — the sinus node and the atria, the AV node and its modes, the His bundle, the right bundle, the left
+   bundle and its two fascicles, the Purkinje network, an accessory pathway, an ectopic focus or a pacemaker — and every
+   wall of the ventricles has a mass, an ischaemia and an injury. The activation sequence is computed from what still
+   conducts: a region is reached through its Purkinje path if that path is open, otherwise muscle to muscle from the
+   nearest region already depolarised, late and slow, with the wavefront pointing from there. Each lead is then the sum
+   of the regions' dipoles projected onto its own direction — and the reading at the end is made from the traces the
+   model wrote, not from the settings, so the lesion → trace → reading loop closes. Frame as ecg.js: x to the patient's
+   left, y inferior, z anterior; ms and mV. Pure functions, usable in node for the tests. */
+(function (root) {
+'use strict';
+const E = root.PFT_ECG;
+const d2r = Math.PI / 180;
+const bump = (u) => (u <= 0 || u >= 1) ? 0 : Math.pow(Math.sin(Math.PI * u), 2);
+const unit = (v) => { const n = Math.hypot(v[0], v[1], v[2]) || 1; return [v[0] / n, v[1] / n, v[2] / n]; };
+const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+
+/* ------------------------------------------------------------ the heart: regions with a centre (cm), the direction a Purkinje-driven wavefront takes
+   through them, the time their Purkinje path normally delivers the impulse (ms after the onset of the QRS), a duration and a weight */
+const REGIONS = [
+  { id: 'sep', name: 'Septum', c: [-0.5, 1.0, 0.5], dir: [-0.55, -0.3, 0.65], t0: 0, dur: 26, mag: 0.32, via: 'lbb', group: 'septal' },
+  { id: 'apex', name: 'Apex and anterior wall', c: [1.5, 5.5, 2.0], dir: [0.35, 0.65, 0.6], t0: 12, dur: 30, mag: 0.7, via: 'lpf', group: 'anterior' },
+  { id: 'rv', name: 'Right ventricular free wall', c: [-3.0, 2.0, 3.0], dir: [-0.6, 0.1, 0.75], t0: 16, dur: 30, mag: 0.32, via: 'rbb', group: 'right' },
+  { id: 'lva', name: 'Anterolateral (anterosuperior) wall', c: [3.5, -0.5, 1.5], dir: [0.8, -0.42, -0.15], t0: 22, dur: 34, mag: 1.0, via: 'laf', group: 'lateral' },
+  { id: 'lvi', name: 'Inferoposterior wall', c: [2.0, 4.5, -2.0], dir: [0.25, 0.87, -0.42], t0: 24, dur: 34, mag: 1.0, via: 'lpf', group: 'inferior' },
+  { id: 'lvl', name: 'Lateral wall', c: [5.0, 0.5, -0.5], dir: [0.95, 0.3, -0.1], t0: 30, dur: 32, mag: 0.7, via: 'laf', group: 'lateral' },
+  { id: 'base', name: 'Posterobasal wall', c: [2.0, -2.0, -3.0], dir: [-0.3, -0.55, -0.75], t0: 50, dur: 26, mag: 0.4, via: 'lbb', group: 'posterior' }
+];
+/* the ST vector of an injured wall points at the leads that face it (and away from them when the ischaemia is subendocardial) */
+const INJ = { sep: [-0.4, 0.1, 0.9], apex: [0.05, 0.3, 0.95], rv: [-0.8, 0.3, 0.5], lva: [0.7, -0.5, 0.5], lvi: [0.1, 0.9, -0.4], lvl: [0.9, 0.1, 0.2], base: [0.2, 0.3, -0.95] };
+const ATRIA = [
+  { id: 'ra', name: 'Right atrium', t0: 0, dur: 55, dir: [0.25, 0.8, 0.4], mag: 0.11, via: 'sa' },
+  { id: 'la', name: 'Left atrium', t0: 28, dur: 58, dir: [0.8, 0.5, -0.3], mag: 0.11, via: 'bach' }
+];
+/* muscle-to-muscle crossings between neighbouring regions (ms, on top of the time the wavefront takes to leave the source) */
+const EDGES = [   // [from, to, ms, kind] — directed, because crossing the septum from its left surface to the right ventricle is a longer road than the reverse
+  ['sep', 'rv', 48, 'muscle'], ['rv', 'sep', 14, 'muscle'], ['sep', 'apex', 22, 'muscle'], ['apex', 'sep', 22, 'muscle'], ['sep', 'lva', 60, 'muscle'], ['lva', 'sep', 36, 'muscle'], ['sep', 'lvi', 60, 'muscle'], ['lvi', 'sep', 36, 'muscle'],
+  ['apex', 'rv', 36, 'muscle'], ['rv', 'apex', 40, 'muscle'], ['rv', 'lva', 44, 'muscle'], ['lva', 'rv', 40, 'muscle'],
+  ['apex', 'lva', 36, 'network'], ['lva', 'apex', 36, 'network'], ['apex', 'lvi', 36, 'network'], ['lvi', 'apex', 36, 'network'], ['apex', 'lvl', 30, 'network'], ['lvl', 'apex', 30, 'network'],
+  ['lva', 'lvl', 18, 'network'], ['lvl', 'lva', 18, 'network'], ['lvl', 'lvi', 20, 'network'], ['lvi', 'lvl', 20, 'network'], ['lvi', 'lva', 22, 'network'], ['lva', 'lvi', 22, 'network'],
+  ['lvl', 'base', 24, 'network'], ['base', 'lvl', 24, 'network'], ['lvi', 'base', 22, 'network'], ['base', 'lvi', 22, 'network'], ['lva', 'base', 30, 'muscle'], ['base', 'lva', 30, 'muscle']];
+/* a wall reached muscle to muscle takes 2.3× as long and, unopposed, writes 1.3× the voltage; between the left fascicles' territories the
+   Purkinje network still carries the front (1.5× as long), and nothing opposes it either (1.5×) */
+const SPREAD = { muscle: { dur: 2.3, mag: 1.9, blend: 0.75 }, network: { dur: 1.5, mag: 2.0, blend: 0.9 } };
+/* the Purkinje tree: which elements an impulse passes to reach each region's Purkinje entry */
+const TREE = { sep: ['his', 'lbb'], apex: ['his', 'lbb', 'lpf'], lvl: ['his', 'lbb', 'laf'], base: ['his', 'lbb'], lva: ['his', 'lbb', 'laf'], lvi: ['his', 'lbb', 'lpf'], rv: ['his', 'rbb'] };
+const ELEMENT_DELAY = 60;        // ms a fully delayed (but not blocked) element adds
+const MUSCLE_DUR = 2.3, MUSCLE_MAG = 1.3;
+const FOCI = { rvapex: { name: 'Right ventricular apex (the paced site)', region: 'rv', dir: [-0.2, -0.75, 0.3] }, rvot: { name: 'Right ventricular outflow tract', region: 'rv', dir: [0.3, 0.9, -0.1] }, lvlat: { name: 'Left ventricular lateral wall', region: 'lvl', dir: [-0.8, 0.3, 0.4] }, lvinf: { name: 'Left ventricular inferior wall', region: 'lvi', dir: [0.1, -0.9, 0.3] } };
+const AP_SITES = { ll: { name: 'Left lateral (type A)', regions: ['base', 'lvl'], dir: [-0.35, 0.55, 0.55] }, rfw: { name: 'Right free wall (type B)', regions: ['rv'], dir: [0.55, 0.6, -0.35] }, ps: { name: 'Posteroseptal', regions: ['lvi', 'base'], dir: [0.2, -0.65, 0.6] } };
+
+/* ------------------------------------------------------------ the settings: one object, every dial */
+function defaults() {
+  const myo = {}; REGIONS.forEach(r => { myo[r.id] = { mass: 1, isch: 0, injury: 0 }; });
+  return {
+    sa: { mode: 'sinus', rate: 72, afRate: 110, flutterRatio: 2 },                  // sinus | af | flutter | arrest
+    atria: { bach: 0, rae: false, lae: false },
+    av: { mode: 'normal', delay: 80, wenck: 4, ratio: 3 },                          // normal | wenck | mobitz2 | complete
+    his: { block: 0 }, rbb: { block: 0 }, lbb: { block: 0 }, laf: { block: 0 }, lpf: { block: 0 },
+    purk: { speed: 1 },
+    ap: { on: false, site: 'll', share: 0.6 },
+    focus: { mode: 'off', site: 'rvapex', every: 3, coupling: 0.6, rate: 70 },      // off | pvc | paced | vt
+    escape: { junctional: 40, ventricular: 32 },
+    myo: myo,
+    repol: { qt: 1, k: 0 }
+  };
+}
+const clone = (o) => JSON.parse(JSON.stringify(o));
+
+/* ------------------------------------------------------------ the activation of one beat
+   origin: 'his' (an impulse arriving from above), or a focus id (an ectopic or paced beat) */
+function activate(cfg, origin) {
+  const speed = clamp(cfg.purk.speed * (1 - 0.45 * cfg.repol.k), 0.3, 1.3);
+  const blocked = (el) => cfg[el].block >= 0.95;
+  const elDelay = (el) => ELEMENT_DELAY * clamp(cfg[el].block, 0, 1);
+  const R = {}; REGIONS.forEach(r => { R[r.id] = { id: r.id, name: r.name, c: r.c, dir0: r.dir, t0: Infinity, dur: r.dur, mag: r.mag * cfg.myo[r.id].mass, via: null, from: null, normalT0: r.t0 }; });
+  // Purkinje delivery
+  if (origin === 'his' && !blocked('his')) REGIONS.forEach(r => {
+    const path = TREE[r.id];
+    if (path.some(blocked)) return;
+    let g = 0; path.forEach(el => { g = Math.max(g, clamp(cfg[el].block, 0, 1)); });
+    const extra = path.reduce((s, el) => s + elDelay(el), 0);
+    const q = R[r.id]; q.t0 = (r.t0 + extra) / speed; q.via = path[path.length - 1]; q.dur = r.dur * (1 + 1.6 * g) / Math.sqrt(speed); q.dir = r.dir; q.g = g;
+  });
+  // an ectopic or paced beat starts in a region
+  if (origin !== 'his') { const F = FOCI[origin] || FOCI.rvapex; const q = R[F.region]; q.t0 = 0; q.via = 'focus'; q.dur = REGIONS.filter(r => r.id === F.region)[0].dur * MUSCLE_DUR / Math.sqrt(speed); q.dir = F.dir; q.mag *= MUSCLE_MAG; }
+  // the accessory pathway pre-excites its wall before anything else arrives
+  let pre = null;
+  if (origin === 'his' && cfg.ap.on && cfg.ap.share > 0) {
+    const site = AP_SITES[cfg.ap.site] || AP_SITES.ll, share = clamp(cfg.ap.share, 0, 1);
+    pre = { id: 'pre', name: 'Pre-excited wall (' + site.name + ')', t0: -70 * share, dur: 55 / Math.sqrt(speed), dir: site.dir, mag: 0.55 * share, via: 'ap', c: REGIONS.filter(r => r.id === site.regions[0])[0].c, late: 0 };
+    site.regions.forEach(id => { R[id].mag *= 1 - 0.35 * share; });
+  }
+  // muscle to muscle: relax until nothing improves
+  for (let it = 0; it < 10; it++) {
+    let changed = false;
+    EDGES.forEach(e => {
+      const a = R[e[0]], b = R[e[1]]; if (!isFinite(a.t0)) return;
+      const t = a.t0 + 0.25 * a.dur + e[2] / speed;
+      if (t < b.t0 - 1e-9) { b.t0 = t; b.via = 'muscle'; b.from = a.id; b.kind = e[3]; changed = true; }
+    });
+    if (!changed) break;
+  }
+  // the pre-excited wall also feeds its neighbours (so a large share widens the QRS)
+  if (pre) { const site = AP_SITES[cfg.ap.site] || AP_SITES.ll; site.regions.forEach(id => { const t = pre.t0 + 18 + 12 / speed; if (t < R[id].t0) { R[id].t0 = t; R[id].via = 'muscle'; R[id].from = 'pre'; R[id].kind = 'muscle'; } }); }
+  const vent = [];
+  REGIONS.forEach(r => {
+    const q = R[r.id]; if (!isFinite(q.t0)) return;
+    if (q.via === 'muscle') {
+      const src = q.from === 'pre' ? pre : R[q.from];
+      const spread = unit(sub(q.c, src.c));
+      const sp = SPREAD[q.kind] || SPREAD.muscle, w = sp.blend;
+      q.dir = unit([w * spread[0] + (1 - w) * q.dir0[0], w * spread[1] + (1 - w) * q.dir0[1], w * spread[2] + (1 - w) * q.dir0[2]]);
+      q.dur = r.dur * sp.dur / Math.sqrt(speed); q.mag *= sp.mag;
+    }
+    q.late = Math.max(0, q.t0 - r.t0);
+    const m = cfg.myo[r.id];
+    vent.push({ id: r.id, name: r.name, t0: q.t0, dur: q.dur, dir: q.dir, mag: q.mag, via: q.via, from: q.from, late: q.late, blocked: q.via === 'muscle', isch: m.isch, injury: m.injury, mass: m.mass, group: r.group });
+  });
+  if (pre) vent.unshift(pre);
+  vent.sort((a, b) => a.t0 - b.t0);
+  // the atria
+  const atria = ATRIA.map(a => {
+    const x = Object.assign({}, a);
+    if (a.id === 'la') { x.t0 += 60 * cfg.atria.bach; x.dur += 20 * cfg.atria.bach; if (cfg.atria.lae) { x.mag *= 1.5; x.dur += 30; } }
+    if (a.id === 'ra' && cfg.atria.rae) x.mag *= 1.9;
+    x.mag *= 1 - 0.7 * cfg.repol.k;
+    return x;
+  });
+  const S = { vent: vent, atria: atria };
+  const alive = vent.filter(x => x.mag > 0.01);
+  const qrsStart = alive.length ? Math.min.apply(null, alive.map(x => x.t0)) : 0, qrsEnd = alive.length ? Math.max.apply(null, alive.map(x => x.t0 + x.dur)) : 0;
+  let fx = 0, fy = 0; for (let t = qrsStart; t <= qrsEnd; t += 2) { const d = dipole(S, t, cfg); fx += d[0]; fy += d[1]; }
+  const axis = Math.round(Math.atan2(fy, fx) / d2r);
+  const pDur = Math.round(Math.max.apply(null, atria.map(a => a.t0 + a.dur)));
+  const pr = origin === 'his' ? Math.round(50 + cfg.av.delay + 30 + ELEMENT_DELAY * clamp(cfg.his.block, 0, 1) + qrsStart) : null;
+  return { S: S, R: { pr: pr || 160, rate: cfg.sa.rate }, origin: origin, qrs: Math.round(qrsEnd - qrsStart), qrsStart: qrsStart, qrsEnd: qrsEnd, pr: pr, axis: axis, pDur: pDur, pre: !!pre };
+}
+
+/* ------------------------------------------------------------ the dipole of a beat at t (ms from the QRS onset): activation, the ST plateau (injury, ischaemia), the T */
+function dipole(S, t, cfg, parts) {
+  const v = [0, 0, 0];
+  const qt = cfg ? cfg.repol.qt : 1, k = cfg ? cfg.repol.k : 0;
+  const add = (dir, w, id) => { v[0] += dir[0] * w; v[1] += dir[1] * w; v[2] += dir[2] * w; if (parts) parts[id] = (parts[id] || 0) + w; };
+  S.vent.forEach(x => {
+    if (x.mag <= 0) return;
+    add(x.dir, x.mag * bump((t - x.t0) / x.dur), x.id);
+    const tEnd = x.t0 + x.dur, tT = x.t0 + (220 + x.dur * 0.6) * qt, tDur = 170 * qt * (1 - 0.35 * k);
+    // the plateau: an injury current from a transmurally injured wall points at the leads facing it; subendocardial ischaemia away
+    const inj = (x.injury || 0), isc = (x.isch || 0);
+    if (inj > 0 || isc > 0) {
+      const ramp = clamp((t - tEnd) / 20, 0, 1) * clamp((tT + tDur * 0.3 - t) / 40, 0, 1);
+      add(INJ[x.id] || x.dir, (0.26 * inj - 0.09 * isc) * Math.min(1.5, x.mass || 1) * ramp, x.id);
+    }
+    // repolarisation: concordant unless the wall was reached late, ischaemic or hypertrophied (strain)
+    const conc = (1 - 1.9 * Math.min(1, (x.late || 0) / 44)) * (1 - 1.6 * isc) * Math.max(-0.9, 1 - 1.6 * Math.max(0, (x.mass || 1) - 1));
+    add(x.dir, x.mag * 0.26 * conc * (1 + 0.9 * k) * (1 + 0.5 * inj) * bump((t - tT) / tDur), x.id);
+  });
+  return v;
+}
+function dipoleP(S, t, parts) {
+  const v = [0, 0, 0];
+  S.atria.forEach(x => { const w = x.mag * bump((t - x.t0) / x.dur) - x.mag * 0.25 * bump((t - x.t0 - 60) / 90); v[0] += x.dir[0] * w; v[1] += x.dir[1] * w; v[2] += x.dir[2] * w; if (parts) parts[x.id] = (parts[x.id] || 0) + w; });
+  return v;
+}
+
+/* ------------------------------------------------------------ the strip: ten seconds of beats, each with its own activation */
+function mulberry(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+function strip(cfg, secs) {
+  secs = secs || 10;
+  const T = secs * 1000, rnd = mulberry(7);
+  const conducted = activate(cfg, 'his');
+  const seqs = { his: conducted };
+  const focusSeq = (site) => { if (!seqs[site]) seqs[site] = activate(cfg, site); return seqs[site]; };
+  const bts = [];
+  const hisOpen = cfg.his.block < 0.95;
+  const pr = conducted.pr;
+  // --- atrial events
+  const Ps = [];
+  if (cfg.sa.mode === 'sinus') { const pp = 60000 / cfg.sa.rate; for (let t = 120; t < T; t += pp) Ps.push(t); }
+  // --- which atrial events conduct
+  const vb = [];   // ventricular beats {q, kind, seq, p}
+  if (cfg.sa.mode === 'sinus') {
+    let n = 0, lastQ = -1e9;
+    Ps.forEach((p) => {
+      let q = null;
+      if (cfg.av.mode === 'normal') q = p + pr;
+      else if (cfg.av.mode === 'wenck') { const W = Math.max(2, cfg.av.wenck), k = n % W; q = k === W - 1 ? null : p + pr + [0, 70, 110, 135, 150, 160, 168][Math.min(6, k)]; }
+      else if (cfg.av.mode === 'mobitz2') { const r = Math.max(2, cfg.av.ratio); q = n % r === r - 1 ? null : p + pr; }
+      n++;
+      if (q !== null && hisOpen && q - lastQ > 240) { vb.push({ q: q, kind: 'conducted', seq: conducted, p: p }); lastQ = q; }
+      bts.push({ p: p, q: null, pOnly: true });
+    });
+  } else if (cfg.sa.mode === 'af') {
+    const meanRR = 60000 / cfg.sa.afRate; let t = 160;
+    while (t < T) { if (hisOpen && cfg.av.mode !== 'complete') vb.push({ q: t, kind: 'conducted', seq: conducted, p: null }); t += meanRR * (0.55 + 0.9 * rnd()); }
+  } else if (cfg.sa.mode === 'flutter') {
+    const ff = 200, r = Math.max(2, cfg.sa.flutterRatio); let i = 0;
+    for (let t = 100; t < T; t += ff, i++) if (i % r === 0 && hisOpen && cfg.av.mode !== 'complete') vb.push({ q: t + 120, kind: 'conducted', seq: conducted, p: null });
+  }
+  // --- a ventricular rhythm of its own: pacing or VT takes over; PVCs intrude
+  if (cfg.focus.mode === 'paced' || cfg.focus.mode === 'vt') {
+    vb.length = 0;
+    const rr = 60000 / cfg.focus.rate, sq = focusSeq(cfg.focus.site);
+    for (let t = 200; t < T; t += rr) vb.push({ q: t, kind: cfg.focus.mode, seq: sq, p: null, spike: cfg.focus.mode === 'paced' });
+  } else if (cfg.focus.mode === 'pvc' && vb.length) {
+    const every = Math.max(1, cfg.focus.every), sq = focusSeq(cfg.focus.site), add = [];
+    const rr = vb.length > 1 ? vb[1].q - vb[0].q : 800;
+    vb.forEach((b, i) => { if ((i + 1) % every === 0) add.push({ q: b.q + cfg.focus.coupling * rr, kind: 'pvc', seq: sq, p: null }); });
+    add.forEach(x => { for (let i = vb.length - 1; i >= 0; i--) if (vb[i].q > x.q - 150 && vb[i].q < x.q + 360) vb.splice(i, 1); vb.push(x); });
+    vb.sort((a, b) => a.q - b.q);
+  }
+  // --- escape: whenever nothing has come for an escape interval
+  const escRate = hisOpen ? cfg.escape.junctional : cfg.escape.ventricular, escRR = 60000 / Math.max(15, escRate);
+  if (!(cfg.focus.mode === 'paced' || cfg.focus.mode === 'vt')) {
+    const escSeq = hisOpen ? conducted : focusSeq('rvapex');
+    let last = 300 - escRR * 0.5, i = 0; const out = [];
+    vb.sort((a, b) => a.q - b.q);
+    while (true) {
+      const next = i < vb.length ? vb[i] : null;
+      const due = last + escRR * 1.15;   // a beat from above resets the escape pacemaker (overdrive suppression)
+      if (next && next.q <= due) { out.push(next); last = next.q; i++; continue; }
+      if (due >= T) break;
+      out.push({ q: due, kind: hisOpen ? 'junctional' : 'ventricular', seq: escSeq, p: null, escape: true }); last = due;
+    }
+    vb.length = 0; out.forEach(x => vb.push(x));
+  }
+  vb.forEach(b => bts.push(b));
+  const vRate = vb.length > 1 ? Math.round(60000 * (vb.length - 1) / (vb[vb.length - 1].q - vb[0].q)) : (vb.length ? 60 : 0);
+  const aRate = cfg.sa.mode === 'sinus' ? cfg.sa.rate : (cfg.sa.mode === 'flutter' ? 300 : (cfg.sa.mode === 'af' ? null : 0));
+  return { cfg: cfg, seq: conducted, seqs: seqs, bts: bts, vRate: vRate, aRate: aRate, secs: secs };
+}
+
+/* the voltage of a lead at time T of the strip, with the parts that make it when asked */
+function voltageAt(leadName, st, T, parts) {
+  const L = E.leadVec(leadName), cfg = st.cfg; let v = 0;
+  for (let i = 0; i < st.bts.length; i++) {
+    const b = st.bts[i];
+    if (b.q !== null && b.q !== undefined && T >= b.q - 80 && T < b.q + 620) {
+      const pp = parts ? {} : null;
+      const d = dipole(b.seq.S, T - b.q, cfg, pp); v += dot(d, L);
+      if (parts) Object.keys(pp).forEach(id => { const x = b.seq.S.vent.filter(y => y.id === id)[0]; if (x) parts[id] = (parts[id] || 0) + dot(x.dir, L) * pp[id]; });
+      if (b.spike && T >= b.q - 2 && T < b.q + 2) v += 0.9;
+    }
+    if (b.p !== null && b.p !== undefined && T >= b.p - 10 && T < b.p + 300) { const pp = parts ? {} : null; const d = dipoleP(st.seq.S, T - b.p, pp); v += dot(d, L); if (parts) Object.keys(pp).forEach(id => { const x = st.seq.S.atria.filter(y => y.id === id)[0]; parts[id] = (parts[id] || 0) + dot(x.dir, L) * pp[id]; }); }
+  }
+  // fibrillation and flutter write their own baseline
+  if (cfg.sa.mode === 'af') v += 0.035 * (Math.sin(T / 31) + Math.sin(T / 47 + 1) + 0.6 * Math.sin(T / 19 + 2)) * dot([0.3, 0.5, 0.4], L);
+  if (cfg.sa.mode === 'flutter') { const ph = ((T - 100) % 200) / 200; v += 0.16 * (ph < 0.8 ? 1 - 2 * ph / 0.8 : -1 + 2 * (ph - 0.8) / 0.2) * dot([-0.1, -0.9, 0.2], L); }
+  return v;
+}
+/* which regions and paths are active at T (for the drawing): 0–1 the front, 1 depolarised, 1–2 repolarising */
+function stateAt(st, T) {
+  const out = { regions: {}, paths: {}, phase: 'rest' };
+  st.bts.forEach(b => {
+    if (b.p !== null && b.p !== undefined) st.seq.S.atria.forEach(x => { const u = (T - b.p - x.t0) / x.dur, r = (T - b.p - x.t0 - 60) / 90; if (u > 0 && u < 1) { out.regions[x.id] = Math.max(out.regions[x.id] || 0, u); out.paths[x.via] = 1; } else if (u >= 1 && r < 1) out.regions[x.id] = Math.max(out.regions[x.id] || 0, r > 0 ? 1 + r : 1); });
+    if (b.p !== null && b.p !== undefined && b.pOnly) {
+      const mine = st.bts.filter(c => c.kind === 'conducted' && c.p === b.p)[0];
+      if (mine && T > b.p + 60 && T < mine.q) { out.paths.av = 1; out.phase = 'av'; }
+      if (!mine && T > b.p + 60 && T < b.p + 260) out.paths.avblock = 1;
+    }
+    if (b.q !== null && b.q !== undefined) b.seq.S.vent.forEach(x => {
+      const u = (T - b.q - x.t0) / x.dur, r = (T - b.q - (x.t0 + 220 + x.dur * 0.6)) / 170;
+      if (u > 0 && u < 1) { out.regions[x.id] = Math.max(out.regions[x.id] || 0, u); if (x.via && x.via !== 'muscle' && x.via !== 'focus') { out.paths[x.via] = 1; out.paths.his = 1; if (x.via === 'laf' || x.via === 'lpf') out.paths.lbb = 1; } }
+      else if (u >= 1 && r < 1) out.regions[x.id] = Math.max(out.regions[x.id] || 0, r > 0 ? 1 + r : 1);
+    });
+  });
+  return out;
+}
+
+/* ------------------------------------------------------------ reading the traces the model wrote */
+function measureLead(st, lead, b) {
+  const q = b.q, s = b.seq;
+  const at = (t) => voltageAt(lead, st, q + t);
+  const base = at(-70);
+  // Q wave: the QRS opens with a negative deflection — pathological when it is deep (≥ 0.1 mV and a quarter of the R) or wide (≥ 30 ms)
+  let qDepth = 0, qWidth = 0, first = 0;
+  for (let t = s.qrsStart; t < s.qrsEnd; t += 2) { const v = at(t) - base; if (!first && Math.abs(v) > 0.1) first = v > 0 ? 1 : -1; if (first < 0) { if (v < qDepth) qDepth = v; if (v < -0.02) qWidth += 2; else break; } else if (first > 0) break; }
+  let rMax = 0, sMin = 0, terminal = 0; const q40 = s.qrsEnd - 40;
+  for (let t = s.qrsStart; t <= s.qrsEnd; t += 2) { const v = at(t) - base; if (v > rMax) rMax = v; if (v < sMin) sMin = v; if (t >= q40) terminal += v; }
+  const j = s.qrsEnd, stDev = at(j + 60) - base, tPeak = (function () { let m = 0; for (let t = j + 80; t < j + 320; t += 4) { const v = at(t) - base; if (Math.abs(v) > Math.abs(m)) m = v; } return m; })();
+  let minEarly = 0; for (let t = s.qrsStart; t < s.qrsStart + 40; t += 2) { const v = at(t) - base; if (v < minEarly) minEarly = v; }
+  const path = first < 0 && ((qDepth <= -0.1 && (qWidth >= 30 || -qDepth >= 0.25 * rMax)) || (minEarly <= -0.15 && rMax < 0.6));
+  return { lead: lead, q: path ? Math.min(qDepth, minEarly) : 0, qWidth: qWidth, r: rMax, s: sMin, terminal: terminal, st: stDev, t: tPeak };
+}
+const GROUPS_L = { inferior: ['II', 'III', 'aVF'], lateral: ['I', 'aVL', 'V5', 'V6'], anterior: ['V1', 'V2', 'V3', 'V4'], septal: ['V1', 'V2'] };
+function interpret(st) {
+  const cfg = st.cfg, lines = [], flags = [];
+  const beats = st.bts.filter(b => b.q !== null && b.q !== undefined);
+  const first = beats.filter(b => b.kind === 'conducted')[0] || beats[0];
+  // rhythm
+  const vr = st.vRate;
+  let rhythm;
+  if (cfg.focus.mode === 'vt') rhythm = 'Wide-complex tachycardia at ' + vr + '/min with the sinus P waves marching through — ventricular tachycardia with AV dissociation';
+  else if (cfg.focus.mode === 'paced') rhythm = 'Ventricular paced rhythm at ' + cfg.focus.rate + '/min (spike before every wide QRS)';
+  else if (cfg.sa.mode === 'af') rhythm = 'Atrial fibrillation, irregularly irregular, ventricular rate about ' + vr + '/min, no P waves';
+  else if (cfg.sa.mode === 'flutter') rhythm = 'Atrial flutter (sawtooth F waves at 300/min, negative in II, III, aVF) with ' + cfg.sa.flutterRatio + ':1 conduction, ventricular rate ' + vr + '/min';
+  else if (cfg.sa.mode === 'arrest') rhythm = beats.length ? 'No P waves (sinus arrest): ' + (beats[0].kind === 'junctional' ? 'junctional escape rhythm, narrow, ' : 'ventricular escape rhythm, wide, ') + vr + '/min' : 'Asystole';
+  else if (cfg.av.mode === 'complete' || cfg.his.block >= 0.95) rhythm = 'Sinus rhythm ' + cfg.sa.rate + '/min with complete heart block: ' + (cfg.his.block >= 0.95 ? 'ventricular escape (wide) at ' : 'junctional escape (narrow) at ') + vr + '/min, P and QRS independent';
+  else if (cfg.av.mode === 'wenck') rhythm = 'Sinus ' + cfg.sa.rate + '/min with Mobitz I (Wenckebach) ' + cfg.av.wenck + ':' + (cfg.av.wenck - 1) + ' block — the PR lengthens until a P is dropped';
+  else if (cfg.av.mode === 'mobitz2') rhythm = 'Sinus ' + cfg.sa.rate + '/min with Mobitz II ' + cfg.av.ratio + ':' + (cfg.av.ratio - 1) + ' block — a constant PR, then a dropped beat';
+  else rhythm = (cfg.sa.rate < 60 ? 'Sinus bradycardia ' : (cfg.sa.rate > 100 ? 'Sinus tachycardia ' : 'Sinus rhythm ')) + cfg.sa.rate + '/min';
+  if (cfg.focus.mode === 'pvc') rhythm += (cfg.focus.every === 2 ? ' with ventricular bigeminy' : (cfg.focus.every === 3 ? ' with ventricular trigeminy' : ' with premature ventricular complexes every ' + cfg.focus.every + ' beats')) + ' (wide, ' + (cfg.focus.site.indexOf('rv') === 0 ? 'LBBB-like: from the right ventricle' : 'RBBB-like: from the left ventricle') + ')';
+  if (beats.some(b => b.escape) && cfg.sa.mode === 'sinus' && cfg.av.mode !== 'complete' && cfg.his.block < 0.95) rhythm += '; escape beats fill the pauses';
+  lines.push(['Rhythm', rhythm]);
+  if (!first) return { lines: lines, flags: flags, leads: {} };
+  const s = first.seq, m = {}; E.LEADS.forEach(l => { m[l[0]] = measureLead(st, l[0], first); });
+  // intervals
+  const prTxt = cfg.sa.mode !== 'sinus' || first.kind !== 'conducted' ? '—' : (cfg.av.mode === 'wenck' ? 'lengthening (' + s.pr + ' ms on the first beat)' : s.pr + ' ms');
+  const prFlag = cfg.sa.mode === 'sinus' && first.kind === 'conducted' && cfg.av.mode !== 'wenck' ? (s.pr > 200 ? ' — first-degree AV block' : (s.pr < 120 ? (s.pre ? ' — short with a delta wave: pre-excitation' : ' — short') : '')) : '';
+  lines.push(['PR', prTxt + prFlag]);
+  const qrs = s.qrs, wide = qrs >= 120, mid = qrs >= 100 && qrs < 120;
+  const v1 = m.V1, v6 = m.V6, I = m.I;
+  let morph = '';
+  const ax = s.axis;
+  const lafb = ax < -45 && !wide && m.I.r > 0.3 && m.aVL.q < 0 && m.II.s < -0.3, lpfb = ax > 100 && !wide && m.III.r > 0.6 && m.I.s < -0.3 && m.III.q < 0;
+  if (first.kind === 'conducted' || first.kind === 'junctional') {
+    if (wide || mid) {
+      if (cfg.repol.k > 0.3 || cfg.purk.speed < 0.8) morph = 'diffusely widened: conduction is slowed through the whole ventricle' + (cfg.repol.k > 0.3 ? ' (hyperkalaemia)' : ' (a sodium-channel blocker, or the potassium)');
+      else if (v1.terminal > 0.4 && v1.r > 0.3 && (v6.s < -0.25 || I.s < -0.2 || m.aVL.s < -0.2)) morph = (wide ? 'complete' : 'incomplete') + ' right bundle branch block pattern (rSR′ in V1, broad S in I and V6)';
+      else if (v1.r < 0.6 && v1.terminal < 0 && v6.r > 1.4 && v1.s < -1.4 && v6.q > -0.25 && I.r > 0.8 && wide) morph = 'left bundle branch block pattern (broad notched R in I, aVL, V5–6 without q; rS or QS in V1; discordant T)';
+      else if (v1.r < 0.6 && v1.terminal < 0 && v6.r > 1.3 && v1.s < -1.2 && v6.q > -0.25 && I.r > 0.8) morph = 'incomplete left bundle branch block pattern (the septal q is gone, the R thickened)';
+      else if ((lafb || lpfb) && mid) morph = 'slightly widened by the fascicular block';
+      else if (s.pre) morph = 'widened by a delta wave (pre-excitation)';
+      else morph = 'non-specific intraventricular conduction delay';
+    }
+  } else morph = first.kind === 'paced' || first.kind === 'vt' || first.kind === 'ventricular' ? 'wide, of ventricular origin (' + (cfg.focus.site.indexOf('rv') === 0 || first.kind === 'ventricular' ? 'LBBB-like' : 'RBBB-like') + ')' : '';
+  lines.push(['QRS', qrs + ' ms' + (morph ? ' — ' + morph : (qrs < 100 ? ' (narrow)' : ''))]);
+  let axTxt = ax + '° — ' + (ax < -90 ? 'extreme (north-west) axis' : (ax < -30 ? 'left axis deviation' : (ax <= 90 ? 'normal axis' : 'right axis deviation')));
+  if (lafb) axTxt += ' with qR in aVL and rS in II, III, aVF: left anterior fascicular block';
+  else if (lpfb) axTxt += ' with rS in I and qR in III: left posterior fascicular block (if the right ventricle is normal)';
+  lines.push(['Axis', axTxt]);
+  // ST and Q waves and T by territory
+  const ste = E.LEADS.map(l => l[0]).filter(l => m[l].st >= 0.1), std = E.LEADS.map(l => l[0]).filter(l => m[l].st <= -0.08), qw = E.LEADS.map(l => l[0]).filter(l => m[l].q < 0 && !/aVR/.test(l)), tinv = E.LEADS.map(l => l[0]).filter(l => m[l].t < -0.15 && !/aVR|V1/.test(l) && m[l].r > 0.3);
+  const terr = (leads) => Object.keys(GROUPS_L).filter(g => GROUPS_L[g].filter(l => leads.indexOf(l) >= 0).length >= 2).join(', ');
+  const ste2 = ste.filter(l => l !== 'aVR'), steT = terr(ste2), qwT = terr(qw);
+  if (s.pre && first.kind === 'conducted') lines.push(['ST-T', 'secondary to the pre-excitation (and pseudo-infarct Q waves where the delta is negative) — not ischaemia']);
+  else if (steT && (first.kind === 'conducted')) { const t = steT; lines.push(['ST elevation', ste2.join(', ') + (t ? ' (' + t + ')' : '') + (std.length ? ' with reciprocal depression in ' + std.join(', ') : '') + (cfg.myo && Object.keys(cfg.myo).some(k => cfg.myo[k].injury > 0.3) ? ' — acute transmural injury' : '')]); flags.push('ste'); }
+  else if (std.length && first.kind === 'conducted' && !wide && !s.pre) { lines.push(['ST depression', std.join(', ') + ' (' + (terr(std) || 'scattered') + ')' + (Object.keys(cfg.myo).some(k => cfg.myo[k].isch > 0.3) ? ' — subendocardial ischaemia' : ' — secondary to the conduction change')]); flags.push('std'); }
+  if (qwT && first.kind === 'conducted' && !wide && !s.pre) { const dead = Object.keys(cfg.myo).filter(k => cfg.myo[k].mass < 0.3); lines.push(['Q waves', qw.join(', ') + ' (' + qwT + ')' + (dead.length ? ' — loss of forces from the infarcted ' + dead.map(k => REGIONS.filter(r => r.id === k)[0].name.toLowerCase()).join(' and ') : '')]); flags.push('q'); }
+  if (tinv.length && !s.pre) lines.push(['T waves', 'inverted in ' + tinv.join(', ') + (wide ? ' (discordant to a wide QRS: secondary)' : (Object.keys(cfg.myo).some(k => cfg.myo[k].isch > 0.3) ? ' — ischaemia' : (Object.keys(cfg.myo).some(k => cfg.myo[k].mass > 1.3) ? ' — strain pattern' : '')))]);
+  if (cfg.repol.k > 0.3) lines.push(['T waves', 'tall, narrow and peaked' + (cfg.repol.k > 0.6 ? '; P waves flattening and the QRS widening — hyperkalaemia' : ' — early hyperkalaemia')]);
+  const sv1 = Math.abs(m.V1.s), rv5 = Math.max(m.V5.r, m.V6.r);
+  if (sv1 + rv5 > 3.5 && !wide && first.kind === 'conducted') lines.push(['Voltage', 'S in V1 + R in V5/V6 = ' + (sv1 + rv5).toFixed(1) + ' mV — left ventricular hypertrophy by Sokolow–Lyon' + (Object.keys(cfg.myo).some(k => cfg.myo[k].mass > 1.3 && cfg.myo[k].mass < 3) ? ' (with strain if the T waves invert laterally)' : '')]);
+  if (((m.V1.r > 0.7 && m.V1.r > -m.V1.s) || (m.V1.r > 0.5 && ax > 100)) && !wide && first.kind === 'conducted' && !/right bundle/.test(morph)) lines.push(['Voltage', 'Dominant R in V1 (R > S)' + (ax > 90 ? ' with a right axis' : '') + ' — right ventricular hypertrophy (or a posterior infarct, or a right-sided pathway)']);
+  if (cfg.atria.bach > 0.5 || cfg.atria.lae) lines.push(['P wave', (s.pDur >= 120 ? 'broad (' + s.pDur + ' ms), notched in II' : 'notched') + (cfg.atria.lae ? ', with a deep terminal force in V1 — left atrial enlargement' : ' — interatrial block')]);
+  if (cfg.atria.rae) lines.push(['P wave', 'tall and peaked in II (P pulmonale) — right atrial enlargement']);
+  if (cfg.repol.qt > 1.2 && !wide) lines.push(['QT', 'prolonged (the T comes ' + Math.round((cfg.repol.qt - 1) * 100) + '% later than it should)']);
+  return { lines: lines, flags: flags, leads: m, beat: first };
+}
+
+/* ------------------------------------------------------------ presets: the classic lesions as settings of the general model */
+const PRESETS = [
+  { id: 'normal', name: 'Normal conduction', set: {} },
+  { id: 'rbbb', name: 'Right bundle branch block', set: { rbb: { block: 1 } } },
+  { id: 'irbbb', name: 'Incomplete RBBB', set: { rbb: { block: 0.55 } } },
+  { id: 'lbbb', name: 'Left bundle branch block', set: { lbb: { block: 1 } } },
+  { id: 'lafb', name: 'Left anterior fascicular block', set: { laf: { block: 1 } } },
+  { id: 'lpfb', name: 'Left posterior fascicular block', set: { lpf: { block: 1 } } },
+  { id: 'bifasc', name: 'Bifascicular block (RBBB + LAFB)', set: { rbb: { block: 1 }, laf: { block: 1 } } },
+  { id: 'trifasc', name: '“Trifascicular”: RBBB + LAFB + first-degree block', set: { rbb: { block: 1 }, laf: { block: 1 }, av: { delay: 180 } } },
+  { id: 'wpw', name: 'Pre-excitation, left lateral pathway', set: { ap: { on: true, site: 'll', share: 0.6 } } },
+  { id: 'wpwb', name: 'Pre-excitation, right free-wall pathway', set: { ap: { on: true, site: 'rfw', share: 0.6 } } },
+  { id: 'avb1', name: 'First-degree AV block', set: { av: { delay: 180 } } },
+  { id: 'wenck', name: 'Mobitz I (Wenckebach)', set: { av: { mode: 'wenck', wenck: 4 } } },
+  { id: 'mobitz2', name: 'Mobitz II with RBBB', set: { av: { mode: 'mobitz2', ratio: 3 }, rbb: { block: 1 } } },
+  { id: 'chb_j', name: 'Complete block, junctional escape', set: { av: { mode: 'complete' } } },
+  { id: 'chb_v', name: 'Complete block below the His, ventricular escape', set: { his: { block: 1 } } },
+  { id: 'af', name: 'Atrial fibrillation', set: { sa: { mode: 'af', afRate: 120 } } },
+  { id: 'flutter', name: 'Atrial flutter 2:1', set: { sa: { mode: 'flutter', flutterRatio: 2 } } },
+  { id: 'pvc', name: 'Ventricular bigeminy from the RV outflow tract', set: { focus: { mode: 'pvc', site: 'rvot', every: 2 } } },
+  { id: 'vt', name: 'Ventricular tachycardia (left ventricular focus)', set: { focus: { mode: 'vt', site: 'lvlat', rate: 165 } } },
+  { id: 'paced', name: 'RV apical pacing', set: { focus: { mode: 'paced', site: 'rvapex', rate: 70 }, av: { mode: 'complete' } } },
+  { id: 'stemi_inf', name: 'Inferior STEMI', set: { myo: { lvi: { injury: 0.8 } } } },
+  { id: 'stemi_ant', name: 'Anterior STEMI', set: { myo: { apex: { injury: 0.7 }, sep: { injury: 0.45 }, lva: { injury: 0.15 } } } },
+  { id: 'old_inf', name: 'Old inferior (inferoapical) infarct', set: { myo: { lvi: { mass: 0.05 }, apex: { mass: 0.1 } } } },
+  { id: 'old_ant', name: 'Old anteroseptal infarct', set: { myo: { apex: { mass: 0.05 }, sep: { mass: 0.05 }, lva: { mass: 0.5 } } } },
+  { id: 'isch', name: 'Subendocardial ischaemia (lateral)', set: { myo: { lvl: { isch: 0.8 }, lva: { isch: 0.6 } } } },
+  { id: 'lvh', name: 'Left ventricular hypertrophy with strain', set: { myo: { lva: { mass: 1.7 }, lvl: { mass: 1.7 }, lvi: { mass: 1.6 }, apex: { mass: 1.5 }, base: { mass: 1.5 } } } },
+  { id: 'rvh', name: 'Right ventricular hypertrophy', set: { myo: { rv: { mass: 6 } }, rbb: { block: 0.45 } } },
+  { id: 'hyperk', name: 'Hyperkalaemia', set: { repol: { k: 0.7 } } },
+  { id: 'lqt', name: 'Long QT', set: { repol: { qt: 1.35 } } }
+];
+function preset(id) {
+  const p = PRESETS.filter(x => x.id === id)[0]; if (!p) return defaults();
+  const cfg = defaults();
+  Object.keys(p.set).forEach(k => { if (k === 'myo') Object.keys(p.set.myo).forEach(r => Object.assign(cfg.myo[r], p.set.myo[r])); else Object.assign(cfg[k], p.set[k]); });
+  return cfg;
+}
+/* which elements are blocked or delayed, for the drawing */
+function elementStates(cfg) {
+  const st = {};
+  ['his', 'rbb', 'lbb', 'laf', 'lpf'].forEach(el => { st[el] = cfg[el].block >= 0.95 ? 'blocked' : (cfg[el].block > 0.05 ? 'delayed' : 'ok'); });
+  st.av = cfg.av.mode === 'complete' ? 'blocked' : (cfg.av.mode !== 'normal' || cfg.av.delay > 120 ? 'delayed' : 'ok');
+  st.sa = cfg.sa.mode === 'sinus' ? 'ok' : 'blocked';
+  st.bach = cfg.atria.bach > 0.5 ? 'delayed' : 'ok';
+  st.ap = cfg.ap.on ? 'ok' : 'off';
+  return st;
+}
+
+/* ------------------------------------------------------------ the topic */
+const T = {};
+T.conduction = { title: 'The conduction system, element by element', kicker: 'Open or close each part of the system, change each wall, and read what the twelve leads write', blocks: [
+  { p: 'The ECG lab plays the classic lesions. This bench is the general case. Every element of the conduction system is a dial — the sinus node and the atria, the AV node and its ways of failing, the His bundle, the right bundle, the left bundle and its two fascicles, the speed of the Purkinje network, an accessory pathway, an ectopic focus or a pacemaker — and every wall of the ventricles has a mass (hypertrophy up, infarction down), an ischaemia and an injury. Nothing is scripted: the model works out which region is reached through which path and when, and which has to wait for muscle-to-muscle spread from a neighbour; the leads are written from that sequence; and the reading at the bottom is made from the traces, not from the settings — so you can see whether what you did to the system shows, and how.' },
+  { widget: 'conduction' },
+  { h: 'How to use it', ul: [
+    'Click an element on the heart (or pick it in the list) and move its dial. A bundle at 50% conducts late; at 95% or more it is blocked and its wall is reached from the nearest wall already depolarised — late, slowly, and with the wavefront pointing from there, which is the whole story of bundle branch block.',
+    'Click a wall to change its mass (0 = an old infarct: its forces are gone and the opposite forces write a Q; 1.5–2 = hypertrophy: tall voltages and a strain pattern), its ischaemia (the ST sags and the T inverts in the leads that face it) or its injury (the ST rises in those leads and falls in the ones opposite).',
+    'Pick a lead in “A lead is a sum of its parts” and see every region’s contribution drawn separately, then added: the septum writes the q, the free walls the R, the late wall the slurred end.',
+    'The reading is made from the traces: intervals, axis, bundle-branch morphology from V1 and V6, ST shifts and Q waves by territory, voltage criteria. Set something and check that the reading changes for the reason you expect — and when it does not, ask why (a block that is hidden by another, a wall that no lead faces well).'] },
+  { h: 'The rules the model obeys', ul: [
+    'Purkinje delivery is fast and fixed in order: septum, apex, right ventricle, the two left fascicle territories, lateral wall, posterobasal wall. Muscle-to-muscle spread costs 20–45 ms per crossing and doubles the time a wall takes to depolarise.',
+    'A wall reached late repolarises late: its T turns away from its QRS (secondary ST-T changes). A wall reached on time but ischaemic turns its T the other way for a different reason; a wall injured through its whole thickness carries an injury current through the plateau.',
+    'The AV node sets the PR; its failures are delay, progressive delay with a dropped beat (Wenckebach), abrupt dropping (Mobitz II, usually with a wide QRS because the disease is below the node) and complete block, after which the escape pacemaker below the lesion drives the ventricles: narrow and 40–60/min from the junction, wide and 20–40/min from the ventricle.',
+    'An accessory pathway starts a wall before the node has finished its delay: short PR, a delta wave whose direction is that of the pre-excited wall. A focus in a ventricle, whether a PVC, pacing or VT, writes a wide QRS whose shape says where it started: a right-sided origin looks like LBBB, a left-sided one like RBBB.'] },
+  { h: 'Where the model stops', p: 'Seven ventricular regions, textbook lead directions, a dipole per region. It explains the shapes and their reasons; it does not read real tracings, and real hearts rotate, chests vary, and drugs and electrolytes change more than one dial at a time. The criteria in the reading are the ones used at the bedside; the numbers the model gives are illustrative.' },
+  { src: ['Surawicz B, Childers R, Deal BJ, et al. AHA/ACCF/HRS recommendations for the standardization and interpretation of the electrocardiogram, part III: intraventricular conduction disturbances. Circulation 2009;119:e235–40.', 'Wagner GS, et al. AHA/ACCF/HRS recommendations, part VI: acute ischemia/infarction. Circulation 2009;119:e262–70.', 'Hancock EW, et al. AHA/ACCF/HRS recommendations, part V: electrocardiogram changes associated with cardiac chamber hypertrophy. Circulation 2009;119:e251–61.', 'Durrer D, et al. Total excitation of the isolated human heart. Circulation 1970;41:899–912.'] }
+] };
+const GROUPS = [{ title: 'The bench', ids: ['conduction'] }];
+
+root.PFT_COND = { topics: T, groups: GROUPS, REGIONS: REGIONS, ATRIA: ATRIA, EDGES: EDGES, TREE: TREE, FOCI: FOCI, AP_SITES: AP_SITES, PRESETS: PRESETS, defaults: defaults, preset: preset, clone: clone, activate: activate, dipole: dipole, dipoleP: dipoleP, strip: strip, voltageAt: voltageAt, stateAt: stateAt, interpret: interpret, measureLead: measureLead, elementStates: elementStates };
+if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_COND;
+})(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this));
 
 </script>
 <script>
@@ -15498,7 +16050,8 @@ function ecgScenario() { return ECG.SCENARIOS.filter(s => s.id === ECG_ST.scn)[0
 function ecgDeg(scn) { const p = scn.param; if (!p) return 0; const v = ECG_ST.deg[scn.id]; return v === undefined ? p.value : v; }
 
 /* ---- the twelve leads on paper: 3 × 4 at 2.5 s a column, then a 10-second strip of lead II */
-function ecgPaper(seq, bts) {
+function ecgPaper(seq, bts, vfn) {
+  const vAt = vfn || ((lead, T) => ECG.voltageAt(lead, seq, bts, T));
   const colW = 2.5 * 25 * ECG_PX, rowH = 32 * ECG_PX, left = 6, top = 6, W = left * 2 + 4 * colW, H = top * 2 + 4 * rowH;
   const svg = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, class: 'ecg-paper', width: W, height: H, role: 'img', 'aria-label': 'Twelve-lead ECG written by the model' });
   const pid = uid('eg');
@@ -15513,7 +16066,7 @@ function ecgPaper(seq, bts) {
   const xOf = (ms) => left + ms / 1000 * 25 * ECG_PX;
   const trace = (lead, t0, t1, baseY) => {
     let d = ''; const step = 4;
-    for (let t = t0; t <= t1; t += step) { const v = ECG.voltageAt(lead, seq, bts, t); const x = xOf(t), y = baseY - v * 10 * ECG_PX; d += (d ? ' L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1); }
+    for (let t = t0; t <= t1; t += step) { const v = vAt(lead, t); const x = xOf(t), y = baseY - v * 10 * ECG_PX; d += (d ? ' L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1); }
     return sv('path', { d: d, class: 'ecg-tr', 'data-lead': lead });
   };
   ECG.LAYOUT.forEach((row, r) => {
@@ -15623,15 +16176,15 @@ function ecgFrame() {
   const t = ECG_ST.t, x = v.paper.xOf(t);
   v.paper.cursor.setAttribute('x1', x); v.paper.cursor.setAttribute('x2', x);
   if (v.range && document.activeElement !== v.range) v.range.value = Math.round(t);
-  const st = ECG.stateAt(v.seq, v.bts, t);
+  const st = v.stateAt ? v.stateAt(t) : ECG.stateAt(v.seq, v.bts, t);
   Object.keys(v.heart.regions).forEach(id => {
     const s = st.regions[id] || 0, el = v.heart.regions[id];
     el.style.fill = s <= 0 ? '' : (s === 1 ? 'rgb(' + ECG_DEP.join(',') + ')' : ecgMix(Math.min(2, s)));
     el.classList.toggle('front', s > 0 && s < 1);
   });
   Object.keys(v.heart.paths).forEach(id => v.heart.paths[id].classList.toggle('on', !!st.paths[id]));
-  if (v.heart.blocks.av) v.heart.blocks.av.style.display = st.paths.avblock ? '' : 'none';
-  const d = ECG.dipole(v.seq.S, t - (v.curBeat(t) || -1e9));
+  if (v.heart.blocks.av && !v.keepAv) v.heart.blocks.av.style.display = st.paths.avblock ? '' : 'none';
+  const d = v.vecAt ? v.vecAt(t) : ECG.dipole(v.seq.S, t - (v.curBeat(t) || -1e9));
   v.dial.arrow.setAttribute('x2', v.dial.cx + d[0] * v.dial.sc); v.dial.arrow.setAttribute('y2', v.dial.cy + d[1] * v.dial.sc);
   v.timeEl.textContent = (t / 1000).toFixed(2) + ' s' + (st.paths.av ? ' · in the AV node' : (Object.keys(st.regions).some(k => st.regions[k] > 0 && st.regions[k] < 1) ? ' · depolarising' : ''));
   if (v.playBtn) { v.playBtn.textContent = ECG_ST.playing ? '❚❚ Pause' : '▶ Play'; v.playBtn.setAttribute('aria-pressed', String(ECG_ST.playing)); }
@@ -17382,13 +17935,29 @@ const EC_SLIDERS = {
     ['va', 'Native alveolar ventilation', 0, 6, 0.25, 'L/min', 'Lung-rest settings give 1–2 L/min; a weaning ventilator 4–5.'],
     ['cvp', 'Venous filling (CVP)', 1, 20, 1, 'mm Hg', 'The drainage’s reservoir: empty veins collapse around the cannula.'],
     ['hco3', 'Bicarbonate', 10, 40, 1, 'mmol/L', 'The metabolic side of the pH.'],
-    ['svr', 'Systemic vascular resistance', 8, 30, 1, 'mm Hg·min/L', 'VA: MAP = total flow × SVR (vasoplegia low, vasoconstriction high).']
+    ['svr', 'Systemic vascular resistance', 4, 30, 1, 'mm Hg·min/L', 'MAP = flow × SVR (vasoplegia low, vasoconstriction high); on VA the total flow, on VV the native output.'],
+    ['hr', 'Heart rate (baseline)', 50, 150, 5, '/min', 'Before the drips; the chronotropes add to it.'],
+    ['pvr', 'Pulmonary vascular resistance', 0.5, 4, 0.25, '× normal', 'VV: the right ventricle’s afterload — ARDS, hypoxia, hypercapnia and PEEP raise it; the output falls as it climbs.']
   ]
 };
+function ecDripSlider(D) {
+  const s = ECS.s, id = uid('ecd'); if (!s.drugs) s.drugs = {};
+  const val = h('span', { class: 'odc-val', text: (s.drugs[D.id] || 0) ? ecDoseFmt(D, s.drugs[D.id]) : 'off' });
+  return h('label', { class: 'odc-sl ec-drip' + ((s.drugs[D.id] || 0) > 0 ? ' on' : ''), for: id, title: D.rec, 'data-ec-drip': D.id }, [h('span', { class: 'nod-l', text: D.name + ' (' + D.unit + ')' }), h('input', { type: 'range', id: id, min: 0, max: D.max, step: D.step, value: s.drugs[D.id] || 0, 'data-ec-dose': D.id, oninput: (e) => { s.drugs[D.id] = +e.target.value; val.textContent = s.drugs[D.id] > 0 ? ecDoseFmt(D, s.drugs[D.id]) : 'off'; e.target.closest('label').classList.toggle('on', s.drugs[D.id] > 0); ecRefresh(); } }), val]);
+}
+function ecDoseFmt(D, v) { return (D.step < 0.1 ? (+v).toFixed(D.step < 0.02 ? 3 : 2) : String(+(+v).toFixed(2))).replace(/\.?0+$/, ''); }
+function ecDripReadout() {
+  const o = ECS.out, fx = o && o.fx; if (!fx) return h('p', { class: 'fine' });
+  const f2 = (x) => '×' + x.toFixed(2);
+  const vv = o.mode === 'vv';
+  return h('p', { class: 'fine ec-dripread', 'data-ec-dripread': '1' }, [
+    h('b', { text: 'What the drips do: ' }), 'SVR ' + f2(fx.svr) + ' · contractility ' + f2(fx.contr) + ' · heart rate ' + (fx.hr >= 0 ? '+' : '') + Math.round(fx.hr) + ' → ' + o.hr + '/min · venous tone ' + (fx.cvp >= 0 ? '+' : '') + fx.cvp.toFixed(1) + ' mm Hg · PVR ' + f2(fx.pvr) + (vv ? ' · native output ' + o.co.toFixed(1) + ' L/min (set ' + o.coSet + ')' : ' · native ejection ' + o.qn.toFixed(1) + ' L/min') + ' · MAP ' + o.map + ' · norepinephrine-equivalent ' + fx.nee.toFixed(2) + ' mcg/kg/min' + (fx.lactate > 0.3 ? ' · β-lactate' : '') + (fx.arr > 0.5 ? ' · arrhythmia risk' : '')
+  ]);
+}
 function ecFmt(k, v) {
   if (k === 'fdo2' || k === 'fio2') return (+v).toFixed(2);
   if (k === 'recirc' || k === 'shunt' || k === 'oxy' || k === 'contr') return Math.round(v * 100) + '%';
-  if (k === 'sweep' || k === 'co' || k === 'va') return (+v).toFixed(2).replace(/\.?0+$/, '');
+  if (k === 'sweep' || k === 'co' || k === 'va' || k === 'pvr') return (+v).toFixed(2).replace(/\.?0+$/, '');
   return String(v);
 }
 function ecSlider(group, sl) {
@@ -17411,7 +17980,8 @@ function ecControls() {
   const kinkId = uid('ec');
   const kink = h('label', { class: 'chk-inline', for: kinkId }, [h('input', { type: 'checkbox', id: kinkId, checked: !!s.kink, 'data-ec-kink': '1', onchange: (e) => { s.kink = e.target.checked; ecRefresh(); } }), 'Drainage kinked or tip malpositioned']);
   const circuitSliders = EC_SLIDERS.circuit.filter(sl => vv || sl[0] !== 'recirc').map(sl => ecSlider('circuit', sl));
-  const patientSliders = EC_SLIDERS.patient.filter(sl => (vv ? sl[0] !== 'contr' && sl[0] !== 'svr' : sl[0] !== 'co')).map(sl => ecSlider('patient', sl));
+  const patientSliders = EC_SLIDERS.patient.filter(sl => (vv ? sl[0] !== 'contr' : sl[0] !== 'co' && sl[0] !== 'pvr')).map(sl => ecSlider('patient', sl));
+  const dripSliders = EC.DRIPS.map(ecDripSlider);
   const vaExtras = [];
   if (!vv) {
     const unId = uid('ec');
@@ -17424,6 +17994,7 @@ function ecControls() {
     h('p', { class: 'fine ec-note', 'data-ec-note': '1', text: ECS.note }),
     h('h5', { text: 'The circuit' }), h('div', { class: 'odc-ctrls' }, [cfgSel, cfgNote].concat(circuitSliders, [h('div', { class: 'nod-grid' }, [drainSel, retSel]), kink], vaExtras)),
     h('h5', { text: 'The patient' }), h('div', { class: 'odc-ctrls' }, patientSliders),
+    h('h5', { text: 'Vasoactive drips' }), h('div', { class: 'odc-ctrls ec-drips', 'data-ec-drips': '1' }, dripSliders.concat([h('div', { 'data-ec-dripslot': '1' }, [ecDripReadout()]), h('button', { type: 'button', class: 'lnk', 'data-ec-dripsoff': '1', text: 'All drips off', onclick: () => { s.drugs = {}; render(); } })])),
     h('button', { type: 'button', class: 'lnk', 'data-ec-reset': '1', text: 'Reset to the default ' + (vv ? 'VV' : 'VA') + ' run', onclick: () => { ecInit(s.mode); render(); } })
   ]);
 }
@@ -17434,7 +18005,7 @@ function ecConsole() {
   const al = EC.alarms(o, s);
   const tiles = [['Flow', f1(o.flow), 'L/min', pm.chatter ? 'alarm' : ''], ['Speed', f0(s.rpm), 'rpm', ''], ['Sweep', ecFmt('sweep', s.sweep), 'L/min', ''], ['FdO2', s.fdo2.toFixed(2), '', ''],
     ['P drain', f0(pm.pDrain), 'mm Hg', pm.pDrain < -100 ? 'alarm' : ''], ['P pre', f0(pm.pPre), 'mm Hg', pm.pPre > 300 ? 'alarm' : ''], ['P post', f0(pm.pPost), 'mm Hg', pm.pPost > 300 ? 'alarm' : ''], ['ΔP', f0(pm.dP), 'mm Hg', pm.dP > 60 ? 'alarm' : ''],
-    ['SvO2 (drainage)', f0(o.preSat * 100), '%', o.mode === 'vv' && o.preSat > 0.75 && s.recirc > 0.2 ? 'alarm' : ''], ['O2 transfer', f0(o.transfer), 'mL/min', s.sweep > 0 && o.transfer < 100 ? 'alarm' : ''], ['Temp', '37.0', '°C', ''], [o.mode === 'vv' ? 'Qeff / CO' : 'Native output', o.mode === 'vv' ? f0(o.flowRatio * 100) + '%' : f1(o.qn) + ' L/min', '', o.mode === 'vv' && o.flowRatio < 0.55 ? 'alarm' : (o.mode === 'va' && o.distension ? 'alarm' : '')]];
+    ['SvO2 (drainage)', f0(o.preSat * 100), '%', o.mode === 'vv' && o.preSat > 0.75 && s.recirc > 0.2 ? 'alarm' : ''], ['O2 transfer', f0(o.transfer), 'mL/min', s.sweep > 0 && o.transfer < 100 ? 'alarm' : ''], ['MAP', f0(o.map), 'mm Hg', o.map < 60 ? 'alarm' : ''], ['HR', f0(o.hr), '/min', o.hr > 130 ? 'alarm' : ''], [o.mode === 'vv' ? 'Qeff / CO' : 'Native output', o.mode === 'vv' ? f0(o.flowRatio * 100) + '%' : f1(o.qn) + ' L/min', '', o.mode === 'vv' && o.flowRatio < 0.55 ? 'alarm' : (o.mode === 'va' && o.distension ? 'alarm' : '')]];
   return h('div', { class: 'vent-screen ec-console', 'data-ec-console': '1' }, [
     h('div', { class: 'vsc-head' }, [h('span', { class: 'vsc-mode', text: (o.mode === 'vv' ? 'V-V ' : 'V-A ') + (EC.CONFIGS[s.mode].filter(c => c[0] === s.config)[0] || [])[1] }), h('span', { class: 'vsc-brand', text: 'ECMO console' })]),
     h('div', { class: 'vsc-alarms' + (al.length ? ' on' : ''), 'data-ec-alarms': al.length }, [h('span', { text: al.length ? '⚠ ' + al.map(a => a.t).join(' · ') : 'No alarms' })]),
@@ -17447,8 +18018,8 @@ function ecGases() {
   const pre = h('div', { class: 'vs-gas ec-gas', 'data-ec-gas': 'pre' }, [h('h5', { text: 'Drainage (pre-membrane)' }), h('div', { class: 'vs-gasgrid' }, [ecCell('PO2', f0(o.preO2), 'mm Hg'), ecCell('SO2', pc(o.preSat)), ecCell('PCO2', f0(o.preCO2), 'mm Hg')])]);
   const post = h('div', { class: 'vs-gas ec-gas', 'data-ec-gas': 'post' }, [h('h5', { text: 'Post-membrane' }), h('div', { class: 'vs-gasgrid' }, [ecCell('PO2', f0(o.postO2), 'mm Hg', s.sweep > 0 && s.fdo2 > 0.9 && o.postO2 < 200 ? 'bad' : ''), ecCell('SO2', pc(o.postSat)), ecCell('PCO2', f0(o.postCO2), 'mm Hg'), ecCell('O2 transfer', f0(o.transfer), 'mL/min'), ecCell('CO2 removed', f0(o.vco2Membrane || (o.pump ? (o.preCO2 - o.postCO2) * o.flow * 4.5 : 0)), 'mL/min')])]);
   let pt;
-  if (vv) pt = h('div', { class: 'vs-gas ec-gas', 'data-ec-gas': 'pt' }, [h('h5', { text: 'Patient — arterial' }), h('div', { class: 'vs-gasgrid' }, [ecCell('PaO2', f0(o.pao2), 'mm Hg', o.pao2 < 55 ? 'bad' : ''), ecCell('SaO2', o.spo2 + '%', '', o.spo2 < 85 ? 'bad' : ''), ecCell('PaCO2', f0(o.paco2), 'mm Hg'), ecCell('pH', o.ph.toFixed(2), '', o.ph < 7.25 || o.ph > 7.55 ? 'bad' : ''), ecCell('SvO2', pc(o.svo2)), ecCell('DO2', f0(o.do2), 'mL/min'), ecCell('DO2 : VO2', o.do2vo2.toFixed(1), '', o.do2vo2 < 2.5 ? 'bad' : ''), ecCell('Lactate', o.lactate)]),
-    h('p', { class: 'fine', text: 'Effective flow ' + o.qeff.toFixed(1) + ' L/min = ' + Math.round(o.flowRatio * 100) + '% of a cardiac output of ' + p.co + ' (recirculation ' + Math.round(o.recirc * 100) + '%). The membrane removes ' + f0(o.vco2Membrane) + ' mL/min of CO2 and the native lung ' + f0(o.vco2Lung) + ' of the ' + p.vco2 + ' produced.' })]);
+  if (vv) pt = h('div', { class: 'vs-gas ec-gas', 'data-ec-gas': 'pt' }, [h('h5', { text: 'Patient — arterial' }), h('div', { class: 'vs-gasgrid' }, [ecCell('PaO2', f0(o.pao2), 'mm Hg', o.pao2 < 55 ? 'bad' : ''), ecCell('SaO2', o.spo2 + '%', '', o.spo2 < 85 ? 'bad' : ''), ecCell('PaCO2', f0(o.paco2), 'mm Hg'), ecCell('pH', o.ph.toFixed(2), '', o.ph < 7.25 || o.ph > 7.55 ? 'bad' : ''), ecCell('SvO2', pc(o.svo2)), ecCell('DO2', f0(o.do2), 'mL/min'), ecCell('DO2 : VO2', o.do2vo2.toFixed(1), '', o.do2vo2 < 2.5 ? 'bad' : ''), ecCell('Lactate', o.lactate), ecCell('MAP', f0(o.map), 'mm Hg', o.map < 60 ? 'bad' : ''), ecCell('Heart rate', f0(o.hr), '/min', o.hr > 130 ? 'bad' : ''), ecCell('Cardiac output', o.co.toFixed(1), 'L/min', o.co < 3.5 ? 'bad' : ''), ecCell('CVP', f0(o.cvp !== undefined ? o.cvp : p.cvp), 'mm Hg')]),
+    h('p', { class: 'fine', text: 'Effective flow ' + o.qeff.toFixed(1) + ' L/min = ' + Math.round(o.flowRatio * 100) + '% of a cardiac output of ' + o.co.toFixed(1) + (Math.abs(o.co - p.co) > 0.15 ? ' (set ' + p.co + ', changed by the drips and the right ventricle’s load)' : '') + ' (recirculation ' + Math.round(o.recirc * 100) + '%). The membrane removes ' + f0(o.vco2Membrane) + ' mL/min of CO2 and the native lung ' + f0(o.vco2Lung) + ' of the ' + p.vco2 + ' produced.' })]);
   else pt = h('div', { class: 'vs-gas ec-gas', 'data-ec-gas': 'pt' }, [h('h5', { text: 'Patient — where the blood came from' }), h('div', { class: 'vs-gasgrid' }, [
     ecCell('Right radial PaO2', f0(o.rrO2), 'mm Hg', o.rrO2 < 60 ? 'bad' : (o.rrO2 > 300 ? 'warn' : '')), ecCell('Right radial SaO2', pc(o.rrSat), '', o.rrSat < 0.88 ? 'bad' : ''), ecCell('Right radial PaCO2', f0(o.paco2RR), 'mm Hg'), ecCell('Right radial pH', o.phRR.toFixed(2)),
     ecCell('Femoral PaO2', f0(o.femO2), 'mm Hg', o.femO2 > 300 ? 'warn' : ''), ecCell('Femoral PaCO2', f0(o.paco2Fem), 'mm Hg'), ecCell('Coronary PO2', f0(o.corO2), 'mm Hg', o.corO2 < 60 ? 'bad' : ''), ecCell('SvO2', pc(o.svo2)),
@@ -17463,6 +18034,7 @@ function ecRefresh() {
   const draw = fig.querySelector('[data-ec-draw]'); if (draw) { draw.textContent = ''; draw.appendChild(ecSvg(ECS.out, ECS.s, ECS.p)); }
   const con = fig.querySelector('[data-ec-conslot]'); if (con) { con.textContent = ''; con.appendChild(ecConsole()); }
   const gas = fig.querySelector('[data-ec-gasslot]'); if (gas) { gas.textContent = ''; gas.appendChild(ecGases()); }
+  const dr = fig.querySelector('[data-ec-dripslot]'); if (dr) { dr.textContent = ''; dr.appendChild(ecDripReadout()); }
 }
 /* ---- the guided scenarios inside the lab: a presentation, the gases the model makes, the next best step — and the chosen move turns the dials ---- */
 function ecGuideCase() { return EC.LABCASES.filter(c => c.id === ECS.guide.id)[0] || null; }
@@ -19352,6 +19924,243 @@ function heart3dPanel(opts) {
   return inst.el;
 }
 
+/* ========================================================================== Learn: the conduction system, element by element (v8.4)
+   The bench: a heart whose conduction paths and walls are clickable, a panel of dials for the selected element, the
+   twelve leads written from the computed activation (the paper, dial and frame loop are the ECG lab's), a panel that
+   draws every region's contribution to one lead and their sum, and a reading made from the traces. Model in conduction.js. */
+const CD = window.PFT_COND || { topics: {}, groups: [], PRESETS: [], REGIONS: [] };
+const CDS = { cfg: null, sel: 'rbb', lead: 'V1', preset: 'normal', pending: 0, st: null };
+const CD_ELEMENTS = [
+  ['sa', 'Sinus node and rhythm'], ['atria', 'Atria and Bachmann’s bundle'], ['av', 'AV node'], ['his', 'Bundle of His'], ['rbb', 'Right bundle branch'], ['lbb', 'Left bundle branch'], ['laf', 'Left anterior fascicle'], ['lpf', 'Left posterior fascicle'], ['purk', 'Purkinje network'], ['ap', 'Accessory pathway'], ['focus', 'Ectopic focus / pacemaker'], ['escape', 'Escape pacemakers'], ['repol', 'Repolarisation and potassium'],
+  ['sep', 'Wall: septum'], ['apex', 'Wall: apex and anterior'], ['rv', 'Wall: right ventricle'], ['lva', 'Wall: anterolateral'], ['lvl', 'Wall: lateral'], ['lvi', 'Wall: inferoposterior'], ['base', 'Wall: posterobasal']
+];
+const CD_PATH2EL = { sa: 'sa', bach: 'atria', internodal: 'atria', av: 'av', his: 'his', rbb: 'rbb', lbb: 'lbb', laf: 'laf', lpf: 'lpf', ap: 'ap' };
+const CD_REG2EL = { ra: 'atria', la: 'atria', pre: 'ap', sep: 'sep', apex: 'apex', rv: 'rv', lva: 'lva', lvl: 'lvl', lvi: 'lvi', base: 'base' };
+const CD_SHORT = { ra: 'Right atrium', la: 'Left atrium', pre: 'Pre-excited wall', sep: 'Septum', apex: 'Apex & anterior wall', rv: 'RV free wall', lva: 'Anterolateral wall', lvl: 'Lateral wall', lvi: 'Inferoposterior wall', base: 'Posterobasal wall' };
+const CD_COL = { ra: '#9c6b3f', la: '#c08a4e', pre: '#7b4fa3', sep: '#b3261e', apex: '#e4572e', rv: '#2b6cb0', lva: '#c2410c', lvl: '#d97706', lvi: '#15803d', base: '#6d28d9' };
+/* the classic lesions' teaching texts live in the ECG lab; the rest are short notes */
+const CD_NOTES = {
+  irbbb: 'The right bundle conducts, late: the right ventricle is still reached through it, so the terminal forces are only a little delayed and the QRS sits between 100 and 120 ms — an r′ in V1 that is narrower than the complete block’s. Push the dial past 95% and the muscle route takes over.',
+  bifasc: 'Right bundle and anterior fascicle both out: the rSR′ of the right bundle plus the left axis of the fascicle. Two of the three fascicles gone — the third is what stands between this patient and complete block.',
+  trifasc: 'The old name for a bifascicular block with a long PR. The PR here is nodal in most patients, so it is not truly a third fascicle, but the combination still earns a pacemaker conversation when there is syncope.',
+  wpwb: 'A right-sided pathway pre-excites the right ventricle: the delta wave is negative in V1 (a left-bundle-like shape), positive in the lateral leads. Compare the left lateral pathway, whose delta is positive in V1.',
+  chb_j: 'Complete block at the node: nothing reaches the His, which escapes at 40–60/min with a narrow QRS, and the P waves walk through unrelated. Atropine and the junction’s own rate decide how stable this is.',
+  chb_v: 'Complete block below the His: the escape comes from the ventricle, wide and slow (20–40/min), and unreliable. This is the pacemaker-today kind.',
+  af: 'No organised atrial activation: a fibrillating baseline and an AV node admitting impulses at random, so the ventricular rhythm is irregularly irregular. The QRS is whatever the ventricles do with a normal conduction system.',
+  flutter: 'A macro-re-entrant circuit in the right atrium at about 300/min writes a sawtooth without an isoelectric baseline, negative in II, III and aVF for the common counter-clockwise loop; the node lets every second (or third, or fourth) one through.',
+  pvc: 'A focus in the outflow tract fires after every sinus beat: the wide complex is shaped like a left bundle branch block with an inferior axis because the wavefront leaves the right ventricle and travels down — the signature of an RVOT origin.',
+  vt: 'A ventricular focus at 165/min captures the ventricles while the sinus node keeps the atria: wide complexes, P waves marching through (AV dissociation), a right-bundle-like shape because the origin is left-sided. Dissociation is the strongest argument for VT in a wide-complex tachycardia.',
+  paced: 'A lead in the right ventricular apex: the spike, then a wide left-bundle-like complex with a superior axis because the wavefront starts at the bottom of the heart and travels up and to the left.',
+  stemi_inf: 'A transmural injury current from the inferior wall points at II, III and aVF (ST elevation) and away from aVL (reciprocal depression). III higher than II and depression in I point at the right coronary; a right-sided lead would ask about the right ventricle.',
+  stemi_ant: 'Injury in the septum and the anterior wall lifts the ST in V1–V4 (and V5 when the lateral wall joins); the reciprocal changes sit in the inferior leads when the vector tilts up.',
+  old_inf: 'The inferior wall no longer depolarises: the forces that pointed at III and aVF are gone, the unopposed anterosuperior forces write Q waves in their place, and the axis drifts up. An old infarct is read from the first 40 ms.',
+  old_ant: 'Septum and apex gone: the r that should grow across V1–V3 does not (poor R-wave progression, or a QS), because the forces that faced those leads are missing.',
+  isch: 'Subendocardial ischaemia of the lateral wall: the injury vector points away from the leads facing it, so the ST sags in I, aVL, V5–6 and the T inverts there. No reciprocal elevation except in aVR, which looks at the cavity.',
+  lvh: 'A thick left ventricle writes big voltages (S in V1 + R in V5/V6 ≥ 3.5 mV) and, as the wall outgrows its blood supply, a strain pattern: ST depression and T inversion in the leads that see the tallest R.',
+  rvh: 'A thick right ventricle pushes the mean vector right and forward: a dominant R in V1, a right axis, often with a little conduction delay through the thickened wall.',
+  hyperk: 'Potassium first peaks and narrows the T (the repolarising current speeds up), then flattens the P and slows conduction through the whole ventricle until the QRS widens into the sine wave of the pre-arrest heart. The dial moves all three at once.',
+  lqt: 'The T comes late: a long QT. Drugs, hypokalaemia, hypomagnesaemia and the channelopathies lengthen repolarisation; the risk is torsades, which starts on the T of a long cycle.'
+};
+function cdCfg() { if (!CDS.cfg) CDS.cfg = CD.preset(CDS.preset); return CDS.cfg; }
+function cdCompute() { const st = CD.strip(cdCfg(), ECG_ST.strip / 1000); st.reading = CD.interpret(st); CDS.st = st; return st; }
+function cdFirstBeat(st) { const b = st.bts.filter(x => x.q !== null && x.q !== undefined); return b.filter(x => x.kind === 'conducted')[0] || b[0] || null; }
+/* ---- the dials of one element ---- */
+function cdRange(label, get, set, min, max, step, fmt, attrs) {
+  const id = uid('cd'), val = h('span', { class: 'odc-val', text: fmt ? fmt(get()) : String(get()) });
+  return h('label', Object.assign({ class: 'odc-sl', for: id }, attrs || {}), [h('span', { class: 'nod-l', text: label }), h('input', { type: 'range', id: id, min: String(min), max: String(max), step: String(step), value: String(get()), oninput: (e) => { set(+e.target.value); val.textContent = fmt ? fmt(+e.target.value) : e.target.value; CDS.touched = true; cdRefresh(); } }), val]);
+}
+function cdSelect(label, get, set, options, attrs) {
+  const id = uid('cd');
+  return h('label', Object.assign({ class: 'nod-f', for: id }, attrs || {}), [h('span', { class: 'nod-l', text: label }), h('select', { id: id, onchange: (e) => { set(e.target.value); CDS.touched = true; cdRefresh(true); } }, options.map(o => h('option', { value: o[0], selected: String(get()) === o[0], text: o[1] })))]);
+}
+function cdCheck(label, get, set, attrs) {
+  const id = uid('cd');
+  return h('label', Object.assign({ class: 'chk-inline', for: id }, attrs || {}), [h('input', { type: 'checkbox', id: id, checked: !!get(), onchange: (e) => { set(e.target.checked); CDS.touched = true; cdRefresh(true); } }), label]);
+}
+const cdPct = (v) => Math.round(v * 100) + '%';
+const cdBlockFmt = (v) => v >= 0.95 ? 'blocked' : (v <= 0.02 ? 'open' : 'conducting with ' + Math.round(v * 60) + ' ms of delay');
+function cdPanel(sel) {
+  const cfg = cdCfg(), rows = [];
+  const title = (CD_ELEMENTS.filter(e => e[0] === sel)[0] || [sel, sel])[1];
+  if (sel === 'sa') {
+    rows.push(cdSelect('Rhythm', () => cfg.sa.mode, (v) => { cfg.sa.mode = v; }, [['sinus', 'Sinus rhythm'], ['af', 'Atrial fibrillation'], ['flutter', 'Atrial flutter'], ['arrest', 'Sinus arrest (no P waves)']], { 'data-cd-samode': '1' }));
+    if (cfg.sa.mode === 'sinus') rows.push(cdRange('Sinus rate (/min)', () => cfg.sa.rate, (v) => { cfg.sa.rate = v; }, 30, 180, 1, null, { 'data-cd-row': 'rate' }));
+    if (cfg.sa.mode === 'af') rows.push(cdRange('Ventricular response (/min)', () => cfg.sa.afRate, (v) => { cfg.sa.afRate = v; }, 50, 180, 5));
+    if (cfg.sa.mode === 'flutter') rows.push(cdSelect('Conduction ratio', () => cfg.sa.flutterRatio, (v) => { cfg.sa.flutterRatio = +v; }, [['2', '2:1 (150/min)'], ['3', '3:1 (100/min)'], ['4', '4:1 (75/min)']]));
+    rows.push(h('p', { class: 'fine', text: 'The sinus node sets the rate; fibrillation and flutter replace the P wave with a baseline of their own and hand the node a different problem.' }));
+  } else if (sel === 'atria') {
+    rows.push(cdRange('Bachmann’s bundle: interatrial delay', () => cfg.atria.bach, (v) => { cfg.atria.bach = v; }, 0, 1, 0.05, (v) => v > 0.5 ? 'interatrial block (+' + Math.round(v * 60) + ' ms)' : (v > 0 ? '+' + Math.round(v * 60) + ' ms' : 'normal')));
+    rows.push(cdCheck('Right atrial enlargement (P pulmonale)', () => cfg.atria.rae, (v) => { cfg.atria.rae = v; }));
+    rows.push(cdCheck('Left atrial enlargement (P mitrale)', () => cfg.atria.lae, (v) => { cfg.atria.lae = v; }));
+    rows.push(h('p', { class: 'fine', text: 'The right atrium writes the first half of the P, the left atrium the second; a slow Bachmann’s bundle separates them (a broad, notched P); a big right atrium makes the P tall, a big left one makes it long.' }));
+  } else if (sel === 'av') {
+    rows.push(cdSelect('Behaviour', () => cfg.av.mode, (v) => { cfg.av.mode = v; }, [['normal', 'Conducts every beat'], ['wenck', 'Mobitz I (Wenckebach)'], ['mobitz2', 'Mobitz II'], ['complete', 'Complete block']], { 'data-cd-avmode': '1' }));
+    if (cfg.av.mode !== 'complete') rows.push(cdRange('Nodal delay (PR = 80 ms + this)', () => cfg.av.delay, (v) => { cfg.av.delay = v; }, 40, 320, 10, (v) => (80 + v) + ' ms PR', { 'data-cd-row': 'avdelay' }));
+    if (cfg.av.mode === 'wenck') rows.push(cdSelect('Cycle', () => cfg.av.wenck, (v) => { cfg.av.wenck = +v; }, [['3', '3:2'], ['4', '4:3'], ['5', '5:4'], ['6', '6:5']]));
+    if (cfg.av.mode === 'mobitz2') rows.push(cdSelect('Dropped beat every', () => cfg.av.ratio, (v) => { cfg.av.ratio = +v; }, [['2', '2:1'], ['3', '3:2'], ['4', '4:3']]));
+    rows.push(h('p', { class: 'fine', text: 'The node is the delay: first-degree block lengthens it, Wenckebach lengthens it a little more each beat until one fails, Mobitz II fails without warning (the disease is usually below the node), complete block hands the ventricles to an escape pacemaker.' }));
+  } else if (/^(his|rbb|lbb|laf|lpf)$/.test(sel)) {
+    rows.push(cdRange('Conduction', () => cfg[sel].block, (v) => { cfg[sel].block = v; }, 0, 1, 0.05, cdBlockFmt, { 'data-cd-row': 'block' }));
+    rows.push(h('p', { class: 'fine', text: sel === 'his' ? 'Block in the His bundle is complete heart block with a ventricular escape: nothing below it is reached from above.' : 'Up to 95% the element still delivers its wall, late — the wall activates slower and the QRS widens a little (an incomplete block). Past that, the wall is reached from its neighbours: late, slow, and pointing from there.' }));
+  } else if (sel === 'purk') {
+    rows.push(cdRange('Conduction speed of the network and the muscle', () => cfg.purk.speed, (v) => { cfg.purk.speed = v; }, 0.5, 1.2, 0.05, (v) => Math.round(v * 100) + '% of normal'));
+    rows.push(h('p', { class: 'fine', text: 'Sodium-channel blockade (class I drugs, tricyclics), hyperkalaemia and ischaemia slow every path at once: the QRS widens without a bundle-branch shape.' }));
+  } else if (sel === 'ap') {
+    rows.push(cdCheck('Accessory pathway present', () => cfg.ap.on, (v) => { cfg.ap.on = v; }, { 'data-cd-ap': '1' }));
+    rows.push(cdSelect('Where it inserts', () => cfg.ap.site, (v) => { cfg.ap.site = v; }, Object.keys(CD.AP_SITES).map(k => [k, CD.AP_SITES[k].name])));
+    rows.push(cdRange('Share of the ventricle it captures', () => cfg.ap.share, (v) => { cfg.ap.share = v; }, 0.05, 1, 0.05, cdPct));
+    rows.push(h('p', { class: 'fine', text: 'A bundle of Kent skips the node: the wall beside it starts early (short PR, delta wave), the rest arrives through the normal system, and the QRS is the fusion of the two. The delta’s direction locates the pathway.' }));
+  } else if (sel === 'focus') {
+    rows.push(cdSelect('Behaviour', () => cfg.focus.mode, (v) => { cfg.focus.mode = v; }, [['off', 'Quiet'], ['pvc', 'Premature beats (PVCs)'], ['paced', 'Pacemaker (ventricular pacing)'], ['vt', 'Ventricular tachycardia']], { 'data-cd-focusmode': '1' }));
+    rows.push(cdSelect('Site', () => cfg.focus.site, (v) => { cfg.focus.site = v; }, Object.keys(CD.FOCI).map(k => [k, CD.FOCI[k].name])));
+    if (cfg.focus.mode === 'pvc') { rows.push(cdSelect('Every', () => cfg.focus.every, (v) => { cfg.focus.every = +v; }, [['2', '2nd beat (bigeminy)'], ['3', '3rd beat (trigeminy)'], ['4', '4th beat'], ['6', '6th beat']])); rows.push(cdRange('Coupling (fraction of the RR)', () => cfg.focus.coupling, (v) => { cfg.focus.coupling = v; }, 0.35, 0.85, 0.05, cdPct)); }
+    if (cfg.focus.mode === 'paced' || cfg.focus.mode === 'vt') rows.push(cdRange('Rate (/min)', () => cfg.focus.rate, (v) => { cfg.focus.rate = v; }, 40, 220, 5));
+    rows.push(h('p', { class: 'fine', text: 'A beat that starts in a wall spreads muscle to muscle from there: wide, and shaped by where it began — right-sided origins look like LBBB, left-sided like RBBB; an apical origin has a superior axis, an outflow-tract origin an inferior one.' }));
+  } else if (sel === 'escape') {
+    rows.push(cdRange('Junctional escape rate (/min)', () => cfg.escape.junctional, (v) => { cfg.escape.junctional = v; }, 20, 70, 1));
+    rows.push(cdRange('Ventricular escape rate (/min)', () => cfg.escape.ventricular, (v) => { cfg.escape.ventricular = v; }, 15, 50, 1));
+    rows.push(h('p', { class: 'fine', text: 'Whenever nothing arrives for an escape interval, the next pacemaker down fires: the junction (narrow) if the His is intact, a ventricular focus (wide) if it is not.' }));
+  } else if (sel === 'repol') {
+    rows.push(cdRange('QT (repolarisation time)', () => cfg.repol.qt, (v) => { cfg.repol.qt = v; }, 0.7, 1.6, 0.05, (v) => Math.round(v * 100) + '% of normal'));
+    rows.push(cdRange('Hyperkalaemia', () => cfg.repol.k, (v) => { cfg.repol.k = v; }, 0, 1, 0.05, (v) => v === 0 ? 'normal potassium' : (v < 0.35 ? 'mild: peaked T' : (v < 0.7 ? 'moderate: P flattening, QRS widening' : 'severe: toward the sine wave'))));
+    rows.push(h('p', { class: 'fine', text: 'Repolarisation is drawn as a bump after each wall’s activation; its timing is the QT, its shape the T. Potassium changes the T first, then the P and the QRS.' }));
+  } else if (cfg.myo[sel]) {
+    const m = cfg.myo[sel];
+    rows.push(cdRange('Mass (0 = infarcted, 1 = normal, 2 = hypertrophied)', () => m.mass, (v) => { m.mass = v; }, 0, 2.5, 0.05, (v) => v < 0.3 ? 'infarct (' + Math.round(v * 100) + '%)' : (v > 1.3 ? 'hypertrophy ×' + v.toFixed(2) : '×' + v.toFixed(2)), { 'data-cd-row': 'mass' }));
+    rows.push(cdRange('Subendocardial ischaemia', () => m.isch, (v) => { m.isch = v; }, 0, 1, 0.05, cdPct, { 'data-cd-row': 'isch' }));
+    rows.push(cdRange('Transmural injury (acute)', () => m.injury, (v) => { m.injury = v; }, 0, 1, 0.05, cdPct, { 'data-cd-row': 'injury' }));
+    rows.push(h('p', { class: 'fine', text: 'Mass scales the wall’s forces (an infarct removes them and the opposite forces write a Q; hypertrophy enlarges them and strains the T). Ischaemia sags the ST and inverts the T in the leads that face the wall; a transmural injury current lifts the ST in those leads and lowers it in the opposite ones.' }));
+  }
+  return h('div', { class: 'cd-panel', 'data-cd-panel': sel }, [h('h5', { text: title })].concat(rows));
+}
+/* ---- the heart: clickable, with the state of every element drawn on it ---- */
+function cdHeart(st) {
+  const heart = heartFig(st.seq);
+  Object.keys(heart.paths).forEach(id => { const el = CD_PATH2EL[id]; if (!el) return; heart.paths[id].style.cursor = 'pointer'; heart.paths[id].setAttribute('data-cd-pick', el); heart.paths[id].addEventListener('click', () => { CDS.sel = el; cdRefresh(true); }); });
+  Object.keys(heart.regions).forEach(id => { const el = CD_REG2EL[id]; if (!el) return; heart.regions[id].style.cursor = 'pointer'; heart.regions[id].setAttribute('data-cd-pick', el); heart.regions[id].addEventListener('click', () => { CDS.sel = el; cdRefresh(true); }); });
+  cdPaintStates(heart);
+  return heart;
+}
+function cdPaintStates(heart) {
+  const cfg = cdCfg(), es = CD.elementStates(cfg);
+  Object.keys(heart.blocks).forEach(id => { heart.blocks[id].style.display = es[id] === 'blocked' ? '' : 'none'; });
+  Object.keys(heart.paths).forEach(id => { const p = heart.paths[id]; p.classList.toggle('blocked', es[id] === 'blocked'); p.classList.toggle('delayed', es[id] === 'delayed'); p.classList.toggle('picked', CD_PATH2EL[id] === CDS.sel); });
+  heart.paths.ap.style.display = cfg.ap.on ? '' : 'none'; heart.regions.pre.style.display = cfg.ap.on ? '' : 'none';
+  Object.keys(heart.regions).forEach(id => { const r = heart.regions[id]; r.classList.toggle('picked', CD_REG2EL[id] === CDS.sel); const m = cfg.myo[id]; r.classList.toggle('infarct', !!(m && m.mass < 0.3)); r.classList.toggle('injured', !!(m && m.injury > 0.3)); r.classList.toggle('isch', !!(m && m.isch > 0.3)); });
+}
+/* ---- a lead is a sum of its parts ---- */
+function cdParts(st, lead) {
+  const b = cdFirstBeat(st);
+  const W = 660, rowH = 30, left = 172, top = 14, t0 = -90, t1 = 470, mvPx = 22;
+  const rows = [];
+  if (b) {
+    const regs = b.seq.S.vent.slice().sort((a, c) => a.t0 - c.t0).map(x => x.id);
+    const pRows = st.cfg.sa.mode === 'sinus' && b.p !== null && b.p !== undefined ? ['ra', 'la'] : [];
+    pRows.concat(regs).forEach(id => rows.push(id));
+  }
+  const H = top + (rows.length + 1) * rowH + 24;
+  const svg = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, class: 'cd-parts-svg', role: 'img', 'aria-label': 'Each region’s contribution to lead ' + lead + ' and their sum' });
+  svg.appendChild(sv('rect', { x: 0, y: 0, width: W, height: H, class: 'cd-parts-bg' }));
+  if (!b) { svg.appendChild(svt(left, 30, 'No ventricular beat on the strip', { class: 'ecg-ll' })); return svg; }
+  const xOf = (t) => left + (t - t0) / (t1 - t0) * (W - left - 10);
+  const names = {}; b.seq.S.vent.forEach(x => { names[x.id] = x; }); st.seq.S.atria.forEach(x => { names[x.id] = x; });
+  // sample once, keeping the parts
+  const samples = [];
+  for (let t = t0; t <= t1; t += 3) { const parts = {}; const v = CD.voltageAt(lead, st, b.q + t, parts); samples.push({ t: t, v: v, parts: parts }); }
+  // the QRS window and the time rule
+  svg.appendChild(sv('rect', { x: xOf(b.seq.qrsStart), y: top, width: xOf(b.seq.qrsEnd) - xOf(b.seq.qrsStart), height: (rows.length + 1) * rowH, class: 'cd-qrs' }));
+  [0, 100, 200, 300, 400].forEach(ms => { svg.appendChild(sv('line', { x1: xOf(ms), y1: top, x2: xOf(ms), y2: top + (rows.length + 1) * rowH, class: 'cd-tick' })); svg.appendChild(svt(xOf(ms), H - 8, ms + ' ms', { class: 'ecg-ll', 'text-anchor': 'middle' })); });
+  rows.forEach((id, i) => {
+    const y0 = top + i * rowH + rowH * 0.6, x = names[id] || {};
+    let d = '';
+    samples.forEach(s => { const v = s.parts[id] || 0; d += (d ? ' L' : 'M') + xOf(s.t).toFixed(1) + ' ' + (y0 - v * mvPx).toFixed(1); });
+    svg.appendChild(sv('line', { x1: left, y1: y0, x2: W - 10, y2: y0, class: 'cd-base' }));
+    svg.appendChild(sv('path', { d: d, class: 'cd-part', stroke: CD_COL[id] || '#888', 'data-cd-part': id }));
+    const label = CD_SHORT[id] || (x.name || id).replace(/ \(.*\)$/, '');
+    svg.appendChild(svt(6, y0 + 4, label, { class: 'cd-lab', fill: CD_COL[id] || '#888' }));
+    if (x.via) svg.appendChild(svt(6, y0 + 13, (x.via === 'muscle' ? 'muscle, from ' + ((names[x.from] || {}).name || x.from || '').split(' ')[0].toLowerCase() : (x.via === 'focus' ? 'the focus' : (x.via === 'ap' ? 'accessory pathway' : 'via ' + x.via.toUpperCase()))) + (x.t0 !== undefined && id !== 'ra' && id !== 'la' ? ' · ' + Math.round(x.t0) + ' ms' : ''), { class: 'cd-sub' }));
+  });
+  // the sum
+  const ys = top + rows.length * rowH + rowH * 0.6;
+  let d = ''; samples.forEach(s => { d += (d ? ' L' : 'M') + xOf(s.t).toFixed(1) + ' ' + (ys - s.v * mvPx).toFixed(1); });
+  svg.appendChild(sv('line', { x1: left, y1: ys, x2: W - 10, y2: ys, class: 'cd-base' }));
+  svg.appendChild(sv('path', { d: d, class: 'cd-sum', 'data-cd-sum': lead }));
+  svg.appendChild(svt(6, ys + 4, '= lead ' + lead, { class: 'cd-lab strong' }));
+  svg.appendChild(sv('path', { d: 'M' + (left + 4) + ' ' + ys + ' l0 -' + mvPx + ' l6 0 l0 ' + mvPx, class: 'ecg-cal' }));
+  return svg;
+}
+/* ---- the reading, from the traces ---- */
+function cdReading(st) {
+  const rd = st.reading;
+  return h('div', { class: 'cd-reading', 'data-cd-reading': '1' }, [h('h5', { text: 'The reading (made from the traces)' })].concat(rd.lines.map(l => h('p', { class: 'cd-line', 'data-cd-line': l[0] }, [h('b', { text: l[0] + '. ' }), l[1]]))));
+}
+function cdReads(st) {
+  const b = cdFirstBeat(st), s = b ? b.seq : st.seq, cfg = st.cfg;
+  const rate = cfg.sa.mode === 'sinus' && st.vRate === cfg.sa.rate ? cfg.sa.rate + '/min' : (cfg.sa.mode === 'sinus' ? 'atrial ' + cfg.sa.rate + ', ventricular ' + st.vRate + '/min' : 'ventricular ' + st.vRate + '/min');
+  return h('div', { class: 'ecg-reads', 'data-cd-reads': '1' }, [
+    h('span', { class: 'ecg-read' }, [h('b', { text: 'Rate ' }), rate]),
+    h('span', { class: 'ecg-read' }, [h('b', { text: 'PR ' }), (b && b.kind === 'conducted' && cfg.sa.mode === 'sinus' ? (cfg.av.mode === 'wenck' ? 'lengthening' : s.pr + ' ms') : '—')]),
+    h('span', { class: 'ecg-read', 'data-cd-qrs': String(s.qrs) }, [h('b', { text: 'QRS ' }), s.qrs + ' ms']),
+    h('span', { class: 'ecg-read', 'data-cd-axis': String(s.axis) }, [h('b', { text: 'Axis ' }), s.axis + '°'])
+  ]);
+}
+/* ---- the lab ---- */
+function cdRefresh(full) {
+  if (CDS.pending) return; CDS.pending = requestAnimationFrame(() => { CDS.pending = 0; cdApply(full); });
+}
+function cdApply(full) {
+  const root = document.querySelector('[data-condlab]'); if (!root) return;
+  const st = cdCompute(), v = ECG_ST.view;
+  if (full) { const slot = root.querySelector('[data-cd-panelslot]'); if (slot) { slot.textContent = ''; slot.appendChild(cdPanel(CDS.sel)); } const es = root.querySelector('[data-cd-el]'); if (es && es.value !== CDS.sel) es.value = CDS.sel; }
+  if (v && v.heart) cdPaintStates(v.heart);
+  const b = cdFirstBeat(st), seq = b ? b.seq : st.seq;
+  const paper = ecgPaper(seq, st.bts, (lead, T) => CD.voltageAt(lead, st, T));
+  const pw = root.querySelector('[data-cd-paper]'); if (pw) { pw.textContent = ''; pw.appendChild(paper.svg); }
+  const dial = vectorDial(seq);
+  const dw = root.querySelector('[data-cd-dial]'); if (dw) { dw.textContent = ''; dw.appendChild(dial.svg); }
+  const rw = root.querySelector('[data-cd-readsslot]'); if (rw) { rw.textContent = ''; rw.appendChild(cdReads(st)); }
+  const parts = root.querySelector('[data-cd-partsslot]'); if (parts) { parts.textContent = ''; parts.appendChild(cdParts(st, CDS.lead)); }
+  const rd = root.querySelector('[data-cd-readingslot]'); if (rd) { rd.textContent = ''; rd.appendChild(cdReading(st)); }
+  const note = root.querySelector('[data-cd-note]'); if (note) note.textContent = cdNote();
+  if (v) { v.paper = paper; v.dial = dial; v.seq = seq; v.bts = st.bts; v.keepAv = st.cfg.av.mode === 'complete'; v.stateAt = (t) => CD.stateAt(st, t); v.vecAt = (t) => { const bb = st.bts.filter(x => x.q !== null && x.q !== undefined && x.q - 80 <= t && t < x.q + 520)[0]; return bb ? CD.dipole(bb.seq.S, t - bb.q, st.cfg) : [0, 0, 0]; }; v.curBeat = () => null; }
+  root.setAttribute('data-cd-preset', CDS.preset);
+}
+function cdNote() {
+  const scn = (window.PFT_ECG && PFT_ECG.SCENARIOS || []).filter(x => x.id === ({ wenck: 'mobitz1', chb_j: 'chb' })[CDS.preset] || x.id === CDS.preset)[0];
+  const base = CD_NOTES[CDS.preset] || (scn ? scn.mech : '');
+  const name = (CD.PRESETS.filter(p => p.id === CDS.preset)[0] || {}).name || '';
+  return CDS.touched ? 'Your own settings, started from “' + name + '”. ' + base : base;
+}
+function conductionLab() {
+  const st = cdCompute(), b = cdFirstBeat(st), seq = b ? b.seq : st.seq;
+  const heart = cdHeart(st), paper = ecgPaper(seq, st.bts, (lead, T) => CD.voltageAt(lead, st, T)), dial = vectorDial(seq);
+  const presetSel = h('select', { 'aria-label': 'Preset', 'data-cd-presetsel': '1', onchange: (e) => { CDS.preset = e.target.value; CDS.cfg = CD.preset(CDS.preset); CDS.touched = false; ECG_ST.t = 0; cdRefresh(true); } }, CD.PRESETS.map(p => h('option', { value: p.id, selected: p.id === CDS.preset, text: p.name })));
+  const elSel = h('select', { 'aria-label': 'Element', 'data-cd-el': '1', onchange: (e) => { CDS.sel = e.target.value; cdRefresh(true); } }, CD_ELEMENTS.map(e => h('option', { value: e[0], selected: e[0] === CDS.sel, text: e[1] })));
+  const leadSel = h('select', { 'aria-label': 'Lead', 'data-cd-lead': '1', onchange: (e) => { CDS.lead = e.target.value; cdRefresh(); } }, (window.PFT_ECG ? PFT_ECG.LEADS : []).map(l => h('option', { value: l[0], selected: l[0] === CDS.lead, text: l[0] })));
+  const playBtn = h('button', { type: 'button', class: 'btn sm', 'data-ecg-play': '1', 'aria-pressed': String(ECG_ST.playing), text: ECG_ST.playing ? '❚❚ Pause' : '▶ Play', onclick: () => ecgPlay(!ECG_ST.playing) });
+  const speed = h('select', { 'aria-label': 'Playback speed', 'data-ecg-speed': '1', onchange: (e) => { ECG_ST.speed = +e.target.value; } }, [[0.1, '1/10 speed'], [0.25, '1/4 speed'], [0.5, '1/2 speed'], [1, 'real time']].map(o => h('option', { value: String(o[0]), selected: ECG_ST.speed === o[0], text: o[1] })));
+  const range = h('input', { type: 'range', class: 'ecg-scrub', min: '0', max: String(ECG_ST.strip), step: '4', value: String(Math.round(ECG_ST.t)), 'data-ecg-t': '1', 'aria-label': 'Time on the strip', oninput: (e) => { ECG_ST.t = +e.target.value; if (!ECG_ST.raf) ECG_ST.raf = requestAnimationFrame(ecgFrame); } });
+  const timeEl = h('span', { class: 'ecg-time', 'data-ecg-time': '1' });
+  const legend = h('div', { class: 'ecg-legend' }, [h('span', { class: 'ecg-lg rest' }, [h('i'), 'resting']), h('span', { class: 'ecg-lg act' }, [h('i'), 'depolarising']), h('span', { class: 'ecg-lg dep' }, [h('i'), 'depolarised']), h('span', { class: 'ecg-lg path' }, [h('i'), 'conducting']), h('span', { class: 'ecg-lg dly' }, [h('i'), 'delayed']), h('span', { class: 'ecg-lg blk' }, [h('i'), 'blocked'])]);
+  const root = h('div', { class: 'ecg-lab cd-lab', 'data-condlab': '1', 'data-cd-preset': CDS.preset }, [
+    h('div', { class: 'ecg-ctl' }, [h('label', { class: 'ecg-pick' }, [h('span', { class: 'lbl', text: 'Start from ' }), presetSel]), h('label', { class: 'ecg-pick' }, [h('span', { class: 'lbl', text: 'Element ' }), elSel]), h('button', { type: 'button', class: 'lnk', 'data-cd-reset': '1', text: 'Reset to normal', onclick: () => { CDS.preset = 'normal'; CDS.cfg = CD.preset('normal'); CDS.touched = false; cdRefresh(true); } })]),
+    h('div', { class: 'ecg-ctl' }, [playBtn, speed, range, timeEl]),
+    h('div', { class: 'ecg-top cd-top' }, [
+      h('figure', { class: 'an-fig ecg-heartfig' }, [heart.svg, legend, h('figcaption', { text: 'Click a path or a wall to select it; its dials appear on the right. Blocked paths are crossed, delayed ones dashed; infarcted walls are grey, injured ones outlined.' })]),
+      h('div', { class: 'ecg-side cd-side' }, [h('div', { 'data-cd-panelslot': '1' }, [cdPanel(CDS.sel)]), h('div', { 'data-cd-readsslot': '1' }, [cdReads(st)]), h('figure', { class: 'an-fig ecg-dialfig' }, [h('div', { 'data-cd-dial': '1' }, [dial.svg]), h('figcaption', { text: 'Frontal plane: the QRS loop, the mean axis and the vector at the cursor.' })])])
+    ]),
+    h('div', { class: 'ecg-wrap', 'data-cd-paper': '1' }, [paper.svg]),
+    h('p', { class: 'fine cd-note', 'data-cd-note': '1', text: cdNote() }),
+    h('div', { class: 'cd-partsbox' }, [h('div', { class: 'ecg-ctl' }, [h('h5', { text: 'A lead is a sum of its parts' }), h('label', { class: 'ecg-pick' }, [h('span', { class: 'lbl', text: 'Lead ' }), leadSel])]), h('div', { class: 'cd-parts', 'data-cd-partsslot': '1' }, [cdParts(st, CDS.lead)]), h('p', { class: 'fine', text: 'The first beat of the strip: each region’s dipole projected onto the lead (activation, then its ST and T), and the sum, which is the trace on the paper. A region reached muscle to muscle says so, with where it came from.' })]),
+    h('div', { 'data-cd-readingslot': '1' }, [cdReading(st)])
+  ]);
+  ECG_ST.view = { root: root, paper: paper, heart: heart, dial: dial, seq: seq, bts: st.bts, range: range, timeEl: timeEl, playBtn: playBtn, curBeat: () => null, keepAv: st.cfg.av.mode === 'complete',
+    stateAt: (t) => CD.stateAt(CDS.st, t), vecAt: (t) => { const S = CDS.st; const bb = S.bts.filter(x => x.q !== null && x.q !== undefined && x.q - 80 <= t && t < x.q + 520)[0]; return bb ? CD.dipole(bb.seq.S, t - bb.q, S.cfg) : [0, 0, 0]; } };
+  if (!ECG_ST.raf) ECG_ST.raf = requestAnimationFrame(ecgFrame);
+  return root;
+}
+function condWidget(kind) { return kind === 'conduction' ? conductionLab() : null; }
+
 
 /* ========================================================================== Learn
    A reading section: topics from window.PFT_EDU, each ending with the glossary entries that belong to it. */
@@ -19366,7 +20175,7 @@ const LEARN_CATS = [
   { id: 'drips', title: 'ICU infusions: pressors, sedation, paralysis', topics: window.PFT_DRIPS.topics, groups: window.PFT_DRIPS.groups },
   { id: 'echo', title: 'Echo & POCUS', topics: window.PFT_ECHO.topics, groups: window.PFT_ECHO.groups },
   { id: 'monitor', title: 'Bedside monitoring', topics: window.PFT_MONITOR.topics, groups: window.PFT_MONITOR.groups },
-  { id: 'ecg', title: 'Cardiac conduction & ECG', topics: ECG.topics, groups: ECG.groups },
+  { id: 'ecg', title: 'Cardiac conduction & ECG', topics: Object.assign({}, ECG.topics, (window.PFT_COND || { topics: {} }).topics), groups: ECG.groups.concat((window.PFT_COND || { groups: [] }).groups) },
   { id: 'cancer', title: 'Lung nodules & cancer screening', topics: NOD.topics, groups: NOD.groups }
 ];
 function learnCatOf(topic) { return LEARN_CATS.filter(c => c.topics[topic])[0] || LEARN_CATS[0]; }
@@ -19450,7 +20259,7 @@ function eduBlocks(id, topic) {
     if (b.table) { out.push(eduTable(b.table)); }
     if (b.note) out.push(h('p', { class: 'fine', text: b.note }));
     if (b.fig) { const f = eduFig(b.fig); if (f) out.push(f); }
-    if (b.widget) { const w = anatWidget(b.widget) || ecgWidget(b.widget) || nodWidget(b.widget) || ctWidget(b.widget) || physWidget(b.widget) || ventWidget(b.widget) || ecmoWidget(b.widget) || hemoWidget(b.widget) || dripWidget(b.widget, b) || echoWidget(b.widget) || monWidget(b.widget); if (w) out.push(w); }
+    if (b.widget) { const w = anatWidget(b.widget) || ecgWidget(b.widget) || nodWidget(b.widget) || ctWidget(b.widget) || physWidget(b.widget) || ventWidget(b.widget) || ecmoWidget(b.widget) || hemoWidget(b.widget) || dripWidget(b.widget, b) || echoWidget(b.widget) || monWidget(b.widget) || condWidget(b.widget); if (w) out.push(w); }
     if (b.links) out.push(h('ul', { class: 'edu-links' }, b.links.map(l => h('li', {}, [h('a', { href: l[1], target: '_blank', rel: 'noopener noreferrer', text: l[0] }), l[2] ? h('span', { class: 'fine', text: ' — ' + l[2] }) : null]))));
   });
   return out;
@@ -19771,8 +20580,9 @@ function bankCaseEl(c, repaint) {
 }
 
 /* ========================================================================== Home
-   The front door: what is in here and where to click. A hero with the name, the resume link, and a tile for each
-   resource — the interpreter, every Learn area with its labs and scenarios, the case bank. */
+   The front door: the fellow's guide through the fellowship — a hero, a progress strip (resume, the case bank, the echo
+   logbook, the next exam), then the areas grouped by where the fellow stands: clinic, bronchoscopy suite, ICU, the probe,
+   the record — each a tile with its featured topics and labs. */
 const LAST_KEY = 'pft.last.v1';
 function lastVisited() { try { const v = JSON.parse(localStorage.getItem(LAST_KEY) || 'null'); return v && v.topic ? v : null; } catch (e) { return null; } }
 function rememberVisit(topic) {
@@ -19787,7 +20597,7 @@ const HOME_AREAS = [
   { id: 'drips', icon: 'drip', sub: 'Pressors, inotropes, vasodilators, sedation, analgesia and paralysis: indications, dosing and titration, monitoring, contraindications, and the trials — with a drip calculator', links: [['drips_vaso', 'Vasopressors'], ['drips_sed', 'Sedation'], ['drips_nmb', 'Paralysis'], ['drips_calc', 'Drip calculator'], ['drips_cases', 'Scenarios']] },
   { id: 'echo', icon: 'probe', sub: 'Point-of-care echo: the windows and views (drawn and real), the anatomy on the screen, LV/RV/pericardium/IVC, RUSH and lung ultrasound — with a scanning simulator on a model and on a real volume, a quiz, and your case logbook for the boards', links: [['echo_views', 'The views'], ['echo_assess', 'Assessments'], ['echo_lab', 'Scanning lab'], ['echo_quiz', 'Quiz'], ['echo_log', 'Logbook']] },
   { id: 'monitor', icon: 'monitor', sub: 'The arterial line and its fluid column, CVP and its waves, pulse-contour devices (FloTrac, HemoSphere, PiCCO), capnography, oximetry, NIRS, ICP, oesophageal and bladder pressures — set-up, pitfalls, troubleshooting, waveforms', links: [['mon_art', 'Arterial line'], ['mon_pulse', 'Pulse contour'], ['mon_capno', 'Capnography'], ['mon_screen', 'Screen scenarios'], ['mon_icp', 'ICP']] },
-  { id: 'ecg', icon: 'ecg', sub: 'How conduction writes the twelve leads — watch the wavefront', links: [['ecglab', 'ECG lab']] },
+  { id: 'ecg', icon: 'ecg', sub: 'How conduction writes the twelve leads — the classic lesions played, and a bench where every element of the system and every wall is a dial, each lead is shown as the sum of its parts, and the reading is made from the traces', links: [['ecglab', 'ECG lab'], ['conduction', 'Conduction bench']] },
   { id: 'cancer', icon: 'nodule', sub: 'Nodules, incidental findings and screening: Fleischner, Lung-RADS, the risk models, the VA programme', links: [['nodules', 'Nodules'], ['screening', 'Screening'], ['incidentals', 'Incidentals']] },
   { id: 'pft', icon: 'loop', sub: 'How a study is read: z-scores, patterns, DLCO, volumes, challenge tests, the phrasing — with the examples', links: [] }
 ];
@@ -19818,40 +20628,75 @@ function homeTile(o) {
   ]);
   return tile;
 }
+/* v8.4: the front door is the fellow's guide — where a PCCM fellow stands (clinic, bronchoscopy suite, ICU, the probe, the record), what is
+   here for each, what has been done, and what is coming up (the boards, the logbook). */
+const HOME_SECTIONS = [
+  { id: 'clinic', title: 'In clinic', sub: 'The study on the desk and the nodule on the scan', areas: ['pft', 'cancer'], tools: ['interpret'] },
+  { id: 'bronch', title: 'In the bronchoscopy suite', sub: 'The airway from the cells to the stations, in three dimensions and on the CT', areas: ['airway'] },
+  { id: 'icu', title: 'In the ICU', sub: 'The machines, the catheter, the drips, the monitors, the twelve leads, the circuit', areas: ['vent', 'hemo', 'drips', 'monitor', 'ecg', 'ecmo'] },
+  { id: 'probe', title: 'With the probe', sub: 'Point-of-care echo from the windows to the logbook', areas: ['echo'] },
+  { id: 'record', title: 'Keeping the record', sub: 'What you have read, scanned and saved — and what the boards will ask for', areas: [], tools: ['bank', 'log'] }
+];
+function homeProgress(goLearn) {
+  const chips = [];
+  const last = lastVisited();
+  if (last) chips.push(h('button', { type: 'button', class: 'ch home-chip hp-resume', 'data-home-resume': last.topic, text: 'Resume: ' + last.cat + ' › ' + last.title, onclick: goLearn(last.topic) }));
+  const n = bankCount(); chips.push(h('button', { type: 'button', class: 'ch home-chip', 'data-home-prog': 'bank', text: 'Case bank: ' + (n ? n + ' saved' : 'empty'), onclick: () => setMode('bank') }));
+  try {
+    if (typeof elLoad === 'function' && typeof ELOG !== 'undefined') {
+      const c = ELOG.counters(elLoad(), new Date());
+      chips.push(h('button', { type: 'button', class: 'ch home-chip', 'data-home-prog': 'log', text: 'Echo logbook: ' + c.all + (c.all === 1 ? ' study' : ' studies') + ' · TTE ' + c.tte + '/150 · TEE ' + c.tee + '/50', onclick: goLearn('echo_log') }));
+    }
+  } catch (e) { /* the logbook is optional here */ }
+  chips.push(h('span', { class: 'home-chip static', 'data-home-prog': 'nbe', text: 'NBE CCEeXAM: 26 Jan 2027 · registration closes 22 Dec 2026' }));
+  return h('section', { class: 'home-progress', 'data-home-progress': '1' }, [h('h3', { text: 'Where you are' }), h('div', { class: 'home-chips' }, chips)]);
+}
 function stepHome() {
   const last = lastVisited();
   const goLearn = (topic) => () => { learnTerm = ''; setMode('learn', { topic: topic }); };
   const goCase = () => { mode = 'case'; render(); window.scrollTo(0, 0); const mm = $('main'); if (mm) mm.focus({ preventScroll: true }); };
-  const tiles = [];
-  tiles.push(homeTile({ id: 'interpret', kind: 'tool', icon: 'loop', title: 'PFT interpreter', sub: 'Enter a study — spirometry, lung volumes, DLCO, challenge tests, 6MWD — and get a clinic-ready reading in the ERS/ATS 2022 language, with the prior for comparison.', cta: 'Interpret →', go: goCase,
-    links: [['case', 'New case', () => { priorAdded = false; loadState(freshState(), 'ctx'); }], ['examples', 'Worked examples', goLearn('examples')], ['bank', 'Case bank', () => setMode('bank')]] }));
-  HOME_AREAS.forEach(a => {
-    const cat = LEARN_CATS.filter(c => c.id === a.id)[0]; if (!cat) return;
+  const tileFor = {};
+  tileFor.interpret = () => homeTile({ id: 'interpret', kind: 'tool', icon: 'loop', title: 'PFT interpreter', sub: 'Enter a study — spirometry, lung volumes, DLCO, challenge tests, 6MWD — and get a clinic-ready reading in the ERS/ATS 2022 language, with the prior for comparison.', cta: 'Interpret →', go: goCase,
+    links: [['case', 'New case', () => { priorAdded = false; loadState(freshState(), 'ctx'); }], ['examples', 'Worked examples', goLearn('examples')], ['bank', 'Case bank', () => setMode('bank')]] });
+  tileFor.bank = () => homeTile({ id: 'bank', kind: 'tool', icon: 'bank', title: 'Case bank', badge: bankCount() ? bankCount() + ' saved' : null, sub: 'PFT cases saved on this computer with their readings, review notes and ratings. Export a backup before moving machines.', cta: 'Open →', go: () => setMode('bank'), links: [] });
+  tileFor.log = () => homeTile({ id: 'log', kind: 'tool', icon: 'probe', title: 'Echo logbook', sub: 'Your de-identified case log toward the echo boards: values, derived numbers, images, review, counters against the 150 TTE / 50 TEE targets, exports and a printable packet.', cta: 'Open →', go: goLearn('echo_log'), links: [['echo_log', 'Logbook', goLearn('echo_log')], ['echo_quiz', 'Echo quiz', goLearn('echo_quiz')]] });
+  const areaTile = (id) => {
+    const a = HOME_AREAS.filter(x => x.id === id)[0]; if (!a) return null;
+    const cat = LEARN_CATS.filter(c => c.id === a.id)[0]; if (!cat) return null;
     const first = cat.groups[0].ids[0];
     const links = a.links.filter(l => cat.topics[l[0]]).map(l => [l[0], l[1], goLearn(l[0])]);
-    if (!links.length) cat.groups[0].ids.slice(0, 4).forEach(id => { if (cat.topics[id]) links.push([id, cat.topics[id].title, goLearn(id)]); });
-    const n = cat.groups.reduce((s, g) => s + g.ids.filter(id => cat.topics[id]).length, 0);
-    tiles.push(homeTile({ id: a.id, kind: 'learn', icon: a.icon, title: cat.title, badge: n + (n === 1 ? ' topic' : ' topics'), sub: a.sub, cta: 'Learn →', go: goLearn(first), links: links }));
-  });
-  tiles.push(homeTile({ id: 'bank', kind: 'tool', icon: 'bank', title: 'Case bank', badge: bankCount() ? bankCount() + ' saved' : null, sub: 'Cases saved on this computer with their readings, review notes and ratings. Export a backup before moving machines.', cta: 'Open →', go: () => setMode('bank'), links: [] }));
+    if (!links.length) cat.groups[0].ids.slice(0, 4).forEach(tid => { if (cat.topics[tid]) links.push([tid, cat.topics[tid].title, goLearn(tid)]); });
+    const n = cat.groups.reduce((s, g) => s + g.ids.filter(tid => cat.topics[tid]).length, 0);
+    return homeTile({ id: a.id, kind: 'learn', icon: a.icon, title: cat.title, badge: n + (n === 1 ? ' topic' : ' topics'), sub: a.sub, cta: 'Learn →', go: goLearn(first), links: links });
+  };
   const hero = h('section', { class: 'home-hero' }, [
     h('div', { class: 'home-hero-text' }, [
-      h('p', { class: 'kicker', text: 'Pulmonary & critical care' }),
+      h('p', { class: 'kicker', text: 'A fellow’s guide through pulmonary & critical care fellowship' }),
       h('h2', { text: 'PulmCrit Daddy' }),
-      h('p', { class: 'home-lead', text: 'Interpret a lung function study. Learn the anatomy, the physiology and the procedures. Run the ventilator, the ECMO circuit and the catheterised heart until the numbers make sense.' }),
+      h('p', { class: 'home-lead', text: 'What a PCCM fellow has to be able to do, in one place: read the study, know the anatomy and the physiology, run the ventilator, the circuit and the drips, scan the heart and keep the log for the boards. Models you can turn the dials on, real images where it matters, and a record of what you have done.' }),
       h('div', { class: 'home-cta' }, [
-        h('button', { type: 'button', class: 'btn primary', 'data-home-cta': 'case', text: 'Interpret a PFT', onclick: goCase }),
-        h('button', { type: 'button', class: 'btn', 'data-home-cta': 'learn', text: 'Browse the Learn areas', onclick: () => { const el = document.querySelector('[data-home-tile="airway"]'); if (el) { el.scrollIntoView({ block: 'start', behavior: 'smooth' }); el.focus(); } } }),
+        h('button', { type: 'button', class: 'btn primary', 'data-home-cta': 'learn', text: 'Open the guide', onclick: () => { const el = document.querySelector('[data-home-section="clinic"]'); if (el) { el.scrollIntoView({ block: 'start', behavior: 'smooth' }); } } }),
+        h('button', { type: 'button', class: 'btn', 'data-home-cta': 'case', text: 'Interpret a PFT', onclick: goCase }),
         last ? h('button', { type: 'button', class: 'btn quiet', 'data-home-resume': last.topic, text: 'Resume: ' + last.cat + ' › ' + last.title, onclick: goLearn(last.topic) }) : null
       ])
     ]),
     h('div', { class: 'home-hero-art', 'aria-hidden': 'true' }, [homeArt()])
   ]);
+  const sections = HOME_SECTIONS.map((sec, i) => {
+    const tiles = [];
+    (sec.tools || []).forEach(t => { if (tileFor[t]) tiles.push(tileFor[t]()); });
+    sec.areas.forEach(id => { const t = areaTile(id); if (t) tiles.push(t); });
+    if (sec.id === 'record') tiles.push(homeTile({ id: 'boards', kind: 'tool', icon: 'tool', title: 'The boards and the certificates', sub: 'ABIM Pulmonary Disease and Critical Care Medicine: the areas here map to the blueprint. NBE CCEeXAM (critical care echo): 26 January 2027, registration closes 22 December 2026; 150 TTE and 50 TEE in the logbook. ELSO adult ECMO certification counts hours outside fellowship — keep that log separately.', cta: 'Logbook →', go: goLearn('echo_log'), links: [['echo_log', 'Echo logbook', goLearn('echo_log')], ['ecmo_cases', 'ECMO scenarios', goLearn('ecmo_cases')], ['echo_quiz', 'Echo quiz', goLearn('echo_quiz')]] }));
+    return h('section', { class: 'home-section', 'data-home-section': sec.id }, [
+      h('div', { class: 'home-sec-head' }, [h('span', { class: 'home-sec-n', text: String(i + 1) }), h('div', {}, [h('h3', { text: sec.title }), h('p', { class: 'fine', text: sec.sub })])]),
+      h('div', { class: 'home-grid' + (tiles.length === 1 ? ' one' : '') }, tiles)
+    ]);
+  });
   const labs = h('section', { class: 'home-labs' }, [h('h3', { text: 'Interactive labs and scenarios' }), h('div', { class: 'home-chips' }, [
-    ['heartlung', 'Heart–lung lab'], ['transport', 'Oxygen-dissociation lab'], ['ventilation', 'Spirometer & A–a'], ['tree', 'Bronchial tree 3D'], ['ct', 'CT anatomy'], ['stations', 'EBUS stations'], ['vent_waves', 'Ventilator waveforms'], ['vent_sim', 'Ventilator simulator'], ['ecmo_lab', 'ECMO circuit lab'], ['ecmo_cases', 'ECMO scenarios'], ['hemo_lab', 'Swan–Ganz lab'], ['hemo_cases', 'Shock scenarios'], ['drips_calc', 'Drip calculator'], ['drips_cases', 'Drip scenarios'], ['echo_lab', 'Echo scanning lab'], ['echo_quiz', 'Echo quiz'], ['mon_art', 'Arterial-line lab'], ['mon_screen', 'Haemodynamic screen'], ['mon_capno', 'Capnography lab'], ['ecglab', 'ECG lab'], ['nodules', 'Nodule advisor'], ['histo', 'Airway quiz']
+    ['heartlung', 'Heart–lung lab'], ['transport', 'Oxygen-dissociation lab'], ['ventilation', 'Spirometer & A–a'], ['tree', 'Bronchial tree 3D'], ['ct', 'CT anatomy'], ['stations', 'EBUS stations'], ['vent_waves', 'Ventilator waveforms'], ['vent_sim', 'Ventilator simulator'], ['ecmo_lab', 'ECMO circuit lab'], ['ecmo_cases', 'ECMO scenarios'], ['hemo_lab', 'Swan–Ganz lab'], ['hemo_cases', 'Shock scenarios'], ['drips_calc', 'Drip calculator'], ['drips_cases', 'Drip scenarios'], ['echo_lab', 'Echo scanning lab'], ['echo_quiz', 'Echo quiz'], ['echo_log', 'Echo logbook'], ['mon_art', 'Arterial-line lab'], ['mon_screen', 'Haemodynamic screen'], ['mon_capno', 'Capnography lab'], ['ecglab', 'ECG lab'], ['conduction', 'Conduction bench'], ['nodules', 'Nodule advisor'], ['histo', 'Airway quiz']
   ].filter(x => LEARN_CATS.some(c => c.topics[x[0]])).map(x => h('button', { type: 'button', class: 'ch home-chip', 'data-home-lab': x[0], text: x[1], onclick: goLearn(x[0]) })))]);
-  $('main').appendChild(h('div', { class: 'home', 'data-home': '1' }, [hero, h('div', { class: 'home-grid' }, tiles), labs,
-    h('p', { class: 'fine home-foot', text: 'Everything runs on this device; nothing is sent anywhere. Teaching models throughout: the directions are right, the numbers are illustrative, the local protocol governs care. Formerly PFT Interpreter.' })]));
+  $('main').appendChild(h('div', { class: 'home', 'data-home': '1' }, [hero, homeProgress(goLearn)].concat(sections, [labs,
+    h('p', { class: 'fine home-foot', text: 'Everything runs on this device; nothing is sent anywhere. Teaching models throughout: the directions are right, the numbers are illustrative, the local protocol governs care. Formerly PFT Interpreter.' })])));
 }
 /* the hero art: lungs breathing, a heart beating, a trace running — a hint of what is inside */
 function homeArt() {

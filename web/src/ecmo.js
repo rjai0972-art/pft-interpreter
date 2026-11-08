@@ -95,12 +95,69 @@
     return r;
   }
   function phOf(hco3, pco2) { return 6.1 + Math.log10(hco3 / (0.03 * Math.max(5, pco2))); }
+  function lactateWord(ratio, fx) {
+    const w = ratio < 2 ? 'rising fast' : (ratio < 2.5 ? 'rising' : (ratio < 3.5 ? 'stable' : 'clearing'));
+    return fx && fx.lactate > 0.3 ? w + ' (β-agonist lactate confounds it)' : w;
+  }
+
+  /* ================================================================== vasoactive drips (v8.4) ==================================================================
+     Each drug acts through its receptors with an Emax dose–response ([Emax, ED50, Hill]) on the systemic resistance (constrictors multiply it,
+     dilators divide it), the contractility, the heart rate, the venous tone (as mm Hg of CVP) and the pulmonary resistance; epinephrine
+     and dopamine also make lactate and arrhythmia. The effects are combined and then applied to the patient before the circuit runs. */
+  const DRIPS = [
+    { id: 'ne', name: 'Norepinephrine', unit: 'mcg/kg/min', max: 1, step: 0.02, rec: 'α1 ≫ β1', fx: { svr: [0.9, 0.25, 1.2], contr: [0.25, 0.15, 1], hr: [8, 0.3, 1], ven: [2.5, 0.3, 1], pvr: [0.3, 0.3, 1] }, lact: 0.25, arr: 0.2, nee: 1 },
+    { id: 'vp', name: 'Vasopressin', unit: 'U/min', max: 0.06, step: 0.01, rec: 'V1', fx: { svr: [0.7, 0.025, 1.5], hr: [-3, 0.02, 1], ven: [1, 0.02, 1] }, lact: 0, arr: 0, nee: 2.5 },
+    { id: 'epi', name: 'Epinephrine', unit: 'mcg/kg/min', max: 0.5, step: 0.02, rec: 'β1 = β2 ≥ α1', fx: { contr: [0.7, 0.08, 1], hr: [35, 0.12, 1], dil: [0.12, 0.04, 1.5], svr: [0.8, 0.3, 1.6], pvr: [0.2, 0.3, 1], ven: [1.5, 0.2, 1] }, lact: 1, arr: 0.7, nee: 1 },
+    { id: 'phe', name: 'Phenylephrine', unit: 'mcg/kg/min', max: 3, step: 0.1, rec: 'α1', fx: { svr: [0.8, 1.0, 1.2], hr: [-10, 1.0, 1], pvr: [0.25, 1.0, 1], ven: [2, 1.0, 1] }, lact: 0, arr: 0, nee: 0.1 },
+    { id: 'dopa', name: 'Dopamine', unit: 'mcg/kg/min', max: 20, step: 1, rec: 'D1 → β1 → α1 with the dose', fx: { contr: [0.4, 6, 1.2], hr: [25, 7, 1.2], svr: [0.6, 13, 2.2], ven: [1.5, 10, 1] }, lact: 0.3, arr: 0.8, nee: 0.01 },
+    { id: 'dobu', name: 'Dobutamine', unit: 'mcg/kg/min', max: 20, step: 0.5, rec: 'β1 > β2', fx: { contr: [0.8, 6, 1], hr: [18, 7, 1], dil: [0.22, 6, 1], pvr: [-0.15, 6, 1] }, lact: 0.2, arr: 0.4, nee: 0 },
+    { id: 'mil', name: 'Milrinone', unit: 'mcg/kg/min', max: 0.75, step: 0.125, rec: 'PDE-3 inhibitor (inodilator)', fx: { contr: [0.5, 0.3, 1], hr: [6, 0.3, 1], dil: [0.32, 0.3, 1], pvr: [-0.4, 0.25, 1] }, lact: 0, arr: 0.3, nee: 0 },
+    { id: 'ang', name: 'Angiotensin II', unit: 'ng/kg/min', max: 80, step: 5, rec: 'AT1', fx: { svr: [0.8, 30, 1.3], hr: [-2, 30, 1] }, lact: 0, arr: 0, nee: 0.01 },
+    { id: 'ino', name: 'Inhaled nitric oxide', unit: 'ppm', max: 40, step: 5, rec: 'pulmonary vasodilator', fx: { pvr: [-0.45, 10, 1.2] }, lact: 0, arr: 0, nee: 0 },
+    { id: 'nip', name: 'Nitroprusside', unit: 'mcg/kg/min', max: 5, step: 0.25, rec: 'NO donor (arterial and venous)', fx: { dil: [0.45, 1.5, 1], hr: [10, 1.5, 1], pvr: [-0.2, 1.5, 1], ven: [-2.5, 1.5, 1] }, lact: 0, arr: 0, nee: 0 }
+  ];
+  const emax = (d, k) => { if (!k || d <= 0) return 0; const n = k[2] || 1, x = Math.pow(d, n); return k[0] * x / (Math.pow(k[1], n) + x); };
+  function vasoactive(drugs) {
+    drugs = drugs || {};
+    const out = { svr: 1, contr: 1, hr: 0, cvp: 0, pvr: 1, lactate: 0, arr: 0, nee: 0, active: [] };
+    let con = 1, dil = 1, inot = 0, pvrUp = 1, pvrDown = 1;
+    DRIPS.forEach(D => {
+      const d = +drugs[D.id] || 0; if (d <= 0) return;
+      out.active.push(D.id);
+      con *= 1 + emax(d, D.fx.svr); dil *= 1 - emax(d, D.fx.dil);
+      inot += emax(d, D.fx.contr); out.hr += emax(d, D.fx.hr); out.cvp += emax(d, D.fx.ven);
+      const pv = emax(d, D.fx.pvr); if (pv > 0) pvrUp *= 1 + pv; else pvrDown *= 1 + pv;
+      out.lactate += D.lact * Math.min(1, d / (D.max * 0.5)); out.arr += D.arr * Math.min(1, d / (D.max * 0.6));
+      out.nee += D.nee * d;
+    });
+    out.svr = con * dil;
+    out.contr = 1 + 1.4 * Math.tanh(inot / 1.4);     // β-agonists and PDE inhibitors add, with a ceiling
+    out.pvr = pvrUp * pvrDown;
+    out.lactate = Math.min(1, out.lactate); out.arr = Math.min(1, out.arr);
+    return out;
+  }
+  /* the patient the circuit sees once the drips have acted: SVR, contractility, heart rate, venous filling and PVR */
+  function applyDrugs(p, s) {
+    const fx = vasoactive(s.drugs), hr0 = p.hr || 95;
+    const q = Object.assign({}, p);
+    q.svr = (p.svr || 16) * fx.svr;
+    q.contr = Math.min(1.3, (p.contr === undefined ? 0.25 : p.contr) * fx.contr);
+    q.hr = Math.round(hr0 + fx.hr);
+    q.cvp = clamp(p.cvp + fx.cvp, 0, 30);
+    q.pvr = Math.max(0.3, (p.pvr || 1) * fx.pvr);
+    // the native output on VV: what the heart does with its contractility, rate, afterload and the right ventricle's load
+    const hrF = clamp(Math.pow(q.hr / hr0, 0.3), 0.8, 1.25), contrF = Math.pow(fx.contr, 0.55), afterF = Math.pow(fx.svr, -0.2), rvF = 1 / (1 + 0.45 * Math.pow(Math.max(0, q.pvr - 1), 1.3));
+    q.coEff = (p.co || 6.5) * hrF * contrF * afterF * rvF;
+    q.fx = fx;
+    return q;
+  }
 
   /* ---------------- VV ---------------- */
-  function runVV(p, s) {
+  function runVV(p0, s) {
+    const p = applyDrugs(p0, s);
     const pm = pump(p, s), Q = pm.flow;
     const sS = Object.assign({}, s, { flow: Q });
-    const R = clamp(s.recirc, 0, 0.9), co = Math.max(0.5, p.co), Qeff = Math.min(Q * (1 - R), co * 0.98);
+    const R = clamp(s.recirc, 0, 0.9), co = Math.max(0.5, p.coEff), Qeff = Math.min(Q * (1 - R), co * 0.98);
     const c = co2Balance(p, sS, Q, Qeff, R, co);
     const paco2 = c.pa;
     const pAO2 = Math.max(0, PH.pao2(p.fio2, 760, paco2, 0.8));
@@ -123,8 +180,9 @@
     const do2 = co * ca * 10, ratio = do2 / p.vo2;
     const pH = phOf(p.hco3, paco2);
     const flowRatio = Qeff / co;
-    const lactate = ratio < 2 ? 'rising fast' : (ratio < 2.5 ? 'rising' : (ratio < 3.5 ? 'stable' : 'clearing'));
-    return { mode: 'vv', pump: pm, flow: Q, qeff: Qeff, recirc: R, flowRatio: flowRatio, co: co,
+    const lactate = lactateWord(ratio, p.fx);
+    const map = Math.round(co * p.svr * Math.pow(5.5 / Math.max(1, co), 0.45) * 0.9);
+    return { mode: 'vv', pump: pm, flow: Q, qeff: Qeff, recirc: R, flowRatio: flowRatio, co: co, coSet: p0.co, map: map, hr: p.hr, pvr: p.pvr, svr: p.svr, cvp: p.cvp, fx: p.fx,
       preO2: preO2, preSat: spre, preCO2: c.pre, postO2: m.postO2, postSat: m.postSat, postCO2: c.post, transfer: m.transfer, vco2Membrane: c.removedM, vco2Lung: c.removedL,
       pao2: pao2, sao2: sao2, spo2: Math.round(sao2 * 100), paco2: paco2, ph: pH, pvO2: pvO2, svo2: svo2, cv: cv, ca: ca, do2: do2, do2vo2: ratio, lactate: lactate,
       pvco2: c.pv, cCap: cCap, pAO2: pAO2 };
@@ -132,14 +190,16 @@
 
   /* ---------------- VA ---------------- */
   const BRANCH = [['coronary', 0.05], ['innominate', 0.12], ['lcarotid', 0.08], ['lsubclavian', 0.07], ['descending', 0.68]];
-  function runVA(p, s) {
+  function runVA(p0, s) {
+    const p = applyDrugs(p0, s);
     const pm = pump(p, s), Q = pm.flow;
     const sS = Object.assign({}, s, { flow: Q });
     const svr = p.svr || 16;
+    const hrF = clamp(Math.pow(p.hr / (p0.hr || 95), 0.3), 0.8, 1.25);
     // the native ejection: what the ventricle has, minus what the afterload of the retrograde flow takes; a device adds its own forward flow
     let qn = 0, map = 70, dev = 0;
     for (let i = 0; i < 30; i++) {
-      const qn0 = p.contr * 5.0;
+      const qn0 = p.contr * 5.0 * hrF;
       const after = Math.max(0, 1 - 0.011 * (map - 60));
       dev = s.unload === 'impella' ? 2.8 : 0;
       qn = Math.max(0, qn0 * after) + (s.unload === 'iabp' ? 0.25 * p.contr : 0);
@@ -188,8 +248,8 @@
     const paco2RR = terr.innominate.fn * paco2Native + (1 - terr.innominate.fn) * paco2Circuit;
     const paco2Fem = terr.descending.fn * paco2Native + (1 - terr.descending.fn) * paco2Circuit;
     const limbRisk = s.config === 'pf' && !s.dpc ? (s.ret >= 17 ? 'high' : 'moderate') : 'low';
-    const lactate = ratio < 2 ? 'rising fast' : (ratio < 2.5 ? 'rising' : (ratio < 3.5 ? 'stable' : 'clearing'));
-    return { mode: 'va', pump: pm, flow: Q, qn: qn, qnTot: qnTot, qt: qt, map: Math.round(map), pp: pp, avOpens: avOpens, lvedp: Math.round(lvedp), distension: distension, oedema: oedema, shunt: shunt,
+    const lactate = lactateWord(ratio, p.fx);
+    return { mode: 'va', pump: pm, flow: Q, qn: qn, qnTot: qnTot, qt: qt, map: Math.round(map), pp: pp, avOpens: avOpens, lvedp: Math.round(lvedp), distension: distension, oedema: oedema, shunt: shunt, hr: p.hr, svr: p.svr, contrEff: p.contr, fx: p.fx,
       preO2: pvO2, preSat: satOf(pvO2), preCO2: c.pre, postO2: m.postO2, postSat: m.postSat, postCO2: c.post, transfer: m.transfer,
       rrO2: rr, rrSat: satOf(rr), femO2: fem, femSat: satOf(fem), corO2: cor, corSat: satOf(cor), lcO2: lc, lcSat: satOf(lc), mixing: mixing, harlequin: harlequin, central: central,
       paco2RR: paco2RR, paco2Fem: paco2Fem, phRR: phOf(p.hco3, paco2RR), phFem: phOf(p.hco3, paco2Fem), svo2: satOf(pvO2), pvO2: pvO2, do2: do2, do2vo2: ratio, lactate: lactate, limbRisk: limbRisk, terr: terr, cn: cn, nativePaO2: po2FromContent(p.hb, cn) };
@@ -197,9 +257,10 @@
   function run(p, s) { return s.mode === 'va' ? runVA(p, s) : runVV(p, s); }
 
   /* the defaults and the presets (a patient and the circuit) */
-  const PATIENT = { hb: 10, vo2: 290, vco2: 240, co: 6.5, shunt: 0.6, fio2: 0.4, va: 1.5, cvp: 8, hco3: 24, contr: 0.25, svr: 16 };
-  const SETTINGS = { vv: { mode: 'vv', config: 'fj', rpm: 3400, sweep: 2.5, fdo2: 1, oxy: 1, drain: 25, ret: 21, recirc: 0.15, kink: false, unload: 'none', dpc: true },
-    va: { mode: 'va', config: 'pf', rpm: 3300, sweep: 2.5, fdo2: 1, oxy: 1, drain: 25, ret: 17, recirc: 0, kink: false, unload: 'none', dpc: true } };
+  const PATIENT = { hb: 10, vo2: 290, vco2: 240, co: 6.5, shunt: 0.6, fio2: 0.4, va: 1.5, cvp: 8, hco3: 24, contr: 0.25, svr: 16, hr: 95, pvr: 1 };
+  const VV_PATIENT = { svr: 11 };
+  const SETTINGS = { vv: { mode: 'vv', config: 'fj', rpm: 3400, sweep: 2.5, fdo2: 1, oxy: 1, drain: 25, ret: 21, recirc: 0.15, kink: false, unload: 'none', dpc: true, drugs: {} },
+    va: { mode: 'va', config: 'pf', rpm: 3300, sweep: 2.5, fdo2: 1, oxy: 1, drain: 25, ret: 17, recirc: 0, kink: false, unload: 'none', dpc: true, drugs: {} } };
   const PRESETS = [
     { id: 'vv_run', title: 'VV: a good run', mode: 'vv', p: {}, s: {}, note: 'Severe ARDS, circuit 4.6 L/min against a cardiac output of 6.5, sweep 2.5, lung at rest. SaO2 in the high 80s–low 90s is what VV buys; it is enough.' },
     { id: 'vv_recirc', title: 'VV: recirculation', mode: 'vv', p: {}, s: { config: 'ff', recirc: 0.45 }, note: 'Femoro-femoral tips too close (or a dual-lumen cannula rotated): the drainage draws back the bright blood it just returned — recirculation. Pre-oxygenator saturation climbs toward the post; the patient falls.' },
@@ -212,11 +273,17 @@
     { id: 'va_distension', title: 'VA: a distended, silent ventricle', mode: 'va', p: { contr: 0.08, cvp: 12, shunt: 0.3 }, s: { rpm: 3700 }, note: 'Full flow, MAP 80, pulse pressure nil, the aortic valve never opens: blood keeps arriving in the left heart (bronchial, Thebesian, whatever the RV sends) and has nowhere to go. Smoke, oedema, thrombus. Vent it.' },
     { id: 'va_unloaded', title: 'VA + Impella (ECPELLA)', mode: 'va', p: { contr: 0.08, cvp: 10, shunt: 0.2 }, s: { rpm: 3400, unload: 'impella' }, note: 'The same ventricle with a microaxial pump emptying it into the aorta: the end-diastolic pressure falls, the lungs dry out, the aortic root is washed.' },
     { id: 'va_wean', title: 'VA: flow-down trial', mode: 'va', p: { contr: 0.7, shunt: 0.15, fio2: 0.4, vo2: 230, vco2: 190 }, s: { rpm: 2000, sweep: 2 }, note: 'Recovered contractility: flow turned down toward 1–1.5 L/min with the sweep kept on. If the MAP holds, the VTI is above 10 cm and the ventricle does not dilate, the pump has become optional.' },
-    { id: 'va_central', title: 'VA: central cannulation', mode: 'va', p: { contr: 0.6, shunt: 0.55, fio2: 0.5 }, s: { config: 'ce', rpm: 3300 }, note: 'Return into the ascending aorta: every branch receives the same mixture. The same sick lungs that made a Harlequin on peripheral VA are harmless here.' }
+    { id: 'va_central', title: 'VA: central cannulation', mode: 'va', p: { contr: 0.6, shunt: 0.55, fio2: 0.5 }, s: { config: 'ce', rpm: 3300 }, note: 'Return into the ascending aorta: every branch receives the same mixture. The same sick lungs that made a Harlequin on peripheral VA are harmless here.' },
+    { id: 'va_pressor', title: 'VA: norepinephrine 0.4 and a valve that stops opening', mode: 'va', p: { contr: 0.18, svr: 10, cvp: 12, shunt: 0.3 }, s: { drugs: { ne: 0.4 } }, note: 'A pressor on VA buys pressure by resistance, and the resistance is the ventricle’s afterload: MAP 75, pulse pressure nil, LVEDP climbing. Turn the norepinephrine down, add an inotrope or a vasodilator, and watch the valve.' },
+    { id: 'va_inodilator', title: 'VA: dobutamine and nitroprusside open the valve', mode: 'va', p: { contr: 0.12, cvp: 12, shunt: 0.3 }, s: { rpm: 3400, drugs: { dobu: 7.5, nip: 1 } }, note: 'The distended ventricle of the earlier preset with an inodilator and an arterial vasodilator: contractility up, afterload down, the valve opens every beat, the LVEDP falls — at the price of a lower MAP. The flow is turned down to what perfuses.' },
+    { id: 'va_vasoplegia', title: 'VA: vasoplegia at full flow — vasopressin', mode: 'va', p: { contr: 0.3, svr: 6, shunt: 0.3 }, s: { rpm: 3600, drugs: { ne: 0.5, vp: 0.03 } }, note: 'Six litres a minute and a MAP in the 50s: the resistance has gone (sepsis, post-bypass, the inflammatory circuit). More flow is not the answer to a resistance problem; norepinephrine and a second, non-catecholamine agent are. Compare with the vasopressin off.' },
+    { id: 'vv_dobu', title: 'VV: dobutamine lifts the output and the saturation falls', mode: 'vv', p: {}, s: { drugs: { dobu: 10 } }, note: 'The circuit is unchanged; the heart now pumps 8–9 L/min, so the circuit’s 4.6 is a smaller fraction of the venous return and the SaO2 falls — while the DO2 rises. On VV the saturation is not the patient.' },
+    { id: 'vv_rv', title: 'VV: the right ventricle fails against a high PVR', mode: 'vv', p: { pvr: 3, cvp: 14, co: 5.5 }, s: {}, note: 'ARDS lungs and a hypoxic, acidotic pulmonary circulation: the right ventricle cannot push 5.5 L/min through a resistance three times normal; the output falls, the CVP climbs, the DO2 falls. Try inhaled nitric oxide and milrinone from the drips panel, then correct the CO2 with the sweep.' },
+    { id: 'vv_rv_ino', title: 'VV: RV failure — iNO and milrinone', mode: 'vv', p: { pvr: 3, cvp: 14, co: 5.5 }, s: { sweep: 4, drugs: { ino: 20, mil: 0.375 } }, note: 'The same patient with the pulmonary resistance brought down: the right ventricle recovers its output, the CVP falls — and milrinone costs some systemic pressure, which may need a little norepinephrine.' }
   ];
   function preset(id) {
     const pr = PRESETS.filter(x => x.id === id)[0]; if (!pr) return null;
-    return { p: Object.assign({}, PATIENT, pr.p), s: Object.assign({}, SETTINGS[pr.mode], pr.s), note: pr.note, title: pr.title };
+    return { p: Object.assign({}, PATIENT, pr.mode === 'vv' ? VV_PATIENT : {}, pr.p), s: Object.assign({}, SETTINGS[pr.mode], { drugs: {} }, pr.s, { drugs: Object.assign({}, pr.s.drugs || {}) }), note: pr.note, title: pr.title };
   }
 
   /* what the monitors would be shouting */
@@ -240,6 +307,10 @@
       if (o.limbRisk !== 'low') a.push({ k: 'limb', t: 'No distal perfusion catheter with a ' + s.ret + ' Fr femoral cannula — leg at risk' });
     }
     if (o.do2vo2 < 2.5) a.push({ k: 'pt', t: 'DO2:VO2 ' + o.do2vo2.toFixed(1) + ' — supply-limited, lactate ' + o.lactate });
+    if (o.hr > 130) a.push({ k: 'pt', t: 'Heart rate ' + o.hr + (o.fx && o.fx.hr > 10 ? ' — chronotropy from the drips' : '') });
+    if (o.fx && o.fx.arr > 0.5) a.push({ k: 'pt', t: 'Arrhythmia risk from the catecholamine load' });
+    if (o.mode === 'vv' && o.map < 60) a.push({ k: 'pt', t: 'MAP ' + o.map });
+    if (o.fx && o.fx.nee > 0.5) a.push({ k: 'pt', t: 'Norepinephrine-equivalent ' + o.fx.nee.toFixed(2) + ' mcg/kg/min — ask why (source, steroids, calcium, the circuit)' });
     return a;
   }
 
@@ -700,7 +771,14 @@
       'Membrane: a new membrane on 100% oxygen returns blood at a PO2 near 480, falling as it clots or as the flow passes the rated 7 L/min; its oxygen transfer is capped near 65 mL/min per litre of flow (about 450 mL/min at the rated flow). CO2 leaves in proportion to the sweep-to-flow ratio (post-membrane PCO2 ≈ pre × e^(−0.4 × sweep/flow)).',
       'VV: effective flow = flow × (1 − recirculation); the drainage blood is venous blood plus the recirculated fraction; the pulmonary-arterial blood is the flow-weighted mix of circuit and venous blood; the native lung lifts the non-shunted part to its alveolar PO2 (FiO2 and the PaCO2); the venous content follows Fick from the arterial content, the output and the VO2 — iterated to a steady state. PaCO2 balances the body’s VCO2 against what the membrane and the native alveolar ventilation remove; pH from the bicarbonate.',
       'VA: the native ejection is the contractility’s 5 L/min minus what the afterload of the circuit’s pressure takes (and plus what an Impella pumps); MAP = (circuit + native) × SVR; LVEDP rises as the ventricle fails to eject and as the flow and the venous pressure rise, falls with a vent; above 20 with a closed valve the ventricle is distended and the lung floods (shunt rises). In the aorta the native blood takes the branches nearest the root in order — coronaries, innominate, left carotid, left subclavian, then the descending aorta — and the circuit’s blood supplies whatever is left, with a soft mixing zone; central or axillary return mixes at the root instead.',
-      'A model, not a patient: the directions and the orders of magnitude are right; the exact numbers are a teaching fiction.'] }
+      'Drips (v8.4): each vasoactive acts through its receptors with a dose–response on the systemic resistance, the contractility, the heart rate, the venous tone and the pulmonary resistance; the combined effect is applied to the patient before the circuit runs. On VA, resistance is pressure but also the ventricle’s afterload (the valve, the pulse pressure, the LVEDP); on VV a higher native output means a smaller circuit fraction (the SaO2 falls while the DO2 rises), and a right ventricle failing against a high PVR answers to iNO and milrinone, not to the sweep.',
+      'A model, not a patient: the directions and the orders of magnitude are right; the exact numbers are a teaching fiction.'] },
+    { h: 'Pressors and inotropes on the circuit', ul: [
+      'VA: the circuit gives flow; the pressure comes from flow × resistance. A pure vasoconstrictor (norepinephrine, vasopressin, phenylephrine, angiotensin II) raises the MAP at the same flow — and raises the afterload of a ventricle already working against the retrograde column: the pulse pressure narrows, the valve stays shut, the LVEDP climbs. Keep the MAP target modest (65–70), and when the ventricle is the problem reach for an inodilator (dobutamine, milrinone) or an arterial vasodilator, a vent, or less flow.',
+      'VA: vasoplegia (sepsis, post-cardiotomy, the inflammatory response to the circuit) is a resistance problem; more flow buys little. Norepinephrine first, vasopressin as the catecholamine-sparing second agent, angiotensin II or methylene blue as rescue; look for the cause.',
+      'VV: the heart does the pumping. Inotropes raise the output and therefore lower the fraction of the venous return the circuit sees — the saturation falls although nothing on the circuit changed. Read the DO2 and the lactate, not the SpO2. A pressor raises the MAP without touching the gas exchange.',
+      'VV: the right ventricle fails against the pulmonary resistance of ARDS (hypoxia, hypercapnia, acidosis, PEEP). Fix the gas (sweep, FiO2), then lower the PVR (inhaled nitric oxide, milrinone) and support the contractility (dobutamine, epinephrine); vasopressin keeps the systemic pressure without raising the PVR. The drainage improves as the CVP rises, which is not good news.',
+      'Dosing: the norepinephrine-equivalent dose adds the agents on one scale (norepinephrine 1:1, epinephrine 1:1, phenylephrine ÷10, dopamine ÷100, vasopressin × 2.5 per U/min, angiotensin II ÷100); above 0.5 mcg/kg/min ask why rather than how much more. Epinephrine and dopamine make lactate and arrhythmia; dobutamine and milrinone drop the pressure; milrinone accumulates in renal failure.'] }
   ] };
 
   T.ecmo_cases = { title: 'Troubleshooting at the bedside', kicker: 'Fourteen calls from the nurse, the perfusionist or the monitor', blocks: [
@@ -859,6 +937,6 @@
       ], done: 'The sweep-off trial: the circuit stays, its gas exchange stops, the lung shows what it can do. Then the cannulas come out.' }
   ];
 
-  root.PFT_ECMO = { topics: T, groups: GROUPS, CONFIGS: CONFIGS, DRAIN: DRAIN, RETURN: RETURN, PATIENT: PATIENT, SETTINGS: SETTINGS, PRESETS: PRESETS, preset: preset, SCENARIOS: SCENARIOS, LABCASES: LABCASES, run: run, runVV: runVV, runVA: runVA, pump: pump, membrane: membrane, alarms: alarms, satOf: satOf, po2Of: po2Of, content: content, po2FromContent: po2FromContent, BRANCH: BRANCH };
+  root.PFT_ECMO = { topics: T, groups: GROUPS, CONFIGS: CONFIGS, DRAIN: DRAIN, RETURN: RETURN, PATIENT: PATIENT, SETTINGS: SETTINGS, PRESETS: PRESETS, preset: preset, DRIPS: DRIPS, vasoactive: vasoactive, applyDrugs: applyDrugs, SCENARIOS: SCENARIOS, LABCASES: LABCASES, run: run, runVV: runVV, runVA: runVA, pump: pump, membrane: membrane, alarms: alarms, satOf: satOf, po2Of: po2Of, content: content, po2FromContent: po2FromContent, BRANCH: BRANCH };
   if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_ECMO;
 })(typeof window !== 'undefined' ? window : globalThis);

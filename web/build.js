@@ -23,6 +23,7 @@ const frag = tpl
   .replace('/*CTREAL*/', () => safe(rd('src/ct_real.js')))
   .replace('/*ECHOREAL*/', () => safe(rd('src/echo_real.js')))
   .replace('/*MONITOR*/', () => safe(rd('src/monitor.js')))
+  .replace('/*CONDUCTION*/', () => safe(rd('src/conduction.js')))
   .replace('/*EXAMPLES*/', () => safe(rd('src/examples.js')))
   .replace('/*THREE*/', () => '/* three.js r147 — MIT License, (c) 2010-2022 three.js authors (vendor/three.LICENSE) */\n' + safe(rd('vendor/three.min.js')))
   .replace('/*UI*/', () => safe(rd('dist/ui.js')));

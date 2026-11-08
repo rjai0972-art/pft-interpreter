@@ -81,7 +81,7 @@ and the single-file browser version (`PulmCritDaddy_standalone.html`) always wor
 - Code signing is optional and not set up. For Windows add a signing certificate to the build; for Mac add an Apple Developer ID and notarization.
   Until then the first-launch steps above are needed.
 
-## How the reading is built (version 8.3)
+## How the reading is built (version 8.4)
 
 The rules layer computes every measurement state before any wording is chosen (ERS/ATS 2022 z-scores and the LLN;
 a reviewed adult phrase catalog anchored to the ERS/ATS 2022, ATS/ERS 2019, ERS/ATS 2023, ERS/ATS 2017, ERS 2019 and
@@ -332,7 +332,27 @@ card); in the scanning lab it follows the sliders and the live picture; in the r
 painted on the plane you have cut through the model heart. Each atlas card now links to The POCUS Atlas
 (thepocusatlas.com, CC BY-NC 4.0) and its "Add your own image or clip" slot takes a GIF, MP4 or WebM as well as a
 still, with a credit line — so a clip saved from the Atlas (or your own de-identified loop) sits under the view it
-shows, kept on the device only. The echo area also gets a case logbook for the
+shows, kept on the device only. Version 8.4 reframes the front door as a fellow's guide through PCCM
+fellowship — the areas grouped by where the fellow stands (clinic, bronchoscopy suite, ICU, the probe, the record),
+a "where you are" strip with the resume link, the case bank, the echo logbook's counters against the 150 TTE / 50
+TEE targets and the next NBE CCEeXAM date, and a boards-and-certificates tile — and adds two labs. The conduction
+bench (Cardiac conduction & ECG → "The conduction system, element by element") makes every element of the system a
+dial — sinus node and rhythm (sinus, AF, flutter, arrest), the atria and Bachmann's bundle, the AV node and its four
+behaviours, the His bundle, the right bundle, the left bundle and its two fascicles (open, delayed, blocked), the
+Purkinje speed, an accessory pathway with three insertion sites, an ectopic focus (PVCs, pacing, VT) at four sites,
+the escape pacemakers, the QT and the potassium — and every wall of the ventricles a mass (infarct to hypertrophy),
+an ischaemia and an injury; the activation is computed from what still conducts (a wall whose path is blocked is
+reached muscle to muscle from its neighbours, late and slow, with the wavefront pointing from there), the twelve leads
+are written from that sequence, a panel draws every region's contribution to any lead and their sum, and the
+reading at the bottom — rhythm, PR, QRS width and bundle-branch morphology from V1 and V6, axis and the fascicular
+blocks, ST shifts and Q waves by territory, voltage criteria, T waves, QT, hyperkalaemia — is made from the traces,
+not the settings; twenty-nine presets start it. The ECMO circuit lab gains vasoactive drips with titration —
+norepinephrine, vasopressin, epinephrine, phenylephrine, dopamine, dobutamine, milrinone, angiotensin II, inhaled
+nitric oxide, nitroprusside — each acting through a dose–response on the systemic resistance, the contractility, the
+heart rate, the venous tone and the pulmonary resistance before the circuit runs, with the norepinephrine-equivalent
+dose, the heart rate, the MAP (now on VV too) and the right ventricle's load against the PVR on the console, and six
+new presets (the pressor that shuts the valve, the inodilator that opens it, vasoplegia and vasopressin, dobutamine
+on VV, RV failure and its rescue with iNO and milrinone). The echo area also gets a case logbook for the
 boards: each study with a random case code (no identifiers), the date, the setting and the clinical question, your
 role (performed, interpreted, supervised), a practice flag that excludes it from the counts, the views obtained and
 the components not obtainable, twenty-one measurements with stroke volume, cardiac output and index, RVSP, E/A, E/e′,
