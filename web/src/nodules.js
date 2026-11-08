@@ -113,6 +113,10 @@ T.nodules = { title: 'Lung nodules: evaluation and management', kicker: 'Fleisch
     'Other features: cavitation with a thick (> 15 mm) irregular wall suggests cancer, a thin (< 4 mm) wall a benign cause; air bronchograms or bubble-like lucencies within a subsolid nodule favour adenocarcinoma; a feeding artery and draining vein mean an arteriovenous malformation; a nodule next to a bronchus with mucus plugging may be an endobronchial lesion.',
     'Number: a dominant nodule among several is managed on its own merits; many small nodules without a dominant one are more often granulomatous (old infection, sarcoidosis) or, in a patient with a known cancer, metastatic.'] },
   { widget: 'nodtypes' },
+  { h: 'Real nodules: call them, measure them', p: 'Six findings cut from a real chest CT at the acquisition’s full resolution — four nodules and two vessels that look like one on a single slice. Scroll through each, window it, probe the density, put the calipers on it (long axis, then short), say whether it is a nodule and what kind, and check: the voxels give the reference measurement and the plan follows from your numbers.' },
+  { widget: 'nodreal' },
+  { h: 'Find them on the whole scan', p: 'The same four nodules are somewhere in the full axial series — the way they arrive on a reading list. Lung window, scroll steadily, and mark what you find; the two vessels are there to be scrolled through.' },
+  { widget: 'nodhunt' },
   { h: 'Growth is the behaviour that decides', ul: [
     'Volume doubling time (VDT) of most solid cancers is 20–400 days; subsolid cancers double in 400–800 days or longer. A VDT under 20–30 days points to infection or inflammation, over 400 days (solid) to a benign nodule — but slow-growing adenocarcinomas are the exception, which is why ground-glass nodules are followed for years.',
     'A 2-mm increase in diameter is a 73% increase in volume for a 6-mm nodule: growth is easier to see in volume. Fleischner counts growth as ≥ 2 mm in diameter (measurement error is about 1.5 mm); Lung-RADS as > 1.5 mm in mean diameter within 12 months; BTS as ≥ 25% in volume.',

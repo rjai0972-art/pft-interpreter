@@ -19,10 +19,10 @@ const total = JSON.stringify(CT).length; ok(total < 3.2e6, 'the CT stack stays u
 ok(/Slicer/.test(CT.credit) && /licen/i.test(CT.credit), 'the credit names 3D Slicer and the licence');
 ok(chest.slices.map(s => s.z).every((z, i, a) => i === 0 || z > a[i - 1]), 'slices are in ascending order');
 // ---- the echo volume
-ok(ER && ER.frames.length === 9 && ER.phases === 9 && ER.dims.length === 3 && ER.frames.every(f => /^data:image\/webp;base64,/.test(f)), 'nine phases of the real volume as WebP mosaics');
+ok(ER && ER.frames.length === 18 && ER.phases === 18 && ER.dims.length === 3 && ER.frames.every(f => /^data:image\/webp;base64,/.test(f)), 'the phases of the real volume as WebP mosaics');
 ok(ER.dims[0] === 224 && ER.dims[1] === 176 && ER.dims[2] === 208 && Math.abs(ER.sp[0] - 0.833) < 0.002 && ER.cols * ER.rows >= ER.dims[2] && Math.abs(ER.period - 0.86) < 0.03, 'the volume at the acquisition’s full resolution (v8.3), the mosaic layout and the cardiac period');
 ok(ER.views.length === 7 && ER.views.every(v => v.labels.length >= 2 && v.note.length > 40) && ER.views.filter(v => v.c !== undefined).length === 3 && ER.views.filter(v => v.phi !== undefined).length === 4, 'seven real views: four long axes and three short axes, each labelled and explained');
-ok(JSON.stringify(ER).length < 3.2e6 && /SlicerHeart/.test(ER.credit), 'the echo volume stays under 3.2 MB and credits SlicerHeart');
+ok(JSON.stringify(ER).length < 5.0e6 && ER.phases === 18 && ER.frames.length === 18 && /SlicerHeart/.test(ER.credit), 'all eighteen phases of the echo volume under 5 MB, crediting SlicerHeart');
 // ---- the logbook logic
 const E = require('../src/echo.js'), L = E.LOG;
 ok(Object.keys(E.topics).length === 9 && E.groups[2].ids.indexOf('echo_log') >= 0 && E.topics.echo_log.blocks.some(b => b.widget === 'echolog'), 'the logbook topic sits in the practice group');

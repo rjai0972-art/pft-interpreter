@@ -304,7 +304,11 @@ function echoQuizFig() {
 }
 
 /* ===== v8.2: the real volume — a 3-D apical acquisition resliced in the browser ===== */
-const EHR = { vol: null, loading: false, cbs: [], W: 300, H: 360, C: 260, half: 80, depth: 160, loops: [], sharpen: true };
+const EHR = { vol: null, loading: false, cbs: [], W: 300, H: 360, C: 260, half: 80, depth: 160, loops: [], sharpen: true, rev: 5, smooth: true, tgc: true, persist: true, gain: 1.0, dr: 1.0, map: 'clinical' };
+/* v8.5 rev 1: the plane is sampled at the pixels the canvas will show (up to 560 wide), not upscaled from a small grid */
+/* the sampling grid: square, because the sector is as wide as it is deep (160 × 160 mm) and the C-plane is square (150 mm); the
+   pixels are therefore isotropic and the canvas is shown at its own aspect (v8.5 rev 5: the earlier 1.2 ratio squashed the heart) */
+function ehrSize(cv, isC) { const dpr = Math.min(2, window.devicePixelRatio || 1), cw = Math.max(240, cv.clientWidth || 320); const W = Math.max(320, Math.min(560, Math.round(cw * dpr))); return isC ? [Math.round(W * 0.87), Math.round(W * 0.87)] : [W, W]; }
 const EHR_MAP = { a4c: 'a4c', a5c: 'a5c', a2c: 'a2c', a3c: 'a3c', psax_mv: 'sax_mv', psax_pm: 'sax_pm' };
 function ehrData() { return typeof PFT_ECHOREAL !== 'undefined' ? PFT_ECHOREAL : window.PFT_ECHOREAL; }
 function ehrView(id) { const d = ehrData(); return d ? d.views.filter(v => v.id === id)[0] : null; }
@@ -328,11 +332,21 @@ function ehrLoad(cb) {
     im.src = src;
   });
 }
+/* v8.5 rev 4: the part of the plane on the screen — the whole sector, or a 2× window around a point (a true re-sampling, not a pixel zoom) */
+function ehrWindow(p, W, H) {
+  const isC = p.c !== undefined, half = isC ? (p.half || 75) : (p.half || EHR.half), depth = p.depth || EHR.depth;
+  const full = isC ? { l0: -half, l1: half, d0: -half, d1: half } : { l0: -half, l1: half, d0: 0, d1: depth };
+  const z = p.zoom; if (!z) return full;
+  const wl = (full.l1 - full.l0) / (2 * z.k), wd = (full.d1 - full.d0) / (2 * z.k);
+  const cl = Math.max(full.l0 + wl, Math.min(full.l1 - wl, z.l)), cd = Math.max(full.d0 + wd, Math.min(full.d1 - wd, z.d));
+  return { l0: cl - wl, l1: cl + wl, d0: cd - wd, d1: cd + wd, zoom: z.k };
+}
 /* one plane of the volume at a fractional phase: a rectangular (lateral, depth) grid masked to the pyramid; or a C-plane (x, y) at depth c */
 function ehrPlane(p, phaseF, W, H) {
   const d = ehrData(), vols = EHR.vol, out = new Uint8ClampedArray(W * H), mask = new Uint8Array(W * H); out.mask = mask; if (!d || !vols) return out;
   const X = d.dims[0], Y = d.dims[1], Z = d.dims[2], sx = d.sp[0], sy = d.sp[1], sz = d.sp[2], ax = d.apex[0], ay = d.apex[1], az = d.apex[2];
-  const nP = vols.length, f0 = Math.floor(phaseF) % nP, f1 = (f0 + 1) % nP, w1 = phaseF - Math.floor(phaseF), w0 = 1 - w1, v0 = vols[f0], v1 = vols[f1];
+  const nP = vols.length, dense = nP >= 12;   // v8.5 rev 3: with every frame stored, the nearest frame is shown as it was acquired — no blend between two moments
+  const f0 = dense ? Math.round(phaseF) % nP : Math.floor(phaseF) % nP, f1 = (f0 + 1) % nP, w1 = dense ? 0 : phaseF - Math.floor(phaseF), w0 = 1 - w1, v0 = vols[f0], v1 = vols[f1];
   const tanA = Math.tan((d.halfAngle || 36) * Math.PI / 180);
   const samp = (vx, vy, vz) => {
     if (vx < 0 || vy < 0 || vz < 0 || vx >= X - 1 || vy >= Y - 1 || vz >= Z - 1) return 0;
@@ -342,16 +356,17 @@ function ehrPlane(p, phaseF, W, H) {
     return w1 ? tri(v0) * w0 + tri(v1) * w1 : tri(v0);
   };
   if (p.c !== undefined) {
-    const half = p.half || 75;
-    for (let j = 0; j < H; j++) { const my = -half + 2 * half * j / (H - 1); for (let i = 0; i < W; i++) { const mx = -half + 2 * half * i / (W - 1); out[j * W + i] = samp((ax + mx) / sx, (ay + my) / sy, (az + p.c) / sz); mask[j * W + i] = 1; } }
+    const win = ehrWindow(p, W, H);
+    for (let j = 0; j < H; j++) { const my = win.d0 + (win.d1 - win.d0) * j / (H - 1); for (let i = 0; i < W; i++) { const mx = win.l0 + (win.l1 - win.l0) * i / (W - 1); out[j * W + i] = samp((ax + mx) / sx, (ay + my) / sy, (az + p.c) / sz); mask[j * W + i] = 1; } }
     return out;
   }
   const phi = (p.phi || 0) * Math.PI / 180, tau = (p.tau || 0) * Math.PI / 180, depth = p.depth || EHR.depth, half = p.half || EHR.half;
   const ux = Math.cos(phi), uy = Math.sin(phi), wx = -Math.sin(phi) * Math.sin(tau), wy = Math.cos(phi) * Math.sin(tau), wz = Math.cos(tau);
+  const win = ehrWindow(p, W, H);
   for (let j = 0; j < H; j++) {
-    const dd = depth * j / (H - 1), lim = dd * tanA + 1;
+    const dd = win.d0 + (win.d1 - win.d0) * j / (H - 1), lim = dd * tanA + 1;
     for (let i = 0; i < W; i++) {
-      const l = -half + 2 * half * i / (W - 1); if (Math.abs(l) > lim) { out[j * W + i] = 0; continue; }
+      const l = win.l0 + (win.l1 - win.l0) * i / (W - 1); if (Math.abs(l) > lim) { out[j * W + i] = 0; continue; }
       out[j * W + i] = samp((ax + l * ux + dd * wx) / sx, (ay + l * uy + dd * wy) / sy, (az + dd * wz) / sz); mask[j * W + i] = 1;
     }
   }
@@ -361,7 +376,8 @@ function ehrPlane(p, phaseF, W, H) {
    than the voxels), a noise floor, a little gain and a gentle gamma; applied in place and cached as a 256-entry curve */
 function ehrEnhance(gray, W, H, opts) {
   opts = opts || {};
-  const amount = opts.amount === undefined ? 1.1 : opts.amount, floor = opts.floor === undefined ? 16 : opts.floor, gain = opts.gain === undefined ? 1.18 : opts.gain, gamma = opts.gamma === undefined ? 0.93 : opts.gamma;
+  const amount = opts.amount === undefined ? 1.1 : opts.amount, floor = opts.floor === undefined ? 16 : opts.floor, gain = (opts.gain === undefined ? 1.18 : opts.gain) * (EHR.gain || 1), gamma = (opts.gamma === undefined ? 0.93 : opts.gamma) / (EHR.dr || 1);
+  if (opts.passes > 1) { const blurred = ehrBlur(gray, W, H, opts.passes); for (let i = 0; i < W * H; i++) { const x = gray[i]; gray[i] = Math.max(0, Math.min(255, x + amount * (x - blurred[i]))); } opts = Object.assign({}, opts, { amount: 0 }); }
   const key = amount + '/' + floor + '/' + gain + '/' + gamma;
   if (!ehrEnhance.lut || ehrEnhance.key !== key) { const lut = new Uint8ClampedArray(256); for (let v = 0; v < 256; v++) { const a = Math.min(1, Math.max(0, (v - floor) / (255 - floor)) * gain); lut[v] = Math.round(Math.pow(a, gamma) * 255); } ehrEnhance.lut = lut; ehrEnhance.key = key; }
   const lut = ehrEnhance.lut;
@@ -377,39 +393,121 @@ function ehrEnhance(gray, W, H, opts) {
   } else for (let i = 0; i < W * H; i++) gray[i] = lut[gray[i]];
   return gray;
 }
+/* v8.5 rev 2: speckle-aware smoothing — a 3×3 bilateral pass (neighbours count only when they are of similar brightness, so
+   edges keep their step while the speckle inside a wall averages out), then a 5-tap unsharp mask; and auto-TGC, which flattens
+   the brightness along depth the way the scanner's time-gain compensation does */
+function ehrSmooth(gray, W, H, sigma) {
+  sigma = sigma || 26;
+  const src = ehrSmooth.buf && ehrSmooth.buf.length === W * H ? ehrSmooth.buf : (ehrSmooth.buf = new Uint8ClampedArray(W * H));
+  src.set(gray);
+  if (!ehrSmooth.lut) { ehrSmooth.lut = new Float32Array(256); }
+  const lut = ehrSmooth.lut; if (ehrSmooth.sig !== sigma) { for (let i = 0; i < 256; i++) lut[i] = Math.exp(-(i * i) / (2 * sigma * sigma)); ehrSmooth.sig = sigma; }
+  for (let j = 1; j < H - 1; j++) {
+    const o = j * W;
+    for (let i = 1; i < W - 1; i++) {
+      const c = src[o + i]; if (c === 0) continue;
+      let acc = 4 * c, wsum = 4, v, w;
+      v = src[o + i - 1]; w = 2 * lut[Math.abs(v - c)]; acc += w * v; wsum += w;
+      v = src[o + i + 1]; w = 2 * lut[Math.abs(v - c)]; acc += w * v; wsum += w;
+      v = src[o + i - W]; w = 2 * lut[Math.abs(v - c)]; acc += w * v; wsum += w;
+      v = src[o + i + W]; w = 2 * lut[Math.abs(v - c)]; acc += w * v; wsum += w;
+      v = src[o + i - W - 1]; w = lut[Math.abs(v - c)]; acc += w * v; wsum += w;
+      v = src[o + i - W + 1]; w = lut[Math.abs(v - c)]; acc += w * v; wsum += w;
+      v = src[o + i + W - 1]; w = lut[Math.abs(v - c)]; acc += w * v; wsum += w;
+      v = src[o + i + W + 1]; w = lut[Math.abs(v - c)]; acc += w * v; wsum += w;
+      gray[o + i] = acc / wsum;
+    }
+  }
+  return gray;
+}
+function ehrTgc(gray, W, H, mask) {
+  const prof = new Float32Array(H), cnt = new Float32Array(H);
+  for (let j = 0; j < H; j++) { const o = j * W; let s = 0, n = 0; for (let i = 0; i < W; i++) if (mask[o + i]) { s += gray[o + i]; n++; } prof[j] = n ? s / n : 0; cnt[j] = n; }
+  // smooth the depth profile and normalise toward its upper-middle level, within limits
+  const sm = new Float32Array(H), R = Math.round(H * 0.08);
+  for (let j = 0; j < H; j++) { let s = 0, n = 0; for (let k = Math.max(0, j - R); k <= Math.min(H - 1, j + R); k++) if (cnt[k] > W * 0.1) { s += prof[k]; n++; } sm[j] = n ? s / n : 0; }
+  let ref = 0, nr = 0; for (let j = Math.round(H * 0.25); j < Math.round(H * 0.6); j++) if (sm[j] > 0) { ref += sm[j]; nr++; } ref = nr ? ref / nr : 0;
+  if (!ref) return gray;
+  for (let j = 0; j < H; j++) { const g = sm[j] > 0 ? Math.max(0.8, Math.min(1.35, ref / sm[j])) : 1; if (Math.abs(g - 1) < 0.02) continue; const o = j * W; for (let i = 0; i < W; i++) { const v = gray[o + i] * g; gray[o + i] = v > 255 ? 255 : v; } }
+  return gray;
+}
+/* a separable (1 2 1) blur repeated `passes` times — the low-pass of the unsharp mask, wide enough at display resolution to lift the walls rather than the pixels */
+function ehrBlur(gray, W, H, passes) {
+  const a = ehrBlur.a && ehrBlur.a.length === W * H ? ehrBlur.a : (ehrBlur.a = new Float32Array(W * H)), b = ehrBlur.b && ehrBlur.b.length === W * H ? ehrBlur.b : (ehrBlur.b = new Float32Array(W * H));
+  a.set(gray);
+  for (let p = 0; p < passes; p++) {
+    for (let j = 0; j < H; j++) { const o = j * W; b[o] = a[o]; b[o + W - 1] = a[o + W - 1]; for (let i = 1; i < W - 1; i++) b[o + i] = (a[o + i - 1] + 2 * a[o + i] + a[o + i + 1]) * 0.25; }
+    for (let i = 0; i < W; i++) { a[i] = b[i]; a[(H - 1) * W + i] = b[(H - 1) * W + i]; for (let j = 1; j < H - 1; j++) { const idx = j * W + i; a[idx] = (b[idx - W] + 2 * b[idx] + b[idx + W]) * 0.25; } }
+  }
+  return a;
+}
 function ehrPaint(cv, gray, W, H, opts) {
   opts = opts || {};
-  if (EHR.sharpen && !opts.raw) ehrEnhance(gray, W, H);
+  if (EHR.sharpen && !opts.raw) {
+    if (EHR.tgc && gray.mask) ehrTgc(gray, W, H, gray.mask);
+    if (EHR.smooth) ehrSmooth(gray, W, H, 22);
+    ehrEnhance(gray, W, H, { amount: 1.2, passes: 2 });
+    // v8.5 rev 3: persistence — a quarter of the previous frame carried over, as the scanner does, to calm the speckle between frames
+    if (EHR.persist && !opts.still) {
+      const key = opts.key || 'default', prev = ehrPaint.prev || (ehrPaint.prev = {}), last = prev[key];
+      if (last && last.length === W * H) { for (let i = 0; i < W * H; i++) gray[i] = gray[i] * 0.75 + last[i] * 0.25; }
+      prev[key] = Uint8ClampedArray.from(gray);
+    }
+  }
   const ctx = cv.getContext('2d'), off = ehrPaint.off || (ehrPaint.off = document.createElement('canvas'));
   off.width = W; off.height = H; const octx = off.getContext('2d'), data = octx.createImageData(W, H);
   for (let i = 0; i < W * H; i++) { const g = gray[i]; data.data[i * 4] = g; data.data[i * 4 + 1] = g; data.data[i * 4 + 2] = g; data.data[i * 4 + 3] = 255; }
   octx.putImageData(data, 0, 0);
-  const dpr = Math.min(2, window.devicePixelRatio || 1), cw = cv.clientWidth || 320, ch = Math.round(cw * H / W);
+  // the grey map: a clinical S-curve (black stays black, the mid-greys open up), linear, or a warm tint
+  const map = ehrMap(EHR.map);
+  for (let i = 0; i < W * H; i++) { const g = gray[i], o = i * 4; data.data[o] = map.r[g]; data.data[o + 1] = map.g[g]; data.data[o + 2] = map.b[g]; }
+  octx.putImageData(data, 0, 0);
+  const dpr = Math.min(2, window.devicePixelRatio || 1), cw = cv.clientWidth || 320, bar = opts.bar === false ? 0 : 22, ch = Math.round(cw * H / W) + bar, ih = ch - bar;
   if (cv.width !== Math.round(cw * dpr) || cv.height !== Math.round(ch * dpr)) { cv.width = Math.round(cw * dpr); cv.height = Math.round(ch * dpr); }
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.imageSmoothingEnabled = true;
-  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, cw, ch); ctx.drawImage(off, 0, 0, cw, ch);
-  const sx = cw / W, sy = ch / H;
-  if (opts.labels && opts.view && opts.view.labels) {
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, cw, ch); ctx.drawImage(off, 0, 0, cw, ih);
+  const sx = cw / W, sy = ih / H, view = opts.view || {}, win = ehrWindow(view, W, H), isC = view.c !== undefined;
+  const px = (l, d) => [(l - win.l0) / (win.l1 - win.l0) * (W - 1) * sx, (d - win.d0) / (win.d1 - win.d0) * (H - 1) * sy];
+  if (opts.labels && view.labels) {
     ctx.font = '600 11px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineWidth = 3; ctx.lineJoin = 'round';
-    opts.view.labels.forEach(L => {
-      let x, y;
-      if (opts.view.c !== undefined) { const half = opts.view.half || 75; x = (L[1] + half) / (2 * half) * (W - 1) * sx; y = (L[2] + half) / (2 * half) * (H - 1) * sy; }
-      else { x = (L[1] + EHR.half) / (2 * EHR.half) * (W - 1) * sx; y = L[2] / EHR.depth * (H - 1) * sy; }
-      ctx.strokeStyle = 'rgba(0,0,0,0.85)'; ctx.strokeText(L[0], x, y); ctx.fillStyle = '#ffe28a'; ctx.fillText(L[0], x, y);
-    });
+    view.labels.forEach(L => { const q = px(L[1], L[2]); if (q[0] < 0 || q[0] > cw || q[1] < 0 || q[1] > ih) return; ctx.strokeStyle = 'rgba(0,0,0,0.85)'; ctx.strokeText(L[0], q[0], q[1]); ctx.fillStyle = '#ffe28a'; ctx.fillText(L[0], q[0], q[1]); });
   }
-  // the chrome: depth marks for a B-plane, a scale for a C-plane, the title
+  // the chrome: the sector's edges, centimetre ticks on the left, a scale on a C-plane, the readout, the title
+  ctx.strokeStyle = 'rgba(143,167,184,0.55)'; ctx.lineWidth = 1;
+  if (!isC && !win.zoom) { const tanA = Math.tan((ehrData().halfAngle || 36) * Math.PI / 180), a = px(0, 0), b1 = px(-EHR.depth * tanA, EHR.depth), b2 = px(EHR.depth * tanA, EHR.depth); ctx.beginPath(); ctx.moveTo(b1[0], b1[1]); ctx.lineTo(a[0], a[1]); ctx.lineTo(b2[0], b2[1]); ctx.stroke(); }
   ctx.fillStyle = '#8fa7b8'; ctx.font = '10px system-ui, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-  if (opts.view && opts.view.c !== undefined) { const half = opts.view.half || 75; const pxcm = 10 / (2 * half) * (W - 1) * sx; ctx.fillRect(6, ch - 10, pxcm * 2, 2); ctx.fillText('2 cm', 6, ch - 14); ctx.fillText('C-plane at ' + opts.view.c + ' mm', 6, 12); }
-  else { for (let dcm = 5; dcm * 10 < EHR.depth; dcm += 5) { const y = dcm * 10 / EHR.depth * (H - 1) * sy; ctx.fillText(dcm + ' cm', 6, y + 3); ctx.fillRect(2, y, 3, 1); } }
-  if (opts.title) { ctx.fillStyle = '#f6efd6'; ctx.font = '600 11px system-ui, sans-serif'; ctx.textAlign = 'right'; ctx.fillText(opts.title, cw - 6, ch - 6); }
+  if (isC) { const pxcm = 10 / (win.l1 - win.l0) * (W - 1) * sx; ctx.fillRect(6, ih - 10, pxcm * 2, 2); ctx.fillText('2 cm', 6, ih - 14); ctx.fillText('C-plane at ' + view.c + ' mm' + (win.zoom ? ' · ×' + win.zoom : ''), 6, 12); }
+  else { for (let dcm = 1; dcm * 10 <= win.d1; dcm++) { const y = px(0, dcm * 10)[1]; if (y < 0 || y > ih) continue; ctx.fillRect(2, y, dcm % 5 === 0 ? 6 : 3, 1); if (dcm % 5 === 0) ctx.fillText(dcm + ' cm', 10, y + 3); } ctx.fillText((win.zoom ? '×' + win.zoom + ' · ' : '') + Math.round(win.d1 / 10) + ' cm · ' + (2 * (ehrData().halfAngle || 36)) + '°', 6, 12); }
+  if (opts.title) { ctx.fillStyle = '#f6efd6'; ctx.font = '600 11px system-ui, sans-serif'; ctx.textAlign = 'right'; ctx.fillText(opts.title, cw - 6, ih - 6); }
   if (opts.phaseText) { ctx.fillStyle = '#8fa7b8'; ctx.font = '10px system-ui, sans-serif'; ctx.textAlign = 'right'; ctx.fillText(opts.phaseText, cw - 6, 12); }
+  // the phase bar: a trace of the cycle with the cursor on the frame on show
+  if (bar) {
+    ctx.fillStyle = '#0b0e12'; ctx.fillRect(0, ih, cw, bar);
+    const y0 = ih + bar * 0.62, amp = bar * 0.42; ctx.strokeStyle = '#59c27a'; ctx.lineWidth = 1.2; ctx.beginPath();
+    for (let i = 0; i <= cw; i++) { const u = i / cw; let v = 0; const q = (u + 0.02) % 1; if (q < 0.03) v = 0.9 * Math.sin(Math.PI * q / 0.03); else if (q > 0.035 && q < 0.055) v = -0.25 * Math.sin(Math.PI * (q - 0.035) / 0.02); else if (q > 0.22 && q < 0.4) v = 0.3 * Math.sin(Math.PI * (q - 0.22) / 0.18); else if (q > 0.86 && q < 0.95) v = 0.12 * Math.sin(Math.PI * (q - 0.86) / 0.09); const y = y0 - v * amp; if (i) ctx.lineTo(i, y); else ctx.moveTo(i, y); }
+    ctx.stroke();
+    if (opts.frame !== undefined) { const x = opts.frame * cw; ctx.strokeStyle = '#ffe28a'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x, ih + 2); ctx.lineTo(x, ch - 2); ctx.stroke(); }
+    ctx.fillStyle = '#8fa7b8'; ctx.font = '9px system-ui, sans-serif'; ctx.textAlign = 'right'; ctx.fillText(opts.fr ? opts.fr + ' Hz' : '', cw - 4, ch - 4);
+  }
+}
+/* the grey maps as three 256-entry channels */
+function ehrMap(kind) {
+  const cache = ehrMap.cache || (ehrMap.cache = {});
+  if (cache[kind]) return cache[kind];
+  const r = new Uint8ClampedArray(256), g = new Uint8ClampedArray(256), b = new Uint8ClampedArray(256);
+  for (let i = 0; i < 256; i++) {
+    const x = i / 255; let y = x;
+    if (kind === 'clinical' || kind === 'sepia') { y = x < 0.5 ? 0.5 * Math.pow(2 * x, 1.15) : 1 - 0.5 * Math.pow(2 * (1 - x), 1.35); }
+    const v = Math.round(y * 255);
+    if (kind === 'sepia') { r[i] = Math.min(255, v * 1.06); g[i] = v * 0.97; b[i] = v * 0.82; } else { r[i] = v; g[i] = v; b[i] = v; }
+  }
+  return (cache[kind] = { r: r, g: g, b: b });
 }
 /* a self-contained real loop: a canvas, play/pause, a frame scrubber; `getView` returns the plane to draw each frame */
 function ehrLoop(getView, opts) {
   opts = opts || {};
   const d = ehrData(), W = opts.W || EHR.W, H = opts.H || EHR.H;
-  const cv = h('canvas', { class: 'eh-canvas ehr-canvas', width: 320, height: Math.round(320 * H / W), 'aria-label': opts.aria || 'Real echo loop' });
+  const cv = h('canvas', { class: 'eh-canvas ehr-canvas', width: 320, height: 320 + 22, 'aria-label': opts.aria || 'Real echo loop' });
   const st = { playing: opts.playing !== false, t0: performance.now(), frame: 0, timer: 0, labels: opts.labels !== false, alive: true };
   const scrub = h('input', { type: 'range', min: 0, max: 100, step: 1, value: 0, class: 'ehr-scrub', 'aria-label': 'Frame', oninput: (e) => { st.playing = false; play.textContent = '▶'; st.frame = +e.target.value / 100; draw(); } });
   const play = h('button', { type: 'button', class: 'btn sm', 'data-ehr-play': '1', text: st.playing ? '❚❚' : '▶', onclick: () => { st.playing = !st.playing; play.textContent = st.playing ? '❚❚' : '▶'; if (st.playing) { st.t0 = performance.now() - st.frame * d.period * 1000; tick(); } } });
@@ -421,22 +519,40 @@ function ehrLoop(getView, opts) {
     if (!cv.isConnected && st.started) { st.alive = false; return; }
     const view = getView(); if (!view) return;
     if (!EHR.vol) { const ctx = cv.getContext('2d'); ctx.fillStyle = '#000'; ctx.fillRect(0, 0, cv.width, cv.height); ctx.fillStyle = '#9aa0a8'; ctx.font = '13px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('loading the real volume…', cv.width / 2, cv.height / 2); return; }
-    const phaseF = st.frame * d.phases, Wv = view.c !== undefined ? EHR.C : W, Hv = view.c !== undefined ? EHR.C : H;
+    const phaseF = st.frame * d.phases, sz = ehrSize(cv, view.c !== undefined), Wv = sz[0], Hv = sz[1];
     const gray = ehrPlane(view, phaseF, Wv, Hv);
-    ehrPaint(cv, gray, Wv, Hv, { labels: st.labels, view: view, title: opts.title === undefined ? (view.name || '') : opts.title, phaseText: Math.round(st.frame * 100) + '% of the cycle' });
+    ehrPaint(cv, gray, Wv, Hv, { labels: st.labels, view: view, title: opts.title === undefined ? (view.name || '') : opts.title, phaseText: Math.round(st.frame * 100) + '% of the cycle', key: opts.id || '1', still: !st.playing, frame: st.frame, fr: Math.round(d.phases / d.period) });
     if (opts.onFrame) opts.onFrame(gray, Wv, Hv, view, gray.mask, st.frame);
   };
+  // v8.5 rev 4: click to zoom ×2 on a point (re-sampled from the volume), click again to zoom out
+  cv.addEventListener('click', (e) => {
+    const view = getView(); if (!view) return;
+    const r = cv.getBoundingClientRect(), bar = 22, ih = r.height - bar; if (e.clientY - r.top > ih) return;
+    if (st.zoom) { st.zoom = null; } else { const win = ehrWindow(Object.assign({}, view, { zoom: null }), 2, 2); const l = win.l0 + (e.clientX - r.left) / r.width * (win.l1 - win.l0), dd = win.d0 + (e.clientY - r.top) / ih * (win.d1 - win.d0); st.zoom = { k: 2, l: l, d: dd }; }
+    draw();
+  });
+  cv.style.cursor = 'zoom-in';
+  const getView0 = getView; getView = () => { const v = getView0(); if (!v) return v; return st.zoom ? Object.assign({}, v, { zoom: st.zoom }) : (v.zoom ? Object.assign({}, v, { zoom: null }) : v); };
   const tick = () => {
     if (!st.alive) return;
     if (!cv.isConnected) { if (st.started) { st.alive = false; return; } }
     else st.started = true;
     if (st.playing) { st.frame = ((performance.now() - st.t0) / 1000 / d.period) % 1; scrub.value = String(Math.round(st.frame * 100)); draw(); }
-    st.timer = setTimeout(tick, 70);
+    st.timer = setTimeout(tick, d.phases >= 12 ? Math.max(30, Math.round(d.period * 1000 / d.phases)) : 70);
   };
   ehrLoad(() => draw());
-  const wrap = h('div', { class: 'ehr-loop', 'data-ehr-loop': opts.id || '1' }, [cv, h('div', { class: 'ehr-ctl' }, [play, scrub, lab, sharp])]);
+  const moreRow = h('div', { class: 'ehr-more', 'data-ehr-more': '1', hidden: true }, [
+    (() => { const id = uid('ehrg'), val = h('span', { class: 'odc-val', text: Math.round(EHR.gain * 100) + '%' }); return h('label', { class: 'odc-sl', for: id }, [h('span', { class: 'nod-l', text: 'Gain' }), h('input', { type: 'range', id: id, min: 0.6, max: 1.6, step: 0.05, value: EHR.gain, 'data-ehr-gain': '1', oninput: (e) => { EHR.gain = +e.target.value; val.textContent = Math.round(EHR.gain * 100) + '%'; draw(); } }), val]); })(),
+    (() => { const id = uid('ehrd'), val = h('span', { class: 'odc-val', text: Math.round(EHR.dr * 100) + '%' }); return h('label', { class: 'odc-sl', for: id }, [h('span', { class: 'nod-l', text: 'Dynamic range' }), h('input', { type: 'range', id: id, min: 0.6, max: 1.5, step: 0.05, value: EHR.dr, 'data-ehr-dr': '1', oninput: (e) => { EHR.dr = +e.target.value; val.textContent = Math.round(EHR.dr * 100) + '%'; draw(); } }), val]); })(),
+    (() => { const id = uid('ehrm'); return h('label', { class: 'nod-f', for: id }, [h('span', { class: 'nod-l', text: 'Grey map' }), h('select', { id: id, 'data-ehr-map': '1', onchange: (e) => { EHR.map = e.target.value; draw(); } }, [['clinical', 'Clinical (S-curve)'], ['linear', 'Linear'], ['sepia', 'Warm tint']].map(o => h('option', { value: o[0], selected: EHR.map === o[0], text: o[1] })))]); })(),
+    (() => { const id = uid('ehrs2'); return h('label', { class: 'chk-inline', for: id }, [h('input', { type: 'checkbox', id: id, checked: EHR.smooth, 'data-ehr-smooth': '1', onchange: (e) => { EHR.smooth = e.target.checked; draw(); } }), 'Speckle smoothing']); })(),
+    (() => { const id = uid('ehrt'); return h('label', { class: 'chk-inline', for: id }, [h('input', { type: 'checkbox', id: id, checked: EHR.tgc, 'data-ehr-tgc': '1', onchange: (e) => { EHR.tgc = e.target.checked; draw(); } }), 'Auto-TGC']); })(),
+    (() => { const id = uid('ehrp'); return h('label', { class: 'chk-inline', for: id }, [h('input', { type: 'checkbox', id: id, checked: EHR.persist, 'data-ehr-persist': '1', onchange: (e) => { EHR.persist = e.target.checked; draw(); } }), 'Persistence']); })()
+  ]);
+  const more = h('button', { type: 'button', class: 'lnk', 'data-ehr-moretoggle': '1', text: 'Display ▾', onclick: () => { moreRow.hidden = !moreRow.hidden; more.textContent = moreRow.hidden ? 'Display ▾' : 'Display ▴'; } });
+  const wrap = h('div', { class: 'ehr-loop', 'data-ehr-loop': opts.id || '1' }, [cv, h('div', { class: 'ehr-ctl' }, [play, scrub, lab, sharp, more]), moreRow]);
   requestAnimationFrame(() => { draw(); tick(); });
-  wrap.ehr = { draw: draw, state: st };
+  wrap.ehr = { draw: draw, state: st, frame: () => st.frame };
   return wrap;
 }
 /* the atlas card's real picture for a view, if the volume holds it */
@@ -473,6 +589,8 @@ function ehrLabRefresh() {
   const rd = document.querySelector('[data-ehr-readout]'); if (rd) rd.textContent = EHRL.mode === 'b' ? 'Plane along the beam · rotation ' + EHRL.phi + '° · tilt ' + EHRL.tau + '°' : 'Plane across the beam at ' + EHRL.c + ' mm';
   document.querySelectorAll('[data-ehr-mode]').forEach(b => b.setAttribute('aria-checked', String(b.getAttribute('data-ehr-mode') === EHRL.mode)));
   if (EHRL.loop && EHRL.loop.ehr) EHRL.loop.ehr.draw();
+  document.querySelectorAll('[data-ehr-row]').forEach(r => { const k = r.getAttribute('data-ehr-row'); r.hidden = (k === 'c') !== (EHRL.mode === 'c'); const inp = r.querySelector('input'); if (inp && +inp.value !== EHRL[k]) { inp.value = EHRL[k]; const v = r.querySelector('.odc-val'); if (v) v.textContent = EHRL[k] + (k === 'c' ? ' mm' : '°'); } });
+  ehrMovesRender();
   ehrSync3d();
 }
 function ehrCurrentView() {
@@ -496,13 +614,58 @@ function ehrSync3d() {
     h3SetPlaneSpec(inst, { P: pr.P, d: pr.d, l: pr.l, depth: 16, fan: 36, rect: { along: [0, 16], across: [-8, 8] }, title: cur.name || ('Rotation ' + EHRL.phi + '°, tilt ' + EHRL.tau + '°') }, true, aim);
   }
 }
+/* v8.5 rev 5: "turn the probe" — what the picture becomes after each manoeuvre from here, as small reslices at the frame on show;
+   clicking one makes the move. The hand's vocabulary is on each: marker toward a landmark, tail up or down, plane deeper or shallower. */
+function ehrMoves() {
+  if (EHRL.mode === 'c') return [
+    { key: 'c', d: -20, label: 'Shallower', sub: '20 mm toward the apex', apply: () => { EHRL.c = Math.max(40, EHRL.c - 20); } },
+    { key: 'c', d: 20, label: 'Deeper', sub: '20 mm toward the base', apply: () => { EHRL.c = Math.min(120, EHRL.c + 20); } },
+    { key: 'mode', label: 'Along the beam', sub: 'back to a long axis', apply: () => { EHRL.mode = 'b'; } }
+  ];
+  return [
+    { key: 'phi', d: -15, label: 'Rotate clockwise', sub: 'marker toward the right hip', apply: () => { EHRL.phi = (EHRL.phi + 165) % 180; } },
+    { key: 'phi', d: 15, label: 'Rotate counter-clockwise', sub: 'marker toward the left shoulder', apply: () => { EHRL.phi = (EHRL.phi + 15) % 180; } },
+    { key: 'tau', d: -10, label: 'Tilt anteriorly', sub: 'tail down, toward the bed', apply: () => { EHRL.tau = Math.max(-20, EHRL.tau - 10); } },
+    { key: 'tau', d: 10, label: 'Tilt posteriorly', sub: 'tail up', apply: () => { EHRL.tau = Math.min(20, EHRL.tau + 10); } },
+    { key: 'mode', label: 'Across the beam', sub: 'a short axis at ' + EHRL.c + ' mm', apply: () => { EHRL.mode = 'c'; } }
+  ];
+}
+function ehrMoveView(m) {
+  const v = Object.assign({}, ehrCurrentView());
+  if (m.key === 'mode') return EHRL.mode === 'c' ? { phi: EHRL.phi, tau: EHRL.tau } : { c: EHRL.c, half: 75 };
+  if (m.key === 'c') return { c: Math.max(40, Math.min(120, EHRL.c + m.d)), half: 75 };
+  if (m.key === 'phi') return { phi: (EHRL.phi + m.d + 180) % 180, tau: EHRL.tau };
+  return { phi: EHRL.phi, tau: Math.max(-20, Math.min(20, EHRL.tau + m.d)) };
+}
+function ehrMovesRender() {
+  const strip = document.querySelector('[data-ehr-moves]'); if (!strip) return;
+  const d = ehrData(); if (!d || !EHR.vol) return;
+  const frame = EHRL.loop && EHRL.loop.ehr ? EHRL.loop.ehr.frame() : 0.72;
+  strip.textContent = '';
+  ehrMoves().forEach(m => {
+    const view = ehrMoveView(m), isC = view.c !== undefined, W = 112, H = 112;
+    const cv = h('canvas', { class: 'ehr-thumb', width: W * 2, height: H * 2 + 0, 'aria-hidden': 'true' });
+    const gray = ehrPlane(view, frame, W, H);
+    const g2 = EHR.sharpen ? ehrEnhance(gray, W, H, { amount: 0.8, passes: 1 }) : gray;
+    const ctx = cv.getContext('2d'), off = document.createElement('canvas'); off.width = W; off.height = H;
+    const octx = off.getContext('2d'), img = octx.createImageData(W, H), map = ehrMap(EHR.map);
+    for (let i = 0; i < W * H; i++) { const g = g2[i], o = i * 4; img.data[o] = map.r[g]; img.data[o + 1] = map.g[g]; img.data[o + 2] = map.b[g]; img.data[o + 3] = 255; }
+    octx.putImageData(img, 0, 0); ctx.imageSmoothingEnabled = true; ctx.drawImage(off, 0, 0, W * 2, H * 2);
+    const near = isC ? (d.views || []).filter(v => v.c !== undefined && Math.abs(v.c - view.c) <= 6)[0] : (d.views || []).filter(v => v.c === undefined && Math.abs((((v.phi - view.phi) % 180) + 270) % 180 - 90) <= 10 && Math.abs(v.tau - view.tau) <= 6)[0];
+    const btn = h('button', { type: 'button', class: 'ehr-move', 'data-ehr-move': m.key + (m.d !== undefined ? (m.d > 0 ? '+' : '-') : ''), title: m.label + ' — ' + m.sub, onclick: () => { m.apply(); ehrLabRefresh(); } }, [
+      cv, h('span', { class: 'ehr-move-l', text: m.label }), h('span', { class: 'ehr-move-s', text: near ? '→ ' + near.name : m.sub })
+    ]);
+    strip.appendChild(btn);
+  });
+}
 function echoRealLabFig() {
   const d = ehrData();
   if (!d) return h('figure', { class: 'an-fig', 'data-echoreal': '1' }, [h('p', { class: 'fine', text: 'The real volume did not load in this build.' })]);
   const panel3d = heart3dPanel({ ownImage: false, model: 'normal', maxH: 330, settings: { beating: false } });
   EHRL.inst3d = panel3d.inst || null;
   const loop = ehrLoop(ehrCurrentView, { id: 'lab', title: '', aria: 'The real volume, resliced', onFrame: (gray, W, H, view, mask, frame) => { const i3 = EHRL.inst3d; if (i3 && i3.alive) { h3SetImage(i3, gray, W, H, mask); i3.extT = frame; } } }); EHRL.loop = loop;
-  const sl = (key, label, min, max, step, unit) => { const id = uid('ehr'); const val = h('span', { class: 'odc-val', text: EHRL[key] + unit }); return h('label', { class: 'odc-sl', for: id, 'data-ehr-row': key }, [h('span', { class: 'nod-l', text: label }), h('input', { type: 'range', id: id, min: min, max: max, step: step, value: EHRL[key], 'data-ehr': key, oninput: (e) => { EHRL[key] = +e.target.value; val.textContent = EHRL[key] + unit; ehrLabRefresh(); } }), val]); };
+  const GLYPH = { phi: ['↻ marker to the right hip', 'marker to the left shoulder ↺'], tau: ['tail down (anterior)', 'tail up (posterior)'], c: ['toward the apex', 'toward the base'] };
+  const sl = (key, label, min, max, step, unit) => { const id = uid('ehr'); const val = h('span', { class: 'odc-val', text: EHRL[key] + unit }); return h('label', { class: 'odc-sl ehr-sl', for: id, 'data-ehr-row': key }, [h('span', { class: 'nod-l', text: label }), h('input', { type: 'range', id: id, min: min, max: max, step: step, value: EHRL[key], 'data-ehr': key, oninput: (e) => { EHRL[key] = +e.target.value; val.textContent = EHRL[key] + unit; ehrLabRefresh(); } }), val, h('span', { class: 'ehr-ends' }, [h('span', { text: GLYPH[key][0] }), h('span', { text: GLYPH[key][1] })])]); };
   const modes = h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Plane' }, [['b', 'Along the beam (long axes)'], ['c', 'Across the beam (short axes)']].map(m => h('button', { type: 'button', class: 'ch', role: 'radio', 'data-ehr-mode': m[0], 'aria-checked': String(EHRL.mode === m[0]), text: m[1], onclick: () => { EHRL.mode = m[0]; ehrLabRefresh(); } })));
   const targets = h('select', { 'data-ehr-target': '1', 'aria-label': 'Target view', onchange: (e) => { EHRL.target = e.target.value; ehrLabRefresh(); } }, d.views.map(v => h('option', { value: v.id, text: v.name, selected: v.id === EHRL.target })));
   const controls = h('div', { class: 'odc-ctrls ehr-ctrls' }, [modes, sl('phi', 'Rotate the marker', 0, 179, 1, '°'), sl('tau', 'Tilt the beam', -20, 20, 1, '°'), sl('c', 'Depth of the short-axis plane', 40, 120, 1, ' mm'),
@@ -510,10 +673,14 @@ function echoRealLabFig() {
       h('button', { type: 'button', class: 'btn sm quiet', 'data-ehr-snap': '1', text: 'Snap to the target', onclick: () => { const t = ehrView(EHRL.target); if (t.c !== undefined) { EHRL.mode = 'c'; EHRL.c = t.c; } else { EHRL.mode = 'b'; EHRL.phi = t.phi; EHRL.tau = t.tau; } const f = document.querySelector('[data-echoreal]'); if (f) f.replaceWith(echoRealLabFig()); } })])]);
   const score = h('div', { class: 'eh-score', 'data-ehr-score': '1' });
   const fig = h('figure', { class: 'an-fig eh-fig ehr-lab', 'data-echoreal': '1' }, [
-    h('div', { class: 'ehr-grid' }, [h('div', { class: 'ehr-left' }, [loop, h('p', { class: 'fine', 'data-ehr-readout': '1' }), h('div', { class: 'eh-3dslot', 'data-ehr-3d': '1' }, [h('h5', { text: 'Where the plane is' }), panel3d, h('p', { class: 'fine', text: 'The model heart stands in for the real one: the real picture is painted on the plane you have cut, in the place that plane has in the chest.' })])]), h('div', { class: 'ec-right' }, [h('label', { class: 'ehr-tgt' }, ['Target view ', targets]), score, controls])]),
-    h('figcaption', { text: d.credit + ' The probe is fixed at the apex (that is where the volume was acquired), so there is no window to choose and no sliding: rotate the marker and tilt the beam for the long axes, or cut across the beam at a depth for the short axes.' })
+    h('div', { class: 'ehr-grid ehr-grid3' }, [
+      h('div', { class: 'ehr-left' }, [loop, h('p', { class: 'fine', 'data-ehr-readout': '1' }), h('div', { class: 'ehr-moves-wrap' }, [h('h5', { text: 'Turn the probe' }), h('p', { class: 'fine', text: 'What the picture becomes after each move from here, at the frame on show. Click one to make the move.' }), h('div', { class: 'ehr-moves', 'data-ehr-moves': '1' })])]),
+      h('div', { class: 'eh-3dslot ehr-3dcol', 'data-ehr-3d': '1' }, [h('h5', { text: 'Where the plane is' }), panel3d, h('p', { class: 'fine', text: 'The model heart stands in for the real one: the real picture is painted on the plane you have cut, in the place that plane has in the chest.' })]),
+      h('div', { class: 'ec-right' }, [h('label', { class: 'ehr-tgt' }, ['Target view ', targets]), score, controls])]),
+    h('figcaption', { text: d.credit + ' The probe is fixed at the apex (that is where the volume was acquired), so there is no window to choose and no sliding: rotate the marker and tilt the beam for the long axes, or cut across the beam at a depth for the short axes. Click the picture to zoom on a point.' })
   ]);
   setTimeout(ehrLabRefresh, 0);
+  ehrLoad(() => { if (fig.isConnected) ehrLabRefresh(); });
   return fig;
 }
 

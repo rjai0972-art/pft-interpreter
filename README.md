@@ -81,7 +81,7 @@ and the single-file browser version (`PulmCritDaddy_standalone.html`) always wor
 - Code signing is optional and not set up. For Windows add a signing certificate to the build; for Mac add an Apple Developer ID and notarization.
   Until then the first-launch steps above are needed.
 
-## How the reading is built (version 8.4)
+## How the reading is built (version 8.5)
 
 The rules layer computes every measurement state before any wording is chosen (ERS/ATS 2022 z-scores and the LLN;
 a reviewed adult phrase catalog anchored to the ERS/ATS 2022, ATS/ERS 2019, ERS/ATS 2023, ERS/ATS 2017, ERS 2019 and
@@ -374,6 +374,28 @@ breathing, low tidal volume, RV failure, a pressor change, the resuscitated pati
 raise, a bolus or a tidal-volume challenge before choosing; venous oximetry, lactate and the CO2 gap; pulse oximetry
 (the physics, the dyshaemoglobins, skin pigmentation, the plethysmogram); NIRS; capnography (the phases, the shapes —
 shark fin, curare cleft, rebreathing, cardiogenic oscillations, oesophageal intubation, loss of output, ROSC — CPR,
-the gradient) with a lab of twelve patterns and a quiz; and processed EEG and train-of-four. `extras/` holds a reworked Anki deck
+the gradient) with a lab of twelve patterns and a quiz; and processed EEG and train-of-four. Version 8.5 works
+on three things. The real echo loop goes through five revisions in a row — full-resolution sampling at the screen's
+size, depth-gain normalisation with a bilateral speckle smoothing that keeps the walls' edges, single acquired frames
+with light persistence instead of blends, a clinical display (an S-curve grey map, gain and dynamic-range sliders,
+the sector's outline, centimetre ticks, a phase bar with the cycle's trace and cursor, click-to-zoom that re-samples
+the volume at twice the scale) and, in the scanning lab, a "turn the probe" strip of live reslices showing what the
+picture becomes after each manoeuvre from where you are (marker toward the hip or the shoulder, tail down or up, the
+plane shallower or deeper, across the beam) that you click to make the move, with the slider ends named in the hand's
+words and the 3-D heart beside the loop on wide screens — and the canvas is finally isotropic (the earlier aspect
+squashed the heart). The ECG area gets "Where the leads go": a torso with the ten electrodes (the ribs, the angle of
+Louis, the mid-clavicular and axillary lines, a strip round the back for V7–V9), each draggable; click one for where
+it goes and which leads it feeds (lit on the paper), let it fall off, or swap its cable with another; eighteen
+ready-made mishaps — every limb-cable swap, electrodes off (the right leg, which hums on all twelve), V1/V2 swapped,
+the chest cables reversed, V1–V2 too high, V4–V6 too low, Mason–Likar torso placement, right-sided and posterior
+leads on purpose, dextrocardia as the look-alike; the twelve leads are built from the electrodes' potentials (I = LA −
+RA, the Wilson terminal for the chest leads, so a limb electrode off spoils the chest leads too), the source heart is
+any of the conduction bench's presets, a reading made from the traces names the clue (a positive P in aVR, a flat
+lead II, a P taller in I than in II, a backward step in the R progression…) and a lead-by-lead comparison against
+the correct placement shows what changed. The nodule area gets real nodules: six crops cut from the real chest CT at
+full resolution (four true nodules of 4–10 mm and two vessels that pass for one on a single slice), each a 17-slice
+stack to scroll, window and probe, with calipers for the long and short axis, the call (nodule or vessel), the
+attenuation and the risk, the Fleischner plan from your numbers and a check against the voxel-measured reference;
+then a hunt for the same four on the whole axial series. `extras/` holds a reworked Anki deck
 (`ECMO_Anki_Deck_v2.apkg`, 103 notes / 237 cards, cloze and basic, tagged by topic, built by `build_ecmo_anki.py` with no
 dependencies) and a bedside reference PDF generated from the same content (`build_ecmo_reference.js`).
