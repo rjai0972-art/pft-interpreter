@@ -1,140 +1,375 @@
-/* ------------------------------------------------------------------ the Campbell / Guyton model (heart–lung interaction)
-   A teaching model, after Kenny JE, An Approach to Mechanical Heart-Lung Interaction (2020, CC): the Campbell diagram
-   (lung volume against pleural pressure: the static lung and chest wall curves, the dynamic loop of a breath, the work
-   of breathing) joined to the Guyton diagram (venous return against cardiac function) through the one variable they
-   share, the pressure around the heart. Numbers are typical adult ones and the shapes are the textbook ones; the point
-   is the direction things move, not a patient's values. Pure functions: usable in node for the tests. */
+/* PulmCrit Daddy — Learn: mechanical heart–lung interaction, after Jon-Émile Kenny's "An Approach to Mechanical Heart-Lung
+   Interaction" (1st ed., 2020, Spectral Envelope Publishing House; a Creative Commons free cultural work, heart-lung.org).
+   The model behind the section's diagrams, in node-testable form:
+   — the respiratory system as a bag (the lung) in a box (the chest wall) with a tube (the airway): static curves of the lung
+     and the passive chest wall in the Campbell frame (volume against pleural pressure), their sum as the respiratory-system
+     curve in the Rahn frame (volume against airway pressure), a breath simulated from the equation of motion (spontaneous,
+     passive ventilator breath, assisted breath), the work of breathing as the areas of the Campbell diagram, auto-PEEP from
+     incomplete emptying;
+   — the circulation as Guyton drew it: a venous-return (circuit-function) curve with its mean systemic pressure, its
+     resistance and the plateau where the great veins collapse, and a cardiac-function curve whose x-intercept is the
+     pressure around the heart; their intersection is the operating point;
+   — the two coupled on their shared pressure axis: the pleural pressure of the breath moves the cardiac-function curve,
+     the lung volume pressurises the abdomen (mean systemic pressure, resistance to venous return, the collapse pressure)
+     and raises the transpulmonary pressure (right-ventricular afterload).
+   Units: volume L (0 = residual volume; vital capacity 4.5 L), pressure cm H2O for the thorax and mmHg for the circulation
+   (1 mmHg = 1.36 cm H2O), flow L/s for gas and L/min for blood. The model is quasi-static and deliberately simple: it is
+   the book's diagrams made to move, not a physiological simulator. */
 (function (root) {
-  'use strict';
-  const CMH2O = 0.7355;   // mm Hg per cm H2O
-  /* default parameters */
-  const DEF = {
-    mode: 'spont',       // 'spont' (muscles drive the breath) or 'vent' (a passive, volume-targeted breath)
-    cl: 1,               // lung compliance, multiple of normal (200 mL/cm H2O at FRC)
-    ccw: 1,              // chest wall compliance, multiple of normal (150 mL/cm H2O)
-    cwShift: 0,          // cm H2O the chest wall curve is pushed rightward (obesity, ascites: more pleural pressure at any volume)
-    raw: 2,              // airway resistance, cm H2O/(L/s) (normal 1–3; 10–25 in an exacerbation)
-    vt: 12,              // tidal volume, % of vital capacity (12% of 4.5 L ≈ 540 mL)
-    rr: 14,              // breaths/min
-    peep: 0,             // set PEEP (ventilator) or CPAP (spontaneous), cm H2O
-    pms: 8,              // mean systemic filling pressure, mm Hg (volume status)
-    contr: 1,            // contractility, multiple of normal
-    pvr: 1,              // pulmonary vascular tone, multiple of normal (hypoxia, embolism, pulmonary hypertension)
-    vc: 4.5              // vital capacity, L (to turn % VC into litres)
-  };
-  /* ---- static curves (volume in % VC above RV; pressures in cm H2O) ---- */
-  // transpulmonary pressure the lung needs to hold a volume: V = 100·(1 − e^(−Ptp/τ)), τ = 11.6 at normal compliance
-  function ptpOf(V, p) { const tau = 11.6 / p.cl; const f = Math.min(0.995, Math.max(0.0005, V / 100)); return -tau * Math.log(1 - f); }
-  function lungPpl(V, p) { return -ptpOf(V, p); }   // the static lung curve on the Campbell diagram (Palv = 0)
-  // the passive chest wall: zero at its own equilibrium (about 60% VC), sigmoid about it
-  function cwPpl(V, p) { const d = V - 60; return (0.2 * d * (1 + (d / 45) * (d / 45))) / p.ccw + p.cwShift; }
-  // the respiratory system as the ventilator sees it (Rahn): Paw = Ptp + Pcw
-  function rsPaw(V, p) { return ptpOf(V, p) + cwPpl(V, p); }
-  function solve(f, lo, hi) { let a = lo, b = hi, fa = f(a); for (let i = 0; i < 48; i++) { const m = (a + b) / 2, fm = f(m); if ((fm < 0) === (fa < 0)) { a = m; fa = fm; } else b = m; } return (a + b) / 2; }
-  function frcOf(p) { return solve(V => cwPpl(V, p) - lungPpl(V, p), 0.5, 99); }
-  // compliances at a volume (mL/cm H2O), for the readouts
-  function clAt(V, p) { const h = 0.5; return (h * 2) / (ptpOf(V + h, p) - ptpOf(V - h, p)) * p.vc * 10; }
-  function ccwAt(V, p) { const h = 0.5; return (h * 2) / (cwPpl(V + h, p) - cwPpl(V - h, p)) * p.vc * 10; }
-  function crsAt(V, p) { const h = 0.5; return (h * 2) / (rsPaw(V + h, p) - rsPaw(V - h, p)) * p.vc * 10; }
-  /* ---- the breath: end-expiratory volume, auto-PEEP, the loop ---- */
-  function breath(p) {
-    const frc = frcOf(p), T = 60 / p.rr, ti = T / 3, te = T - ti;
-    const vtL = p.vt / 100 * p.vc;
-    // passive emptying follows a time constant τ = R·Crs; with a short expiratory time the lung does not get back to its rest volume
-    const crs = crsAt(frc + p.vt / 2, p) / 1000;   // L/cm H2O
-    const tau = p.raw * crs;
-    // the resting volume the set PEEP (or CPAP) holds the system at
-    const rest = p.peep > 0 ? solve(V => rsPaw(V, p) - p.peep, frc, 99.5) : frc;
-    const e = Math.exp(-te / tau), trapped = e > 1e-6 ? Math.min(60, (p.vt * e) / (1 - e)) : 0;
-    const vee = Math.min(96, rest + trapped);                     // end-expiratory volume, % VC
-    const autoPeep = Math.max(0, rsPaw(vee, p) - p.peep);        // alveolar pressure left at end-expiration, above the set PEEP
-    const vei = Math.min(99, vee + p.vt);
-    const pts = [];
-    const N = 60;
-    for (let i = 0; i <= N; i++) {   // inspiration: a half-sine flow profile
-      const u = i / N, V = vee + p.vt * (1 - Math.cos(Math.PI * u)) / 2, flow = (vtL * Math.PI / (2 * ti)) * Math.sin(Math.PI * u);
-      pts.push(point(V, flow, u * ti, 'in', p, u, autoPeep));
-    }
-    for (let i = 1; i <= N; i++) {   // expiration: exponential emptying toward the rest volume, cut off by the next breath
-      const t = i / N * te, V = rest + (vei - rest) * Math.exp(-t / tau), flow = -((vei - rest) / 100 * p.vc) / tau * Math.exp(-t / tau);
-      pts.push(point(V, flow, ti + t, 'ex', p, i / N, autoPeep));
-    }
-    // work per breath (J): the loop against the static curves. elastic = area between the lung and chest wall curves over the tidal range
-    const dv = (vei - vee) / 40, lPerPct = p.vc / 100;
-    let wEl = 0, wRes = 0;
-    for (let k = 0; k < 40; k++) {
-      const V = vee + dv * (k + 0.5);
-      wEl += Math.max(0, cwPpl(V, p) - lungPpl(V, p) - (p.mode === 'spont' ? p.peep : 0)) * dv * lPerPct;   // cm H2O · L (CPAP carries part of the elastic load)
-    }
-    for (let i = 1; i <= N; i++) { const a = pts[i - 1], b = pts[i]; wRes += Math.abs(a.pres) * (b.V - a.V) * lPerPct; }   // the resistive part of the inspiratory limb
-    const J = 0.0981;   // 1 cm H2O · L = 0.0981 J
-    const pmus = p.mode === 'spont' ? Math.max(0, cwPpl(vei, p) - lungPpl(vei, p) + autoPeep - p.peep) : 0;
-    return { frc: frc, rest: rest, vee: vee, vei: vei, autoPeep: autoPeep, tau: tau, ti: ti, te: te, T: T, pts: pts, wEl: wEl * J, wRes: wRes * J, pmus: pmus, cl: clAt(vee + p.vt / 2, p), ccw: ccwAt(vee + p.vt / 2, p), crs: crs * 1000, trapped: trapped };
+'use strict';
+const VC = 4.5, CM_PER_MMHG = 1.36, J_PER_CMH2O_L = 0.098;
+
+/* ---------------------------------------------------------------- the thorax */
+const RESP_DEFAULT = {
+  cl: 1.0,        // lung compliance multiplier (1 = 230 mL/cm H2O at FRC)
+  ccw: 1.0,       // chest wall compliance multiplier (1 = 150 mL/cm H2O at FRC)
+  shift: 0,       // rightward shift of the chest wall curve, cm H2O (obesity, ascites, abdominal hypertension)
+  ri: 2.0,        // inspiratory airway resistance, cm H2O/L/s (normal < 4; ~double through a tube)
+  re: 2.5,        // expiratory airway resistance
+  vt: 0.5,        // tidal volume, L
+  rr: 14,         // breaths/min
+  tiFrac: 0.4,    // inspiratory fraction of the cycle (spontaneous)
+  mode: 'spont',  // 'spont' | 'passive' (volume control, constant flow) | 'assist' (pressure support with effort) | 'hold' (no volume change: Mueller/Valsalva)
+  peep: 0,        // set PEEP, cm H2O (ventilator modes)
+  ps: 0,          // pressure support above PEEP (assist)
+  pmusMax: 8,     // the effort of an assisted breath, cm H2O
+  pexp: 0,        // active expiratory effort, cm H2O (0 = passive expiration)
+  holdPpl: 0      // 'hold' mode: the pleural pressure held, cm H2O
+};
+/* the lung's static recoil (transpulmonary pressure) at volume v (L above RV): an exponential, 5 cm H2O at a normal FRC
+   and 30 at TLC, 230 mL/cm H2O at FRC; scaled by the compliance multiplier */
+const L_A = 5.29, L_B = 0.4222;
+function lungP(v, p) { return L_A * (Math.exp(L_B * Math.max(0, v)) - 1) / (p ? p.cl : 1); }
+/* the passive chest wall: the pleural pressure that holds it at v; zero at its own relaxation volume (55% VC), −5 at a
+   normal FRC, 150 mL/cm H2O there, stiffer at both ends; scaled and shifted */
+const CW_EQ = 0.55 * VC, CW_C1 = 5, CW_C3 = 0.686;
+function cwP(v, p) { const d = v - CW_EQ; return (CW_C1 * d + CW_C3 * d * d * d) / (p ? p.ccw : 1) + (p ? p.shift : 0); }
+/* the respiratory system's relaxation pressure (airway pressure to hold v passively, or the muscles' static pressure) */
+function rsP(v, p) { return cwP(v, p) + lungP(v, p); }
+/* FRC: where the outward recoil of the chest wall balances the inward recoil of the lungs (rsP = 0) */
+function frc(p, peep) { let lo = 0.05, hi = VC - 0.05; const target = peep || 0; for (let i = 0; i < 60; i++) { const m = (lo + hi) / 2; if (rsP(m, p) < target) lo = m; else hi = m; } return (lo + hi) / 2; }
+/* chord compliances around a volume, L/cm H2O */
+function compliances(p, v) {
+  const v0 = v === undefined ? frc(p) : v, dv = 0.1;
+  const cl = dv / (lungP(v0 + dv, p) - lungP(v0, p)), ccw = dv / (cwP(v0 + dv, p) - cwP(v0, p));
+  return { cl: cl, ccw: ccw, crs: 1 / (1 / cl + 1 / ccw), frac: cl / (cl + ccw) };
+}
+/* ---- a breath, simulated from the equation of motion: Paw + Pmus = Prs(v) + R·flow. Returns the steady-state cycle
+   (after the trapped volume has settled) sampled every dt, and its measures. */
+function breath(p0) {
+  const p = Object.assign({}, RESP_DEFAULT, p0 || {}), dt = 0.01, T = 60 / p.rr, Ti = p.mode === 'passive' ? Math.min(T * 0.5, Math.max(0.6, p.vt / 1.0 * 1.2)) : T * p.tiFrac, Te = T - Ti;
+  const FRC = frc(p), out = { p: p, T: T, Ti: Ti, Te: Te, FRC: FRC, t: [], v: [], flow: [], ppl: [], palv: [], paw: [], pmus: [], ptp: [] };
+  if (p.mode === 'hold') {   // Mueller / Valsalva: the pleural pressure moves, the volume does not
+    for (let t = 0; t < T; t += dt) { const on = t < Ti, ppl = cwP(FRC, p) + (on ? p.holdPpl - cwP(FRC, p) : 0); out.t.push(+t.toFixed(3)); out.v.push(FRC); out.flow.push(0); out.ppl.push(ppl); out.palv.push(0); out.paw.push(0); out.pmus.push(cwP(FRC, p) - ppl); out.ptp.push(0 - ppl); }
+    return finish(out, FRC, FRC);
   }
-  /* one instant of the breath: where the pleural (and airway) pressure sits */
-  function point(V, flow, t, phase, p, u, ap) {
-    const pres = p.raw * flow;                     // resistive pressure, cm H2O (positive on inspiration)
-    let ppl, paw, palv;
-    if (p.mode === 'spont') {
-      paw = p.peep;                                // CPAP at the mouth lifts the whole picture
-      if (phase === 'in') {
-        // the muscles pull the pleural pressure below the static lung curve by the resistive pressure; any auto-PEEP must be
-        // pulled down first (a threshold load, spent over the first part of inspiration)
-        palv = -pres + p.peep + ap * Math.max(0, 1 - 4 * u); ppl = palv - ptpOf(V, p);
-      } else {
-        // expiration: the inspiratory muscles let go over the first part of it (post-inspiratory braking), then the chest is passive
-        // and the pleural pressure sits on the chest wall curve; the recoil of the system drives the flow
-        const f = 0.45 + 0.55 * Math.min(1, u * 1.6);
-        const lungSide = -ptpOf(V, p) + p.peep, cwSide = cwPpl(V, p);
-        ppl = lungSide + f * (cwSide - lungSide); palv = ptpOf(V, p) + ppl;
-      }
-    } else {
-      // passive: the pleural pressure follows the chest wall; the ventilator supplies the transpulmonary and the resistive pressure
-      ppl = cwPpl(V, p);
-      palv = ptpOf(V, p) + ppl;
-      paw = palv + pres;
+  let vee = FRC + (p.peep ? Math.max(0, frc(p, p.peep) - FRC) : 0);
+  // settle the end-expiratory volume: run the cycle until the exhaled volume equals the inhaled one
+  let cycle = null;
+  for (let it = 0; it < 12; it++) {
+    cycle = runCycle(p, vee, Ti, Te, dt);
+    const next = cycle.vEnd; if (Math.abs(next - vee) < 0.002) { vee = next; break; } vee = next;
+  }
+  cycle = runCycle(p, vee, Ti, Te, dt);
+  Object.assign(out, { t: cycle.t, v: cycle.v, flow: cycle.flow, ppl: cycle.ppl, palv: cycle.palv, paw: cycle.paw, pmus: cycle.pmus, ptp: cycle.ptp, vtDelivered: cycle.vtDelivered });
+  return finish(out, FRC, vee);
+}
+function runCycle(p, vee, Ti, Te, dt) {
+  const t = [], v = [], flow = [], ppl = [], palv = [], paw = [], pmus = [], ptp = [];
+  let vol = vee, time = 0, vtDel = 0, pkFlow = 0;
+  const push = (F, Ppl, Palv, Paw, Pmus) => { t.push(+time.toFixed(3)); v.push(vol); flow.push(F); ppl.push(Ppl); palv.push(Palv); paw.push(Paw); pmus.push(Pmus); ptp.push(Palv - Ppl); };
+  const peep = p.mode === 'spont' ? 0 : p.peep;
+  // inspiration
+  if (p.mode === 'spont') {
+    const Fpk = Math.PI * p.vt / (2 * Ti);
+    for (let i = 0; time < Ti - 1e-9; i++) { const F = Fpk * Math.sin(Math.PI * time / Ti); vol = vee + p.vt * (1 - Math.cos(Math.PI * time / Ti)) / 2; const Palv = -p.ri * F, Ppl = Palv - lungP(vol, p); push(F, Ppl, Palv, 0, cwP(vol, p) - Ppl); time += dt; }
+    vtDel = p.vt;
+  } else if (p.mode === 'passive') {
+    const F = p.vt / Ti;
+    for (; time < Ti - 1e-9;) { vol = vee + F * time; const Palv = rsP(vol, p), Ppl = cwP(vol, p); push(F, Ppl, Palv, Palv + p.ri * F, 0); time += dt; }
+    vtDel = p.vt;
+  } else {   // assist: a pressure-support breath with the patient's own effort; cycles at 25 % of peak flow or Ti
+    const Paw = peep + p.ps; let F = 0;
+    for (; time < Ti - 1e-9;) {
+      const Pm = p.pmusMax * Math.sin(Math.PI * Math.min(1, time / (Ti * 0.8)));
+      F = Math.max(0, (Paw + Pm - rsP(vol, p)) / p.ri); if (F > pkFlow) pkFlow = F;
+      if (time > 0.15 && F < 0.25 * pkFlow) break;
+      const Palv = Paw - p.ri * F, Ppl = Palv - lungP(vol, p); push(F, Ppl, Palv, Paw, Pm); vol += F * dt; time += dt;
     }
-    return { V: V, flow: flow, t: t, phase: phase, ppl: ppl, palv: palv, paw: paw, pres: pres };
+    vtDel = vol - vee;
   }
-  /* ---- the circulation (mm Hg, L/min) ---- */
-  function circ(V, ppl, p, br) {
-    const pplMm = ppl * CMH2O;
-    // the pressure around the heart is the pleural pressure; the heart fills by Pra − Ppl (transmural)
-    const frc = br ? br.frc : frcOf(p);
-    // pulmonary vascular resistance is lowest at FRC and rises either side of it (alveolar vessels squeezed at high volume, extra-alveolar at low)
-    const d = (V - frc) / 40, fpvr = p.pvr * (1 + 0.6 * d * d);
-    // mean systemic pressure: volume status, lifted a little by the diaphragm pressing on the abdomen and by any pressure the ventilator leaves in the chest
-    const pms = p.pms + 0.012 * Math.max(0, V - frc) + Math.max(0, (p.mode === 'vent' ? pplMm - (-5 * CMH2O) : 0)) * 0.8;
-    const pcrit = 0 + 0.03 * Math.max(0, V - frc) * CMH2O + Math.max(0, (p.mode === 'vent' ? pplMm - (-5 * CMH2O) : 0)) * 0.8;   // the great veins collapse when Pra falls below the pressure around them
-    const rvr = 1.2;
-    const vr = (pra) => (Math.max(pcrit, pra) >= pms ? 0 : (pms - Math.max(pcrit, pra)) / rvr);
-    const k = 4 * Math.sqrt(fpvr), coMax = 6.4 * p.contr / Math.sqrt(fpvr);
-    const cf = (pra) => { const ptm = pra - pplMm; return ptm <= 0 ? 0 : coMax * (1 - Math.exp(-ptm / k)); };
-    // the operating point: where what returns equals what the heart puts out
-    const pra = solve(x => cf(x) - vr(x), pplMm - 0.001, Math.max(pplMm + 0.01, pms));
-    const co = cf(pra);
-    return { pplMm: pplMm, pms: pms, pcrit: pcrit, rvr: rvr, fpvr: fpvr, k: k, coMax: coMax, pra: pra, co: co, ptm: pra - pplMm, vr: vr, cf: cf };
+  // expiration: the system's recoil (plus any expiratory effort) drives flow out against the resistance, down to PEEP
+  const tEnd = Ti + Te;
+  for (; time < tEnd - 1e-9;) {
+    const Palv = rsP(vol, p) + p.pexp, F = Math.max(0, (Palv - peep) / p.re), Ppl = Palv - lungP(vol, p);
+    push(-F, Ppl, Palv, peep, -p.pexp); vol = Math.max(0.05, vol - F * dt); time += dt;
   }
-  /* the whole cycle: the loop with the circulation at every point */
-  function run(opts) {
-    const p = Object.assign({}, DEF, opts || {});
-    const br = breath(p);
-    const cyc = br.pts.map(pt => { const c = circ(pt.V, pt.ppl, p, br); return Object.assign({}, pt, { pra: c.pra, co: c.co, ptm: c.ptm, pms: c.pms, pcrit: c.pcrit }); });
-    const cos = cyc.map(x => x.co), coMax = Math.max.apply(null, cos), coMin = Math.min.apply(null, cos);
-    const atRest = circ(br.vee, cyc[0].ppl, p, br), atTop = circ(br.vei, cyc[60].ppl, p, br);
-    return { p: p, br: br, cyc: cyc, rest: atRest, top: atTop, coMean: cos.reduce((a, b) => a + b, 0) / cos.length, coVar: coMax > 0 ? (coMax - coMin) / ((coMax + coMin) / 2) : 0 };
+  return { t: t, v: v, flow: flow, ppl: ppl, palv: palv, paw: paw, pmus: pmus, ptp: ptp, vEnd: vol, vtDelivered: vtDel };
+}
+function finish(out, FRC, vee) {
+  const p = out.p, n = out.t.length, vmax = Math.max.apply(null, out.v), vmin = Math.min.apply(null, out.v);
+  const m = { FRC: FRC, Vee: vee, trapped: Math.max(0, vee - FRC), autoPEEP: Math.max(0, rsP(vee, p) - (p.mode === 'spont' ? 0 : p.peep)), totalPEEP: p.mode === 'spont' ? Math.max(0, rsP(vee, p)) : Math.max(p.peep, rsP(vee, p)),
+    pplMin: Math.min.apply(null, out.ppl), pplMax: Math.max.apply(null, out.ppl), pplEE: cwP(vee, p), pplEI: null, ptpEI: null, pplat: null, ppeak: null, vt: out.vtDelivered === undefined ? 0 : out.vtDelivered,
+    vmax: vmax, vmin: vmin, pctFRC: FRC / VC * 100, pctEE: vee / VC * 100, pctEI: vmax / VC * 100 };
+  // end-inspiration: the last sample of inspiration (flow about to turn negative)
+  let iEI = 0; for (let i = 1; i < n; i++) { if (out.flow[i] < 0 && out.flow[i - 1] >= 0) { iEI = i - 1; break; } iEI = i; }
+  m.pplEI = out.ppl[iEI]; m.ptpEI = out.ptp[iEI]; m.iEI = iEI;
+  if (p.mode !== 'spont' && p.mode !== 'hold') { m.pplat = rsP(vmax, p); m.ppeak = Math.max.apply(null, out.paw); m.dPpl = m.pplEI - m.pplEE; m.dPplat = m.pplat - m.totalPEEP; m.transmission = m.dPplat > 0 ? m.dPpl / m.dPplat : 0; m.drivingP = m.dPplat; m.crsMeasured = m.dPplat > 0 ? m.vt / m.dPplat : 0; }
+  m.comp = compliances(p);
+  // work of breathing, as the areas of the Campbell diagram (cm H2O·L → J); the patient's or the ventilator's
+  let wElastic = 0, wResI = 0, wResE = 0, wThreshold = 0;
+  for (let i = 1; i < n; i++) {
+    const dv = out.v[i] - out.v[i - 1]; if (dv > 0) { wElastic += Math.max(0, rsP(out.v[i], p) - (p.mode === 'spont' ? 0 : p.peep)) * dv; wResI += Math.abs(out.palv[i] - out.paw[i]) * dv; }
+    else if (dv < 0 && p.pexp > 0) wResE += p.pexp * (-dv);
   }
-  const PRESETS = [
-    { id: 'normal', name: 'Normal', set: {} },
-    { id: 'copd', name: 'COPD exacerbation (hyperinflation, auto-PEEP)', set: { cl: 1.6, raw: 14, rr: 24, vt: 10 } },
-    { id: 'asthma', name: 'Acute asthma', set: { raw: 20, rr: 26, vt: 10 } },
-    { id: 'oedema', name: 'Cardiogenic pulmonary oedema', set: { cl: 0.45, raw: 5, rr: 28, vt: 8, pms: 12, contr: 0.55 } },
-    { id: 'ards', name: 'ARDS, ventilated with PEEP 10', set: { mode: 'vent', cl: 0.4, raw: 4, peep: 10, vt: 9, rr: 24 } },
-    { id: 'obese', name: 'Obesity / tense ascites', set: { ccw: 0.55, cwShift: 5, vt: 9, rr: 20 } },
-    { id: 'hypo', name: 'Hypovolaemia', set: { pms: 5.5 } },
-    { id: 'rvf', name: 'Pulmonary hypertension / RV strain', set: { pvr: 2.4, contr: 0.8 } },
-    { id: 'ventnorm', name: 'Ventilated, normal lungs, PEEP 5', set: { mode: 'vent', peep: 5, vt: 10, rr: 14 } }
-  ];
-  root.PFT_HL = { DEF: DEF, PRESETS: PRESETS, CMH2O: CMH2O, ptpOf: ptpOf, lungPpl: lungPpl, cwPpl: cwPpl, rsPaw: rsPaw, frcOf: frcOf, breath: breath, circ: circ, run: run, clAt: clAt, ccwAt: ccwAt, crsAt: crsAt };
-  if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_HL;
+  wThreshold = m.autoPEEP * m.vt; wElastic = Math.max(0, wElastic - wThreshold);
+  m.wob = { elastic: wElastic * J_PER_CMH2O_L, resistive: wResI * J_PER_CMH2O_L, expiratory: wResE * J_PER_CMH2O_L, threshold: wThreshold * J_PER_CMH2O_L };
+  m.wob.total = m.wob.elastic + m.wob.resistive + m.wob.expiratory + m.wob.threshold; m.wob.perMin = m.wob.total * p.rr; m.wob.perL = m.vt > 0 ? m.wob.total / m.vt : 0;
+  m.who = p.mode === 'passive' ? 'ventilator' : 'patient';
+  out.m = m; return out;
+}
+/* the static curves, sampled for drawing: volume v (L) against pleural pressure (lung, chest wall) and airway pressure (system) */
+function curves(p0, n) {
+  const p = Object.assign({}, RESP_DEFAULT, p0 || {}), N = n || 60, lung = [], cw = [], rs = [];
+  for (let i = 0; i <= N; i++) { const v = 0.05 + (VC - 0.1) * i / N; lung.push([-lungP(v, p), v]); cw.push([cwP(v, p), v]); rs.push([rsP(v, p), v]); }
+  return { lung: lung, cw: cw, rs: rs, frc: frc(p) };
+}
+/* the pleural pressure a plateau pressure produces, by the compliances (eq. 12 of chapter 1) */
+function transmission(pplat, peep, cl, ccw) { const f = cl / (cl + ccw); return { frac: f, dPpl: (pplat - peep) * f, ptp: (pplat - peep) * (1 - f) }; }
+
+/* ---------------------------------------------------------------- the circulation */
+const CV_DEFAULT = {
+  pms: 7,       // mean systemic filling pressure, mmHg (stressed volume / venous compliance)
+  rvr: 1.0,     // resistance to venous return, mmHg per L/min
+  pcrit: -1,    // the pressure below which the great veins collapse at the thoracic inlet: the plateau of venous return
+  pmax: 12,     // the plateau of the cardiac-function curve, L/min (contractility, rhythm, valves)
+  k: 10,        // preload sensitivity, mmHg (the curve's rise)
+  p0: -3.7,     // the x-intercept: the pressure around the heart (pleural + pericardial), mmHg
+  contr: 1.0,   // contractility multiplier
+  aft: 0        // right-ventricular afterload (0 = normal; bends the curve down and right)
+};
+function venousReturn(pra, c) { const pr = Math.max(pra, c.pcrit); return Math.max(0, (c.pms - pr) / c.rvr); }
+function cardiacFn(pra, c) { const pmax = c.pmax * c.contr / (1 + c.aft), k = c.k / c.contr * (1 + c.aft); if (pra <= c.p0) return 0; return pmax * (1 - Math.exp(-(pra - c.p0) / k)); }
+/* the operating point: where the curves cross */
+function operate(c0) {
+  const c = Object.assign({}, CV_DEFAULT, c0 || {});
+  let lo = c.p0, hi = c.pms; if (hi <= lo) return { pra: c.pms, co: 0, ptm: c.pms - c.p0, c: c, vrMax: venousReturn(-99, c) };
+  for (let i = 0; i < 60; i++) { const m = (lo + hi) / 2; if (cardiacFn(m, c) < venousReturn(m, c)) lo = m; else hi = m; }
+  const pra = (lo + hi) / 2;
+  return { pra: pra, co: cardiacFn(pra, c), ptm: pra - c.p0, gradient: c.pms - pra, c: c, vrMax: venousReturn(-99, c), collapsed: pra < c.pcrit };
+}
+function cvCurves(c0, n) {
+  const c = Object.assign({}, CV_DEFAULT, c0 || {}), N = n || 60, vr = [], cf = [], lo = Math.min(c.p0, c.pcrit) - 2, hi = Math.max(c.pms, c.p0 + 20) + 1;
+  for (let i = 0; i <= N; i++) { const x = lo + (hi - lo) * i / N; vr.push([x, venousReturn(x, c)]); cf.push([x, cardiacFn(x, c)]); }
+  return { vr: vr, cf: cf, lo: lo, hi: hi, op: operate(c) };
+}
+
+/* ---------------------------------------------------------------- the coupling */
+const HL_DEFAULT = {
+  zone: 0.7,     // abdominal and pulmonary zone conditions: 1 = zone III (volume replete), 0 = zone I/II (hypovolaemia)
+  kPab: 4.5,     // cm H2O of abdominal pressure per litre of lung volume above FRC (diaphragm descent, and the catecholamines that come with it)
+  strain: 0,     // share of a pleural pressure change that the abdomen shares (a Valsalva strains the whole trunk; a Mueller pulls the diaphragm down)
+  kPms: 1.0,     // mmHg of mean systemic pressure per mmHg of abdominal pressure, scaled by the zone
+  kRvr: 0.25,    // rise in resistance to venous return per mmHg of abdominal pressure, scaled by (1 − zone)
+  kPcrit: 0.8,   // the collapse pressure follows the abdominal pressure
+  aftSens: 0.15, // right-ventricular afterload per 10 cm H2O of transpulmonary pressure above FRC's
+  ppc: 0,        // pericardial recoil pressure, mmHg (large hearts)
+  pplScale: 1.0  // how much of the pleural pressure reaches the heart (1 = all)
+};
+/* the circulation through one breath: the pleural pressure moves the cardiac-function curve, the lung volume works on the
+   abdomen and the pulmonary vessels. Returns per-sample right atrial pressure, output, transmural pressure, and the means. */
+function couple(b, cv0, hl0) {
+  const cv = Object.assign({}, CV_DEFAULT, cv0 || {}), hl = Object.assign({}, HL_DEFAULT, hl0 || {}), n = b.t.length;
+  const FRC0 = frc(RESP_DEFAULT), ptpFRC = lungP(b.FRC, b.p), series = { pra: [], co: [], ptm: [], pms: [], pcrit: [], p0: [], aft: [], vr: [] };
+  let coSum = 0, praSum = 0, ptmSum = 0, coMin = 1e9, coMax = -1e9;
+  for (let i = 0; i < n; i++) {
+    const dPab = (hl.kPab * Math.max(0, b.v[i] - FRC0) + hl.strain * Math.abs(b.ppl[i] - cwP(FRC0, RESP_DEFAULT))) / CM_PER_MMHG;   // mmHg
+    const c = Object.assign({}, cv, {
+      p0: b.ppl[i] / CM_PER_MMHG * hl.pplScale + hl.ppc,
+      pms: cv.pms + hl.kPms * hl.zone * dPab,
+      rvr: cv.rvr * (1 + hl.kRvr * (1 - hl.zone) * dPab),
+      pcrit: cv.pcrit + hl.kPcrit * dPab,
+      aft: cv.aft + hl.aftSens * Math.max(0, b.ptp[i] - ptpFRC) / 10
+    });
+    const o = operate(c);
+    series.pra.push(o.pra); series.co.push(o.co); series.ptm.push(o.ptm); series.pms.push(c.pms); series.pcrit.push(c.pcrit); series.p0.push(c.p0); series.aft.push(c.aft); series.vr.push(o.vrMax);
+    coSum += o.co; praSum += o.pra; ptmSum += o.ptm; if (o.co < coMin) coMin = o.co; if (o.co > coMax) coMax = o.co;
+  }
+  const base = operate(Object.assign({}, cv, { p0: cwP(b.FRC, b.p) / CM_PER_MMHG * hl.pplScale + hl.ppc }));
+  return { series: series, mean: { co: coSum / n, pra: praSum / n, ptm: ptmSum / n }, swing: { co: coMax - coMin, pct: coMax > 0 ? (coMax - coMin) / ((coMax + coMin) / 2) * 100 : 0 }, base: base, cv: cv, hl: hl };
+}
+
+/* ---------------------------------------------------------------- the scenarios */
+const SCENARIOS = [
+  { id: 'quiet', group: 'In health', name: 'A quiet breath', resp: {}, cv: {}, hl: {}, note: 'Inspiration pulls the pleural pressure down by a few cm H2O: the cardiac-function curve slides left along the venous-return curve, the right atrial pressure falls, its transmural pressure rises, and output rises by the gradient the fall opened — a 3 mmHg fall against a 5 mmHg gradient is a large change. The descending diaphragm nudges the mean systemic pressure up as well. Expiration undoes it.' },
+  { id: 'deep', group: 'In health', name: 'A deep, fast breath', resp: { vt: 1.2, rr: 20, ri: 3 }, cv: {}, hl: {}, note: 'A bigger breath takes the pleural pressure further down — more of it for the elastic recoil, more for the flow — and the venous return it opens runs into the plateau: below the collapse pressure the great veins flutter at the thoracic inlet and no further fall buys more flow. The high lung volume also begins to afterload the right ventricle.' },
+  { id: 'mueller', group: 'In health', name: 'Mueller manoeuvre (−20 cm H2O, no volume change)', resp: { mode: 'hold', holdPpl: -20 }, cv: {}, hl: { strain: 0.35 }, note: 'A sustained pull against a closed glottis: pressure falls, volume does not. The curve slides far left, the right atrial pressure goes sub-atmospheric, and venous return hits its plateau at once — the veins collapse at the inlet, so right-heart volume may not rise at all. What rises is the left ventricle’s transmural pressure: afterload.' },
+  { id: 'valsalva', group: 'In health', name: 'Valsalva (+30 cm H2O, no volume change)', resp: { mode: 'hold', holdPpl: 30 }, cv: {}, hl: { strain: 0.9, zone: 1 }, note: 'A strain against a closed glottis: the pleural pressure rises, the curve slides right, the right atrial pressure rises while its transmural pressure and the output fall. The right ventricle is not afterloaded — it and the pulmonary artery sit in the same box, so their transmural pressure does not change; the calculated PVR rises only because the output fell.' },
+  { id: 'ippv', group: 'In health', name: 'A passive ventilator breath (ZEEP)', resp: { mode: 'passive', ri: 6 }, cv: {}, hl: {}, note: 'Not the reverse of a spontaneous breath: the volume still rises, but the pleural pressure rises with it, following the chest wall curve. The cardiac-function curve slides right: right atrial pressure up, transmural pressure and output down, the descending diaphragm raising the mean systemic pressure a little against it. The transpulmonary pressure — alveolar minus pleural — is what afterloads the right ventricle, and in health at this volume it barely does.' },
+  { id: 'peep', group: 'In health', name: 'PEEP 10 on a passive patient', resp: { mode: 'passive', peep: 10, ri: 6 }, cv: {}, hl: {}, note: 'PEEP is steady-state: the end-expiratory volume and pleural pressure sit higher for every breath. The mean systemic pressure rises with the pressurised abdomen by about as much as the collapse pressure does, so the gradient for venous return is kept — output falls little in a volume-replete patient.' },
+  { id: 'peep_dry', group: 'In health', name: 'PEEP 10 in hypovolaemia', resp: { mode: 'passive', peep: 10, ri: 6 }, cv: { pms: 4.5 }, hl: { zone: 0.1 }, note: 'The same PEEP on an empty circulation: the mean systemic pressure barely moves with the abdomen (the venous beds are already collapsible — zone I), the resistance to venous return rises, and the right atrial pressure is pushed toward the collapse pressure. Output falls precipitously. Fluid, or less PEEP, moves the venous-return curve back.' },
+  { id: 'peep_wet', group: 'In health', name: 'PEEP 10 in volume overload', resp: { mode: 'passive', peep: 10, ri: 6 }, cv: { pms: 13 }, hl: { zone: 1 }, note: 'With a high mean systemic pressure the pressurised abdomen pushes blood toward the thorax (zone III), the right atrial pressure stays well above the collapse pressure, and venous return is kept — it can even rise. This is why PEEP is tolerated, or helps, when the heart is full.' },
+  { id: 'copd_sp', group: 'In sickness', name: 'COPD exacerbation, breathing spontaneously', resp: { cl: 1.6, ri: 12, re: 24, vt: 0.5, rr: 26, pexp: 4 }, cv: { aft: 0.2 }, hl: { aftSens: 0.5 }, note: 'Long time constants and a short expiration: the lungs do not empty, the end-expiratory volume rises (dynamic hyperinflation) and alveolar pressure stays positive (auto-PEEP). The breath now starts higher on stiffer curves, after a threshold load. Auto-PEEP acts like PEEP on the circulation — the collapse pressure and the mean systemic pressure both rise — while the inspiratory swings pull the cardiac-function curve far left and the expiratory effort pushes it right.' },
+  { id: 'copd_mv', group: 'In sickness', name: 'COPD ventilated at a fast rate (auto-PEEP)', resp: { mode: 'passive', cl: 1.6, ri: 12, re: 24, vt: 0.5, rr: 24, peep: 0 }, cv: { aft: 0.2 }, hl: { aftSens: 0.5 }, note: 'The ventilator can trap gas as readily as the patient: a rate that leaves no time to empty stacks volume, the plateau pressure climbs on the stiff upper curve, and the hidden end-expiratory pressure shifts the cardiac-function curve right for every breath. Drop the rate (lengthen expiration) and the trapped volume drains.' },
+  { id: 'copd_fix', group: 'In sickness', name: 'COPD ventilated at a slow rate', resp: { mode: 'passive', cl: 1.6, ri: 12, re: 24, vt: 0.5, rr: 12, peep: 0 }, cv: { aft: 0.2 }, hl: { aftSens: 0.5 }, note: 'The same lungs with a long expiration: the end-expiratory volume returns toward FRC, the auto-PEEP goes, the plateau falls, and the circulation is let alone. The treatment of auto-PEEP is time, not pressure.' },
+  { id: 'asthma', group: 'In sickness', name: 'Status asthmaticus', resp: { cl: 1.0, ri: 22, re: 30, vt: 0.55, rr: 28, pexp: 8 }, cv: { aft: 0.15 }, hl: { aftSens: 0.4 }, note: 'Resistance in both directions, so the pleural pressure swings from deeply negative on inspiration (−20 to −40 cm H2O in the literature) to positive on forced expiration. Elastic recoil is kept, which helps expiration; the breath is taken at high volume to open the airways, at the price of elastic work. The venous return runs into the plateau on inspiration and is pushed back on expiration — the pulse pressure varies beat to beat.' },
+  { id: 'cpe_sp', group: 'In sickness', name: 'Cardiogenic pulmonary oedema, breathing spontaneously', resp: { cl: 0.45, ri: 9, re: 10, vt: 0.4, rr: 28 }, cv: { pms: 13, contr: 0.5, aft: 0.5 }, hl: { zone: 1, aftSens: 0.5, ppc: 2 }, note: 'Wet lungs are stiff and their airways narrow: each breath needs a deep fall in pleural pressure. That fall boluses a full venous system into a right heart whose output is already afterloaded by the congested pulmonary bed, so the transmural pressure climbs with little gain in flow — and on the left the same negative pressure raises the afterload of a dilated ventricle that cannot shrink its radius. The breath feeds the oedema.' },
+  { id: 'cpe_mv', group: 'In sickness', name: 'Cardiogenic pulmonary oedema on positive pressure', resp: { mode: 'passive', cl: 0.65, ri: 7, re: 8, vt: 0.45, rr: 18, peep: 8 }, cv: { pms: 13, contr: 0.7, aft: 0.1 }, hl: { zone: 1, aftSens: 0.15, ppc: 1 }, note: 'Positive pressure (invasive or a mask) raises the pleural pressure and takes the swings away: venous return is limited, the enlarged heart shrinks off its pericardium, the left ventricle’s transmural pressure — its afterload — falls, and the oxygenation and recruitment unload the right ventricle. The cardiac-function curve steepens; output rises at a lower filling pressure. The same physiology makes extubation the hard moment.' },
+  { id: 'ards_p', group: 'In sickness', name: 'Pulmonary ARDS (stiff lung, normal chest wall)', resp: { mode: 'passive', cl: 0.35, ccw: 1.0, vt: 0.4, rr: 22, peep: 10, ri: 7 }, cv: { aft: 0.3 }, hl: { aftSens: 0.7 }, note: 'The lung curve has moved down and left; the chest wall is itself. For the same plateau pressure the pleural pressure changes little — most of the airway pressure is spent across the lung, as transpulmonary pressure. The cardiac-function curve moves little but bends: the right ventricle is afterloaded, the operating point falls, the right atrial pressure rises, the ventricle dilates. The septum is pushed left.' },
+  { id: 'ards_e', group: 'In sickness', name: 'Extra-pulmonary ARDS (stiff chest wall, abdominal hypertension)', resp: { mode: 'passive', cl: 0.75, ccw: 0.45, shift: 5, vt: 0.4, rr: 22, peep: 10, ri: 7 }, cv: { aft: 0.05 }, hl: { aftSens: 0.3, zone: 0.7 }, note: 'The same respiratory-system compliance and the same plateau pressure as pulmonary ARDS, but the loss is in the chest wall: the pleural pressure rises for every breath, the transpulmonary pressure is smaller. The cardiac-function curve is pushed far right — preload, not afterload — and the right ventricle shrinks. The two ARDS look alike on the ventilator and opposite on the echo.' },
+  { id: 'cirr_sp', group: 'In sickness', name: 'Septic cirrhosis with ascites, breathing spontaneously', resp: { cl: 0.6, ccw: 0.6, shift: 6, ri: 9, re: 11, vt: 0.3, rr: 30, pexp: 6 }, cv: { pms: 9, rvr: 0.6, contr: 0.7, aft: 0.3 }, hl: { zone: 0.8, aftSens: 0.4 }, note: 'A loaded chest wall and wet, stiff lungs: rapid shallow breathing to spare elastic work, large swings of pleural pressure all the same, abdominal muscles recruited on expiration. Sepsis lowers the resistance to venous return (a steep curve, so output swings with the breath) and depresses both ventricles (a flat cardiac curve, which damps the swing). Inspiration is limited by great-vein collapse; expiration pushes the curve right against a tense abdomen.' },
+  { id: 'cirr_mv', group: 'In sickness', name: 'Septic cirrhosis, ventilated', resp: { mode: 'passive', cl: 0.8, ccw: 0.6, shift: 6, ri: 7, re: 8, vt: 0.4, rr: 20, peep: 8 }, cv: { pms: 9, rvr: 0.6, contr: 0.8, aft: 0.2 }, hl: { zone: 0.8, aftSens: 0.3 }, note: 'The plateau pressure is high, but much of it is the chest wall: the transpulmonary pressure is modest, so the right ventricle is unloaded while its preload is taken by the raised pleural pressure. The swings are gone. Paracentesis moves the chest wall curve back and gives the lungs room.' },
+  { id: 'wean', group: 'Weaning', name: 'From pressure support to the trial of breathing (heart failure)', resp: { mode: 'spont', cl: 0.6, ri: 8, re: 9, vt: 0.45, rr: 26 }, cv: { pms: 12, contr: 0.5, aft: 0.4 }, hl: { zone: 1, aftSens: 0.4, ppc: 2 }, note: 'Take the positive pressure away from a weak, full heart and the pleural pressure turns negative with every breath: venous return rises (preload), the left ventricle’s transmural pressure rises (afterload), the work of breathing takes a share of the output, and the wedge pressure climbs — weaning-induced pulmonary oedema. Compare with the same patient on support.' },
+  { id: 'wean_ps', group: 'Weaning', name: 'The same patient on pressure support 10 / PEEP 5', resp: { mode: 'assist', cl: 0.6, ri: 8, re: 9, rr: 20, peep: 5, ps: 8, pmusMax: 4 }, cv: { pms: 12, contr: 0.65, aft: 0.2 }, hl: { zone: 1, aftSens: 0.25, ppc: 1 }, note: 'On support the airway pressure is positive, yet the patient’s effort still pulls the pleural pressure below the chest wall curve — positive at the mouth is not positive in the chest. Even so, the end-expiratory pressure holds the curve to the right and the swings are smaller: the heart is spared what the trial will ask of it.' }
+];
+function scenario(id) { return SCENARIOS.filter(s => s.id === id)[0] || SCENARIOS[0]; }
+function runScenario(id) { const s = scenario(id), b = breath(s.resp), c = couple(b, s.cv, s.hl); return { s: s, b: b, c: c }; }
+
+/* ---------------------------------------------------------------- the geometrical model (Kenny 2023) and its corollaries */
+/* Qcirculatory = (PMSF − PPC)/(Rcardiac + RVR), PPC = Ppl + Paw·Ecw/Ers + pericardial recoil; capped by the cardiac plateau
+   (PRA above PRAplat: Q = (PRAplat − PPC)/Rcardiac) and by venous collapse (PRA below PCRIT: Q = (PMSF − PCRIT)/RVR). */
+const GEOM_DEFAULT = { pmsf: 8, ppl: -2.5, paw: 7, ecw: 0.3, ppcel: 0, rcard: 0.45, rvr: 1.0, praPlat: 4, pcrit: -1 };
+function geom(g0) {
+  const g = Object.assign({}, GEOM_DEFAULT, g0 || {}), ppc = g.ppl + g.paw * g.ecw + g.ppcel;
+  const qU = Math.max(0, (g.pmsf - ppc) / (g.rcard + g.rvr)), praU = qU * g.rcard + ppc;
+  const qC = Math.max(0, (g.praPlat - ppc) / g.rcard), qV = Math.max(0, (g.pmsf - g.pcrit) / g.rvr);
+  let q = qU, pra = praU, regime = 'unlimited';
+  if (praU > g.praPlat && qC <= qV) { q = qC; pra = g.pmsf - q * g.rvr; regime = 'cardiac-limited'; }
+  else if (praU < g.pcrit && qV < qC) { q = qV; pra = q * g.rcard + ppc; regime = 'venous-limited'; }
+  if (qC < qU && qV < qU && Math.abs(qC - qV) < 0.3) { q = Math.min(qC, qV); regime = 'dual limitation'; pra = (g.pcrit + g.praPlat) / 2; }
+  return { q: q, pra: pra, ppc: ppc, regime: regime, g: g, qU: qU, qC: qC, qV: qV, ptm: pra - ppc };
+}
+/* the 2025 letter: right atrial pressure against the mean systemic filling pressure (pericardial pressure taken as zero) */
+function praVsPmsf(pmsf, ratio, praPlat, responsive, ppc) { const pc = ppc || 0; return responsive ? pc + (pmsf - pc) / (ratio + 1) : pmsf - ratio * (praPlat - pc); }
+/* the whole curve: on the slope until the cardiac plateau is reached, then every mmHg of Pms goes into the right atrium */
+function praCurve(pmsf, ratio, praPlat, ppc) { return Math.max(praVsPmsf(pmsf, ratio, praPlat, true, ppc), praVsPmsf(pmsf, ratio, praPlat, false, ppc)); }
+/* a contractility that puts the operating point at a chosen right atrial pressure for a given circuit (for "the same CVP, three patients") */
+function fitContr(cv0, praTarget) { let lo = 0.1, hi = 4; for (let i = 0; i < 50; i++) { const m = (lo + hi) / 2, op = operate(Object.assign({}, cv0, { contr: m })); if (op.pra > praTarget) lo = m; else hi = m; } return (lo + hi) / 2; }
+/* strain and stress (chapter 9): strain = VT / the lung that is open; stress ≈ 12 cm H2O per unit strain; stress raisers multiply it */
+function strainStress(vt, baby, raiser) { const strain = vt / baby, stress = 12 * strain; return { strain: strain, stress: stress, local: stress * (raiser || 1), tlcStrain: 2.5, collagenAt: 21 }; }
+/* the pulmonary pressure–flow relation (chapter 7 figure 3, chapter 10 figures 40–43): the driving pressure rises with flow
+   from a closing pressure, less and less steeply (recruitment, distension); a "calculated PVR" is the chord from the left atrial pressure,
+   so it falls as flow rises along one curve and rises as flow falls — without any change in the vessels */
+const PQ = { r: 2.9, n: 0.7 };   // ΔP = r·Q^n above the closing pressure: distension and recruitment flatten the curve as flow rises
+function pqPressure(q, pc, n) { return (pc || 0) + PQ.r * Math.pow(Math.max(0, q), n || PQ.n); }
+function pqFlow(p, pc, n) { const c = pc || 0; return p <= c ? 0 : Math.pow((p - c) / PQ.r, 1 / (n || PQ.n)); }
+
+/* ---------------------------------------------------------------- the topics */
+const SRC = ['Kenny JE. An Approach to Mechanical Heart-Lung Interaction. 1st ed. Toronto: Spectral Envelope Publishing House; 2020 (a Creative Commons free cultural work; the author’s video lectures are at heart-lung.org/lectures).'];
+const T = {};
+T.hl_start = { title: 'The approach: one pressure axis', kicker: 'How Kenny ties the lungs to the heart — and how to use this section', blocks: [
+  { p: 'Guyton saw that the venous-return curve and the cardiac-function curve share an axis (right atrial pressure), so they can be drawn together and the circulation read at their crossing. Kenny’s approach does the same for the thorax: the Campbell diagram (lung volume against pleural pressure) and the Guyton diagram (blood flow against right atrial pressure) share a pressure axis too, because the heart sits in the chest and the pleural pressure is the pressure around it. Put the two on one axis and a breath becomes a movement of the cardiac-function curve along the venous-return curve.' },
+  { h: 'The five diagrams, in order', ol: ['The bag, the box and the tube: the lung is a balloon held open by the pressure difference across its wall (static), fed through an airway whose pressure drop is flow times resistance (dynamic). The equation of motion adds the two.', 'The Campbell diagram: the lung’s curve and the passive chest wall’s curve on one graph. Where they cross is FRC; the gap between them is the pressure the muscles must make; the loop of a breath and its areas are the work of breathing. Reflect the lung curve and add instead of subtract and it becomes the Rahn diagram — the ventilator’s view, with the plateau pressure on its axis.', 'The Guyton diagram: venous return falls as right atrial pressure rises, from the mean systemic pressure down to a plateau where the great veins collapse; cardiac output rises with right atrial pressure from an intercept that is the pressure around the heart. The crossing fixes both.', 'Their union: the cardiac-function curve slides along the pressure axis with the pleural pressure of the breath; the lung volume works on the abdomen (the mean systemic pressure, the resistance to venous return, the collapse pressure) and on the pulmonary vessels (right-ventricular afterload).', 'Sickness on the same picture: auto-PEEP, pulmonary oedema, the two kinds of ARDS, cirrhosis, the trial of breathing — each a different shape of the curves.'] },
+  { h: 'How to use it', p: 'Each topic has a diagram you can move. Start with the bag and the tube, build the Campbell diagram, then the Guyton diagram, then watch them move together in health before the diseases. Kenny’s video lectures on the book are at heart-lung.org/lectures; the book is free and worth reading in full.' },
+  { links: [['heart-lung.org — the lectures', 'https://heart-lung.org/lectures', 'the author’s video lectures on the book'], ['The book (free, Creative Commons)', 'https://heart-lung.org', 'An Approach to Mechanical Heart-Lung Interaction, 1st ed., 2020']] },
+  { src: SRC }
+] };
+T.hl_bag = { title: 'The bag, the box and the tube', kicker: 'Static and dynamic pressure: the equation of motion, made visible', blocks: [
+  { p: 'Picture the lung as a bag inside a box, with a tube to the outside. The bag’s volume is set by the pressure across its wall — inside (the alveolus) minus outside (the pleural space) — through its compliance; that is the static, or transpulmonary, pressure, and it says nothing about flow. The tube adds a second pressure: to move gas there must be a gradient between the alveolus and the mouth, proportional to flow and resistance. The equation of motion adds the two: airway pressure = volume ÷ compliance + flow × resistance.' },
+  { widget: 'hl_bag' },
+  { h: 'What the breath does with the pleural pressure', p: 'At the start of a spontaneous inspiration the pleural pressure falls and takes the alveolar pressure down with it: little transpulmonary pressure, a large gradient for flow — the effort is buying gas movement. As the lung fills the alveolar pressure climbs back toward atmospheric and the flow gradient shrinks, while the pleural pressure stays low: now the effort is buying volume. At end-inspiration flow is zero and the whole fall is transpulmonary — a static state. A ventilator breath on a passive patient is not the reverse of this: the alveolar pressure rises, and the pleural pressure follows the chest wall, not the lung.' },
+  { h: 'The numbers', ul: ['Normal compliances: lung ≈ 200 mL/cm H2O, chest wall ≈ 150, the system together ≈ 85 mL/cm H2O. Compliance falls at high volume on every curve.', 'Normal airway resistance < 4 cm H2O/L/s, most of it in the pharynx and large airways; an endotracheal tube roughly doubles it.', 'Flow in the large airways is transitional to turbulent (resistance rises with flow and with gas density — hence heliox); laminar flow, proportional to viscosity, only in the smallest airways.', 'Surfactant keeps the small alveoli from emptying into the large (Laplace) and gives the lung its hysteresis — why atelectasis forms easily and PEEP is needed to keep what has been recruited.'] },
+  { src: SRC }
+] };
+T.hl_campbell = { title: 'The Campbell diagram', kicker: 'Lung and chest wall on one graph: FRC, the muscles’ pressure, the loop of a breath, the work of breathing', blocks: [
+  { p: 'Plot lung volume against pleural pressure. The lung’s static curve runs down to the right: the lower the pleural pressure, the bigger the lung. The passive chest wall’s curve runs up to the right: it rests at about 55 % of vital capacity and must be held below that by a negative pleural pressure. Where the two cross, the outward recoil of the chest wall balances the inward recoil of the lung: FRC, at a pleural pressure of about −5 cm H2O. At any other volume the horizontal gap between the curves is the pressure the inspiratory muscles must make to hold it there with no flow.' },
+  { widget: 'hl_campbell' },
+  { h: 'Reading the loop', ul: ['The dynamic curve of inspiration lies to the left of the lung’s static curve by flow × resistance; passive expiration lies to its right, inside the elastic envelope, because the recoil pays for the flow. Active expiration pushes outside the envelope — the pleural pressure goes positive.', 'Elastic work is the triangle between the two static curves over the tidal range; it is stored as recoil and given back on expiration. Resistive work is the loop between the dynamic and static curves; it is lost as heat.', 'A stiffer lung or chest wall pulls the curves apart: more pressure for the same volume, more elastic work — the patient breathes small and fast to shrink the triangle, at the price of dead space. A narrower airway widens the loop — the patient breathes at high volume to open the airways, at the price of elastic work.', 'Auto-PEEP: when the lungs cannot empty in the time given (long time constants, short expiration) the next breath starts above FRC, on the stiff part of both curves, and must first overcome the trapped alveolar pressure — a threshold load (the rectangle) before any volume moves. Extrinsic PEEP narrows that threshold for a triggering patient; only a longer expiration removes it.'] },
+  { h: 'The ventilator’s view: Rahn, the plateau and the pleural pressure', p: 'Reflect the lung curve and add the two pressures instead of subtracting them and the gap becomes the airway pressure a ventilator must apply to a passive patient — the respiratory-system curve, a series of plateau pressures. Switch the diagram to a passive breath to see it: the alveolar pressure follows the system curve, the pleural pressure follows the chest wall curve, and the fraction of a plateau pressure that reaches the pleural space is the lung’s compliance over the sum of the two — about half in health, far less when the lung is stiff, far more when the chest wall is. That fraction is what the heart feels; the rest, the transpulmonary pressure, is what the lung feels.' },
+  { widget: 'hl_ptrans' },
+  { src: SRC }
+] };
+T.hl_guyton = { title: 'The Guyton diagram', kicker: 'Circuit function meets cardiac function: the crossing sets the right atrial pressure and the output', blocks: [
+  { p: 'Weber filled a loop of gut with water and pumped one end: the pressures rose downstream and fell upstream, and the average did not change. The heart redistributes volume; it does not make pressure. The pressure the system would settle to with the heart stopped — the mean systemic (or circulatory) filling pressure, Pms — is the upstream head for venous return, set by the stressed volume of the veins over their compliance: about 7 mmHg. Venous return is the gradient from Pms to the right atrium over the resistance to venous return, and it is linear — until the right atrial pressure falls below the pressure outside the great veins at the thoracic inlet, where they collapse and flutter: a Starling resistor, and the plateau of maximal venous return.' },
+  { widget: 'hl_guyton' },
+  { h: 'The two curves', ul: ['Circuit function: Pms moves the venous-return curve along the axis (fluid, venous tone, abdominal pressure, catecholamines, hypoxaemia recruit stressed volume); the resistance to venous return sets its slope (alpha-agonists raise it, beta-agonists lower it, abdominal hypertension and a descending diaphragm raise it); the collapse pressure caps it.', 'Cardiac function: output rises with right atrial pressure by Frank–Starling, to a plateau set by the pericardium and the afterload — there is no descending limb; patients do not “fall off” the curve. Contractility, rhythm, valves, afterload and diastolic stiffness all flatten or steepen it. Its x-intercept is the pressure around the heart: the pleural pressure, plus the pericardium’s recoil when the heart is large.', 'The crossing: a higher Pms raises output and right atrial pressure together; a better heart raises output and lowers right atrial pressure. A right atrial pressure means nothing alone — it is read against both curves. The distance from the intercept to the operating point is the transmural, distending pressure: the preload.'] },
+  { h: 'Why this matters for the lungs', p: 'The gradient for venous return is only about 5 mmHg. A 3 mmHg fall in right atrial pressure, the size of a quiet inspiration, is a 60 % rise in venous return — the largest haemodynamic event of a healthy day, absorbed by a pulmonary bed that recruits and dilates as output rises. Because the intercept of the cardiac-function curve is the pleural pressure, every breath slides the curve along the axis. That is the whole of the next topic.' },
+  { src: SRC }
+] };
+T.hl_union = { title: 'Campbell and Guyton on one axis', kicker: 'The heart–lung interaction diagram: a breath moves the cardiac-function curve', blocks: [
+  { p: 'Keep pressure on the shared axis. The Guyton diagram stands in the plane of the page: pressure across, blood flow up. Lay the Campbell diagram into the page: pressure across, lung volume into the depth. Now the pleural pressure of any instant of the breath is a point on the Campbell loop, dropped onto the shared axis, and the cardiac-function curve has its foot there. Inspire spontaneously and the foot slides left along the venous-return curve: right atrial pressure down, transmural pressure and output up. Give a ventilator breath and the foot slides right: right atrial pressure up, transmural pressure and output down. Meanwhile the lung volume, into the page, is doing its own work: a descending diaphragm pressurises the abdomen (Pms up, and in a dry patient the resistance to venous return and the collapse pressure up), and the transpulmonary pressure above FRC afterloads the right ventricle, bending the curve down.' },
+  { widget: 'hl_union' },
+  { h: 'What to watch', ul: ['The dumbbell under the axis: the transmural pressure of the right atrium, the preload. It can rise while the right atrial pressure falls (spontaneous inspiration) and fall while the right atrial pressure rises (a ventilator breath).', 'The plateau: when the foot slides left past the collapse pressure, venous return is maximal and no further effort buys flow — a Mueller manoeuvre, a deep breath in hypovolaemia.', 'Lung volume versus pleural pressure: both spontaneous and mechanical breaths raise the volume; they differ in the pressure. The volume effects (abdomen, pulmonary vessels) are shared; the pressure effects are opposite.', 'The bend: right-ventricular afterload flattens the curve — the operating point falls and the right atrial pressure rises at the same time. In health, at tidal volumes, it is trivial; in a stiff lung on PEEP it is the story.', 'The left ventricle is not drawn, but follow it in words: a negative pleural pressure raises its transmural pressure (afterload) and, through a filled right ventricle, stiffens it (interdependence); lung inflation above FRC squeezes blood from the pulmonary capacitance toward it (zone III) — the piston that makes the stroke volume vary with the ventilator.'] },
+  { src: SRC }
+] };
+T.hl_health = { title: 'Breathing and the heart in health', kicker: 'Lung volume and pleural pressure, each alone, then together: spontaneous breath, Mueller, Valsalva, the ventilator, PEEP', blocks: [
+  { p: 'Chapter 3 takes the two mediators apart. A change of lung volume at constant pleural pressure stresses the vessels: the descending diaphragm compresses the splanchnic reservoir and raises Pms (helping venous return when the abdomen is in zone III — full — and hindering it when zone I vessels collapse and the IVC is pinched); lung inflation above FRC squeezes the pulmonary capillaries toward the left heart in zone III and raises the closing pressure of the alveolar vessels — the biphasic curve of “PVR” against lung volume is a Starling resistor, not a Poiseuille one. A change of pleural pressure at constant volume moves the cardiac-function curve along the axis, and that is all it does to the right ventricle: the ventricle and the pulmonary artery share the box, so their transmural pressure is untouched — Valsalva lowers the transmural pulmonary artery pressure, whatever the calculated PVR says.' },
+  { widget: 'hl_pvr' },
+  { h: 'The combined acts', table: { head: ['', 'Lung volume', 'Pleural pressure', 'Right heart', 'Left heart'], rows: [
+    ['Spontaneous breath', 'up', 'down', 'Curve slides left: Pra down, transmural up, output up — to the plateau if the veins collapse', 'Interdependence from the filled RV and a higher transmural (afterload) pressure trim the stroke volume: the normal inspiratory fall'],
+    ['Mueller (closed glottis)', 'unchanged', 'far down', 'Veins collapse at the inlet: little or no gain in volume', 'Afterload dominates; a dilated LV suffers most'],
+    ['Valsalva (closed glottis)', 'unchanged', 'far up', 'Curve slides right: Pra up, transmural and output down (phase II); no RV afterload', 'Phase I: a brief rise as the septum moves right; then the series fall; overshoot on release'],
+    ['Passive ventilator breath (ZEEP)', 'up', 'up, along the chest wall curve', 'Curve slides right and bends with the transpulmonary pressure; the abdomen lifts Pms a little against it', 'The piston: inflation sends pulmonary blood to the LV (stroke volume rises on inspiration, falls 2–3 beats later)'],
+    ['PEEP', 'up, steady', 'up, steady', 'Curve shifted right; Pms and the collapse pressure rise together so the gradient is kept — unless the patient is dry, sedated or beta-blocked', 'Afterload down when the LV is full; trivial in health']
+  ] } },
+  { h: 'The quantities worth keeping', ul: ['Gradient for venous return ≈ 5 mmHg; a 3 mmHg fall in Pra is +60 % venous return.', 'For each 1 mmHg fall in right atrial transmural pressure, pulmonary artery flow falls about 8 % (an isolated rise in pleural pressure).', 'The great veins collapse at about −4 to −8 cm H2O of right atrial pressure, or when the abdomen exceeds the IVC by about 5 cm H2O.', 'In health the RV is an unstressed chamber: its volume changes with little change in transmural pressure — the cardiac-function curve is nearly vertical in the normal range; PEEP below 15–20 cm H2O barely afterloads it.', 'About half of a plateau pressure reaches the pleural space in health (lung and chest wall compliances alike); the pleural pressure follows the chest wall’s curve in the passive patient and cannot be predicted at all in one who is making efforts.'] },
+  { src: SRC }
+] };
+T.hl_sick = { title: 'Heart–lung interaction in sickness', kicker: 'Auto-PEEP, pulmonary oedema, the two ARDS, cirrhosis: the same diagram with different curves', blocks: [
+  { p: 'Chapter 4 draws four patients. In each, the question is the same: what have the disease and the ventilator done to the lung curve, the chest wall curve, the venous-return curve and the cardiac-function curve — and therefore to the pleural pressure, the lung volume, and the crossing. Run each one on the diagram above (it opens on the scenario you choose here) and read the note.' },
+  { widget: 'hl_sickpick' },
+  { h: 'Broncho-obstruction', p: 'Dynamic hyperinflation is a volume; auto-PEEP is the pressure it leaves in the alveolus. The breath starts high on both curves and after a threshold, so elastic and inspiratory work rise while the resistive work falls — the trade of high-volume breathing. The circulation sees auto-PEEP as PEEP: the collapse pressure and Pms rise together, the resistance to venous return rises, maximal venous return falls — the steady-state effect that matters more than the swings. Lower-lobe trapping compresses the heart in its fossa (high filling pressures, a small heart: the transmural pressure is what counts) and the hyperinflated lung afterloads a right ventricle whose vascular bed is already lost to emphysema. On the ventilator, the fix is time to exhale; extrinsic PEEP only helps the patient who is triggering. Asthma differs from emphysema in keeping its recoil, so its expiration costs less pleural pressure.' },
+  { h: 'Systolic heart failure and pulmonary oedema', p: 'Excess volume shifts the venous-return curve right — the high right atrial pressure is not only the failing heart (the pressure barely changes when the heart stops). Lung water stiffens the lung and narrows the airways, so each spontaneous breath needs a deep fall in pleural pressure; that boluses the right heart (transmural pressure up, output up little, afterloaded by West zone IV and hypoxic vasoconstriction) and afterloads a dilated left ventricle that cannot shrink its radius. Positive pressure reverses all of it — it limits venous return, shrinks the heart off its pericardium, lowers the LV’s transmural pressure, empties the thoracic aorta — and output rises at a lower filling pressure, but only when the heart is full. Furosemide works first as a venodilator (Pms down) and only later as a diuretic.' },
+  { h: 'Pulmonary versus extra-pulmonary ARDS', p: 'Gattinoni’s two ARDS have the same respiratory-system compliance and the same plateau pressure: in the pulmonary kind the lung curve has fallen, in the extra-pulmonary kind the chest wall’s (its compliance tracks the abdominal pressure). Pleural pressure follows the chest wall, so the stiff-lung patient keeps most of the plateau as transpulmonary pressure — right-ventricular afterload, a dilating RV, a septum pushed left — while the stiff-chest patient sends the plateau into the pleural space — a right-shifted cardiac-function curve, lost preload, a shrinking RV. A plateau of 30 is not the same lung stress in the two; an oesophageal balloon tells them apart.' },
+  { h: 'Septic cirrhosis with ascites', p: 'Everything at once: a loaded chest wall (ascites) and wet lungs, so rapid shallow breathing with big pleural swings and recruited abdominal muscles; a large blood volume whose Pms is blunted by splanchnic capacitance and portal resistance; sepsis lowering the resistance to venous return (a steep venous curve, big respiratory swings in output) and flattening both cardiac curves (which damps them). Ventilated, the high plateau is largely chest wall, so the RV is unloaded as its preload is taken; paracentesis and albumin move the curves back.' },
+  { src: SRC }
+] };
+T.hl_wean = { title: 'Extubation failure', kicker: 'Chapter 5: what happens when the positive pressure comes off — a positive-feedback loop through the thorax', blocks: [
+  { p: 'The heart is “a pressure chamber within the thoracic pressure chamber”. Take the ventilator away and four stresses arrive together: the pulmonary vasculature, the surface of the heart, the septum and the abdomen. Kenny draws them as a loop that feeds itself — an insult to the lungs, the heart or the vessels “induces pathology in the other”.' },
+  { h: 'The loop, step by step', ol: ['Positive pressure removed → airway resistance up. With low recoil the equal pressure point moves toward the alveolus, past the cartilage: dynamic collapse, air-trapping, auto-PEEP; loss of PEEP also lets the bases close.', 'Air-trapping → compliance down → a deeper fall in pleural pressure for each breath (the Campbell curves are stiff at both ends; auto-PEEP adds a threshold).', 'Negative pleural pressure → right-ventricular outflow impedance up: the extra-alveolar vessels dilate but in West zone II “the alveolar pressure becomes the pressure against which the right ventricle ejects”; a Mueller lowers RV ejection fraction and enlarges the RV.', 'A filled RV stiffens the LV through the septum — in overload “the RV preload can become its own afterload”; a stiff pericardium or lower-lobe hyperinflation magnifies it (Jardin: in status asthmaticus the transmural pressure, not the absolute, predicted the load; septal bowing explained the paradoxical pulse).', 'Negative pleural pressure → LV afterload up by Laplace (tension ∝ transmural pressure × radius; Buda: end-systolic volume tracked the transmural pressure); pleural pressures to −60 cm H2O occur in severe distress → LVEDP up → congestion.', 'Congestion → work of breathing up (Staub’s stages: engorgement, bronchovascular interstitium — about 500 mL fits there — alveolar interstitium, flooding; compliance falls, resistance rises by reflex, then impingement, then plugging) → rapid shallow breathing → back to step 2.', 'The abdomen: inspiration raises venous return until the right atrial pressure falls about 4–6 cm H2O below atmospheric and the great veins become Starling resistors; a descending diaphragm helps a full abdomen (zone III) and hurts an empty one.'] },
+  { widget: 'hl_wean' },
+  { h: 'What follows for the bedside', ul: ['PEEP, for contrast, barely changes the gradient for venous return (Pms rises with Pra): “it is the resistance to venous return that increases”. Volume status decides whether positive pressure cuts preload or afterload; in congestion, afterload reduction wins.', 'Before extubation “euvolemia is achieved”: Lemaire’s weaning-induced LV dysfunction cleared with a week of diuresis (he proposed relief of abdominal zone III). Optimise the RV’s load first; in mild pulmonary hypertension a lower preload (IVC occlusion) raised LV stroke volume (Kasner).', 'In air-trapping with RV overload, diuresis “may be dangerous” (lower-lobe trapping impairs venous return); bronchodilate first.', 'The trial of breathing on pressure support hides the load: the RSBI was validated on a T-piece, and “the true load … might be masked on pressure support”.', 'Chapter 10 adds the numbers: removing PEEP drops the collapse pressure (≈3 → 0 mmHg) and raises maximal venous return and the transmural RA pressure; weaning-induced pulmonary oedema was found in 29 of 81 trials, all of which failed; COPD (OR 8.7), cardiopathy (4.5) and obesity (3.6) predicted it; preload-independence on a leg raise flags the risk, and conversion to responsiveness after diuresis predicted passing (6 of 7).'] },
+  { src: SRC }
+] };
+T.hl_cvp = { title: 'The central venous pressure', kicker: 'Chapter 6: the CVP is the crossing of two curves — an eddy in a stream', blocks: [
+  { p: 'The right atrial pressure is set neither by the heart nor by the circuit but by both: it is where venous return (inflow) meets cardiac function (outflow) — the right atrium “like an eddy in a stream”. A single value therefore says nothing about volume on its own: reading volume status from the CVP “is like determining the lactate concentration when given only the patient’s pH”. Three patients can share a CVP of 2 mmHg with three different hearts and three different venous reservoirs — and three different outputs.' },
+  { widget: 'hl_cvp3' },
+  { h: 'Reading it well', ul: ['Reference the right atrium about 5 cm below the sternal angle; the mid-axillary line is right only fully supine. Zero is the atmosphere, so on a spontaneous inspiration the CVP falls while the RA transmural pressure very often rises (venous return rose). Read at end-expiration; high PEEP and forced expiration defeat it.', 'The waves: a (atrial contraction; cannon a-waves with a weak beat = AV dissociation), c (tricuspid bulge; the a–c nadir, the z-point, is the true end-diastolic pressure), x (the annulus descends), v (late-systolic filling; tall with TR, or with volume alone), y (tricuspid opening; prominent in restriction, lost in global tamponade but it may persist with a localised effusion).', 'Responsiveness: the plateau can sit “as low as 2 mmHg”; response is unlikely above 10 and “completely absent above 13 mmHg” — a responder above that has a right-shifted curve (PEEP, lower-lobe trapping, mediastinal oedema). A fluid challenge raises the CVP by 2 mmHg over 10–30 min; responders raise the cardiac index by more than 300 mL/min/m² or 10–15 %.', 'A CVP that does not fall with a spontaneous inspiration suggests the plateau (Magder) — “though this is contentious”; active expiration makes a false inspiratory fall. A CVP that does not rise with a mechanical breath “suggests – but does not prove” a plateau, and is uncommon.', 'The IVC: on a passive breath the CVP rises above the abdominal pressure and the IVC dilates; on a spontaneous breath the CVP falls, the abdomen rises and the IVC collapses — the Starling resistor that makes the plateau. More than 50 % collapse goes with a Pra below 10 mmHg in healthy subjects (Kircher); effort, non-invasive ventilation, auto-PEEP or a tense abdomen break the correlation. Collapse is “a surrogate marker for static right atrial pressure”, at best “moderately useful” for responsiveness.', 'Chapter 10’s defence of the CVP: not a predictor of volume status, but “the fulcrum of cardiovascular physiology” — the IVC follows the CVP against the abdominal pressure, and Maas’s bedside venous-return curves showed norepinephrine acting largely on venous return. The mean systemic filling pressure, 7–10 mmHg in health (stressed volume ≈ 20 mL/kg), 13 ± 5.5 after death on norepinephrine, spans 8–14 mmHg in euvolaemia according to tone; in arrest Pra = Pms (≈ 7 mmHg).'] },
+  { src: SRC }
+] };
+T.hl_pac = { title: 'The pulmonary artery catheter', kicker: 'Chapter 7: “not therapy; a monitoring utensil” — every number is a transmural pressure, a zone or a kinetics problem', blocks: [
+  { p: 'Evidence counsels against routine use, and those most exposed to the catheter understood it least — the harm may lie in the users. There are no absolute indications; it earns its place in complicated shock with pulmonary hypertension, when the clinician can interpret what it says and cannot get it less invasively. Each number is corrupted by the intrathoracic pressure, the lung zone or oxygen kinetics unless the physiology is understood.' },
+  { h: 'The catheter and its numbers', ul: ['110 cm, four lumens: the distal port at the tip (PA pressure, SvO2), the proximal port 30 cm back in the RA, the thermistor 4 cm from the tip, a 1.5 mL balloon. SVC at 10–15 cm; RV at 30–40 cm (systolic < 30, diastolic ≈ 0, CVP ≈ RVEDP); PA at 50–55 cm with the diastolic step-up (PAD 4–12; the notch ≈ mean PAP); the wedge about 10 cm on, a static column to within 1.5 cm of the LA — it must sit in West zone III, below the LA on the film.', 'PAD ≥ 5 mmHg above an accurate wedge → “likely an abnormality in pulmonary vascular resistance”. But PVR = (mPAP − Ppao)/CO assumes a straight line through the left atrial pressure; the true relation is curvilinear above a closing pressure. PVR moves with no change in tone — haemorrhage or a Valsalva raise it (the output fell), a flow-raising drug lowers it. Infer a true change only when pressure and flow move in opposite directions, or one is constant.', 'The wedge: its v-wave comes after the T-wave, whereas the PA systolic wave sits within it — that is how a true v-wave (MR) is told from an incomplete wedge. Read it at end-expiration: the tracing’s peak in a spontaneous breather, its trough in a passive one. Under PEEP, Teboul’s index of transmission ΔPpao/ΔPaw (end-expiration to plateau) × total PEEP corrects it — passive patients only, and not for the CVP, because the pleural pressure moves right-heart function relative to systemic venous return but moves LV function and pulmonary venous return together. A quarter to a third of catheters wedge in zone I/II: a wedge that swings more than the PAD in a passive patient is reading alveolar pressure.', 'LVEDV–LVEDP is exponential with “no universal curve”; 20–24 mmHg is the usual ceiling. “Ppao > 20 = hydrostatic oedema” is wrong on several fronts: the film lags; a few minutes of ischaemia push the wedge to 40 and back; hypoalbuminaemia; and the pulmonary venous resistance (normally a third of the total; raised in ARDS, hypoxaemia, veno-occlusive disease) hides a high capillary pressure behind a low wedge — read the inflection of the occlusion decay.', 'Cardiac output, “arguably the most valuable hemodynamic variable”: three 10 mL room-temperature injections over 2–4 s at end-expiration, averaged (the first over-reads; shunts over-read; TR slurs the curve and under-reads — use Fick). Fick with an assumed VO2 is “a gross estimation at best”; a widening arteriovenous difference “suggests – but does not prove” a falling output, since VO2 moves with agitation, fever, rigors, paralysis, cooling, sedation and cytopathic hypoxia.', 'Complications: arrhythmia under 5 %; RBBB on a LBBB → block; PA rupture — “the intensivist can never be too conscientious about the distal balloon” (inflate only to place and to wedge; less air to wedge means migration). Over-wedge: the pressure climbs toward the flush bag; incomplete wedge: the trace drifts to the PAD with “v-waves” inside the T-wave.'] },
+  { widget: 'hl_pvrillusion' },
+  { src: SRC }
+] };
+T.hl_dynamic = { title: 'Dynamic monitoring: a stress and its dose', kicker: 'Chapter 8: apply a defined stress to one curve and the response tells you where the operating point is', blocks: [
+  { p: '“The validity of the measured hemodynamic response is inexorably linked to the stress applied to the system” — a dose–response relation, as in pharmacology. The stress of a ventilator breath is the swing of pleural pressure, and nearly every validation study gave it the same way: volume control, 8–10 mL/kg, a passive patient in sinus rhythm. Change the effort, the tidal volume or the chest wall and the dose changes. Tests that stress venous return instead — the passive leg raise, the end-expiratory occlusion, a mini-bolus — escape most of the caveats.' },
+  { widget: 'hl_twostress' },
+  { h: 'The mechanics of a variation', ul: ['Status and responsiveness are “mechanistically, mutually exclusive”: “a patient may be hypervolemic and volume responsive”, and up to a quarter with a CVP under 5 do not respond. The Guyton diagram “is true only under respiratory arrest”: the intercept of the cardiac-function curve tracks the pleural pressure.', 'dUP (the inspiratory rise of the pulse) comes from pressure transmitted to the aorta, a better-filled LV and a lower LV afterload — stronger when full, so a poor marker. dDOWN is the inspiratory fall of right-heart output arriving at the LV two or three beats later, “waves reaching the shore, created by a distant boat”: “dDOWN represents biventricular volume responsiveness.” PPV = (PPmax − PPmin)/mean.', 'Wrong dose: spontaneous or triggered breathing (sensitivity falls; the wedge out-performed SVV in Heenen’s triggered patients); small tidal volumes (sensitivity falls — lower thresholds help); a stiff chest wall (false positives, and a fluid cycle that feeds itself).', 'Wrong heart: lung volume above FRC afterloads the RV, and afterload sensitivity shows as a flattened slope — an ARDS or pulmonary-hypertension patient on the plateau can still vary (false positive); systolic LV failure inflates dUP; arrhythmia and a high RR:HR ratio break the test.', 'The cavae: the SVC sees the pleural pressure, the IVC the abdomen. A passive breath raises the CVP above the abdomen and dilates the IVC while it collapses the SVC (the pleural pressure rises more than the CVP); a spontaneous breath collapses the IVC. Does collapse show responsiveness? “Unfortunately, no”: without abdominal pressurisation or stressed breathing it means a low CVP — hypovolaemia, a high resistance to venous return, a high capacitance or a hyperdynamic heart.', 'The leg raise shifts the venous-return curve and not the cardiac one, so it works in spontaneous breathing and arrhythmia — but it needs a flow measurement (semi-recumbent to supine with the legs at 45°, about 150 mL, peak at 30–90 s; abdominal hypertension blunts it; avoid in head injury). The end-expiratory occlusion: a 15 s pause, ≥ 5 % rise in stroke volume, tolerant of arrhythmia and light effort, better than PPV when compliance is poor, “though results have not been totally generalizable”.'] },
+  { src: SRC }
+] };
+T.hl_resp9 = { title: 'Updates in respiratory physiology', kicker: 'Chapter 9: hidden haemodynamics, stress and strain, driving pressure, power, prone, the obstructed patient', blocks: [
+  { h: 'Hidden haemodynamics in respiratory mechanics', p: 'The Rahn (passive) and Campbell (spontaneous) diagrams are mirror images; the system’s compliance sums the lung and the chest wall in series. In the passive patient the plateau pressure is the alveolar pressure and the chest wall curve is the pleural pressure (an oesophageal balloon), so the gap between the respiratory-system curve and the chest wall curve at a volume is the transpulmonary pressure — the RV’s afterload — while the rise of pleural pressure per volume is the RV’s lost preload. A high plateau has two aetiologies: a stiff lung (the plateau rises away from the pleural pressure) or a stiff chest wall (both rise together). Aim to shrink the area between the two curves — oedema, PEEP by stress index or driving pressure, prone: that area is “a partial representation of driving power”, and a large one yields pulse-pressure variation from afterload sensitivity rather than preload reserve.' },
+  { h: 'Stress and strain', p: 'Strain is the tidal volume relative to the lung that is open: 400 mL into a 200 mL baby lung is a strain of 2, into 800 mL 0.5. Stress is the fibre tension, ≈ the transpulmonary pressure: stress ≈ 12 cm H2O × strain, so TLC is reached at a strain of about 2.5 (≈ 30 cm H2O) and the collagen is fully distended at 21 cm H2O (strain 1.5–2). The specific elastance of ARDS is normal — the lung is small, not stiff. Stress raisers at the interfaces of an inhomogeneous lung multiply local stress (4.6 in theory, about 2 clinically), hence a suggested transpulmonary driving pressure under 12 cm H2O. Prone position homogenises the stress by matching the lung to the chest wall, without adding power.' },
+  { widget: 'hl_strain' },
+  { h: 'Driving pressure, stress index, power', ul: ['ΔP = VT/Crs = plateau − PEEP: both the volume and the compliance move it, and it is trans-thoracic — a stiff chest wall gives a large ΔP without lung stress (the oesophageal critique of Amato); ΔPtp = ΔP × El/Ers, about 0.8 in pulmonary ARDS and 0.2 in extra-pulmonary (7.5 cm H2O → 6 vs 1.5). Stress index < 1 recruitment, > 1 overdistension — constant flow only.', 'The PV curve of the system: PEEP 2 above the lower inflection point with a plateau ≤ 20 cut mortality in Amato’s 1998 trial (38 vs 71 %); recruitment continues beyond the inflection; regional curves scatter around the global one (EIT), so a stress index of 1 can still overdistend the ventral lung.', 'Ergotrauma: work × rate = power; in Cressoni’s pigs a rate of 15 instead of 3 raised power eleven-fold, and injury began at about 12 J/min (the human threshold unknown, ~24 J/min extrapolated). Power ∝ VT², RR^1.4, flow²; the tidal “driving” fraction is about 60 % at ZEEP and 40 % at low PEEP. Order of priorities: small VT and rate → PEEP only if elastance falls → prone → the I:E. Shorthand: 0.098 J per L·cm H2O; power ≈ VT × [Ppeak − ½(Pplat − PEEP)] × RR × 0.098; the lung’s share is the system’s × El/Ers.', 'Fighter pilots teach transmural pressure by extremes: under 95 cm H2O of counter-pressure breathing the oesophageal pressure exceeded the airway pressure, the lung volume fell and the mean PA pressure reached 77 mmHg — yet the PA transmural pressure, and the RV’s impedance, fell. “Measuring an intravascular or airway pressure is only half the story.”', 'The pulmonary vasculature under injury: alveolar vessels collapse on inflation, extra-alveolar and corner vessels dilate; too much zone I drives the flow through corner vessels, and on deflation stress raisers can fracture capillaries — a low left atrial pressure worsened VILI: “West zone III acts as vascular PEEP”. Acute cor pulmonale, 60 % before lung protection and about 20 % now, is predicted by pneumonia, ΔP ≥ 18, P/F < 150 and PaCO2 ≥ 48; dynamic indices are confounded by afterload, thermodilution by TR, and the PVR is “meaningless” — “what’s good for the lung is good for the RV”.', 'The obstructed patient: auto-PEEP hides behind early airway closure; expiration needs 3–4 time constants; FRC can double and 20 mL/kg of trapped gas is dangerous. Under waterfall physiology applied PEEP unloads inspiration and is “functionally absent” in expiration (no volume change until ~80 % of the auto-PEEP) — raise it stepwise and watch the plateau. Heliox lowers the density term (peak pressures fell 32, 10, 5 cm H2O in trials) and the pendelluft, at the cost of FiO2. High-flow nasal oxygen gives about 0.7 cm H2O of PEEP per 10 L/min (half with the mouth open), washes dead space and lowers the inspiratory fraction; 8 of external PEEP raised the tidal volume ~20 % at a lower diaphragm activity — efficiency, not work.', 'APRV: a time constant of about 0.45 s (63 % decay 30 → 11 → 4 cm H2O) is unreliable in a heterogeneous lung; cutting expiration at 75 % of peak flow minimises micro-strain; the hidden PEEP ≈ (end-expiratory flow / peak flow) × P-high, so ΔP = (1 − EEF/PEFR) × P-high (60 → 45 L/min at 30 cm H2O: PEEPi 22.5, ΔP 7.5); oesophageal tracings found negative transpulmonary pressures at the end of every T-low — hidden auto-PEEP plus the mediastinum’s weight (subtract 3–7 cm H2O).'] },
+  { src: SRC }
+] };
+T.hl_cv10 = { title: 'Updates in cardiovascular physiology', kicker: 'Chapter 10: Pms, the IVC, venous excess, coupling, the folly of PVR, embolism, weaning', blocks: [
+  { h: 'Venous return and its myth', p: 'Brengelmann’s critique of venous return holds only under steady-state conditions rarely met in the ICU; venous return is “a true and separate – albeit transient – entity”. Venous excess is the transmural right atrial pressure on the Guyton diagram: inspiration lowers the Pra and raises the transmural pressure; Valsalva the reverse. Venous Doppler is “an inverse trace” of the Pra — the S wave is the x-descent (lost with RV failure or TR), the D wave the y-descent; reverse flow in the SVC is under 10 % in health; portal and renal pulsatility mark a right ventricle in trouble. Responsiveness is one sub-component of volume tolerance.' },
+  { h: 'The IVC under PEEP', p: 'Collapse comes when the CVP falls below the abdominal pressure (collapse pressure ≈ 0). PEEP raises Pms and the pleural pressure (about half of it), lowers maximal venous return, raises the collapse pressure; above 10–15 cm H2O it afterloads the RV (15 cm H2O → a transpulmonary pressure of 7.5 above a left atrial pressure of 7: zone II) and blunts collapse (Juhl-Olsen: collapsibility 0.15 → 0.20 at PEEP 10, back to 0.15 with Trendelenburg, a litre and PEEP 20). Simplified surrogates bring “disappointment and danger”.' },
+  { h: 'Coupling', p: 'Arterial elastance ≈ 2.2 and end-systolic elastance ≈ 2.3 mmHg/mL — a ratio of 1 in health; uncoupling raises the end-systolic volume and flattens the lumped Starling curve. By analogy, venous efficiency Eh = (Pms − Pra)/Pms: a low Eh “atrialises” the distal veins, and the venous return’s power splits into what moves forward and what is directed back on the organs — the hypothesis of veno-cardiac uncoupling, which chains chapter 9 to the bedside: driving power → RV afterload → Pra near Pms → venous pulsatility. The 2025 letter formalises it: the RVR : Rcardiac ratio sets how far a rise in Pms shows up as congestion, more in the preload-unresponsive.' },
+  { h: 'The folly of PVR and the embolus', p: 'Clamp a pulmonary artery and the PVR rises truly (PAD runs above the wedge); clamp the aorta and it rises apparently, the congested vessels stiff, PAD and wedge rising together — PAD − Ppao under 6 mmHg is the discriminator. Afterload is the transmural systolic wall stress, not the absolute PA pressure: in a Valsalva the lung volume is unchanged, the calculated PVR rises and the PA transmural pressure falls — in pulmonary hypertension the danger of a Valsalva is preload, not afterload. After an embolus, norepinephrine and lytics both lower the calculated PVR, but the embolus raised the closing pressure: norepinephrine rides the same line (the ratio falls only because it is referenced to the wedge) and “only the latter truly lowers the lifted load”. A healthy RV tolerates more than 50 % obstruction by adrenergic preload and contractility; it never raised the mean PA pressure beyond 40; frank ischaemia needed a low MAP — hypotension prognosticates, and raising the MAP helps.' },
+  { h: 'Blood pressure and perfusion', p: 'Systolic pressure is central volume × compliance, diastolic the decay over the diastolic time; a stiffened aorta raised the calculated resistance 20 % with no arteriolar change. MAP is a determinant of perfusion, not its indicator; macro–micro dissociation is “normal and expected”; all perfusion is local — tissue conductance and cardiac output in, MAP and regional flow out — which argues for perfusion-guided resuscitation and permissive hypotension. The revised Starling principle: with the glycocalyx the filtration gradient is (Pc − Pi) − σ(πc − πsg), “no absorption” in the steady state, colloids expanding less than hoped.' },
+  { src: SRC }
+] };
+T.hl_frame = { title: 'The geometrical framework (2023) and prone position', kicker: 'Kenny 2023: Pra and cardiac output are outputs; the four inputs are Pms, the pericardial pressure, cardiac resistance and the resistance to venous return', blocks: [
+  { p: 'Cardiac output and right atrial pressure “are outputs of the system and not determinants”. Where venous return meets cardiac function both coordinates are dependent; the independent variables are the mean systemic filling pressure (Pms), the pressure around the heart (Ppc), the heart’s own resistance (Rcardiac, the inverse slope of its curve) and the resistance to venous return (RVR). Two right triangles share the operating point as their apex: on the left, base Pra − Ppc with slope Gcardiac ≈ 35 mL/min/kg per mmHg; on the right, base Pms − Pra with slope GVR ≈ 10 mL/kg/min per mmHg. Equate them and the pressure in the middle drops out: Q = (Pms − Ppc)/(Rcardiac + RVR). The right atrial pressure “plays no role in cardiac output”.' },
+  { h: 'The heart–lung link is Ppc', p: 'Ppc = pleural pressure + mean airway pressure × Ecw/Ers + pericardial recoil. Thoracic supports (the pleural term), a dilated RV (the pericardial term), more PEEP (the airway term) or a stiffer chest wall (prone raises Ecw/Ers) all raise Ppc and lower the output — “but only if Pms, Rcardiac and RVR are constant”. The curves flatten in vivo: on the cardiac plateau Q = (Praplat − Ppc)/Rcardiac and Pms or RVR change only the Pra (preload unresponsiveness); below the collapse pressure Q = (Pms − Pcrit)/RVR and the heart changes only the Pra (venous limitation, seen as great-vein collapse through most of the cycle).' },
+  { widget: 'hl_geom' },
+  { h: 'Prone, through the four inputs', ul: ['Pms rose semi-recumbent → prone in Lai’s patients, unrelated to the abdominal pressure — by analogy with PEEP, adrenergic reflexes and central-to-peripheral redistribution; so vasoactives, volume state and anaesthesia may explain why surgical and ICU series differ.', 'Ppc: no human data. 10 mmHg of airway pressure × 0.3 adds 3 mmHg supine, × 0.5 adds 5 prone; the pericardium engages above a transmural RA pressure of about 5, above all when the Pra exceeds 10–12 (cor pulmonale) — prone may raise the pleural pressure yet shrink the heart and lower the pericardial term, so Ppc could stay or fall (as CPAP does in heart failure). Sternal supports lowered the stroke volume, possibly by raising it.', 'Rcardiac fell: in Vieillard-Baron’s 21 patients with cor pulmonale, heart rate down, output up, RV area down, LV area up, TR down; in Ruste’s hundred, output rose in a quarter of sessions and fell in a quarter, most risers without a rise in end-diastolic volume. The PEEP strategy with the largest rise in output had the smallest rise in transmural Pra (Boesing) — which “suggests, but does not prove” better cardiac function.', 'RVR rose in most, unrelated to the abdominal pressure: Takata–Robotham’s zones turned out to depend on focal subcostal, crural and hepatic pressures; alpha-mediated recruitment of stressed volume necessarily raises resistance (a 20 % fall in diameter: volume −36 %, resistance +244 %); the SVC can be compressed by a raised pleural pressure (Fessler’s PEEP data were SVC-dominant).', 'The prediction: measure preload responsiveness before proning. Cardiac-limited patients change flow only through Rcardiac (pulmonary unloading); venous-limited ones only through peripheral factors (volume, the abdominal zone); the unlimited through all four. Dual limitation — a high collapse pressure from high PEEP or a tense abdomen with a poor heart — may make prone reduce flow, above all in hypovolaemia; titrate PEEP to lower the collapse pressure. Great-vein ultrasound before and after pronation is the proposed test: “measuring preload responsiveness locates the system’s operating point.”'] },
+  { h: 'The 2025 letter: congestion and the geometry', p: 'Answering a post-CABG study of portal pulsatility, Kenny and Werner Moller take the pericardial pressure as atmospheric so that the Pra is the transmural pressure (a surrogate for hepatic congestion). Solved for the Pra, the model gives Pra ≈ Pms/(Rcardiac/RVR + 1) when preload-responsive and Pra ≈ Pms − (RVR/Rcardiac) × Praplat when not. Hence pulsatility rises with Pms but falls with the RVR : Rcardiac ratio (“veno-cardiac coupling”, the analogue of Ea : Ees), which could explain the missing baseline association; and a given rise in Pms (a leg raise, a crystalloid) should raise the Pra and the pulsatility more in the preload-unresponsive. The authors call it hypothesis-generating: compliance, valves, hepatic damping, perihepatic pressure and tone all intervene.' },
+  { src: ['Kenny JE. A framework for heart-lung interaction and its application to prone position in the acute respiratory distress syndrome. Front Physiol 2023;14:1230654.', 'Kenny JE, Werner Moller P. Venous congestion and the geometry of Guyton. Ann Intensive Care 2025;15:166.'].concat(SRC) }
+] };
+const GROUPS = [
+  { title: 'The approach', ids: ['hl_start'] },
+  { title: 'The thorax', ids: ['hl_bag', 'hl_campbell'] },
+  { title: 'The circulation', ids: ['hl_guyton'] },
+  { title: 'Together', ids: ['hl_union', 'hl_health', 'hl_sick', 'hl_wean'] },
+  { title: 'At the bedside', ids: ['hl_cvp', 'hl_pac', 'hl_dynamic'] },
+  { title: 'Updates and the framework', ids: ['hl_resp9', 'hl_cv10', 'hl_frame'] }
+];
+root.PFT_HL = { VC: VC, CM_PER_MMHG: CM_PER_MMHG, RESP_DEFAULT: RESP_DEFAULT, CV_DEFAULT: CV_DEFAULT, HL_DEFAULT: HL_DEFAULT, lungP: lungP, cwP: cwP, rsP: rsP, frc: frc, compliances: compliances, breath: breath, curves: curves, transmission: transmission, venousReturn: venousReturn, cardiacFn: cardiacFn, operate: operate, cvCurves: cvCurves, couple: couple, SCENARIOS: SCENARIOS, scenario: scenario, runScenario: runScenario, GEOM_DEFAULT: GEOM_DEFAULT, geom: geom, praVsPmsf: praVsPmsf, praCurve: praCurve, fitContr: fitContr, strainStress: strainStress, pqFlow: pqFlow, pqPressure: pqPressure, topics: T, groups: GROUPS, SRC: SRC };
+if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_HL;
 })(typeof window !== 'undefined' ? window : globalThis);

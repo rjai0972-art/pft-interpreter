@@ -81,7 +81,7 @@ and the single-file browser version (`PulmCritDaddy_standalone.html`) always wor
 - Code signing is optional and not set up. For Windows add a signing certificate to the build; for Mac add an Apple Developer ID and notarization.
   Until then the first-launch steps above are needed.
 
-## How the reading is built (version 8.5)
+## How the reading is built (version 8.6)
 
 The rules layer computes every measurement state before any wording is chosen (ERS/ATS 2022 z-scores and the LLN;
 a reviewed adult phrase catalog anchored to the ERS/ATS 2022, ATS/ERS 2019, ERS/ATS 2023, ERS/ATS 2017, ERS 2019 and
@@ -396,6 +396,31 @@ the correct placement shows what changed. The nodule area gets real nodules: six
 full resolution (four true nodules of 4–10 mm and two vessels that pass for one on a single slice), each a 17-slice
 stack to scroll, window and probe, with calipers for the long and short axis, the call (nodule or vessel), the
 attenuation and the risk, the Fleischner plan from your numbers and a check against the voxel-measured reference;
-then a hunt for the same four on the whole axial series. `extras/` holds a reworked Anki deck
+then a hunt for the same four on the whole axial series. Version 8.6 adds a learning area built on Jon-Émile
+Kenny's free book *An Approach to Mechanical Heart-Lung Interaction* (2020, Creative Commons) and his 2023
+geometrical framework paper and 2025 letter: fourteen topics in six groups (the approach; the thorax; the
+circulation; together; at the bedside; updates and the framework) with thirteen diagrams you can move, driven by one
+model (`web/src/heartlung.js`) — the bag, the box and the tube with the equation of motion read live and the pleural,
+alveolar and mouth pressures, flow and volume breathing beside it (spontaneous, ventilator, ventilator + PEEP); the
+Campbell diagram (fourteen presets from emphysema and asthma to oedema, fibrosis, obesity, ascites, rapid shallow
+breathing, the ventilator with and without PEEP, ARDS, extrapulmonary, COPD on the ventilator, pressure support with
+effort) with the elastic, resistive, threshold and expiratory work shaded and measured, FRC and the trapped volume,
+auto-PEEP, plateau and peak, the Rahn view for a passive breath, and a transmission bar showing how much of a plateau
+pressure reaches the pleura for a given lung and chest wall; the Guyton diagram with twelve presets, a ghost of the
+normal and sliders for stressed volume, resistance to venous return, the collapse pressure, contractility, RV
+afterload and the pressure around the heart; the union — the Guyton diagram standing in the page with the Campbell
+diagram laid into its depth, animated through a breath for twenty scenarios (quiet and deep breathing, Müller,
+Valsalva, IPPV, PEEP in the normal, the empty and the overfilled patient, COPD and asthma breathing and ventilated,
+cardiogenic oedema spontaneous and on positive pressure, pulmonary and extrapulmonary ARDS, cirrhosis with ascites,
+a failed weaning trial and pressure support), with the pleural pressure, the right atrial and transmural pressures
+and the right-heart output traced and the mean output and its swing read; the U-shaped PVR–volume curve; and, for the
+bedside chapters, the same CVP from three different crossings, the PVR illusion on the pulmonary pressure–flow curve
+(Valsalva, an embolus, norepinephrine, lysis — the calculated resistance against the load the right ventricle really
+lifts), the two stresses on one diagram (a mechanical breath, a spontaneous breath, an occlusion and a leg raise in a
+responder, a patient on the plateau and an afterload-sensitive right ventricle), strain and stress with stress
+raisers, and the 2023 framework's two right triangles (unlimited, cardiac-limited, venous-limited and dual-limited
+regimes, with a prone toggle) and the 2025 letter's right-atrial-pressure-against-Pms curve. Each topic cites the
+chapter and links the author's lectures at heart-lung.org/lectures. The older compact heart–lung lab stays in the
+physiology area. `extras/` holds a reworked Anki deck
 (`ECMO_Anki_Deck_v2.apkg`, 103 notes / 237 cards, cloze and basic, tagged by topic, built by `build_ecmo_anki.py` with no
 dependencies) and a bedside reference PDF generated from the same content (`build_ecmo_reference.js`).

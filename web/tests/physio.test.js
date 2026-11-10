@@ -1,5 +1,5 @@
 // the foundations: the heart–lung model and the physiology helpers, in node
-const H = require('../src/heartlung.js'), P = require('../src/physio.js');
+const H = require('../src/heartlung_lab.js'), P = require('../src/physio.js');
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.log('FAIL', m); } };
 const near = (a, b, tol) => Math.abs(a - b) <= tol;

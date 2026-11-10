@@ -331,3 +331,35 @@ hunt `nhLab` on the chest series (`nhClick` within 14 px and ±2 slices; `[data-
 [data-nr-win] [data-nr-zoom] [data-nr-what] [data-nr-size] [data-nr-type] [data-nr-risk] [data-nr-plan]
 [data-nr-checkbtn] [data-nr-clear] [data-nr-check] [data-nr-score] [data-nr-measure]`. Tests: `tests/nodreal.test.js`,
 `tests/e2e8.js` (the three features end to end).
+
+v8.6, heart–lung interaction (Kenny): `src/heartlung.js` (`PFT_HL`, node-testable; `tests/heartlung.test.js`) is the
+model. The thorax: `lungP(v, p)`, `cwP(v, p)`, `rsP` (exponential lung, cubic chest wall, both scaled by `cl`/`ccw`
+and the wall shifted by `shift`), `frc(p, peep)`, `compliances(p, v)`, `transmission(pplat, peep, cl, ccw)`;
+`breath(p)` integrates one cycle of `RESP_DEFAULT`-shaped parameters (`mode` spont | passive | assist | hold, `ri`,
+`re`, `vt`, `rr`, `tiFrac`, `peep`, `ps`, `pmusMax`, `pexp`) into traces `t v flow ppl palv paw pmus ptp` and the
+measures `m` (FRC, Vee, trapped, autoPEEP, pplEE/EI/Min/Max, ptpEI, pplat, ppeak, drivingP, crsMeasured, `comp`,
+`wob` {elastic, resistive, threshold, expiratory, total, perMin, perL}, `who`). The circulation: `CV_DEFAULT`
+(`pms rvr pcrit pmax k p0 contr aft`), `venousReturn`, `cardiacFn`, `operate(c)` → {pra, co, ptm, collapsed},
+`cvCurves`. The union: `couple(b, cv, hl)` runs the breath through the circulation (`HL_DEFAULT`: `zone` for the
+abdominal/pleural share, `kPab`, `strain`, `kPms`, `kRvr`, `kPcrit`, `aftSens`, `ppc`) → series and the mean and
+swing; `SCENARIOS` (20, `scenario(id)`, `runScenario(id)` → {s, b, c}). The framework (Kenny 2023, Kenny & Werner
+Moller 2025): `GEOM_DEFAULT`, `geom(g)` → {q, pra, ppc, regime, qU, qC, qV, ptm}, `praVsPmsf`, `praCurve`; the
+bedside: `fitContr(cv, praTarget)`, `pqPressure(q, pc)` / `pqFlow(p, pc)` (ΔP = r·Qⁿ above a closing pressure),
+`strainStress(vt, baby, raiser)`. `topics` (14) and `groups` (6) feed the learn index (`LEARN_CATS` id `hl`).
+`src/ui_4t_heartlung.js` draws them (`hk` prefix; `hkChart` kit, `hkSlider` with `[data-hk-sl=key]`, `hkSeg`,
+`hkLoop` for the animations): `hkBagFig` `[data-hkbag]` (`[data-hk-bagmode]`, `[data-hk-eq]`, `[data-hk-bagread]`,
+`[data-hk-play]`), `hkCampbellFig` `[data-hkcampbell]` (`[data-hk-campreset]`, `[data-hk-cammode]`,
+`[data-hk-camview]`, `[data-hk-camread]`, `HK_CAM_PRESETS`), `hkPtransFig` `[data-hkptrans]` (`[data-hk-tpre]`,
+`[data-hk-tbar]`, `[data-hk-tread]`), `hkGuytonFig` `[data-hkguyton]` (`[data-hk-guypreset]`, `[data-hk-ghost]`,
+`[data-hk-guyread]`, `HK_GUY_PRESETS`), `hkUnionFig({key, start, groups})` `[data-hkunion=key]` (the oblique
+three-axis drawing `[data-hk-union]`, `[data-hk-uniscen]`, `[data-hk-uniplay]`, `[data-hk-unispeed]`,
+`[data-hk-uninote]`, `[data-hk-uniread]`, the knobs; `fig.hk.frame(f)`), `hkPvrFig` `[data-hkpvr]`, `hkCvp3Fig`
+`[data-hkcvp3]` (`[data-hk-cvp3]`), `hkPvrIllusionFig` `[data-hkpq]` (`[data-hk-pq]`, `[data-hk-pqread]`),
+`hkTwoStressFig` `[data-hktwostress]` (`[data-hk-tspat]`, `[data-hk-tsstress]`, `[data-hk-tsread]`), `hkStrainFig`
+`[data-hkstrain]` (`[data-hk-strainread]`), `hkGeomFig` `[data-hkgeom]` (`[data-hk-geompat]`, `[data-hk-prone]`,
+`[data-hk-geomread]`, `[data-hk-geom2]`); `hkWidget(kind)` maps the topics' widget ids. Presets mutate the state
+object in place so the sliders bound to it keep working. The earlier compact lab moved to `src/heartlung_lab.js`
+(`PFT_HLL`; the physiology area's `heartlung` topic, `ui_4g_physio.js`). Build placeholders `/*HEARTLUNGLAB*/` and
+`/*HEARTLUNG*/`. Styles: the `.hk-*` block at the end of `style.css`. Tests: `tests/heartlung.test.js` (111),
+`tests/e2e9.js` (every diagram, the index, the home tile, phone width). The lecture list at heart-lung.org could not
+be fetched from the build environment, so topics link the lectures page as a whole.

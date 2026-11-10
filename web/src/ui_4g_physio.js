@@ -1,7 +1,7 @@
 /* ------------------------------------------------------------------ foundations: the figures and labs of the anatomy and physiology topics
    syllabus (the map of the area), ladder (the airway wall level by level), cycle (pressures over a breath), spiro (volumes
    and capacities), aa (alveolar gas calculator), odc (the oxygen dissociation curve lab), hl (the Campbell + Guyton lab). */
-const PH = window.PFT_PHYS, HL = window.PFT_HL;
+const PH = window.PFT_PHYS, HLL = window.PFT_HLL;
 function svHide(el, on) { if (on) el.setAttribute('hidden', ''); else el.removeAttribute('hidden'); return el; }
 
 /* ---- the map of the area: a card per topic in course order ---- */
@@ -272,8 +272,8 @@ function odcLab() {
 }
 
 /* ---- the heart–lung lab: the Campbell diagram beside the Guyton diagram ---- */
-const HLS = { p: Object.assign({}, HL.DEF), run: null, phase: 0, playing: true, raf: 0, t0: 0, trace: [] };
-function hlRun() { HLS.run = HL.run(HLS.p); return HLS.run; }
+const HLS = { p: Object.assign({}, HLL.DEF), run: null, phase: 0, playing: true, raf: 0, t0: 0, trace: [] };
+function hlRun() { HLS.run = HLL.run(HLS.p); return HLS.run; }
 function hlLab() {
   const run = hlRun();
   const p = HLS.p;
@@ -313,24 +313,24 @@ function hlLab() {
   function pathOf(fn, from, to, n, xf, yf) { let d = ''; for (let i = 0; i <= n; i++) { const v = from + (to - from) * i / n; const pr = fn(v); if (!isFinite(pr)) continue; d += (d ? ' L' : 'M') + xf(pr).toFixed(1) + ' ' + yf(v).toFixed(1); } return d; }
   function drawStatic() {
     const r = HLS.run, b = r.br, pp = r.p;
-    lungC.setAttribute('d', pathOf(v => HL.lungPpl(v, pp) + (pp.mode === 'spont' ? pp.peep : 0), 1, 99, 80, X, Y));
-    cwC.setAttribute('d', pathOf(v => HL.cwPpl(v, pp), 1, 99, 80, X, Y));
+    lungC.setAttribute('d', pathOf(v => HLL.lungPpl(v, pp) + (pp.mode === 'spont' ? pp.peep : 0), 1, 99, 80, X, Y));
+    cwC.setAttribute('d', pathOf(v => HLL.cwPpl(v, pp), 1, 99, 80, X, Y));
     svHide(rsC, pp.mode !== 'vent'); svHide(rsT, pp.mode !== 'vent'); svHide(loopAw, pp.mode !== 'vent');
-    if (pp.mode === 'vent') { rsC.setAttribute('d', pathOf(v => HL.rsPaw(v, pp), 1, 99, 80, X, Y)); let vEdge = 99; for (let v = 1; v <= 99; v++) { if (HL.rsPaw(v, pp) >= PMAX - 1) { vEdge = v; break; } } rsT.setAttribute('x', cx1 - 2); rsT.setAttribute('text-anchor', 'end'); rsT.setAttribute('y', Y(Math.min(vEdge, 99)) - 6); }
-    lungT.setAttribute('x', X(HL.lungPpl(88, pp) + (pp.mode === 'spont' ? pp.peep : 0)) - 4); lungT.setAttribute('y', Y(88)); lungT.setAttribute('text-anchor', 'end');
-    cwT.setAttribute('x', X(HL.cwPpl(88, pp)) + 4); cwT.setAttribute('y', Y(88));
+    if (pp.mode === 'vent') { rsC.setAttribute('d', pathOf(v => HLL.rsPaw(v, pp), 1, 99, 80, X, Y)); let vEdge = 99; for (let v = 1; v <= 99; v++) { if (HLL.rsPaw(v, pp) >= PMAX - 1) { vEdge = v; break; } } rsT.setAttribute('x', cx1 - 2); rsT.setAttribute('text-anchor', 'end'); rsT.setAttribute('y', Y(Math.min(vEdge, 99)) - 6); }
+    lungT.setAttribute('x', X(HLL.lungPpl(88, pp) + (pp.mode === 'spont' ? pp.peep : 0)) - 4); lungT.setAttribute('y', Y(88)); lungT.setAttribute('text-anchor', 'end');
+    cwT.setAttribute('x', X(HLL.cwPpl(88, pp)) + 4); cwT.setAttribute('y', Y(88));
     // the loop
     const pts = b.pts, xOf = (q) => X(pp.mode === 'vent' ? q.ppl : q.ppl);
     let d = ''; pts.forEach((q, i) => { d += (i ? ' L' : 'M') + xOf(q).toFixed(1) + ' ' + Y(q.V).toFixed(1); }); loop.setAttribute('d', d + ' Z');
     let di = ''; pts.slice(0, 61).forEach((q, i) => { di += (i ? ' L' : 'M') + xOf(q).toFixed(1) + ' ' + Y(q.V).toFixed(1); }); loopIn.setAttribute('d', di);
     if (pp.mode === 'vent') { let da = ''; pts.forEach((q, i) => { da += (i ? ' L' : 'M') + X(Math.min(PMAX, q.paw)).toFixed(1) + ' ' + Y(q.V).toFixed(1); }); loopAw.setAttribute('d', da + ' Z'); }
     // the areas: elastic between the curves over the tidal range; resistive between the inspiratory limb and the static lung curve
-    let de = ''; for (let i = 0; i <= 30; i++) { const v = b.vee + (b.vei - b.vee) * i / 30; de += (i ? ' L' : 'M') + X(HL.cwPpl(v, pp)).toFixed(1) + ' ' + Y(v).toFixed(1); }
-    for (let i = 30; i >= 0; i--) { const v = b.vee + (b.vei - b.vee) * i / 30; de += ' L' + X(HL.lungPpl(v, pp) + (pp.mode === 'spont' ? pp.peep : 0)).toFixed(1) + ' ' + Y(v).toFixed(1); }
+    let de = ''; for (let i = 0; i <= 30; i++) { const v = b.vee + (b.vei - b.vee) * i / 30; de += (i ? ' L' : 'M') + X(HLL.cwPpl(v, pp)).toFixed(1) + ' ' + Y(v).toFixed(1); }
+    for (let i = 30; i >= 0; i--) { const v = b.vee + (b.vei - b.vee) * i / 30; de += ' L' + X(HLL.lungPpl(v, pp) + (pp.mode === 'spont' ? pp.peep : 0)).toFixed(1) + ' ' + Y(v).toFixed(1); }
     elastic.setAttribute('d', de + ' Z');
     if (pp.mode === 'spont') {
       let dr = ''; pts.slice(0, 61).forEach((q, i) => { dr += (i ? ' L' : 'M') + X(q.ppl).toFixed(1) + ' ' + Y(q.V).toFixed(1); });
-      for (let i = 30; i >= 0; i--) { const v = b.vee + (b.vei - b.vee) * i / 30; dr += ' L' + X(HL.lungPpl(v, pp) + pp.peep).toFixed(1) + ' ' + Y(v).toFixed(1); }
+      for (let i = 30; i >= 0; i--) { const v = b.vee + (b.vei - b.vee) * i / 30; dr += ' L' + X(HLL.lungPpl(v, pp) + pp.peep).toFixed(1) + ' ' + Y(v).toFixed(1); }
       resist.setAttribute('d', dr + ' Z');
     } else resist.setAttribute('d', '');
     frcL.setAttribute('x1', cx0); frcL.setAttribute('x2', cx1); frcL.setAttribute('y1', Y(b.frc)); frcL.setAttribute('y2', Y(b.frc)); frcT.setAttribute('x', cx1 - 2); frcT.setAttribute('y', Y(b.frc) - 3); frcT.setAttribute('text-anchor', 'end');
@@ -338,8 +338,8 @@ function hlLab() {
     svHide(veeL, !hyper); svHide(veeT, !hyper);
     if (hyper) { veeL.setAttribute('x1', cx0); veeL.setAttribute('x2', cx1); veeL.setAttribute('y1', Y(b.vee)); veeL.setAttribute('y2', Y(b.vee)); veeT.setAttribute('x', cx1 - 2); veeT.setAttribute('y', Y(b.vee) - 3); veeT.setAttribute('text-anchor', 'end'); veeT.textContent = b.autoPeep > 0.3 ? 'end-expiration · auto-PEEP ' + b.autoPeep.toFixed(1) : (pp.peep > 0 ? 'end-expiration on PEEP ' + pp.peep : 'end-expiration'); }
     // the muscle pressure at end-inspiration (spontaneous) or the plateau pressure (ventilator)
-    if (pp.mode === 'spont') { const vI = b.vei, a = HL.lungPpl(vI, pp) + pp.peep, c = HL.cwPpl(vI, pp); pmusL.setAttribute('x1', X(a)); pmusL.setAttribute('x2', X(c)); pmusL.setAttribute('y1', Y(vI)); pmusL.setAttribute('y2', Y(vI)); pmusT.setAttribute('x', (X(a) + X(c)) / 2); pmusT.setAttribute('y', Y(vI) - 9); pmusT.setAttribute('text-anchor', 'middle'); pmusT.textContent = 'Pmus ' + b.pmus.toFixed(0); }
-    else { const vI = b.vei, c = HL.cwPpl(vI, pp), aw = HL.rsPaw(vI, pp); pmusL.setAttribute('x1', X(c)); pmusL.setAttribute('x2', X(Math.min(PMAX, aw))); pmusL.setAttribute('y1', Y(vI)); pmusL.setAttribute('y2', Y(vI)); pmusT.setAttribute('x', (X(c) + X(Math.min(PMAX, aw))) / 2); pmusT.setAttribute('y', Y(vI) - 5); pmusT.setAttribute('text-anchor', 'middle'); pmusT.textContent = 'Ptp ' + (aw - c).toFixed(0) + ' · plateau ' + aw.toFixed(0); }
+    if (pp.mode === 'spont') { const vI = b.vei, a = HLL.lungPpl(vI, pp) + pp.peep, c = HLL.cwPpl(vI, pp); pmusL.setAttribute('x1', X(a)); pmusL.setAttribute('x2', X(c)); pmusL.setAttribute('y1', Y(vI)); pmusL.setAttribute('y2', Y(vI)); pmusT.setAttribute('x', (X(a) + X(c)) / 2); pmusT.setAttribute('y', Y(vI) - 9); pmusT.setAttribute('text-anchor', 'middle'); pmusT.textContent = 'Pmus ' + b.pmus.toFixed(0); }
+    else { const vI = b.vei, c = HLL.cwPpl(vI, pp), aw = HLL.rsPaw(vI, pp); pmusL.setAttribute('x1', X(c)); pmusL.setAttribute('x2', X(Math.min(PMAX, aw))); pmusL.setAttribute('y1', Y(vI)); pmusL.setAttribute('y2', Y(vI)); pmusT.setAttribute('x', (X(c) + X(Math.min(PMAX, aw))) / 2); pmusT.setAttribute('y', Y(vI) - 5); pmusT.setAttribute('text-anchor', 'middle'); pmusT.textContent = 'Ptp ' + (aw - c).toFixed(0) + ' · plateau ' + aw.toFixed(0); }
     // the Guyton curves at rest (ghost) — the live ones are drawn each frame
     const c0 = r.rest;
     vrGhost.setAttribute('d', pathOf(pr => c0.vr(pr), QMIN, c0.pms, 60, GX, GY).replace(/M/, 'M')); // placeholder, redone below with x as pressure
@@ -354,7 +354,7 @@ function hlLab() {
       row('Auto-PEEP', b.autoPeep.toFixed(1) + ' cm H2O', b.autoPeep > 2 ? 'warn' : ''),
       row('Time constant', b.tau.toFixed(2) + ' s (expiration ' + b.te.toFixed(1) + ' s)'),
       row('Compliance (lung / chest wall / system)', b.cl.toFixed(0) + ' / ' + b.ccw.toFixed(0) + ' / ' + b.crs.toFixed(0) + ' mL/cm H2O'),
-      row(pp.mode === 'spont' ? 'Muscle pressure at end-inspiration' : 'Plateau pressure', pp.mode === 'spont' ? b.pmus.toFixed(1) + ' cm H2O' : HL.rsPaw(b.vei, pp).toFixed(1) + ' cm H2O (driving ' + (HL.rsPaw(b.vei, pp) - Math.max(pp.peep, HL.rsPaw(b.vee, pp))).toFixed(1) + ')'),
+      row(pp.mode === 'spont' ? 'Muscle pressure at end-inspiration' : 'Plateau pressure', pp.mode === 'spont' ? b.pmus.toFixed(1) + ' cm H2O' : HLL.rsPaw(b.vei, pp).toFixed(1) + ' cm H2O (driving ' + (HLL.rsPaw(b.vei, pp) - Math.max(pp.peep, HLL.rsPaw(b.vee, pp))).toFixed(1) + ')'),
       row('Pleural pressure, end-expiration → end-inspiration', b.pts[0].ppl.toFixed(1) + ' → ' + b.pts[60].ppl.toFixed(1) + ' cm H2O'),
       row('Work per breath (elastic + resistive)', b.wEl.toFixed(2) + ' + ' + b.wRes.toFixed(2) + ' J = ' + (b.wEl + b.wRes).toFixed(2) + ' J · ' + perMin.toFixed(1) + ' J/min'),
       row('Mean systemic pressure / collapse pressure', c0.pms.toFixed(1) + ' / ' + c0.pcrit.toFixed(1) + ' mm Hg'),
@@ -367,7 +367,7 @@ function hlLab() {
   function cfPath(c) { let d = ''; for (let i = 0; i <= 80; i++) { const pr = QMIN + (QMAX - QMIN) * i / 80; const f = c.cf(pr); d += (i ? ' L' : 'M') + GX(pr).toFixed(1) + ' ' + GY(Math.min(FMAX, f)).toFixed(1); } return d; }
   function drawFrame(phase) {
     const r = HLS.run, b = r.br, pp = r.p, n = b.pts.length - 1, i = Math.max(0, Math.min(n, Math.round(phase * n)));
-    const q = r.cyc[i], c = HL.circ(q.V, q.ppl, pp, b);
+    const q = r.cyc[i], c = HLL.circ(q.V, q.ppl, pp, b);
     dot.setAttribute('cx', X(q.ppl)); dot.setAttribute('cy', Y(q.V));
     vrC.setAttribute('d', vrPath(c)); cfC.setAttribute('d', cfPath(c));
     op.setAttribute('cx', GX(c.pra)); op.setAttribute('cy', GY(Math.min(FMAX, c.co)));
@@ -397,7 +397,7 @@ function hlLab() {
   // ---------- controls ----------
   const sl = (key, label, min, max, step, fmt, title) => { const id = uid('hl'); const val = h('span', { class: 'odc-val', text: fmt(p[key]) }); const inp = h('input', { type: 'range', id: id, min: min, max: max, step: step, value: p[key], 'data-hl': key, oninput: (e) => { p[key] = +e.target.value; val.textContent = fmt(p[key]); hlRun(); drawStatic(); drawFrame(HLS.phase); } }); return h('label', { class: 'odc-sl', for: id, title: title || null }, [h('span', { class: 'nod-l', text: label }), inp, val]); };
   const modes = h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Who drives the breath' }, [['spont', 'Spontaneous breath'], ['vent', 'Ventilator (passive)']].map(m => h('button', { type: 'button', class: 'ch', role: 'radio', 'data-hl-mode': m[0], 'aria-checked': String(p.mode === m[0]), text: m[1], onclick: () => { p.mode = m[0]; HLS.trace = []; render(); } })));
-  const presetSel = h('select', { class: 'learn-cat', 'data-hl-preset': '1', 'aria-label': 'Preset', onchange: (e) => { const pr = HL.PRESETS.filter(x => x.id === e.target.value)[0]; if (!pr) return; Object.assign(HLS.p, HL.DEF, pr.set); HLS.trace = []; render(); } }, [h('option', { value: '', text: 'Presets…' })].concat(HL.PRESETS.map(pr => h('option', { value: pr.id, text: pr.name }))));
+  const presetSel = h('select', { class: 'learn-cat', 'data-hl-preset': '1', 'aria-label': 'Preset', onchange: (e) => { const pr = HLL.PRESETS.filter(x => x.id === e.target.value)[0]; if (!pr) return; Object.assign(HLS.p, HLL.DEF, pr.set); HLS.trace = []; render(); } }, [h('option', { value: '', text: 'Presets…' })].concat(HLL.PRESETS.map(pr => h('option', { value: pr.id, text: pr.name }))));
   const playBtn = h('button', { type: 'button', class: 'btn sm', 'data-hl-play': '1', text: HLS.playing ? '❚❚ Pause' : '▶ Play', onclick: () => { HLS.playing = !HLS.playing; playBtn.textContent = HLS.playing ? '❚❚ Pause' : '▶ Play'; if (HLS.playing) { HLS.t0 = performance.now() - HLS.phase * HLS.run.br.T * 1000; } } });
   const scrub = h('input', { type: 'range', min: 0, max: 1000, step: 1, value: Math.round(HLS.phase * 1000), 'data-hl-phase': '1', 'aria-label': 'Point in the breath', class: 'hl-scrub', oninput: (e) => { HLS.playing = false; playBtn.textContent = '▶ Play'; HLS.scrub = true; HLS.phase = +e.target.value / 1000; drawFrame(HLS.phase); HLS.scrub = false; } });
   const ctrls = h('div', { class: 'hl-ctrls' }, [

@@ -2026,3 +2026,59 @@ body.has-pop { overflow: hidden; }
 .nr-truth { font-size: 14px; }
 .nh-view { background: #000; border-radius: 10px; overflow: hidden; }
 .nh-canvas { display: block; width: 100%; max-width: 760px; margin: 0 auto; height: auto; cursor: crosshair; }
+/* v8.6: heart–lung interaction (Kenny) */
+.hk-fig { margin: 0 0 12px; }
+.hk-grid2 { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (min-width: 900px) { .hk-grid2 { grid-template-columns: minmax(0, 1fr) minmax(260px, 0.8fr); } .hk-grid2.wide { grid-template-columns: minmax(0, 1.4fr) minmax(260px, 0.8fr); } }
+.hk-chart, .hk-scene { width: 100%; height: auto; display: block; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.an-fig svg.hk-chart, .an-fig svg.hk-scene { background: var(--surface); }
+.hk-lab { font-size: 11px; fill: var(--ink-2); }
+.hk-lab.bold { font-weight: 650; fill: var(--ink); }
+.hk-lab.lung { fill: #2f6fb5; } .hk-lab.cw { fill: #c9622e; } .hk-lab.rs { fill: #3fa0c8; } .hk-lab.frc { fill: #6b7a86; } .hk-lab.vee { fill: #a02020; } .hk-lab.pmus { fill: #7a3ad4; } .hk-lab.plat { fill: #3fa0c8; } .hk-lab.peak { fill: #c9622e; }
+.hk-lab.vr { fill: #d9822b; } .hk-lab.cf { fill: #2f6fb5; } .hk-lab.dumb { fill: #2e9a5a; }
+.hk-axis.zero { stroke: var(--line-strong); stroke-width: 1; }
+.hk-curve { stroke-width: 2.2; fill: none; stroke-linecap: round; }
+.hk-curve.lung { stroke: #2f6fb5; } .hk-curve.cw { stroke: #c9622e; } .hk-curve.rs { stroke: #3fa0c8; stroke-dasharray: 6 4; } .hk-curve.thin { stroke-width: 1.3; opacity: 0.7; }
+.hk-curve.vr { stroke: #d9822b; } .hk-curve.cf { stroke: #2f6fb5; } .hk-curve.ghost { opacity: 0.35; stroke-dasharray: 4 4; stroke-width: 1.6; }
+.hk-loop { stroke-width: 2.4; fill: none; } .hk-loop.insp { stroke: #d62828; } .hk-loop.exp { stroke: #4a7bd0; } .hk-loop.thin { stroke-width: 1.6; opacity: 0.85; }
+.hk-area { stroke: none; } .hk-area.elastic { fill: rgba(214, 40, 40, 0.16); } .hk-area.resistive { fill: rgba(122, 58, 212, 0.22); } .hk-area.threshold { fill: rgba(242, 193, 78, 0.35); } .hk-area.expiratory { fill: rgba(74, 123, 208, 0.22); }
+.hk-mark { stroke-width: 1; stroke-dasharray: 3 3; fill: none; } .hk-mark.frc { stroke: #6b7a86; } .hk-mark.vee { stroke: #a02020; } .hk-mark.plat { stroke: #3fa0c8; } .hk-mark.peak { stroke: #c9622e; } .hk-mark.op { stroke: var(--ink-2); } .hk-mark.pcrit { stroke: #d9822b; stroke-dasharray: 2 2; }
+.hk-pmus { stroke: #7a3ad4; stroke-width: 2; }
+.hk-cursor { stroke: var(--ink); stroke-width: 1.2; } .hk-cursor-dot { fill: var(--ink); stroke: #fff; stroke-width: 1.5; }
+.hk-tr { stroke-width: 1.8; fill: none; } .hk-tr.ppl { stroke: #2f6fb5; } .hk-tr.palv { stroke: #d62828; } .hk-tr.paw { stroke: #3fa0c8; stroke-dasharray: 4 3; } .hk-tr.flow { stroke: #7a3ad4; } .hk-tr.vol { stroke: #2e9a5a; } .hk-tr.pra { stroke: #2f6fb5; } .hk-tr.ptm { stroke: #2e9a5a; } .hk-tr.co { stroke: #d9822b; }
+.hk-op { fill: var(--ink); stroke: #fff; stroke-width: 2; } .hk-op.ghost { fill: var(--muted); opacity: 0.5; }
+.hk-dot.vr { fill: #d9822b; } .hk-dot.cf { fill: #2f6fb5; }
+.hk-dumb { stroke: #2e9a5a; stroke-width: 3; } .hk-dumb-end { fill: #2e9a5a; }
+.hk-plane { fill: rgba(107, 122, 134, 0.06); stroke: var(--line); stroke-width: 1; }
+.hk-axis3 { stroke: var(--ink-2); stroke-width: 1.4; fill: none; } .hk-arrowhead { fill: var(--ink-2); }
+.hk-drop { stroke: var(--ink); stroke-width: 1; stroke-dasharray: 3 2; }
+.hk-box { fill: #f1e4d6; stroke: #a07a5a; stroke-width: 2; } .hk-pleura { fill: rgba(70,120,200,0.12); stroke: none; transition: fill 0.1s; }
+.hk-tube { stroke: #8a8a8a; stroke-width: 14; stroke-linecap: round; fill: none; } .hk-bag { fill: rgba(220, 120, 110, 0.55); stroke: #a0403a; stroke-width: 2; }
+.hk-flow { stroke: #7a3ad4; stroke-width: 3; fill: none; } .hk-tp { stroke: #2f6fb5; stroke-width: 2.2; fill: none; }
+.hk-sc-lab { font-size: 11.5px; fill: var(--ink); font-weight: 600; } .hk-sc-lab.mid { text-anchor: middle; } .hk-sc-lab.fine { font-weight: 400; fill: var(--ink-2); }
+.hk-eq { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; color: var(--ink-2); margin: 6px 0; line-height: 1.4; }
+.hk-strips { display: grid; gap: 4px; }
+.hk-ctl { display: grid; gap: 8px; margin-top: 8px; }
+.hk-sliders { display: grid; gap: 6px 14px; grid-template-columns: minmax(0, 1fr); margin-top: 8px; }
+@media (min-width: 620px) { .hk-sliders.two { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.hk-read { margin: 0 0 8px; display: grid; gap: 3px; font-size: 12.5px; }
+.hk-read > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding: 3px 0; border-bottom: 1px solid var(--line); }
+.hk-read dt { color: var(--ink-2); } .hk-read dd { margin: 0; font-variant-numeric: tabular-nums; text-align: right; }
+.hk-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 11.5px; color: var(--ink-2); }
+.hk-legend .lg::before { content: ''; display: inline-block; width: 14px; height: 3px; margin-right: 5px; vertical-align: middle; background: var(--ink-2); border-radius: 2px; }
+.hk-legend .lg.lung::before { background: #2f6fb5; } .hk-legend .lg.cw::before { background: #c9622e; } .hk-legend .lg.rs::before { background: #3fa0c8; } .hk-legend .lg.insp::before { background: #d62828; } .hk-legend .lg.exp::before { background: #4a7bd0; }
+.hk-legend .lg.a-el::before { background: rgba(214,40,40,0.3); height: 10px; } .hk-legend .lg.a-res::before { background: rgba(122,58,212,0.35); height: 10px; } .hk-legend .lg.a-thr::before { background: rgba(242,193,78,0.6); height: 10px; } .hk-legend .lg.a-exp::before { background: rgba(74,123,208,0.35); height: 10px; }
+.hk-legend .lg.vr::before { background: #d9822b; } .hk-legend .lg.cf::before { background: #2f6fb5; } .hk-legend .lg.ghost::before { background: var(--muted); opacity: 0.5; } .hk-legend .lg.dumb::before { background: #2e9a5a; }
+.hk-note { margin: 8px 0; padding: 8px 12px; border-left: 3px solid var(--accent); background: var(--surface); font-size: 13px; line-height: 1.5; }
+.hk-knobs summary { cursor: pointer; font-size: 12.5px; color: var(--accent); }
+.hk-tbar { display: flex; height: 34px; border-radius: 8px; overflow: hidden; margin: 6px 0; font-size: 12px; font-weight: 600; color: #fff; }
+.hk-tseg { display: flex; align-items: center; justify-content: center; padding: 0 6px; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.hk-tseg.pleura { background: #2f6fb5; } .hk-tseg.lung { background: #c9622e; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .hk-box { fill: #4a3a2e; stroke: #a07a5a; } }
+:root[data-theme="dark"] .hk-box { fill: #4a3a2e; stroke: #a07a5a; }
+.hk-fig { min-width: 0; max-width: 100%; overflow-x: clip; }
+.hk-fig .ecg-pick { display: flex; align-items: center; gap: 6px; flex: 1 1 220px; min-width: 0; max-width: 100%; }
+.hk-fig .ecg-pick .lbl { flex: 0 0 auto; }
+.hk-fig .ecg-pick select { width: 100%; min-width: 0; flex: 1 1 0; }
+.hk-fig .chk-inline { white-space: normal; max-width: 100%; }
+.learn article { min-width: 0; }
