@@ -2082,3 +2082,199 @@ body.has-pop { overflow: hidden; }
 .hk-fig .ecg-pick select { width: 100%; min-width: 0; flex: 1 1 0; }
 .hk-fig .chk-inline { white-space: normal; max-width: 100%; }
 .learn article { min-width: 0; }
+
+/* ======================================================================== v8.7: the unifying pass
+   One scale for space and type, flatter surfaces, equal tiles, and every lab laid out the same way: the picture and its
+   numbers side by side, the dials in an even deck underneath. Definitions and descriptions live in the hover pop-up. */
+:root { --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --r: 12px; --r-sm: 8px; --shadow: 0 1px 2px rgba(20, 18, 12, 0.04), 0 8px 24px rgba(20, 18, 12, 0.06); }
+
+/* the header: one slim row */
+.app { padding-block: 8px 48px; }
+.top { padding-block: 2px 8px; gap: 8px 16px; }
+.brand svg { width: 32px; height: 26px; }
+.brand h1 { font-size: 18px; }
+.brand p { font-size: 11.5px; }
+@media (max-width: 640px) { .brand p { display: none; } }
+
+/* hover words and tips */
+.gt { text-decoration: underline dotted; text-decoration-color: var(--accent); text-decoration-thickness: 1.5px; text-underline-offset: 3px; cursor: help; border-radius: 3px; }
+.gt:hover, .gt:focus-visible, .gt[aria-expanded="true"] { background: var(--accent-soft); outline: none; }
+#main label[title] > .nod-l, #main label[data-tip] > .nod-l, #main .chk-inline[title], #main .chk-inline[data-tip] { text-decoration: underline dotted; text-decoration-color: var(--line-strong); text-underline-offset: 3px; }
+#main [data-tip]:not(button):not(a):not(label):not(.ht-sub) { cursor: help; }
+.pop.tip { width: min(320px, calc(100vw - 16px)); gap: 4px; padding: 10px 12px; }
+.pop.tip .pop-h b { font-size: 13.5px; }
+.pop.tip .pop-w { font-size: 13px; line-height: 1.45; color: var(--ink-2); }
+
+/* ---- home: a slim hero, one grid of twelve, the record, the labs ---- */
+.home { gap: var(--s4); }
+.home-hero { padding: 18px 22px; border-radius: 16px; grid-template-columns: minmax(0, 1fr); gap: var(--s4); }
+@media (min-width: 760px) { .home-hero { grid-template-columns: minmax(0, 1fr) 200px; } }
+.home-hero h2 { font-size: clamp(26px, 3.6vw, 36px); margin: 0 0 6px; }
+.home-lead { font-size: 14.5px; max-width: 72ch; }
+.home-cta { margin-top: 12px; }
+.home-progress { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.home-art { max-width: 200px; }
+@media (max-width: 759px) { .home-hero-art { display: none; } }
+.home-grid, .home-record { display: grid; gap: var(--s3); grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 520px) { .home-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 820px) { .home-grid, .home-record { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 1100px) { .home-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.ht { padding: 14px; border-radius: 14px; gap: 10px; grid-template-rows: auto auto 1fr; background: var(--surface); transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s; }
+.ht.tool { background: var(--surface); }
+.ht:hover, .ht:focus-visible { transform: translateY(-1px); box-shadow: var(--shadow); }
+.ht-head { gap: 10px; align-items: center; }
+.ht-icon { width: 44px; height: 33px; }
+.ht-name { display: grid; gap: 1px; min-width: 0; }
+.ht-head h3 { font-size: 15px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ht-badge { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.07em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ht-sub { font-size: 12.5px; line-height: 1.4; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; min-height: 2.8em; cursor: help; }
+.ht-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; align-self: end; }
+.ht-link { border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg); padding: 5px 8px; font-size: 12px; text-align: left; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-decoration: none; }
+.ht-link:hover, .ht-link:focus-visible { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.home-record .ht { grid-template-rows: auto auto; }
+.home-labs h3 { margin-bottom: 6px; }
+.home-chip { padding: 4px 10px; font-size: 12px; }
+.home-chip.static { cursor: help; }
+.ht-links > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+
+/* ---- learn: the shell ---- */
+.edu-lead.clamp { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.edu-lead.clamp.open { display: block; overflow: visible; }
+.lead-wrap { display: grid; gap: 2px; justify-items: start; }
+.lead-more { font-size: 12.5px; }
+
+/* ---- the lab pattern: a bar, the picture beside its numbers, the dials in an even deck ---- */
+.ec-lab { gap: var(--s3); }
+.ec-bar { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: end; }
+.ec-bar .seg { align-self: end; }
+.ec-scen { flex: 1 1 300px; max-width: 620px; }
+.ec-bar .ec-score { flex: 1 1 220px; align-self: center; }
+.ec-bar .lnk, .ec-bar .ib { align-self: center; }
+.ec-note { max-width: none !important; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.ec-main { display: grid; gap: var(--s3); grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (min-width: 980px) { .ec-main { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.ec-lab .ec-draw svg.ec-svg { max-width: none; border: 1px solid var(--line); border-radius: var(--r); }
+.ec-right { gap: var(--s2); }
+.ec-console .vsc-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.ec-gases { gap: var(--s2); }
+.ec-sites { display: grid; gap: var(--s2); grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.ec-sites.n4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.ec-site { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--surface); display: grid; gap: 3px; align-content: start; min-width: 0; }
+.ec-site h5 { margin: 0 0 2px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ec-site .vs-cell { grid-template-columns: minmax(0, 1fr) auto auto; align-items: baseline; gap: 0 5px; }
+.ec-site .vs-cell .lbl { font-size: 12px; font-weight: 500; color: var(--ink-2); }
+.ec-site .vs-cell b { font-size: 15px; text-align: right; }
+.ec-site .vs-cell .ec-unit { min-width: 34px; }
+.ec-status { display: grid; gap: 6px 10px; grid-template-columns: repeat(5, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--surface); }
+.ec-status .vs-cell .lbl { font-size: 11px; font-weight: 500; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ec-status .vs-cell b { font-size: 14.5px; white-space: nowrap; }
+.ec-gasnote { margin: 0; }
+@media (max-width: 620px) { .ec-sites, .ec-sites.n4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } .ec-status { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.ec-deck { display: grid; gap: var(--s3); grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); align-items: start; }
+.ec-col { border: 1px solid var(--line); border-radius: var(--r); padding: 10px 12px 12px; background: var(--surface); display: grid; gap: 8px; min-width: 0; }
+.ec-col h5 { margin: 0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.ec-col h5 .lnk { text-transform: none; letter-spacing: 0; }
+.ec-col .odc-ctrls { grid-template-columns: repeat(auto-fit, minmax(min(100%, 132px), 1fr)); gap: 8px 14px; align-items: end; }
+.ec-col .odc-ctrls > .nod-grid, .ec-col .odc-ctrls > [data-ec-dripslot], .ec-col .odc-ctrls > .ec-actions, .ec-col .odc-ctrls > .chk-inline { grid-column: 1 / -1; }
+/* a dial on a deck: its name and its value on one line, the track beneath — whatever order the three were written in */
+.deck .odc-sl { grid-template-columns: minmax(0, 1fr) auto; gap: 0 8px; align-items: end; }
+.deck .odc-sl .nod-l { grid-column: 1; grid-row: 1; line-height: 1.25; font-size: 12px; min-width: 0; }
+.deck .odc-val { grid-column: 2; grid-row: 1; font-size: 12px; white-space: nowrap; }
+.deck .odc-sl input[type=range] { grid-column: 1 / -1; grid-row: 2; }
+.deck .odc-sl.locked { opacity: 0.45; }
+.ec-deck .ec-drip.on .odc-val { color: var(--accent); font-weight: 650; }
+.ec-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.ec-dripread { margin: 0; }
+/* gas rounds */
+.ec-round, .ec-guide { border: 1px solid var(--line-strong); border-radius: var(--r); padding: 12px 14px; background: var(--surface); display: grid; gap: 8px; }
+.ec-round-head { display: flex; flex-wrap: wrap; gap: 6px 14px; justify-content: space-between; align-items: baseline; }
+.ec-round-btns { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.ec-round .ec-who, .ec-guide .ec-who { max-width: none; font-size: 14.5px; line-height: 1.5; }
+.ec-targets { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.ec-target { border: 1px solid var(--line-strong); border-radius: 999px; padding: 3px 10px; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.ec-target.ok { border-color: var(--c-wnl); background: var(--c-wnl-bg); color: var(--ink); }
+.ec-target.no { border-color: var(--c-sev); background: var(--c-sev-bg); color: var(--ink); }
+.ec-fb { display: grid; gap: 4px; border-top: 1px solid var(--line); padding-top: 8px; }
+.ec-fb p { font-size: 13.5px; line-height: 1.5; max-width: 110ch; }
+.ec-hazard { color: var(--c-sev) !important; font-weight: 600; }
+.ec-solved ul { margin-top: 4px; }
+.ec-pending { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 6px); z-index: 6; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; padding: 8px 12px; border: 1px dashed var(--line-strong); border-radius: var(--r); background: var(--surface); box-shadow: var(--shadow); font-size: 13px; }
+.ec-pending.has { border-style: solid; border-color: var(--accent); }
+.ec-orders { display: flex; flex-wrap: wrap; gap: 4px 6px; }
+.ec-order { background: var(--surface-2); border-radius: 6px; padding: 2px 7px; font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; display: inline-block; margin: 1px 2px 1px 0; }
+.ec-pend-btns { margin-left: auto; display: flex; gap: 12px; align-items: center; }
+.ec-sheet { min-width: 0; font-size: 13px; }
+.ec-sheet th, .ec-sheet td { padding: 4px 10px; }
+.ec-sheet td { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ec-sheet thead th { text-align: right; } .ec-sheet thead th:first-child { text-align: left; }
+.ec-sheet td.bad { color: var(--c-sev); font-weight: 650; }
+.ec-sheet-sec th { background: var(--surface-2); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); padding-block: 3px; }
+.ec-sheet-orders td { white-space: normal; text-align: right; }
+.ec-col .odc-ctrls > .ec-locked-note { grid-column: 1 / -1; margin: 0; }
+.ec-sheet tbody th, .ec-sheet thead th { white-space: nowrap; }
+.ec-lab.rounds .ec-draw svg.ec-svg { max-height: 420px; }
+
+/* ---- echo: the atlas as a picker, the lab as screen + heart + deck ---- */
+.eh-picker { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: end; }
+.eh-pick-group { display: grid; gap: 3px; }
+.eh-pick-group .lbl { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+.eh-atlas-grid { display: grid; gap: var(--s3); grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (min-width: 1000px) { .eh-atlas-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.eh-atlas .eh-card { margin: 0; display: grid; gap: 10px; }
+.eh-card-top { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr) minmax(120px, 0.42fr); align-items: start; }
+.eh-card-top .eh-torso { max-width: 190px; }
+.eh-card-top .fine { text-align: center; margin-top: 2px; }
+.eh-how { font-size: 13.5px !important; line-height: 1.5 !important; max-width: none !important; }
+.eh-card-lists { display: grid; gap: 8px 20px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
+.eh-card-lists li { font-size: 12.5px !important; line-height: 1.4 !important; }
+.eh-more > summary { cursor: pointer; font-size: 13px; color: var(--accent); }
+.eh-more-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); margin-top: 8px; }
+.eh-card-nav { justify-content: space-between; }
+.eh-canvas:not(.ehr-canvas) { aspect-ratio: 320 / 260; }
+.eh-toolbar { align-items: end; }
+.eh-toolbar .nod-f { flex: 1 1 180px; max-width: 280px; }
+.eh-toolbar .eh-pathnote { flex: 1 1 100%; margin: 0; }
+.eh-text { display: grid; gap: 10px; border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; background: var(--surface); }
+.eh-winpick { display: grid; gap: 2px; }
+.eh-winpick .nod-l { font-size: 12.5px; }
+.eh-main .eh-screen { padding: 8px; }
+.eh-seenline { margin: 0; text-align: center; }
+.eh-3dslot { min-width: 0; }
+.eh-main > .eh-3dslot { margin-top: 0; }
+.eh-deck .eh-torso { max-width: 170px; }
+.eh-mapcol { justify-items: center; }
+.eh-mapcol h5 { justify-self: stretch; }
+.eh-deck .eh-score { border: 0; padding: 0; background: none; }
+.h3-panel { border-width: 1px; }
+.h3-ctl { gap: 3px 12px; padding: 6px 10px 8px; }
+.eh-atlas-grid { align-items: stretch; }
+.eh-atlas [data-eh-cardslot] > .eh-card { height: 100%; align-content: center; }
+.cap-clamp { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: help; max-width: 100%; }
+.cap-clamp:focus-visible { outline-offset: 0; }
+
+/* the Swan–Ganz lab: the heart and its monitor beside the numbers; the patient's dials flow into columns underneath */
+@media (min-width: 1000px) {
+  .ec-lab-grid.hm-grid { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); grid-template-areas: "centre right" "controls controls"; }
+  .hm-grid > .hm-centre { grid-area: centre; }
+  .hm-grid > .ec-right { grid-area: right; }
+  .hm-grid > .hm-controls { grid-area: controls; display: block; column-count: 4; column-gap: 22px; border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px 6px; background: var(--surface); }
+  .hm-controls > * { break-inside: avoid; margin: 0 0 8px; }
+  .hm-controls > h5 { break-after: avoid; margin-top: 2px; }
+}
+@media (min-width: 1000px) and (max-width: 1250px) { .hm-grid > .hm-controls { column-count: 3; } }
+
+/* the real-volume lab in the same pattern: a bar, two pictures, a deck */
+.ehr-lab { margin-top: var(--s3); }
+.ehr-main > .ehr-left { display: grid; gap: 4px; min-width: 0; align-content: start; }
+.ehr-main > .ehr-left .ehr-canvas { max-width: 440px; margin-inline: auto; }
+.ehr-main > .ehr-left > .fine { margin: 0; text-align: center; }
+.ehr-main > .ehr-3dcol { margin-top: 0; }
+@media (min-width: 1000px) { .ehr-deck { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.6fr); align-items: stretch; } }
+.ehr-deck .ehr-ctrls { margin-top: 0; grid-template-columns: minmax(0, 1fr); }
+.ehr-deck .ehr-sl { padding-bottom: 14px; }
+.ehr-deck .eh-score { border: 0; padding: 0; background: none; }
+.ehr-deck .ehr-moves-wrap { margin-top: 0; align-content: start; }
+.ehr-deck .ehr-moves { flex-wrap: wrap; overflow: visible; padding-bottom: 0; }
+.ehr-deck .ehr-move { flex: 1 1 74px; width: auto; max-width: 124px; min-width: 0; }
+.ehr-deck > .ec-col { align-content: start; }
+.ehr-deck .ehr-move canvas.ehr-thumb { width: 100%; }

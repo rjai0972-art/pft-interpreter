@@ -32,7 +32,7 @@ function eduTable(t) {
     h('tbody', {}, t.rows.map(r => h('tr', {}, r.map((c, i) => h(i === 0 ? 'th' : 'td', { scope: i === 0 ? 'row' : null, text: c })))))])]);
 }
 function eduTerms(topicId) {
-  const keys = Object.keys(GL.terms).filter(k => GL.terms[k].t === topicId && k.indexOf('code.') !== 0 && k.indexOf('test.') !== 0);
+  const keys = Object.keys(GL.terms).filter(k => GL.terms[k].t === topicId && k.indexOf('code.') !== 0 && k.indexOf('test.') !== 0 && k.indexOf('t.') !== 0);
   const codes = Object.keys(GL.terms).filter(k => GL.terms[k].t === topicId && k.indexOf('code.') === 0);
   const out = [];
   if (keys.length) {
@@ -81,9 +81,19 @@ function catalogBrowser() {
   out.push(h('ul', { class: 'srcs' }, C.sources.map(x => h('li', {}, [h('b', { text: x.id + ' ' }), x.title + ' (' + x.year + '). ' + x.role + ' ', h('a', { href: x.url, target: '_blank', rel: 'noopener', text: x.url })]))));
   return out;
 }
+/* v8.7: in a topic built around a lab, the paragraph that introduces it is held to two lines until asked for, so the lab starts at the top */
+const LEAD_OPEN = {};
+function eduLead(id, text) {
+  if (text.length < 240) return h('p', { class: 'edu-lead', text: text });
+  const p = h('p', { class: 'edu-lead clamp' + (LEAD_OPEN[id] ? ' open' : ''), id: 'lead-' + id, text: text });
+  const btn = h('button', { type: 'button', class: 'lnk lead-more', 'data-lead-more': '1', 'aria-expanded': String(!!LEAD_OPEN[id]), 'aria-controls': 'lead-' + id, text: LEAD_OPEN[id] ? 'Less' : 'More about this', onclick: () => { LEAD_OPEN[id] = !LEAD_OPEN[id]; p.classList.toggle('open', LEAD_OPEN[id]); btn.textContent = LEAD_OPEN[id] ? 'Less' : 'More about this'; btn.setAttribute('aria-expanded', String(LEAD_OPEN[id])); } });
+  return h('div', { class: 'lead-wrap' }, [p, btn]);
+}
 function eduBlocks(id, topic) {
   const out = [];
-  topic.blocks.forEach(b => {
+  const firstW = topic.blocks.findIndex(b => b.widget);
+  topic.blocks.forEach((b, bi) => {
+    if (b.p && firstW > 0 && bi < firstW && !b.h) { out.push(eduLead(id + '-' + bi, b.p)); return; }
     if (b.terms) { eduTerms(id).forEach(x => out.push(x)); return; }
     if (b.catalog) { catalogBrowser().forEach(x => out.push(x)); return; }
     if (b.examples) { out.push(h('div', { class: 'ex-list' }, X.EXAMPLES.map(e => h('button', { type: 'button', class: 'ex', 'data-example': e.name,
@@ -125,5 +135,6 @@ function stepLearn() {
       prev ? h('button', { type: 'button', class: 'btn', text: '← ' + topics[prev].title, onclick: () => setMode('learn', { topic: prev }) }) : h('span'),
       next ? h('button', { type: 'button', class: 'btn primary', text: topics[next].title + ' →', onclick: () => setMode('learn', { topic: next }) }) : null])
   ]);
+  annotateTerms(article, cat.id); compactCaptions(article);
   $('main').appendChild(h('div', { class: 'learn' }, [h('div', { class: 'learn-side' }, [h('div', { class: 'learn-cat-row' }, [catSel, toggle]), nav]), article]));
 }

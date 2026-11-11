@@ -14,10 +14,12 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
 
   // ---- the real echo loop: display controls, grey map, zoom, the phase bar
   await boot('echo_views', '[data-echoatlas]');
+  await page.click('[data-eh-pick="a4c"]'); await page.waitForSelector('[data-eh-view="a4c"]');
+  await page.$eval('[data-eh-more="a4c"]', d => { if (!d.open) d.querySelector('summary').click(); });
   await page.waitForFunction(() => !!document.querySelector('[data-ehr-slot="a4c"] canvas'), null, { timeout: 60000 });
   await page.waitForTimeout(2500);
   const loop = page.locator('[data-ehr-slot="a4c"] .ehr-loop');
-  await loop.scrollIntoViewIfNeeded(); await page.evaluate(() => { const st = document.querySelector('[data-h3-atlas]'); if (st) st.style.display = 'none'; }); await page.waitForTimeout(300);
+  await loop.scrollIntoViewIfNeeded(); await page.waitForTimeout(300);
   ok(await loop.locator('[data-ehr-more]').isHidden(), 'display controls start folded');
   await loop.locator('[data-ehr-moretoggle]').click();
   ok(await loop.locator('[data-ehr-more]').isVisible() && await loop.locator('[data-ehr-gain]').count() === 1 && await loop.locator('[data-ehr-dr]').count() === 1 && await loop.locator('[data-ehr-map]').count() === 1, 'gain, dynamic range and grey map controls');
@@ -50,8 +52,9 @@ const ok = (c, m) => { if (c) passes++; else { fails++; console.log('FAIL:', m);
   ok(moves2.join() === 'c-,c+,mode', 'across the beam: shallower, deeper, back');
   ok(await page.$eval('[data-ehr-row="phi"]', e => e.hidden) && !(await page.$eval('[data-ehr-row="c"]', e => e.hidden)), 'the depth slider shows across the beam, the rotation hides');
   ok(await page.$$eval('.ehr-ends', els => els.length >= 3 && els.every(e => e.textContent.length > 10)), 'slider ends name the manoeuvre');
-  const g3 = await page.$eval('.ehr-grid3', e => getComputedStyle(e).gridTemplateColumns.split(' ').length);
-  ok(g3 === 3, 'three columns at 1380 px: loop, 3-D, controls (' + g3 + ')');
+  const g3 = await page.$eval('.ehr-deck', e => getComputedStyle(e).gridTemplateColumns.split(' ').length);
+  const m2 = await page.$$eval('.ehr-main > *', els => els.map(e => { const r = e.getBoundingClientRect(); return [Math.round(r.top), Math.round(r.width)]; }));
+  ok(g3 === 3 && m2.length === 2 && m2[0][0] === m2[1][0] && Math.abs(m2[0][1] - m2[1][1]) <= 2, 'at 1380 px: the loop and the 3-D heart side by side, then a deck of three (' + g3 + ')');
   ok(await page.$$eval('.ehr-thumb', els => els.every(c => c.width >= 200)), 'thumbnails rendered at 2× pixels');
 
   // ---- the lead-placement lab

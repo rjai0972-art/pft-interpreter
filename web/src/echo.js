@@ -23,7 +23,7 @@
   /* ================================================================== the model ================================================================== */
   const S = { AIR: 0, WALL: 1, TISSUE: 2, BLOOD: 3, MYO: 4, PERI: 5, FLUID: 6, VALVE: 7, PAP: 8, VESSEL: 9, LIVER: 10, DIAPH: 11, LVB: 12, RVB: 13, LAB: 14, RAB: 15, AOB: 16, PAB: 17, IVCB: 18, DAOB: 19, SVCB: 20, PLEFF: 21 };
   const NAMES = { 12: 'LV', 13: 'RV', 14: 'LA', 15: 'RA', 16: 'Ao', 17: 'PA', 18: 'IVC', 19: 'DAo', 20: 'SVC', 4: 'myocardium', 5: 'pericardium', 6: 'effusion', 7: 'valve', 8: 'papillary', 10: 'liver', 11: 'diaphragm', 21: 'pleural effusion' };
-  const INTENSITY = { 0: 0, 1: 0.42, 2: 0.3, 3: 0.05, 4: 0.58, 5: 1.0, 6: 0.02, 7: 0.95, 8: 0.62, 9: 0.85, 10: 0.5, 11: 0.98, 12: 0.05, 13: 0.05, 14: 0.05, 15: 0.05, 16: 0.05, 17: 0.05, 18: 0.05, 19: 0.05, 20: 0.05, 21: 0.02 };
+  const INTENSITY = { 0: 0, 1: 0.4, 2: 0.2, 3: 0.05, 4: 0.5, 5: 1.0, 6: 0.02, 7: 0.95, 8: 0.62, 9: 0.85, 10: 0.5, 11: 0.98, 12: 0.05, 13: 0.05, 14: 0.05, 15: 0.05, 16: 0.05, 17: 0.05, 18: 0.05, 19: 0.05, 20: 0.05, 21: 0.02 };
   const PATHOLOGY = [
     { id: 'normal', title: 'Normal heart', p: {} , note: 'A normal adult: LV 4.8 cm, walls 0.9 cm, EF ~60%, RV smaller than the LV, IVC 1.6 cm collapsing with the breath, no fluid.' },
     { id: 'dcm', title: 'Dilated LV, poor function', p: { lvScale: 1.35, contr: 0.25, laScale: 1.2, ivc: 1.3, ivcCol: 0.1 }, note: 'A big, round, barely moving left ventricle: EPSS wide, fractional shortening small, the mitral leaflets far from the septum; a full IVC.' },
@@ -59,16 +59,27 @@
     m.ao.root = rootC; m.ao.e = e;
     const asc = [rootC, V.add(rootC, V.mul(e, 2.0)), V.add(rootC, V.mul(e, 4.0))];
     const top = V.add(rootC, V.mul(e, 4.0)), des0 = [m.dao.c[0], m.dao.c[1], 2.5];
-    const arch = []; for (let i = 1; i <= 6; i++) { const t = i / 6, ang = Math.PI * t; const mid = V.mul(V.add(top, des0), 0.5), rad = V.len(V.sub(des0, top)) / 2; arch.push([mid[0] + (top[0] - mid[0]) * Math.cos(ang) + 0.4 * Math.sin(ang), mid[1] + (top[1] - mid[1]) * Math.cos(ang), mid[2] + (top[2] - mid[2]) * Math.cos(ang) + rad * 0.75 * Math.sin(ang)]); }
+    const arch = []; for (let i = 1; i <= 6; i++) { const t = i / 6, ang = Math.PI * t; const mid = V.mul(V.add(top, des0), 0.5), rad = V.len(V.sub(des0, top)) / 2; arch.push([mid[0] + (top[0] - mid[0]) * Math.cos(ang) + 0.4 * Math.sin(ang), mid[1] + (top[1] - mid[1]) * Math.cos(ang), mid[2] + (top[2] - mid[2]) * Math.cos(ang) + rad * 1.0 * Math.sin(ang)]); }
     m.aortaPath = asc.concat(arch); m.aortaR = [1.5, 1.45, 1.4, 1.3, 1.25, 1.2, 1.2, 1.15, 1.15];
+    // the three arch vessels, rising from the top of the arch toward the neck and the arms
+    m.archBranches = [
+      { id: 'innominate', r: 0.6, path: [arch[1], V.add(arch[1], [-0.9, -0.4, 2.2]), V.add(arch[1], [-2.2, -0.9, 4.6])] },
+      { id: 'lcca', r: 0.4, path: [arch[2], V.add(arch[2], [0.1, -0.5, 2.3]), V.add(arch[2], [0.5, -1.0, 4.8])] },
+      { id: 'lsca', r: 0.5, path: [arch[3], V.add(arch[3], [0.9, -0.2, 2.0]), V.add(arch[3], [2.6, -0.3, 4.0])] }
+    ];
     const rvot = H2B(-2.4, 2.6, -1.8);
     const pe = V.unit(V.add(V.add(V.mul(a, -0.5), [0.3, 0.15, 0.85]), V.mul(n2, -0.15)));
-    m.paPath = [rvot, V.add(rvot, V.mul(pe, 1.8)), V.add(rvot, V.mul(pe, 3.6)), V.add(V.add(rvot, V.mul(pe, 3.6)), [1.6, 1.4, 0.6])];
+    m.paPath = [rvot, V.add(rvot, V.mul(pe, 1.1)), V.add(rvot, V.mul(pe, 2.1)), V.add(V.add(rvot, V.mul(pe, 2.1)), [1.3, 1.3, 0.2])];   // the bifurcation sits under the aortic arch
+    const bif = m.paPath[2];
+    m.paBranches = [
+      { id: 'rpa', r: 0.65, path: [bif, V.add(bif, [-1.6, 1.7, 0.9]), V.add(bif, [-3.6, 2.6, 1.5]), V.add(bif, [-6.6, 3.0, 1.3])] },
+      { id: 'lpa', r: 0.75, path: [m.paPath[3], V.add(m.paPath[3], [0.9, 1.6, 0.0]), V.add(m.paPath[3], [1.4, 3.2, -0.3])] }
+    ];
     const rac = H2B(m.ra.c[0], m.ra.c[1], m.ra.c[2]);
     m.ra.cb = rac;
     m.ivcPath = [[rac[0] - 0.4, rac[1] + 0.6, rac[2] - 1.6], [rac[0] - 0.9, rac[1] + 1.2, rac[2] - 5], [rac[0] - 1.3, rac[1] + 1.6, rac[2] - 19]];
     m.hvPath = [[rac[0] - 1.0, rac[1] + 1.3, rac[2] - 5.6], [rac[0] - 4.2, rac[1] + 3.6, rac[2] - 8.5]];
-    m.svcPath = [[rac[0] - 0.2, rac[1] - 0.2, rac[2] + 2.4], [rac[0] - 0.6, rac[1] - 0.4, rac[2] + 6.5]];
+    m.svcPath = [[rac[0] - 0.5, rac[1] + 0.1, rac[2] + 2.3], [rac[0] - 1.5, rac[1] + 0.5, rac[2] + 4.4], [rac[0] - 2.0, rac[1] + 0.6, rac[2] + 7.0]];
     return m;
   }
   /* distance from a point to a polyline (returns the distance and the parameter along the path) */
@@ -85,11 +96,24 @@
   const ell = (u, v, w, ra, rb, rc) => (u * u) / (ra * ra) + (v * v) / (rb * rb) + (w * w) / (rc * rc);
   /* the cycle: k = contraction (0 diastole → 1 end-systole), phase 0 at the R wave */
   function cycle(t) { t = ((t % 1) + 1) % 1; const k = t < 0.36 ? Math.sin(Math.PI * t / 0.36 * 0.5) : (t < 0.6 ? Math.cos(Math.PI * (t - 0.36) / 0.24 * 0.5) : 0); return clamp(k, 0, 1); }
+  /* how far the mitral and tricuspid leaflets are open through the cycle: shut from the R wave to the end of relaxation, flung open by
+     early filling (E), drifting half-shut in diastasis, reopened by the atrial kick (A) and closing as the next R wave arrives */
+  const sstep = (a, b, x) => { const q = clamp((x - a) / (b - a), 0, 1); return q * q * (3 - 2 * q); };
+  function avOpen(t) {
+    t = ((t % 1) + 1) % 1;
+    if (t < 0.035) return 0.35 * (1 - sstep(0, 0.035, t));
+    if (t < 0.6) return 0;
+    if (t < 0.68) return sstep(0.6, 0.68, t);
+    if (t < 0.76) return 1;
+    if (t < 0.86) return 1 - 0.5 * sstep(0.76, 0.86, t);
+    if (t < 0.93) return 0.5 + 0.38 * sstep(0.86, 0.93, t);
+    return 0.88 - 0.53 * sstep(0.93, 1, t);
+  }
   /* funnel leaflets: the segment from the annulus hinge toward the cavity, in the (axial, radial) half-plane; angle depends on opening */
   function leaflet(u, rho, azim, annU, annR, open, dir) {
     // dir = +1: leaflets point toward +u (into a ventricle whose cavity is at u > annU); azim: 0 = the anterior (long) leaflet
     const L = 1.45 + 0.75 * Math.max(0, Math.cos(azim));
-    const beta = (6 + 68 * open) * D2R;
+    const beta = (8 + 66 * (1 - open)) * D2R;   // open: the leaflets lie along the inflow; shut: they meet across the orifice
     const ux = annU + dir * L * Math.cos(beta), rx = annR - L * Math.sin(beta);
     // distance from (u, rho) to the segment (annU, annR) → (ux, rx)
     const dx = ux - annU, dy = rx - annR, px = u - annU, py = rho - annR;
@@ -102,7 +126,7 @@
     const sk = skinY(x);
     if (y < sk) return S.AIR;
     if (y < sk + 1.3) return S.WALL;
-    const o = m.o, k = cycle(t);
+    const o = m.o, k = cycle(t), mvO = avOpen(t);
     // heart frame
     const hx = x - m.lvc[0], hy = y - m.lvc[1], hz = z - m.lvc[2];
     const u = hx * m.a[0] + hy * m.a[1] + hz * m.a[2], v = hx * m.n1[0] + hy * m.n1[1] + hz * m.n1[2], w = hx * m.n2[0] + hy * m.n2[1] + hz * m.n2[2];
@@ -118,8 +142,10 @@
     const inLaCav = ell(u - la.c[0], v - la.c[1], w - la.c[2], laR[0], laR[1], laR[2]) < 1;
     const inLaOut = ell(u - la.c[0], v - la.c[1], w - la.c[2], laR[0] + la.wall, laR[1] + la.wall, laR[2] + la.wall) < 1;
     // mitral valve: a funnel from the annulus into the LV; open in diastole
-    if (!inLvCav || rho > 0.4) { if (u > lv.ann - 0.5 && u < lv.ann + 2.6 && rho < lv.annR + 0.1 && leaflet(u, rho, azim, lv.ann, lv.annR, 1 - lvK, +1)) return S.VALVE; }
-    else if (leaflet(u, rho, azim, lv.ann, lv.annR, 1 - lvK, +1)) return S.VALVE;
+    if (!inLvCav || rho > 0.4) { if (u > lv.ann - 0.5 && u < lv.ann + 2.6 && rho < lv.annR + 0.1 && leaflet(u, rho, azim, lv.ann, lv.annR, mvO, +1)) return S.VALVE; }
+    else if (leaflet(u, rho, azim, lv.ann, lv.annR, mvO, +1)) return S.VALVE;
+    const underWall = y < sk + 1.3 + 0.42;   // the free wall that lies against the inner chest wall
+    if (underWall && (inLvCav || ell(u, v, w, epiRa, epiRc, epiRc) < 1 && u > lv.ann - 1.2)) return S.MYO;
     if (inLvCav) {
       // papillary muscles
       for (let i = 0; i < 2; i++) { const ang = (i === 0 ? 118 : 242) * D2R, pr = lvRc * 0.62; const pv = pr * Math.cos(ang), pw = pr * Math.sin(ang); if (ell(u - 0.6, v - pv, w - pw, 1.5, 0.5, 0.5) < 1) return S.PAP; }
@@ -133,7 +159,8 @@
     const inRvOut = ell(u - 0.2, rvV, rvW, rvRa + rv.wall, rvRb + rv.wall, rvRc + rv.wall) < 1 && u > rv.ann - 0.9;
     // tricuspid valve
     const rvRho = Math.sqrt(rvV * rvV + rvW * rvW), rvAz = Math.atan2(rvW, rvV);
-    if (u > rv.ann - 0.5 && u < rv.ann + 2.4 && rvRho < rv.annR + 0.1 && !inLvEpi && leaflet(u, rvRho, rvAz + 2.2, rv.ann, rv.annR, 1 - rvK, +1)) return S.VALVE;
+    if (u > rv.ann - 0.5 && u < rv.ann + 2.4 && rvRho < rv.annR + 0.1 && !inLvEpi && leaflet(u, rvRho, rvAz + 2.2, rv.ann, rv.annR, mvO, +1)) return S.VALVE;
+    if (underWall && (inRvCav || inRvOut)) return S.MYO;
     if (inRvCav) {
       // moderator band near the apex
       const bA = [1.7, (lv.rc + 0.6) * Math.cos(rv.psi + 0.5), (lv.rc + 0.6) * Math.sin(rv.psi + 0.5)], bB = [1.7, (rvC[0] + rvRb * 0.9) * 1.0, rvC[1] + 1.2];
@@ -164,6 +191,7 @@
       return S.AOB;
     }
     if (aoD.d < aoR + 0.18) return S.VESSEL;
+    if (z > m.archBranches[0].path[0][2] - 1) { for (let b = 0; b < 3; b++) { const B = m.archBranches[b], bd = tubeDist(p, B.path).d; if (bd < B.r) return S.AOB; if (bd < B.r + 0.14) return S.VESSEL; } }
     // descending aorta (straight down, posterior to the LA)
     const dd = Math.hypot(x - m.dao.c[0], y - m.dao.c[1]);
     if (z > m.dao.z[0] && z < m.dao.z[1]) { if (dd < m.dao.r) return S.DAOB; if (dd < m.dao.r + 0.18) return S.VESSEL; }
@@ -171,6 +199,7 @@
     const paD = tubeDist(p, m.paPath);
     if (paD.d < m.pa.r && !inRvCav) return S.PAB;
     if (paD.d < m.pa.r + 0.15 && !inRvCav && !inRvOut) return S.VESSEL;
+    for (let b = 0; b < 2; b++) { const B = m.paBranches[b], bd = tubeDist(p, B.path).d; if (bd < B.r && !inLaCav) return S.PAB; if (bd < B.r + 0.14 && !inLaCav && !inLaOut) return S.VESSEL; }
     // atria
     if (inLaCav) return S.LAB;
     if (inRaCav) return S.RAB;
@@ -219,13 +248,18 @@
     // heart-frame coordinates of a body point
     const hf = (x, y, z) => { const hx = x - m.lvc[0], hy = y - m.lvc[1], hz = z - m.lvc[2]; return [hx * m.a[0] + hy * m.a[1] + hz * m.a[2], hx * m.n1[0] + hy * m.n1[1] + hz * m.n1[2], hx * m.n2[0] + hy * m.n2[1] + hz * m.n2[2]]; };
     const lvEpi = (u, v, w) => Math.max(ell(u, v, w, epiRa, epiRc, epiRc) - 1, (lv.ann - 1.2) - u);
-    const lvEndo = (u, v, w) => Math.max(ell(u, v, w, lvRa, lvRc, lvRc) - 1, (lv.ann - 0.2) - u);
+    const lvEndo0 = (u, v, w) => Math.max(ell(u, v, w, lvRa, lvRc, lvRc) - 1, (lv.ann - 0.2) - u);
+    // body coordinates of a heart-frame point, for the closure under the chest wall
+    const cwIn = (u, v, w) => { const b = m.h2b(u, v, w); return (skinY(b[0]) + 1.3 + 0.42) - b[1]; };
+    const closed = opts.chest !== false;
+    const lvEndo = closed ? (u, v, w) => Math.max(lvEndo0(u, v, w), cwIn(u, v, w)) : lvEndo0;
     const laCav = (u, v, w) => ell(u - la.c[0], v - la.c[1], w - la.c[2], laR[0], laR[1], laR[2]) - 1;
     const laOut = (u, v, w) => ell(u - la.c[0], v - la.c[1], w - la.c[2], laR[0] + laW, laR[1] + laW, laR[2] + laW) - 1;
     const raCav = (u, v, w) => ell(u - ra.c[0], v - ra.c[1], w - ra.c[2], raR[0], raR[1], raR[2]) - 1;
     const raOut = (u, v, w) => ell(u - ra.c[0], v - ra.c[1], w - ra.c[2], raR[0] + raW, raR[1] + raW, raR[2] + raW) - 1;
     const rvFrame = (v, w) => [(v - rv.c[0]) * cps + (w - rv.c[1]) * sps, -(v - rv.c[0]) * sps + (w - rv.c[1]) * cps];
-    const rvCav = (u, v, w) => { const q = rvFrame(v, w); return Math.max(ell(u - 0.2, q[0], q[1], rvRa, rvRb, rvRc) - 1, (rv.ann - 0.2) - u, -lvEpi(u, v, w)); };
+    const rvCav0 = (u, v, w) => { const q = rvFrame(v, w); return Math.max(ell(u - 0.2, q[0], q[1], rvRa, rvRb, rvRc) - 1, (rv.ann - 0.2) - u, -lvEpi(u, v, w)); };
+    const rvCav = closed ? (u, v, w) => Math.max(rvCav0(u, v, w), cwIn(u, v, w)) : rvCav0;
     const rvOut = (u, v, w) => { const q = rvFrame(v, w); return Math.max(ell(u - 0.2, q[0], q[1], rvRa + rvW, rvRb + rvW, rvRc + rvW) - 1, (rv.ann - 0.9) - u); };
     const aoLumen = (p) => tubeField(p, m.aortaPath, m.aortaR);
     const daoLumen = (p) => Math.max(Math.hypot(p[0] - m.dao.c[0], p[1] - m.dao.c[1]) - m.dao.r, m.dao.z[0] - p[2], p[2] - m.dao.z[1]);
@@ -264,8 +298,90 @@
     parts.forEach(p => { p.static = p.id === 'liver'; });
     // the valve rings, as geometry the 3-D view can draw directly: centre, axis, radius (cm)
     const mvC = m.h2b(lv.ann, 0, 0), tvC = m.h2b(rv.ann, rv.c[0], rv.c[1]), avC = V.add(m.ao.root, V.mul(m.ao.e, 0.37));
-    const rings = [{ id: 'mv', name: 'Mitral annulus', c: mvC, axis: m.a, r: lv.annR, open: 1 - lvK }, { id: 'tv', name: 'Tricuspid annulus', c: tvC, axis: m.a, r: rv.annR, open: 1 - rvK }, { id: 'av', name: 'Aortic valve', c: avC, axis: m.ao.e, r: m.aortaR[0], open: lvK }];
-    return { parts: parts, rings: rings, k: k, centre: m.lvc, apex: m.apex, base: m.base };
+    const rings = [{ id: 'mv', name: 'Mitral annulus', c: mvC, axis: m.a, r: lv.annR, open: avOpen(t === undefined ? 0 : t) }, { id: 'tv', name: 'Tricuspid annulus', c: tvC, axis: m.a, r: rv.annR, open: avOpen(t === undefined ? 0 : t) }, { id: 'av', name: 'Aortic valve', c: avC, axis: m.ao.e, r: m.aortaR[0], open: lvK }];
+    /* ---- what the 3-D view draws on and around the heart but the beam does not need (v8.7): the coronary arteries in their grooves,
+       the arch vessels, the branch pulmonary arteries, the pulmonary veins and the two appendages — each a tube in body coordinates ---- */
+    const ventOut = (u, v, w) => Math.min(lvEpi(u, v, w), rvOut(u, v, w));
+    const outR = (u, phi) => {   // the outermost radius of the ventricular mass along a ray from the long axis
+      const c = Math.cos(phi), sn = Math.sin(phi); let r = 8.5;
+      while (r > 0.05 && ventOut(u, r * c, r * sn) > 0) r -= 0.12;
+      if (r <= 0.05) return 0;
+      let lo = r, hi = r + 0.12; for (let i = 0; i < 10; i++) { const md = (lo + hi) / 2; if (ventOut(u, md * c, md * sn) < 0) lo = md; else hi = md; }
+      return lo;
+    };
+    const lift = 0.1, inChest = (pt) => [pt[0], Math.max(pt[1], skinY(pt[0]) + 1.45), pt[2]];
+    const onSurf = (u, phi) => { const R = outR(u, phi) + lift; return inChest(m.h2b(u, R * Math.cos(phi), R * Math.sin(phi))); };
+    // the interventricular grooves lie on the left ventricle's own surface, where the right ventricle's wall leaves it
+    const onLv = (u, phi) => { const R = epiRc * Math.sqrt(Math.max(0.02, 1 - (u * u) / (epiRa * epiRa))) + lift + 0.05; return inChest(m.h2b(u, R * Math.cos(phi), R * Math.sin(phi))); };
+    const phiC = Math.atan2(rv.c[1], rv.c[0]);
+    // where the right ventricle's wall leaves the left ventricle's surface at a given level: the two interventricular grooves
+    const groove = (u, sign) => {
+      const re = epiRc * Math.sqrt(Math.max(0.02, 1 - (u * u) / (epiRa * epiRa))) + 0.06;
+      const g = (phi) => rvOut(u, re * Math.cos(phi), re * Math.sin(phi));
+      if (g(phiC) > 0) return null;
+      let a0 = phiC, a1 = phiC; for (let i = 0; i < 80; i++) { a1 = a0 + sign * 0.045; if (g(a1) > 0) break; a0 = a1; }
+      for (let i = 0; i < 10; i++) { const md = (a0 + a1) / 2; if (g(md) < 0) a0 = md; else a1 = md; }
+      return a0;
+    };
+    const uB = lv.ann + 0.25, uRvEnd = (0.2 + rvRa) * 0.7, uApex = epiRa * 0.93;
+    const trail = (sign, uTo) => { const pts = []; let last = null; for (let u = uB; u <= uTo + 1e-6; u += 0.45) { let ph = u < uRvEnd ? groove(u, sign) : null; if (ph === null) ph = last; if (ph === null) continue; last = ph; pts.push(onLv(u, ph)); } return { pts: pts, phi0: groove(uB, sign) }; };
+    const decor = [];
+    const lad = trail(-1, uApex), pda = trail(+1, uRvEnd * 1.25);
+    if (lad.pts.length > 3 && lad.phi0 !== null && pda.phi0 !== null) {
+      decor.push({ id: 'lad', name: 'Left anterior descending', kind: 'coronary', r: 0.15, path: lad.pts });
+      decor.push({ id: 'pda', name: 'Posterior descending', kind: 'coronary', r: 0.12, path: pda.pts });
+      const ring = (from, to, n) => { const pts = []; for (let i = 0; i <= n; i++) pts.push(onSurf(uB, from + (to - from) * i / n)); return pts; };
+      decor.push({ id: 'rca', name: 'Right coronary', kind: 'coronary', r: 0.15, path: ring(lad.phi0 + 0.25, pda.phi0, 14) });
+      decor.push({ id: 'lcx', name: 'Circumflex', kind: 'coronary', r: 0.14, path: ring(lad.phi0, lad.phi0 - 3.3, 16) });
+      // branches: two diagonals from the LAD, an obtuse marginal from the circumflex, an acute marginal from the right coronary
+      const branch = (id, name, u0, phi0, dphi, len, r) => { const pts = []; for (let i = 0; i <= 6; i++) { const q = i / 6; pts.push(onSurf(Math.min(uApex, u0 + len * q), phi0 + dphi * q)); } decor.push({ id: id, name: name, kind: 'coronary', r: r, path: pts }); };
+      const gA = (u) => { const x = groove(u, -1); return x === null ? lad.phi0 : x; };
+      branch('d1', 'First diagonal', uB + 1.4, gA(uB + 1.4), -0.75, 3.2, 0.1);
+      branch('d2', 'Second diagonal', uB + 3.0, gA(uB + 3.0), -0.6, 2.6, 0.09);
+      branch('om', 'Obtuse marginal', uB, lad.phi0 - 1.6, -0.25, 4.6, 0.11);
+      branch('am', 'Acute marginal', uB, phiC + 0.35, 0.1, 3.6, 0.1);
+    }
+    m.archBranches.forEach(b => decor.push({ id: b.id, name: b.id === 'innominate' ? 'Innominate artery' : (b.id === 'lcca' ? 'Left common carotid' : 'Left subclavian'), kind: 'artery', r: b.r + 0.12, path: b.path }));
+    m.paBranches.forEach(b => decor.push({ id: b.id, name: b.id === 'rpa' ? 'Right pulmonary artery' : 'Left pulmonary artery', kind: 'pa', r: b.r + 0.14, path: b.path }));
+    const lac = m.h2b(la.c[0], la.c[1], la.c[2]), rac = m.ra.cb;
+    [['rupv', -1, 1.1], ['rlpv', -1, -0.9], ['lupv', 1, 1.2], ['llpv', 1, -0.8]].forEach(q => { const a0 = V.add(lac, [q[1] * 1.5, 1.2, q[2]]); decor.push({ id: q[0], name: 'Pulmonary vein', kind: 'pv', r: 0.5, path: [a0, V.add(a0, [q[1] * 1.6, 0.5, q[2] * 0.25]), V.add(a0, [q[1] * 3.2, 0.7, q[2] * 0.6])] }); });
+    const inChest2 = (pt) => [pt[0], Math.max(pt[1], skinY(pt[0]) + 1.95), pt[2]];
+    decor.push({ id: 'laa', name: 'Left atrial appendage', kind: 'la', r: 0.75, taper: 0.45, path: [V.add(lac, [1.2, -1.0, 1.1]), V.add(lac, [2.5, -2.2, 1.2]), V.add(lac, [3.3, -3.4, 0.7])].map(inChest2) });
+    decor.push({ id: 'raa', name: 'Right atrial appendage', kind: 'ra', r: 0.85, taper: 0.45, path: [V.add(rac, [0.3, -1.3, 1.0]), V.add(rac, [1.3, -2.3, 1.5]), V.add(rac, [2.4, -2.9, 1.3])].map(inChest2) });
+    return { parts: parts, rings: rings, decor: decor, k: k, centre: m.lvc, apex: m.apex, base: m.base };
+  }
+  /* the valve leaflets as surfaces for the 3-D view: the same hinge, length and opening as the lines the beam paints. Each is a grid of
+     two rows (the hinge at the annulus, the free edge) and n columns, in body coordinates. */
+  function valves3d(m, t) {
+    t = t === undefined ? 0 : t;
+    const o = m.o, k = cycle(t), lvK = k * o.contr, open = avOpen(t), lv = m.lv, rv = m.rv, n = 49, out = [];
+    const beta = (8 + 66 * (1 - open)) * D2R, cb = Math.cos(beta), sb = Math.sin(beta);
+    const cps = Math.cos(rv.psi), sps = Math.sin(rv.psi);
+    const av = (id, annU, annR, toBody, azOff) => {
+      const pos = new Float32Array(2 * n * 3);
+      for (let i = 0; i < n; i++) {
+        const az = 2 * Math.PI * i / (n - 1), L = (1.45 + 0.75 * Math.max(0, Math.cos(az + azOff))) * (0.9 + 0.1 * Math.abs(Math.cos(1.5 * (az + azOff))));
+        const h = toBody(annU, annR, az), tp = toBody(annU + L * cb, Math.max(0.03, annR - L * sb), az);
+        pos.set(h, i * 3); pos.set(tp, (n + i) * 3);
+      }
+      out.push({ id: id, n: n, pos: pos, open: open });
+    };
+    av('mv', lv.ann, lv.annR, (u, rho, az) => m.h2b(u, rho * Math.cos(az), rho * Math.sin(az)), 0);
+    av('tv', rv.ann, rv.annR, (u, rho, az) => { const a = rho * Math.cos(az), b = rho * Math.sin(az); return m.h2b(u, rv.c[0] + a * cps - b * sps, rv.c[1] + a * sps + b * cps); }, 2.2);
+    // the aortic valve: three cusps, each from its third of the annulus to a free edge that meets the others at the centre when shut
+    const e = m.ao.e, c0 = V.add(m.ao.root, V.mul(e, 0.3)), R = m.aortaR[0] - 0.05, ref = V.unit(V.cross(e, m.a)), ref2 = V.cross(e, ref), aoOpen = clamp(lvK, 0, 1), nc = 13;
+    for (let cusp = 0; cusp < 3; cusp++) {
+      const pos = new Float32Array(2 * nc * 3), a0 = cusp * 2 * Math.PI / 3 + 0.04, a1 = (cusp + 1) * 2 * Math.PI / 3 - 0.04;
+      for (let i = 0; i < nc; i++) {
+        const q = i / (nc - 1), ang = a0 + (a1 - a0) * q, belly = Math.sin(Math.PI * q);
+        const rim = V.add(c0, V.add(V.mul(ref, R * Math.cos(ang)), V.mul(ref2, R * Math.sin(ang))));
+        const re = R * (aoOpen * 0.86 + (1 - aoOpen) * (1 - 0.94 * belly)), ax = 0.12 + 0.55 * aoOpen + 0.22 * (1 - aoOpen) * belly;
+        const edge = V.add(V.add(c0, V.mul(e, ax)), V.add(V.mul(ref, re * Math.cos(ang)), V.mul(ref2, re * Math.sin(ang))));
+        pos.set(rim, i * 3); pos.set(edge, (nc + i) * 3);
+      }
+      out.push({ id: 'av' + cusp, n: nc, pos: pos, open: aoOpen });
+    }
+    return out;
   }
 
   /* ================================================================== the probe ================================================================== */
@@ -307,39 +423,70 @@
     if (sectorCache[key]) return sectorCache[key];
     const top = 6, scale = (H - top - 4) / depth, cx = W / 2, half = 45 * D2R;
     const r = new Float32Array(W * H), c = new Float32Array(W * H), s = new Float32Array(W * H), inside = new Uint8Array(W * H);
+    const ri = new Int32Array(W * H), ai = new Int32Array(W * H), up = new Int32Array(W * H), up2 = new Int32Array(W * H), dn2 = new Int32Array(W * H), edge = new Float32Array(W * H);
     for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
       const dx = i + 0.5 - cx, dy = j + 0.5 - top; const rr = Math.sqrt(dx * dx + dy * dy) / scale, phi = Math.atan2(dx, dy);
       const idx = j * W + i; r[idx] = rr; c[idx] = Math.cos(phi); s[idx] = Math.sin(phi);
       inside[idx] = (dy > 0 && Math.abs(phi) <= half && rr <= depth && rr >= 0.25) ? 1 : 0;
+      // polar grain: fine along the beam, a fixed angle across it (so it widens with depth, as a real beam does)
+      ri[idx] = Math.floor(rr * scale * 0.62); ai[idx] = Math.floor((phi + 1) * 105);
+      // the neighbour one step back toward the probe, for the interfaces the beam meets head-on
+      const ui = Math.round(i - 1.6 * Math.sin(phi)), uj = Math.round(j - 1.6 * Math.cos(phi));
+      up[idx] = (ui >= 0 && ui < W && uj >= 0 && uj < H) ? uj * W + ui : idx;
+      const ai2 = Math.round(i - 3.2 * Math.sin(phi)), aj2 = Math.round(j - 3.2 * Math.cos(phi)), bi2 = Math.round(i + 3.2 * Math.sin(phi)), bj2 = Math.round(j + 3.2 * Math.cos(phi));
+      up2[idx] = (ai2 >= 0 && ai2 < W && aj2 >= 0 && aj2 < H) ? aj2 * W + ai2 : idx; dn2[idx] = (bi2 >= 0 && bi2 < W && bj2 >= 0 && bj2 < H) ? bj2 * W + bi2 : idx;
+      // the picture fades toward the edges of the sector
+      edge[idx] = Math.min(1, (half - Math.abs(phi)) / 0.05) * Math.min(1, (depth - rr) / 0.5);
     }
-    return (sectorCache[key] = { r: r, c: c, s: s, inside: inside, scale: scale, top: top });
+    return (sectorCache[key] = { r: r, c: c, s: s, inside: inside, ri: ri, ai: ai, up: up, up2: up2, dn2: dn2, edge: edge, scale: scale, top: top });
   }
   function hash(i, j, seed) { let h = (i * 374761393 + j * 668265263 + seed * 2246822519) | 0; h = (h ^ (h >>> 13)) * 1274126177 | 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967296; }
+  function vnoise(x, y, seed) { const i = Math.floor(x), j = Math.floor(y), fx = x - i, fy = y - j, sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy); const a = hash(i, j, seed), b = hash(i + 1, j, seed), c = hash(i, j + 1, seed), d = hash(i + 1, j + 1, seed); return a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy; }
+  const THIN = {}; [5, 7, 9, 11].forEach(i => { THIN[i] = 1; });   // pericardium, leaflets, vessel walls, diaphragm: bright when the beam meets them square, faint when it runs along them
+  const BLOODLIKE = {}; [3, 6, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21].forEach(i => { BLOODLIKE[i] = 1; });
   function render(params, W, H, t, opts) {
     opts = opts || {};
     const m = params.model, depth = params.depth || 16, pr = probe(params), sec = sector(W, H, depth);
-    const ids = new Uint8Array(W * H), img = new Uint8ClampedArray(W * H);
+    const N = W * H, ids = new Uint8Array(N), img = new Uint8ClampedArray(N), F = new Float32Array(N);
     const gain = opts.gain === undefined ? 1 : opts.gain;
     const P = pr.P, d = pr.d, l = pr.l;
-    for (let idx = 0; idx < W * H; idx++) {
-      if (!sec.inside[idx]) { ids[idx] = S.AIR; img[idx] = 0; continue; }
+    for (let idx = 0; idx < N; idx++) {
+      if (!sec.inside[idx]) { ids[idx] = S.AIR; continue; }
       const r = sec.r[idx], cr = sec.c[idx] * r, sr = sec.s[idx] * r;
       const x = P[0] + cr * d[0] + sr * l[0], y = P[1] + cr * d[1] + sr * l[1], z = P[2] + cr * d[2] + sr * l[2];
       const id = classify(m, x, y, z, t);
       ids[idx] = id;
+      if (id === S.AIR) continue;
       let I = INTENSITY[id];
-      const i = idx % W, j = (idx / W) | 0;
-      if (id === S.AIR) { img[idx] = 0; continue; }
-      // speckle: fine and coarse grains
-      const n1 = hash(i, j, 7), n2 = hash(i >> 1, j >> 1, 11), n3 = hash(i >> 2, j >> 2, 13);
-      const grain = 0.45 + 0.55 * (0.45 * n1 + 0.35 * n2 + 0.2 * n3);
+      // speckle in the beam's own coordinates: fine, medium and coarse grains
+      const a = sec.ri[idx], b = sec.ai[idx];
+      const n1 = hash(a, b, 7), n2 = hash(a >> 1, b >> 1, 11), n3 = hash(a >> 2, b >> 2, 13);
+      const grain = 0.3 + 0.7 * (0.5 * n1 + 0.32 * n2 + 0.18 * n3);
+      if (id === S.TISSUE) I *= 0.5 + 1.1 * vnoise(a / 26, b / 34, 17) * vnoise(a / 9 + 3.1, b / 13 + 1.7, 19);   // lung and fat beyond the heart: patchy, not a flat grey
       if (I > 0.1) I *= grain * (id === S.PERI || id === S.VALVE || id === S.DIAPH ? 1.15 : 1);
-      else I = I * 0.6 + 0.06 * n1 * n2;
+      else I = I * 0.6 + 0.05 * n1 * n2;
       // depth attenuation with time-gain compensation (mild), near-field haze
       I *= gain * (1.05 - 0.3 * (r / depth)) + (r < 1.2 ? 0.12 * (1.2 - r) : 0);
-      // beam blur: a touch of lateral averaging would cost a second pass; a lateral dependence of speckle is enough here
-      img[idx] = clamp(Math.round(I * 255), 0, 255);
+      F[idx] = I;
     }
+    if (opts.polish !== false) {
+      // interfaces the beam meets head-on reflect it (the endocardium, the pericardium, a vessel wall); those it runs along drop out
+      for (let idx = 0; idx < N; idx++) {
+        if (!sec.inside[idx]) continue;
+        const u = sec.up[idx], a = ids[idx], b = ids[u]; if (a === b || !sec.inside[u]) continue;
+        const ba = BLOODLIKE[a], bb = BLOODLIKE[b];
+        const boost = (ba ? !bb : bb) ? 0.22 : ((a === S.TISSUE || b === S.TISSUE || a === S.WALL || b === S.WALL) ? 0.08 : 0.12);
+        F[idx] += boost; F[u] += boost * 0.5;
+      }
+      // a thin bright structure that runs along the beam (the same thing three pixels nearer and three further) returns little: lateral drop-out
+      for (let idx = 0; idx < N; idx++) { const a = ids[idx]; if (THIN[a] && ids[sec.up2[idx]] === a && ids[sec.dn2[idx]] === a) F[idx] *= 0.42; }
+      // the point-spread: one soft pass (centre 4, sides 2, corners 1), fading into the sector's edge
+      for (let j = 1; j < H - 1; j++) for (let i = 1; i < W - 1; i++) {
+        const idx = j * W + i; if (!sec.inside[idx]) continue;
+        const v = (4 * F[idx] + 2 * (F[idx - 1] + F[idx + 1] + F[idx - W] + F[idx + W]) + F[idx - W - 1] + F[idx - W + 1] + F[idx + W - 1] + F[idx + W + 1]) / 16;
+        img[idx] = clamp(Math.round(v * sec.edge[idx] * 255), 0, 255);
+      }
+    } else for (let idx = 0; idx < N; idx++) img[idx] = clamp(Math.round(F[idx] * 255), 0, 255);
     return { ids: ids, img: img, probe: pr, sector: sec };
   }
   /* which structures are on the screen, where (centroids in pixels) and how big */
@@ -663,6 +810,6 @@
     { title: 'Practice', ids: ['echo_lab', 'echo_quiz', 'echo_log'] }
   ];
 
-  root.PFT_ECHO = { topics: T, groups: GROUPS, LOG: LOG, S: S, NAMES: NAMES, INTENSITY: INTENSITY, PATHOLOGY: PATHOLOGY, WINDOWS: WINDOWS, VIEWS: VIEWS, build: build, classify: classify, probe: probe, sector: sector, render: render, regions: regions, cycle: cycle, view: view, viewParams: viewParams, score: score, fields: fields, skinY: skinY, V: V };
+  root.PFT_ECHO = { topics: T, groups: GROUPS, LOG: LOG, S: S, NAMES: NAMES, INTENSITY: INTENSITY, PATHOLOGY: PATHOLOGY, WINDOWS: WINDOWS, VIEWS: VIEWS, build: build, classify: classify, probe: probe, sector: sector, render: render, regions: regions, cycle: cycle, avOpen: avOpen, view: view, viewParams: viewParams, score: score, fields: fields, valves3d: valves3d, skinY: skinY, V: V };
   if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_ECHO;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -527,7 +527,7 @@ const near = (a, b, t) => Math.abs(a - b) <= t;
   ok(await page.locator('[data-ec-score="1/2"]').count() === 1, 'the answers survive leaving and returning');
   // the guided scenarios inside the lab
   await page.evaluate(() => window.__pft.setMode('learn', { topic: 'ecmo_lab' })); await page.waitForSelector('[data-ecmolab] [data-ec-guide]');
-  ok(await page.locator('[data-ec-guide] option').count() === 11 && await page.locator('[data-ec-guide-panel="free"]').count() === 1 && await page.locator('[data-ec-gopt]').count() === 0, 'the lab opens in free play with ten guided scenarios on offer');
+  ok(await page.locator('[data-ec-guide] option').count() === 39 && await page.locator('[data-ec-guide] optgroup').count() === 3 && await page.locator('[data-ec-guide-panel="free"]').count() === 1 && await page.locator('[data-ec-gopt]').count() === 0, 'the lab opens in free play; one list offers ten gas rounds, ten next-best-step cases and eighteen presets');
   await page.selectOption('[data-ec-guide]', 'lab_recirc'); await page.waitForSelector('[data-ec-guide-panel="lab_recirc"]');
   ok(await page.locator('[data-ec-gopt]').count() === 4 && (await ecCell('SO2')) >= 75 && await page.locator('[data-ec-config] option:checked').evaluate(e => e.value) === 'ff' && /Recirculation|recirculation/.test(await txt('[data-ec-alarms]')) && (await ecTile('Flow')).v > 4, 'the recirculation case loads its circuit: femoro-femoral, a bright drainage, the alarm, four moves');
   const spo2Before = await ecCell('SaO2');
@@ -623,8 +623,9 @@ const near = (a, b, t) => Math.abs(a - b) <= t;
   // ---- echo & POCUS
   await page.evaluate(() => window.__pft.setMode('learn', { topic: 'echo_views' })); await page.waitForSelector('[data-echoatlas="11"]');
   await page.waitForTimeout(800);
-  ok(await page.locator('#learn-cat').inputValue() === 'echo' && await page.locator('.ln-btn[data-topic]').count() === 9 && await page.locator('[data-eh-view]').count() === 11 && await page.locator('[data-eh-view] canvas.eh-atlascv').count() === 11 && await page.locator('[data-eh-file]').count() === 11, 'the echo area: nine topics; eleven view cards, each rendered with a slot for your own image');
+  ok(await page.locator('#learn-cat').inputValue() === 'echo' && await page.locator('.ln-btn[data-topic]').count() === 9 && await page.locator('[data-eh-pick]').count() === 11 && await page.locator('[data-eh-view] canvas.eh-atlascv').count() === 1 && await page.locator('[data-eh-file]').count() === 1, 'the echo area: nine topics; eleven view cards, each rendered with a slot for your own image');
   ok(await page.evaluate(() => { const c = document.querySelector('[data-eh-view="plax"] canvas'); const ctx = c.getContext('2d'); const d = ctx.getImageData(0, 0, c.width, c.height).data; let bright = 0; for (let i = 0; i < d.length; i += 16) if (d[i] > 150) bright++; return bright > 200; }), 'the PLAX card is painted (bright walls on a black sector)');
+  await page.locator('[data-eh-pick="a4c"]').click(); await page.waitForSelector('[data-eh-view="a4c"]');
   await page.locator('[data-eh-open="a4c"]').click(); await page.waitForSelector('[data-echolab]');
   ok(await page.locator('[data-eh-target] option:checked').evaluate(e => e.value) === 'a4c' && await page.locator('[data-eh-win="apical"][aria-checked="true"]').count() === 1 && await page.locator('[data-eh-got="false"]').count() === 1 && await page.locator('[data-eh-hint]').count() >= 1, '“Obtain it in the lab” opens the lab at the apical window, off-axis, with hints');
   await page.locator('[data-eh-snap]').click(); await page.waitForSelector('[data-eh-got="true"]');
@@ -674,9 +675,13 @@ const near = (a, b, t) => Math.abs(a - b) <= t;
   ok(/Sagittal/.test(await txt('[data-cr-level]')) && await page.locator('[data-cr-preset]').count() === 2, 'the sagittal reformats carry two labelled planes');
 
   // ---- v8.2: the real echo volume in the atlas and the real lab
-  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'echo_views' })); await page.waitForSelector('[data-ehr-slot="a4c"]');
+  await page.evaluate(() => window.__pft.setMode('learn', { topic: 'echo_views' })); await page.waitForSelector('[data-echoatlas]');
+  let realN = 0, noneN = 0;
+  for (const id of await page.$$eval('[data-eh-pick]', b => b.map(x => x.getAttribute('data-eh-pick')))) { await page.click('[data-eh-pick="' + id + '"]'); await page.waitForSelector('[data-eh-more="' + id + '"]'); realN += await page.locator('[data-ehr-slot]').count(); noneN += await page.locator('[data-ehr-none]').count(); }
+  await page.click('[data-eh-pick="a4c"]'); await page.waitForSelector('[data-eh-more="a4c"]'); await page.$eval('[data-eh-more="a4c"]', d => { if (!d.open) d.querySelector('summary').click(); });
+  await page.waitForFunction(() => !!document.querySelector('[data-ehr-slot="a4c"] canvas'), null, { timeout: 60000 });
   await page.waitForTimeout(3500);
-  ok(await page.locator('[data-ehr-slot]').count() === 6 && await page.locator('[data-ehr-none]').count() === 5, 'six atlas cards carry a real loop; the other five say why not');
+  ok(realN === 6 && noneN === 5, 'six atlas views carry a real loop; the other five say why not (' + realN + '/' + noneN + ')');
   ok(await page.evaluate(() => { const c = document.querySelector('[data-ehr-slot="a4c"] canvas'); const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let bright = 0; for (let i = 0; i < d.length; i += 16) if (d[i] > 120) bright++; return bright > 200; }), 'the real four-chamber loop has drawn');
   await page.locator('[data-ehr-slot="a4c"] [data-ehr-play]').click(); await page.waitForTimeout(200);
   ok(await txt('[data-ehr-slot="a4c"] [data-ehr-play]') === '▶', 'the loop pauses');
@@ -692,19 +697,21 @@ const near = (a, b, t) => Math.abs(a - b) <= t;
 
   // ---- v8.3: the heart in 3-D — the atlas panel follows the card, the lab's follows the sliders, the real lab paints the real picture
   await page.evaluate(() => window.__pft.setMode('learn', { topic: 'echo_views' })); await page.waitForSelector('[data-h3-atlas]');
+  await page.locator('[data-eh-pick="plax"]').click();   // the atlas remembers the last view picked
   await page.waitForTimeout(2500);
-  ok(await page.locator('[data-h3-atlas] .h3-canvas').count() === 1 && /1\. Parasternal long axis/.test(await txt('[data-h3-title]')) && await page.locator('[data-h3-atlas][data-h3-current="plax"]').count() === 1 && await page.locator('[data-eh-3d]').count() === 11 && await page.locator('[data-eh-atlaslink]').count() === 11, 'the atlas opens with the 3-D heart on the first view; every card has a “Show in 3-D” button and a POCUS Atlas link');
-  ok(await page.evaluate(() => { const i = document.querySelector('[data-h3-atlas] .h3-panel').inst; return i && i.build.done >= 1 && i.meshes.lv.mesh.geometry.index.count > 3000 && i.meshes.rv && i.meshes.ao && i.rings.mv && i.plane.visible && i.hasImage; }), 'the model is meshed (LV wall > 1000 triangles), the valve rings exist and the picture is on the plane');
+  ok(await page.locator('[data-h3-atlas] .h3-canvas').count() === 1 && /1\. Parasternal long axis/.test(await txt('[data-h3-title]')) && await page.locator('[data-h3-atlas][data-h3-current="plax"]').count() === 1 && await page.locator('[data-eh-3d]').count() === 11 && await page.locator('[data-eh-atlaslink]').count() === 1, 'the atlas opens with the 3-D heart on the first view; every view is one press away, and the card links the POCUS Atlas');
+  ok(await page.evaluate(() => { const i = document.querySelector('[data-h3-atlas] .h3-panel').inst; return i && i.build.done >= 1 && i.meshes.lv.mesh.geometry.index.count > 3000 && i.meshes.rv && i.meshes.ao && i.rings.mv && i.plane.visible && i.hasImage && i.valves.mv && i.valves.av0 && Object.keys(i.decor).indexOf('lad') >= 0 && i.chest.children.length > 20; }), 'the model is meshed (LV wall > 1000 triangles), the valves have leaflets, the coronaries and the ribs are there, and the picture is on the plane');
   await page.locator('[data-eh-3d="a4c"]').click(); await page.waitForTimeout(900);
-  ok(/5\. Apical four-chamber/.test(await txt('[data-h3-title]')) && await page.locator('[data-h3-atlas][data-h3-current="a4c"]').count() === 1 && await page.locator('.eh-card.h3-on[data-eh-view="a4c"]').count() === 1 && await page.evaluate(() => { const i = document.querySelector('[data-h3-atlas] .h3-panel').inst; return i.params.win === 'apical' && i.target.fan === 45; }), '“Show in 3-D” moves the plane to the apical window and marks the card');
-  await page.evaluate(() => document.querySelector('[data-eh-view="sc4"]').scrollIntoView({ block: 'center' })); await page.waitForTimeout(1200);
-  ok(await page.locator('[data-h3-atlas][data-h3-current="sc4"]').count() === 1 && /Subcostal/.test(await txt('[data-h3-title]')), 'scrolling to the subcostal card moves the plane with it');
+  ok(/5\. Apical four-chamber/.test(await txt('[data-h3-title]')) && await page.locator('[data-h3-atlas][data-h3-current="a4c"]').count() === 1 && await page.locator('.eh-card[data-eh-view="a4c"]').count() === 1 && await page.locator('[data-eh-pick="a4c"][aria-checked="true"]').count() === 1 && await page.evaluate(() => { const i = document.querySelector('[data-h3-atlas] .h3-panel').inst; return i.params.win === 'apical' && i.target.fan === 45; }), 'picking a view moves the plane to the apical window and shows its card');
+  await page.locator('[data-eh-next]').click(); await page.locator('[data-eh-pick="sc4"]').click(); await page.waitForTimeout(1200);
+  ok(await page.locator('[data-h3-atlas][data-h3-current="sc4"]').count() === 1 && /Subcostal/.test(await txt('[data-h3-title]')) && await page.locator('[data-eh-text="sc4"]').count() === 1, 'the next button and the picker both move the plane and the text');
   await page.locator('[data-h3-atlas] [data-h3-opt="cut"]').click(); await page.waitForTimeout(300);
-  ok(await page.evaluate(() => { const i = document.querySelector('[data-h3-atlas] .h3-panel').inst; return !i.opts.cut && i.meshes.lv.mat.transparent && i.meshes.lv.mat.clippingPlanes.length === 0 && !i.meshes.lv.cap.visible; }), 'turning the cut-away off makes the walls translucent and drops the caps');
+  ok(await page.evaluate(() => { const i = document.querySelector('[data-h3-atlas] .h3-panel').inst; return !i.opts.cut && !i.meshes.lv.mat.transparent && i.meshes.lv.mat.clippingPlanes.length === 0 && !i.meshes.lv.cap.visible && i.plane.material.depthTest === false; }), 'turning the cut-away off shows the whole heart, drops the caps and lets the picture show through it');
   await page.locator('[data-h3-atlas] [data-h3-opt="cut"]').click(); await page.locator('[data-h3-atlas] [data-h3-opt="screen"]').click(); await page.waitForTimeout(1200);
   ok(await page.evaluate(() => { const i = document.querySelector('[data-h3-atlas] .h3-panel').inst; return i.opts.cut && !i.opts.screen && i.meshes.lv.mat.clippingPlanes.length === 1 && i.camera.up.y > 0.99; }), 'cut-away back on; head-up re-aims the camera with the head up');
   // a clip of your own on a card, with its credit
   const gif = Buffer.from('R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==', 'base64');
+  await page.locator('[data-eh-pick="plax"]').click(); await page.waitForSelector('[data-eh-more="plax"]'); await page.$eval('[data-eh-more="plax"]', d => { if (!d.open) d.querySelector('summary').click(); });
   await page.locator('[data-eh-file="plax"]').setInputFiles({ name: 'atlas-plax.gif', mimeType: 'image/gif', buffer: gif }); await page.waitForSelector('[data-eh-own="plax"] .eh-ownimg');
   await page.locator('[data-eh-credit="plax"]').fill('The POCUS Atlas (CC BY-NC 4.0)'); await page.locator('[data-eh-credit="plax"]').dispatchEvent('change'); await page.waitForSelector('[data-eh-creditline="plax"]');
   ok(/POCUS Atlas/.test(await txt('[data-eh-creditline="plax"]')) && await page.locator('[data-eh-own="plax"] img.eh-ownimg').count() === 1 && await page.locator('[data-eh-clear="plax"]').count() === 1, 'a GIF added to the PLAX card is shown with its credit line');
@@ -744,7 +751,7 @@ const near = (a, b, t) => Math.abs(a - b) <= t;
   ok(/ventricular tachycardia/.test(await txt('[data-cd-line="Rhythm"]')) && /ventricular origin/.test(await txt('[data-cd-line="QRS"]')), 'VT: wide complexes of ventricular origin with AV dissociation');
   // ---- v8.4: drips on the circuit
   await page.evaluate(() => window.__pft.setMode('learn', { topic: 'ecmo_lab' })); await page.waitForSelector('[data-ecmolab]'); await page.waitForTimeout(300);
-  ok(await page.locator('[data-ec-drip]').count() === 10 && await page.locator('[data-ec-preset] option').count() === 19, 'ten drips with dials and eighteen presets');
+  ok(await page.locator('[data-ec-drip]').count() === 10 && await page.locator('[data-ec-preset] optgroup:last-of-type option').count() === 18, 'ten drips with dials and eighteen presets');
   await page.selectOption('[data-ec-preset]', 'va_pressor'); await page.waitForTimeout(500);
   const qn0 = parseFloat(await txt('[data-ec-cell="Native output"] b'));
   ok(/norepinephrine-equivalent 0\.40/.test(await txt('[data-ec-dripread]')) && /SVR ×1\.[4-7]/.test(await txt('[data-ec-dripread]')) && await page.locator('[data-ec-drip="ne"].on').count() === 1 && /MAP/.test(await txt('[data-tile="MAP"]')), 'the pressor preset: norepinephrine 0.4 shows its effects and the MAP on the console');
@@ -757,8 +764,8 @@ const near = (a, b, t) => Math.abs(a - b) <= t;
   await page.$eval('[data-ec-dose="ino"]', (e) => { e.value = '20'; e.dispatchEvent(new Event('input', { bubbles: true })); }); await page.waitForTimeout(500);
   ok(coRv < 3.5 && parseFloat(await txt('[data-ec-cell="Cardiac output"] b')) > coRv + 0.8 && /PVR ×0\.[4-7]/.test(await txt('[data-ec-dripread]')), 'VV RV failure: inhaled NO lowers the PVR and the output recovers');
   // ---- v8.4: the home as the fellow's guide
-  await page.evaluate(() => window.__pft.setMode('home')); await page.waitForSelector('[data-home-section="icu"]');
-  ok(await page.locator('[data-home-section]').count() === 5 && await page.locator('[data-home-prog="nbe"]').count() === 1 && await page.locator('[data-home-tile="boards"]').count() === 1 && await page.locator('[data-home-tile="log"]').count() === 1 && await page.locator('[data-home-lab="conduction"]').count() === 1 && /fellow’s guide/.test(await txt('.home-hero .kicker')), 'the home page is the guide: five sections, the boards, the logbook, the bench');
+  await page.evaluate(() => window.__pft.setMode('home')); await page.waitForSelector('[data-home-grid]');
+  ok(await page.locator('[data-home-grid] > [data-home-tile]').count() === 12 && await page.locator('[data-home-record] > [data-home-tile]').count() === 3 && await page.locator('[data-home-tile][data-home-setting="icu"]').count() === 7 && await page.locator('[data-home-prog="nbe"]').count() === 1 && await page.locator('[data-home-tile="boards"]').count() === 1 && await page.locator('[data-home-tile="log"]').count() === 1 && await page.locator('[data-home-lab="conduction"]').count() === 1 && /fellow’s guide/.test(await txt('.home-hero .kicker')), 'the home page is the guide: twelve tiles in one grid, the record (the boards, the logbook), the bench');
 
   // ---- v8.2: the echo logbook
   await page.evaluate(() => { try { localStorage.removeItem('pcd.echolog.v1'); } catch (e) {} window.__pft.setMode('learn', { topic: 'echo_log' }); }); await page.waitForSelector('[data-el-form]');

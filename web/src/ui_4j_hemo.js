@@ -206,7 +206,7 @@ function hmControls() {
   const constrict = h('label', { class: 'chk-inline', for: conId }, [h('input', { type: 'checkbox', id: conId, checked: !!p.constrict, 'data-hm-constrict': '1', onchange: (e) => { p.constrict = e.target.checked ? 1 : 0; hmRefresh(); } }), 'Constrictive pericardium']);
   const dev = h('div', { class: 'hm-devices' }, [['iabp', 'IABP'], ['impella', 'Impella 3 L/min'], ['ecmo', 'VA ECMO 4 L/min']].map(d => h('button', { type: 'button', class: 'btn sm' + (p[d[0]] ? ' on' : ''), 'data-hm-device': d[0], 'aria-pressed': String(!!p[d[0]]), text: d[1], onclick: () => { HMS.p = HM.apply(p, d[0]); render(); } })));
   const treat = h('div', { class: 'hm-treat' }, HM.INTERVENTIONS.filter(it => ['iabp', 'impella', 'ecmo'].indexOf(it[0]) < 0).map(it => h('button', { type: 'button', class: 'ch hm-tx', 'data-hm-tx': it[0], title: it[3], text: it[1], onclick: () => { HMS.p = HM.apply(HMS.p, it[0]); HMS.note = it[1] + ': ' + it[3]; render(); } })));
-  return h('div', { class: 'ec-controls hm-controls' }, [
+  return h('div', { class: 'ec-controls hm-controls deck' }, [
     presetSel, h('p', { class: 'fine ec-note', 'data-hm-note': '1', text: HMS.note }),
     h('h5', { text: 'Treat' }), treat, h('p', { class: 'fine', text: 'Each button applies what the drug or the device does to the sliders below; press again for another dose.' }),
     h('h5', { text: 'The heart' }), group('heart'),

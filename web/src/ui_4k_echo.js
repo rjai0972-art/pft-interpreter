@@ -4,7 +4,7 @@
 const EH = window.PFT_ECHO;
 const EHS = { win: 'psl', rot: 135, tilt: 0, rock: -10, dx: -0.5, dz: 1, depth: 16, path: 'normal', target: 'plax', labels: true, beating: true, model: null, anim: { raf: 0, t0: 0 }, canvas: null, lastRegs: [], own: {} };
 const EHQ = { round: null, step: 0, picks: [], score: 0, n: 0 };
-const EH_W = 256, EH_H = 208;
+const EH_W = 320, EH_H = 260;
 const EH_COL = { 12: '#ff7a7a', 13: '#7fb2ff', 14: '#ffc266', 15: '#8ee89a', 16: '#ff8cff', 17: '#7ff2f2', 18: '#fff27a', 19: '#cfa3ff', 20: '#b8ffb8', 6: '#59d3ff', 21: '#5aa9e0', 7: '#ffffff', 8: '#d8c8b0', 10: '#c9b49a', 11: '#ffffff', 5: '#ffffff', 4: '#d0d0d0' };
 function ehModel() { if (!EHS.model || EHS.model.pathId !== EHS.path) { EHS.model = EH.build(EHS.path); EHS.model.pathId = EHS.path; } return EHS.model; }
 function ehParams(over) { return Object.assign({ win: EHS.win, rot: EHS.rot, tilt: EHS.tilt, rock: EHS.rock, dx: EHS.dx, dz: EHS.dz, depth: EHS.depth, model: ehModel() }, over || {}); }
@@ -29,7 +29,7 @@ function ehPaint(cv, res, W, H, opts) {
     for (let j = 1; j < H - 1; j++) for (let i = 1; i < W - 1; i++) { const idx = j * W + i; if (res.ids[idx] !== opts.outline) continue; if (res.ids[idx - 1] !== opts.outline || res.ids[idx + 1] !== opts.outline || res.ids[idx - W] !== opts.outline || res.ids[idx + W] !== opts.outline) ctx.fillRect(i * sx - 1, j * sy - 1, 2.5, 2.5); }
   }
   if (opts.labels) {
-    const regs = EH.regions(res, W, H).filter(r => r.frac > (r.id === 19 || r.id === 18 || r.id === 17 ? 0.0015 : 0.003));
+    const regs = EH.regions(res, W, H).filter(r => r.frac > (r.id === 19 || r.id === 18 ? 0.0015 : (r.id === 20 ? 0.008 : (r.id === 17 ? 0.004 : 0.003))));
     ctx.font = '600 12px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineWidth = 3; ctx.lineJoin = 'round';
     regs.forEach(r => { if (r.id === 4 || r.id === 5 || r.id === 7 || r.id === 8 || r.id === 11) return; const x = r.x * sx, y = r.y * sy; ctx.strokeStyle = 'rgba(0,0,0,0.8)'; ctx.strokeText(r.name, x, y); ctx.fillStyle = EH_COL[r.id] || '#fff'; ctx.fillText(r.name, x, y); });
     // the thin structures get a small tag at their centroid too
@@ -126,48 +126,69 @@ function ehOwnSlot(view) {
   return holder;
 }
 /* v8.3: the atlas's 3-D heart — a sticky panel whose plane follows the card you are reading */
+/* v8.7: the atlas shows one view at a time — pick it from the row of windows; the 3-D heart turns its plane to it, the picture, the probe
+   position and the three lists change with it. (Eleven stacked cards were eleven thousand pixels.) */
 function ehAtlasShow(id, animate) {
   const A = EHS.atlas3d; if (!A || !A.inst || !A.inst.alive) return;
-  const v = EH.view(id); if (!v || A.current === id) return;
+  const v = EH.view(id); if (!v) return;
   A.current = id;
   const i = EH.VIEWS.indexOf(v);
   h3SetProbe(A.inst, Object.assign(EH.viewParams(id), { model: A.model, title: (i + 1) + '. ' + v.title }), animate, true);
   const box = document.querySelector('[data-h3-atlas]'); if (box) box.setAttribute('data-h3-current', id);
-  document.querySelectorAll('.eh-card').forEach(c => c.classList.toggle('h3-on', c.getAttribute('data-eh-view') === id));
 }
-function ehAtlasWatch(fig) {
-  if (typeof IntersectionObserver === 'undefined') return;
-  const io = new IntersectionObserver((entries) => {
-    let best = null;
-    entries.forEach(e => { if (e.isIntersecting && (!best || e.intersectionRatio > best.intersectionRatio)) best = e; });
-    if (best) ehAtlasShow(best.target.getAttribute('data-eh-view'), true);
-  }, { rootMargin: '-38% 0px -42% 0px', threshold: [0, 0.1, 0.25, 0.5] });
-  fig.querySelectorAll('.eh-card').forEach(c => io.observe(c));
-  EHS.atlas3d.io = io;
+const EH_SHORT = { plax: 'Long axis', psax_av: 'Short axis · aortic', psax_mv: 'Short axis · mitral', psax_pm: 'Short axis · papillary', a4c: 'Four-chamber', a5c: 'Five-chamber', a2c: 'Two-chamber', a3c: 'Three-chamber', sc4: 'Four-chamber', ivc: 'IVC', ssn: 'Aortic arch' };
+function ehAtlasCard(v, m) {
+  const cv = h('canvas', { class: 'eh-canvas eh-atlascv', width: 320, height: 260, 'aria-label': v.title + ', rendered from the model with labels' });
+  const p = Object.assign(EH.viewParams(v.id), { model: m });
+  requestAnimationFrame(() => { if (!cv.isConnected) return; const res = EH.render(p, EH_W, EH_H, 0.72, {}); ehPaint(cv, res, EH_W, EH_H, { labels: true }); ehSectorChrome(cv, p.depth, ''); });
+  return h('article', { class: 'eh-card', 'data-eh-view': v.id }, [
+    h('div', { class: 'eh-card-top' }, [
+      h('div', { class: 'eh-card-img' }, [cv]),
+      h('div', { class: 'eh-card-torso' }, [ehTorso(EH.viewParams(v.id), { caption: EH.WINDOWS[v.win].title + ' window' }), h('p', { class: 'fine', text: 'Marker ' + v.rot + '°' + (v.tilt ? ', tilt ' + v.tilt + '°' : '') + (v.rock ? ', rock ' + v.rock + '°' : '') + ' · depth ' + v.depth + ' cm' })])
+    ])
+  ]);
+}
+function ehAtlasText(v) {
+  const i = EH.VIEWS.indexOf(v);
+  const list = (t, items) => h('div', { class: 'eh-sec' }, [h('h5', { text: t }), h('ul', { class: 'edu-ul' }, items.map(x => h('li', { text: x })))]);
+  const prev = EH.VIEWS[(i + EH.VIEWS.length - 1) % EH.VIEWS.length], next = EH.VIEWS[(i + 1) % EH.VIEWS.length];
+  return h('div', { class: 'eh-text', 'data-eh-text': v.id }, [
+    h('p', { class: 'eh-how' }, [h('b', { text: (i + 1) + '. ' + v.title + '. ' }), v.how]),
+    h('div', { class: 'eh-card-lists' }, [list('What is in it', v.see), list('What to measure', v.measure), list('Pitfalls', v.pitfalls)]),
+    h('details', { class: 'plain eh-more', 'data-eh-more': v.id, open: !!EHS.atlasMore, ontoggle: (e) => { EHS.atlasMore = e.target.open; } }, [h('summary', { text: 'The real loop, and your own images of this view' }), h('div', { class: 'eh-more-grid' }, [ehrAtlasSlot(v), ehOwnSlot(v)])]),
+    h('div', { class: 'ec-labbtns eh-card-nav' }, [
+      h('button', { type: 'button', class: 'btn sm quiet', 'data-eh-prev': prev.id, text: '← ' + (EH_SHORT[prev.id] || prev.title), onclick: () => ehAtlasPick(prev.id) }),
+      h('button', { type: 'button', class: 'btn sm primary', 'data-eh-open': v.id, text: 'Obtain it in the lab →', onclick: () => { EHS.target = v.id; const q = EH.viewParams(v.id); Object.assign(EHS, { win: q.win, rot: q.rot + 35, tilt: q.tilt + 12, rock: q.rock, dx: q.dx, dz: q.dz, depth: q.depth }); setMode('learn', { topic: 'echo_lab' }); } }),
+      h('button', { type: 'button', class: 'btn sm quiet', 'data-eh-next': next.id, text: (EH_SHORT[next.id] || next.title) + ' →', onclick: () => ehAtlasPick(next.id) })])
+  ]);
+}
+function ehAtlasPick(id) {
+  const v = EH.view(id); if (!v) return;
+  EHS.atlasView = id;
+  const fig = document.querySelector('[data-echoatlas]'); if (!fig) return;
+  fig.querySelectorAll('[data-eh-pick]').forEach(bn => bn.setAttribute('aria-checked', String(bn.getAttribute('data-eh-pick') === id)));
+  const slot = fig.querySelector('[data-eh-cardslot]'); if (slot) { slot.textContent = ''; slot.appendChild(ehAtlasCard(v, EHS.atlas3d.model)); }
+  const ts = fig.querySelector('[data-eh-textslot]'); if (ts) { ts.textContent = ''; ts.appendChild(ehAtlasText(v)); }
+  ehAtlasShow(id, true);
 }
 function echoAtlasFig() {
   const m = EH.build('normal');
-  const panel = heart3dPanel({ ownImage: true, model: 'normal', maxH: 330, settings: { spin: false } });
-  EHS.atlas3d = { inst: panel.inst || null, model: m, current: null, io: null };
-  const sticky = h('div', { class: 'h3-sticky', 'data-h3-atlas': '1' }, [panel, h('p', { class: 'fine h3-caption', text: 'The model heart with the probe and the scan plane of the view you are reading; the picture on the plane is the one in the card. Scroll, or press “Show in 3-D” on a card.' })]);
-  const cards = EH.VIEWS.map((v, i) => {
-    const cv = h('canvas', { class: 'eh-canvas eh-atlascv', width: 320, height: 260, 'aria-label': v.title + ', rendered from the model with labels' });
-    const p = Object.assign(EH.viewParams(v.id), { model: m });
-    requestAnimationFrame(() => { if (!cv.isConnected) return; const res = EH.render(p, EH_W, EH_H, 0.72, {}); ehPaint(cv, res, EH_W, EH_H, { labels: true }); ehSectorChrome(cv, p.depth, ''); });
-    const list = (t, items) => h('div', { class: 'eh-sec' }, [h('h5', { text: t }), h('ul', { class: 'edu-ul' }, items.map(x => h('li', { text: x })))]);
-    return h('article', { class: 'eh-card', 'data-eh-view': v.id }, [
-      h('h4', { class: 'eh-title', text: (i + 1) + '. ' + v.title }),
-      h('div', { class: 'eh-card-grid' }, [
-        h('div', { class: 'eh-card-torso' }, [ehTorso(EH.viewParams(v.id), { caption: EH.WINDOWS[v.win].title + ' window' }), h('p', { class: 'fine', text: 'Marker ' + v.rot + '°' + (v.tilt ? ', tilt ' + v.tilt + '°' : '') + (v.rock ? ', rock ' + v.rock + '°' : '') + '; depth ' + v.depth + ' cm' })]),
-        h('div', { class: 'eh-card-img' }, [cv, ehrAtlasSlot(v), ehOwnSlot(v)]),
-        h('div', { class: 'eh-card-text' }, [h('p', { class: 'eh-how' }, [h('b', { text: 'How: ' }), v.how]), list('What is in it', v.see), list('What to measure', v.measure), list('Pitfalls', v.pitfalls),
-          h('div', { class: 'ec-labbtns' }, [h('button', { type: 'button', class: 'btn sm', 'data-eh-open': v.id, text: 'Obtain it in the lab →', onclick: () => { EHS.target = v.id; const q = EH.viewParams(v.id); Object.assign(EHS, { win: q.win, rot: q.rot + 35, tilt: q.tilt + 12, rock: q.rock, dx: q.dx, dz: q.dz, depth: q.depth }); setMode('learn', { topic: 'echo_lab' }); } }),
-            h('button', { type: 'button', class: 'btn sm quiet', 'data-eh-3d': v.id, text: 'Show in 3-D', onclick: () => { ehAtlasShow(v.id, true); const box = document.querySelector('[data-h3-atlas]'); if (box && box.scrollIntoView) box.scrollIntoView({ block: 'start', behavior: 'smooth' }); } })])])
-      ])
-    ]);
-  });
-  const fig = h('figure', { class: 'an-fig eh-fig', 'data-echoatlas': String(EH.VIEWS.length) }, [sticky].concat(cards, [h('figcaption', { text: 'The pictures are the simulator’s: the geometry is the point, the speckle is synthetic. The torso shows the probe on the window with the marker direction; the angles are the lab’s. Your own images are stored in this browser only and never leave the device.' })]));
-  requestAnimationFrame(() => { if (!fig.isConnected) return; ehAtlasShow(EH.VIEWS[0].id, false); ehAtlasWatch(fig); });
+  const panel = heart3dPanel({ ownImage: true, model: 'normal', maxH: 400, settings: { spin: false } });
+  EHS.atlas3d = { inst: panel.inst || null, model: m, current: null };
+  if (!EH.view(EHS.atlasView)) EHS.atlasView = EH.VIEWS[0].id;
+  const groups = Object.keys(EH.WINDOWS).map(w => ({ w: w, views: EH.VIEWS.filter(v => v.win === w) })).filter(g => g.views.length);
+  const picker = h('div', { class: 'eh-picker', role: 'radiogroup', 'aria-label': 'Standard view' }, groups.map(g => h('div', { class: 'eh-pick-group' }, [h('span', { class: 'lbl', text: EH.WINDOWS[g.w].title }),
+    h('div', { class: 'seg' }, g.views.map(v => tip(h('button', { type: 'button', class: 'ch', role: 'radio', 'data-eh-pick': v.id, 'data-eh-3d': v.id, 'aria-checked': String(v.id === EHS.atlasView), text: EH_SHORT[v.id] || v.title, onclick: () => ehAtlasPick(v.id) }), EH.WINDOWS[g.w].note, v.title)))])));
+  const fig = h('figure', { class: 'an-fig eh-fig eh-atlas', 'data-echoatlas': String(EH.VIEWS.length) }, [
+    picker,
+    h('div', { class: 'eh-atlas-grid' }, [
+      h('div', { class: 'eh-atlas-3d', 'data-h3-atlas': '1' }, [panel]),
+      h('div', { 'data-eh-cardslot': '1' }, [ehAtlasCard(EH.view(EHS.atlasView), m)])
+    ]),
+    h('div', { 'data-eh-textslot': '1' }, [ehAtlasText(EH.view(EHS.atlasView))]),
+    h('figcaption', { text: 'The pictures are the simulator’s: the geometry is the point, the speckle is synthetic. The torso shows the probe on the window with the marker direction; the angles are the lab’s. Your own images stay in this browser’s storage on this device.' })
+  ]);
+  requestAnimationFrame(() => { if (!fig.isConnected) return; ehAtlasShow(EHS.atlasView, false); });
   return fig;
 }
 
@@ -176,8 +197,8 @@ function ehRenderLive(now) {
   const cv = EHS.canvas; if (!cv || !cv.isConnected) return;
   const t = EHS.beating ? ((now - EHS.anim.t0) / 1000 / 0.9) % 1 : 0.72;
   const res = EH.render(ehParams(), EH_W, EH_H, t, {});
-  const i3 = EHS.inst3d; if (i3 && i3.alive && i3.cv.isConnected) { h3SetImage(i3, res.img, EH_W, EH_H, res.sector.inside); i3.extT = t; }
   const regs = ehPaint(cv, res, EH_W, EH_H, { labels: EHS.labels }) || EH.regions(res, EH_W, EH_H).filter(r => r.frac > 0.003);
+  const i3 = EHS.inst3d; if (i3 && i3.alive && i3.cv.isConnected) { h3SetImage(i3, res.img, EH_W, EH_H, res.sector.inside, regs); i3.extT = t; }
   ehSectorChrome(cv, EHS.depth, (EH.view(EHS.target) || {}).title || '');
   EHS.lastRegs = regs;
   const seen = document.querySelector('[data-eh-seen]');
@@ -209,7 +230,7 @@ function ehRefresh() {
 function ehSlider(key, label, min, max, step, unit, title) {
   const id = uid('eh');
   const val = h('span', { class: 'odc-val', text: EHS[key] + (unit || '') });
-  return h('label', { class: 'odc-sl', for: id, title: title || null, 'data-eh-row': key }, [h('span', { class: 'nod-l', text: label }), h('input', { type: 'range', id: id, min: min, max: max, step: step, value: EHS[key], 'data-eh': key, oninput: (e) => { EHS[key] = +e.target.value; val.textContent = EHS[key] + (unit || ''); ehRefresh(); } }), val]);
+  return tip(h('label', { class: 'odc-sl', for: id, 'data-eh-row': key }, [h('span', { class: 'nod-l', text: label }), val, h('input', { type: 'range', id: id, min: min, max: max, step: step, value: EHS[key], 'data-eh': key, oninput: (e) => { EHS[key] = +e.target.value; val.textContent = EHS[key] + (unit || ''); ehRefresh(); } })]), title, label);
 }
 function echoLabFig() {
   const cv = h('canvas', { class: 'eh-canvas', width: 512, height: 416, 'aria-label': 'The ultrasound sector' });
@@ -221,8 +242,7 @@ function echoLabFig() {
   const tId = uid('eh'), pId = uid('eh');
   const targetSel = h('label', { class: 'nod-f', for: tId }, [h('span', { class: 'nod-l', text: 'Target view' }), h('select', { id: tId, 'data-eh-target': '1', onchange: (e) => { EHS.target = e.target.value; render(); } }, EH.VIEWS.map(v => h('option', { value: v.id, selected: v.id === EHS.target, text: v.title })))]);
   const pathSel = h('label', { class: 'nod-f', for: pId }, [h('span', { class: 'nod-l', text: 'The heart' }), h('select', { id: pId, 'data-eh-path': '1', onchange: (e) => { EHS.path = e.target.value; EHS.model = null; render(); } }, EH.PATHOLOGY.map(x => h('option', { value: x.id, selected: x.id === EHS.path, text: x.title })))]);
-  const pathNote = h('p', { class: 'fine', 'data-eh-pathnote': '1', text: (EH.PATHOLOGY.filter(x => x.id === EHS.path)[0] || {}).note || '' });
-  const lblId = uid('eh'), beatId = uid('eh');
+    const lblId = uid('eh'), beatId = uid('eh');
   const toggles = h('div', { class: 'eh-toggles' }, [
     h('label', { class: 'chk-inline', for: lblId }, [h('input', { type: 'checkbox', id: lblId, checked: EHS.labels, 'data-eh-labels': '1', onchange: (e) => { EHS.labels = e.target.checked; ehRefresh(); if (!EHS.beating) ehRenderLive(performance.now()); } }), 'Labels']),
     h('label', { class: 'chk-inline', for: beatId }, [h('input', { type: 'checkbox', id: beatId, checked: EHS.beating, 'data-eh-beat': '1', onchange: (e) => { EHS.beating = e.target.checked; if (EHS.beating) ehKick(); else ehRenderLive(performance.now()); } }), 'Beating'])
@@ -232,29 +252,33 @@ function echoLabFig() {
     h('button', { type: 'button', class: 'btn sm', 'data-eh-scramble': '1', text: 'Scramble the probe', onclick: () => { const q = EH.viewParams(EHS.target); const r = (a) => (Math.random() * 2 - 1) * a; Object.assign(EHS, { win: q.win, rot: Math.round(q.rot + r(50)), tilt: Math.round(q.tilt + r(25)), rock: Math.round(q.rock + r(20)), dx: Math.round((q.dx + r(1.5)) * 2) / 2, dz: Math.round((q.dz + r(1.5)) * 2) / 2, depth: q.depth }); render(); } }),
     h('button', { type: 'button', class: 'lnk', 'data-eh-reset': '1', text: 'Reset', onclick: () => { Object.assign(EHS, { win: 'psl', rot: 135, tilt: 0, rock: -10, dx: -0.5, dz: 1, depth: 16, path: 'normal', model: null, target: 'plax' }); render(); } })
   ]);
-  const controls = h('div', { class: 'ec-controls eh-controls' }, [
-    h('h5', { text: 'Window' }), winSeg, h('p', { class: 'fine', text: EH.WINDOWS[EHS.win].note }),
-    h('h5', { text: 'The probe' }), h('div', { class: 'odc-ctrls' }, [
-      ehSlider('rot', 'Rotate (marker direction)', -180, 180, 5, '°', '0° = marker to the patient’s left, 90° = toward the head, 135° = the right shoulder'),
-      ehSlider('tilt', 'Tilt (fan across the heart)', -45, 45, 1, '°', 'Angle the beam across the plane without moving the footprint'),
-      ehSlider('rock', 'Rock (angle within the plane)', -40, 40, 5, '°', 'Angle the beam within the plane: moves the picture sideways'),
-      ehSlider('dx', 'Slide left ↔ right', -3, 3, 0.5, ' cm', 'Positive = toward the patient’s left'),
-      ehSlider('dz', 'Slide up ↔ down', -4, 4, 0.5, ' cm', 'Positive = toward the head'),
-      ehSlider('depth', 'Depth', 10, 24, 1, ' cm', '')]),
-    h('h5', { text: 'The task' }), targetSel, btns,
-    h('h5', { text: 'The patient' }), pathSel, pathNote, toggles
-  ]);
+  const legend = 'LV red · RV blue · LA orange · RA green · aorta magenta · pulmonary artery cyan · IVC yellow · descending aorta violet · effusion light blue.';
+  tip(toggles.firstChild, legend, 'Colours of the labels');
+  const bar = h('div', { class: 'ec-bar eh-toolbar' }, [
+    tip(h('div', { class: 'eh-winpick' }, [h('span', { class: 'nod-l', text: 'Window' }), winSeg]), EH.WINDOWS[EHS.win].note, EH.WINDOWS[EHS.win].title + ' window'),
+    targetSel, tip(pathSel, (EH.PATHOLOGY.filter(x => x.id === EHS.path)[0] || {}).note || '', 'The heart'), toggles, btns, h('p', { class: 'fine eh-pathnote', 'data-eh-pathnote': '1', text: (EH.PATHOLOGY.filter(x => x.id === EHS.path)[0] || {}).note || '' }),
+    tipI('A model of the heart in the chest and a probe you move: the sector is painted from the plane the probe makes, with speckle, depth attenuation and the cardiac cycle. The 3-D heart beside it is cut open along the same plane. Score and hints compare your probe with the target view’s. Labels name every structure in the plane; turn them off to test yourself.', 'The scanning lab')]);
+  const sliders = h('section', { class: 'ec-col' }, [h('h5', { text: 'The probe' }), h('div', { class: 'odc-ctrls' }, [
+    ehSlider('rot', 'Rotate', -180, 180, 5, '°', 'Rotate the marker: 0° = toward the patient’s left, 90° = toward the head, 135° = the right shoulder'),
+    ehSlider('tilt', 'Tilt', -45, 45, 1, '°', 'Fan the beam across the heart without moving the footprint'),
+    ehSlider('rock', 'Rock', -40, 40, 5, '°', 'Angle the beam within the plane: moves the picture sideways'),
+    ehSlider('dx', 'Slide ↔', -3, 3, 0.5, ' cm', 'Slide the footprint left or right; positive = toward the patient’s left'),
+    ehSlider('dz', 'Slide ↕', -4, 4, 0.5, ' cm', 'Slide the footprint up or down; positive = toward the head'),
+    ehSlider('depth', 'Depth', 10, 24, 1, ' cm', 'How far down the picture reaches')])]);
   const fig = h('figure', { class: 'an-fig ec-fig ec-lab eh-lab', 'data-echolab': '1' }, [
-    h('div', { class: 'ec-lab-grid eh-grid' }, [
-      controls,
-      h('div', { class: 'eh-centre' }, [h('div', { class: 'vent-screen eh-screen' }, [h('div', { class: 'vsc-head' }, [h('span', { class: 'vsc-mode', text: EH.WINDOWS[EHS.win].title + ' · ' + (EH.PATHOLOGY.filter(x => x.id === EHS.path)[0] || {}).title }), h('span', { class: 'vsc-brand', text: 'Cardiac preset · marker on the right' })]), cv]),
-        h('p', { class: 'fine' }, [h('b', { text: 'On the screen: ' }), h('span', { 'data-eh-seen': '1', text: '' })]),
-        h('div', { class: 'eh-3dslot', 'data-eh-3d': '1' }, [h('h5', { text: 'The plane in the chest' }), panel3d, h('p', { class: 'fine', text: 'The same heart, the probe where you put it, and the plane the beam makes — cut open along the plane so the cross-section is the picture above.' })])]),
-      h('div', { class: 'ec-right eh-right' }, [h('div', { 'data-eh-scoreslot': '1' }, [ehScoreEl()]), h('div', { class: 'eh-torsoslot', 'data-eh-torsoslot': '1' }, [ehTorso(ehParams())]),
-        h('div', { class: 'eh-legend' }, [h('h5', { text: 'Colours of the labels' }), h('div', { class: 'eh-leg' }, [[12, 'LV'], [13, 'RV'], [14, 'LA'], [15, 'RA'], [16, 'Aorta'], [17, 'Pulmonary artery'], [18, 'IVC'], [19, 'Descending aorta'], [6, 'Effusion']].map(x => h('span', { class: 'eh-legi' }, [h('i', { style: 'background:' + EH_COL[x[0]] }), x[1]])))])])
+    bar,
+    h('div', { class: 'ec-main eh-main' }, [
+      h('div', { class: 'eh-centre' }, [h('div', { class: 'vent-screen eh-screen' }, [h('div', { class: 'vsc-head' }, [h('span', { class: 'vsc-mode', text: EH.WINDOWS[EHS.win].title + ' · ' + (EH.PATHOLOGY.filter(x => x.id === EHS.path)[0] || {}).title }), h('span', { class: 'vsc-brand', text: 'Cardiac preset · marker on the right' })]), cv])]),
+      h('div', { class: 'eh-3dslot', 'data-eh-3d': '1' }, [panel3d])
     ]),
-    h('figcaption', { text: 'A model of the heart in the chest and a probe you move: the sector is painted from the plane the probe makes, with speckle, depth attenuation and the cardiac cycle. Score and hints compare your probe with the target view’s. Labels name every structure in the plane; turn them off to test yourself.' })
+    h('p', { class: 'fine eh-seenline' }, [h('b', { text: 'On the screen: ' }), h('span', { 'data-eh-seen': '1', text: '' })]),
+    h('div', { class: 'ec-deck deck eh-deck' }, [
+      sliders,
+      h('section', { class: 'ec-col' }, [h('h5', { text: 'The target' }), h('div', { 'data-eh-scoreslot': '1' }, [ehScoreEl()])]),
+      h('section', { class: 'ec-col eh-mapcol' }, [h('h5', { text: 'The probe on the chest' }), h('div', { class: 'eh-torsoslot', 'data-eh-torsoslot': '1' }, [ehTorso(ehParams())])])
+    ])
   ]);
+  if (EHS.inst3d) EHS.inst3d.matchEl = fig.querySelector('.eh-centre');
   EHS.anim.t0 = performance.now();
   requestAnimationFrame(() => { ehRenderLive(performance.now()); if (EHS.beating) ehKick(); });
   return fig;
@@ -667,18 +691,28 @@ function echoRealLabFig() {
   const GLYPH = { phi: ['↻ marker to the right hip', 'marker to the left shoulder ↺'], tau: ['tail down (anterior)', 'tail up (posterior)'], c: ['toward the apex', 'toward the base'] };
   const sl = (key, label, min, max, step, unit) => { const id = uid('ehr'); const val = h('span', { class: 'odc-val', text: EHRL[key] + unit }); return h('label', { class: 'odc-sl ehr-sl', for: id, 'data-ehr-row': key }, [h('span', { class: 'nod-l', text: label }), h('input', { type: 'range', id: id, min: min, max: max, step: step, value: EHRL[key], 'data-ehr': key, oninput: (e) => { EHRL[key] = +e.target.value; val.textContent = EHRL[key] + unit; ehrLabRefresh(); } }), val, h('span', { class: 'ehr-ends' }, [h('span', { text: GLYPH[key][0] }), h('span', { text: GLYPH[key][1] })])]); };
   const modes = h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Plane' }, [['b', 'Along the beam (long axes)'], ['c', 'Across the beam (short axes)']].map(m => h('button', { type: 'button', class: 'ch', role: 'radio', 'data-ehr-mode': m[0], 'aria-checked': String(EHRL.mode === m[0]), text: m[1], onclick: () => { EHRL.mode = m[0]; ehrLabRefresh(); } })));
-  const targets = h('select', { 'data-ehr-target': '1', 'aria-label': 'Target view', onchange: (e) => { EHRL.target = e.target.value; ehrLabRefresh(); } }, d.views.map(v => h('option', { value: v.id, text: v.name, selected: v.id === EHRL.target })));
-  const controls = h('div', { class: 'odc-ctrls ehr-ctrls' }, [modes, sl('phi', 'Rotate the marker', 0, 179, 1, '°'), sl('tau', 'Tilt the beam', -20, 20, 1, '°'), sl('c', 'Depth of the short-axis plane', 40, 120, 1, ' mm'),
-    h('div', { class: 'ec-labbtns' }, [h('button', { type: 'button', class: 'btn sm', 'data-ehr-scramble': '1', text: 'Scramble', onclick: () => { EHRL.phi = Math.floor(Math.random() * 180); EHRL.tau = Math.round(Math.random() * 24 - 12); EHRL.c = 40 + Math.floor(Math.random() * 80); EHRL.mode = Math.random() < 0.5 ? 'b' : 'c'; const f = document.querySelector('[data-echoreal]'); if (f) f.replaceWith(echoRealLabFig()); } }),
-      h('button', { type: 'button', class: 'btn sm quiet', 'data-ehr-snap': '1', text: 'Snap to the target', onclick: () => { const t = ehrView(EHRL.target); if (t.c !== undefined) { EHRL.mode = 'c'; EHRL.c = t.c; } else { EHRL.mode = 'b'; EHRL.phi = t.phi; EHRL.tau = t.tau; } const f = document.querySelector('[data-echoreal]'); if (f) f.replaceWith(echoRealLabFig()); } })])]);
+  const targets = h('select', { 'data-ehr-target': '1', onchange: (e) => { EHRL.target = e.target.value; ehrLabRefresh(); } }, d.views.map(v => h('option', { value: v.id, text: v.name, selected: v.id === EHRL.target })));
+  const tgtId = uid('ehr'); targets.id = tgtId;
+  /* the same pattern as the model lab: a bar, two pictures the same size, a deck */
+  const bar = h('div', { class: 'ec-bar eh-toolbar ehr-bar' }, [
+    h('label', { class: 'nod-f', for: tgtId }, [h('span', { class: 'nod-l', text: 'Target view' }), targets]),
+    h('div', { class: 'eh-winpick' }, [h('span', { class: 'nod-l', text: 'Plane' }), modes]),
+    h('button', { type: 'button', class: 'btn sm', 'data-ehr-scramble': '1', text: 'Scramble', onclick: () => { EHRL.phi = Math.floor(Math.random() * 180); EHRL.tau = Math.round(Math.random() * 24 - 12); EHRL.c = 40 + Math.floor(Math.random() * 80); EHRL.mode = Math.random() < 0.5 ? 'b' : 'c'; const f = document.querySelector('[data-echoreal]'); if (f) f.replaceWith(echoRealLabFig()); } }),
+    h('button', { type: 'button', class: 'btn sm', 'data-ehr-snap': '1', text: 'Snap to the target', onclick: () => { const t = ehrView(EHRL.target); if (t.c !== undefined) { EHRL.mode = 'c'; EHRL.c = t.c; } else { EHRL.mode = 'b'; EHRL.phi = t.phi; EHRL.tau = t.tau; } const f = document.querySelector('[data-echoreal]'); if (f) f.replaceWith(echoRealLabFig()); } }),
+    tipI('The probe is fixed at the apex (that is where the volume was acquired), so there is no window to choose and no sliding: rotate the marker and tilt the beam for the long axes, or cut across the beam at a depth for the short axes. Click the picture to zoom on a point.', 'The real volume')]);
   const score = h('div', { class: 'eh-score', 'data-ehr-score': '1' });
-  const fig = h('figure', { class: 'an-fig eh-fig ehr-lab', 'data-echoreal': '1' }, [
-    h('div', { class: 'ehr-grid ehr-grid3' }, [
-      h('div', { class: 'ehr-left' }, [loop, h('p', { class: 'fine', 'data-ehr-readout': '1' }), h('div', { class: 'ehr-moves-wrap' }, [h('h5', { text: 'Turn the probe' }), h('p', { class: 'fine', text: 'What the picture becomes after each move from here, at the frame on show. Click one to make the move.' }), h('div', { class: 'ehr-moves', 'data-ehr-moves': '1' })])]),
-      h('div', { class: 'eh-3dslot ehr-3dcol', 'data-ehr-3d': '1' }, [h('h5', { text: 'Where the plane is' }), panel3d, h('p', { class: 'fine', text: 'The model heart stands in for the real one: the real picture is painted on the plane you have cut, in the place that plane has in the chest.' })]),
-      h('div', { class: 'ec-right' }, [h('label', { class: 'ehr-tgt' }, ['Target view ', targets]), score, controls])]),
-    h('figcaption', { text: d.credit + ' The probe is fixed at the apex (that is where the volume was acquired), so there is no window to choose and no sliding: rotate the marker and tilt the beam for the long axes, or cut across the beam at a depth for the short axes. Click the picture to zoom on a point.' })
+  const left = h('div', { class: 'ehr-left' }, [loop, h('p', { class: 'fine', 'data-ehr-readout': '1' })]);
+  const fig = h('figure', { class: 'an-fig ec-fig ec-lab eh-fig ehr-lab', 'data-echoreal': '1' }, [
+    bar,
+    h('div', { class: 'ec-main eh-main ehr-main' }, [left, h('div', { class: 'eh-3dslot ehr-3dcol', 'data-ehr-3d': '1' }, [panel3d])]),
+    h('div', { class: 'ec-deck deck ehr-deck' }, [
+      h('section', { class: 'ec-col' }, [h('h5', { text: 'The probe' }), h('div', { class: 'odc-ctrls ehr-ctrls' }, [sl('phi', 'Rotate the marker', 0, 179, 1, '°'), sl('tau', 'Tilt the beam', -20, 20, 1, '°'), sl('c', 'Depth of the short-axis plane', 40, 120, 1, ' mm')])]),
+      h('section', { class: 'ec-col' }, [h('h5', { text: 'The target' }), score]),
+      h('section', { class: 'ec-col ehr-moves-wrap' }, [tip(h('h5', { text: 'Turn the probe' }), 'What the picture becomes after each move from here, at the frame on show. Click one to make the move.', 'Turn the probe'), h('div', { class: 'ehr-moves', 'data-ehr-moves': '1' })])
+    ]),
+    h('figcaption', { text: d.credit + ' The model heart stands in for the real one: the real picture is painted on the plane you have cut, in the place that plane has in the chest.' })
   ]);
+  if (EHRL.inst3d) EHRL.inst3d.matchEl = left;
   setTimeout(ehrLabRefresh, 0);
   ehrLoad(() => { if (fig.isConnected) ehrLabRefresh(); });
   return fig;

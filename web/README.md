@@ -363,3 +363,55 @@ object in place so the sliders bound to it keep working. The earlier compact lab
 `/*HEARTLUNG*/`. Styles: the `.hk-*` block at the end of `style.css`. Tests: `tests/heartlung.test.js` (111),
 `tests/e2e9.js` (every diagram, the index, the home tile, phone width). The lecture list at heart-lung.org could not
 be fetched from the build environment, so topics link the lectures page as a whole.
+
+v8.7, the unifying pass (layout, hover definitions, ECMO gas rounds, the echo review, the 3-D renderer).
+*Hover definitions.* `src/terms.js` (`PFT_TERMS = { terms, ICU }`, build placeholder `/*TERMS*/`): 122 entries
+`{ n, f, w, t (topic id), m: [spellings], c?: [LEARN_CATS ids] }`; a spelling with a capital matches exactly, a
+lower-case one any case; without `c` a term applies in the `ICU` areas. `ui_2_info.js` merges them into the glossary
+as `t.<key>` and adds `term(key, text)` (a `span.gt[data-gloss]`), `tip(el, text, title)` (`data-tip`,
+`data-tip-title`), `tipI(text, title)` (an (i) button), `annotateTerms(root, catId)` (first mention of each term in
+`p, li, td, dd`, never inside figures, headings or controls) and `compactCaptions(root)` (`figure > figcaption` of 150
+characters or more → `.cap-clamp`, one line, the whole of it in its tip). The one pop-up (`#pop`; class `tip` for free
+text, `pinned` after a click or Enter) serves `[data-gloss]` and `[data-tip]`; a native `title` inside `#main` is
+adopted as a tip on first hover; labels, buttons and controls with tips preview on hover and focus without swallowing
+the click. `ui_4_learn.js`: `eduLead(id, text)` clamps a lead paragraph of 240 characters or more before the first
+widget to two lines (`.edu-lead.clamp`, `.open`, `[data-lead-more]`).
+*Home.* `ui_8_home.js`: `HOME_ORDER` (twelve tiles, `[data-home-grid] > [data-home-tile][data-home-setting]`, links
+`[data-home-link]`), `[data-home-record]` (bank, log, boards), `[data-home-cta]`, `[data-home-prog]`,
+`[data-home-lab]`; `[data-home-section]` is gone.
+*The lab pattern* (style.css, “v8.7: the unifying pass”): `.ec-bar` (toolbar), `.ec-main` (two equal columns from
+980 px), `.ec-deck.deck` with `.ec-col` sections; inside `.deck`, `.odc-sl` puts the name and the value on one line
+with the track beneath. Used by the ECMO lab, the haemodynamics lab (`.hm-controls.deck`), the echo lab and the
+real-volume lab (`.ehr-bar`, `.ehr-main`, `.ehr-deck`). Tokens `--s1…--s5`, `--r`, `--r-sm`, `--shadow`.
+*ECMO.* `ecmo.js`: the membrane's capacity factor is `0.8 + 0.2·FdO2` (post-membrane PO2 ≈ FdO2 × 485). Gas rounds:
+`R_ORDERS` ([key, label, unit, why] for rpm, sweep, fdo2, hb, vo2, fio2, va, cvp), `R_ACTIONS` (reposition,
+membrane, kink: `modes, tip, why, nothing, applies(p, s), apply(p, s)`), `ROUNDS` (ten: `{ id, mode, level, title,
+who, p, s, par, pace?, targets: [[label, test(o, p, s, hist), now()]], expert: [[say, fn(p, s), why]], teach }`),
+`round(id)`, `roundStart(id)`, `roundDraw(p, s)` → `{ p, s, out }`, `roundCheck(c, hist)`, `roundOrders(a, b)`,
+`roundHazards(c, prev, cur)`, `roundRows(mode)`, `roundExpert(id)`. `ui_4i_ecmo.js`: `ECS.rounds = { id, hist, fb,
+results, revealed }`; one scenario list `[data-ec-scenario]` (also `[data-ec-preset] [data-ec-guide]
+[data-ec-round]`; optgroups gas rounds / next best step / presets), `[data-ec-mode]`, `[data-ec-reset]`, the free-play
+hint `[data-ec-guide-panel="free"][data-ec-gscore][data-ec-rscore]`; the deck `[data-ec-deck]` (`.orders` in
+rounds, sliders `[data-ec=key]` in `[data-ec-row=key]`, `[data-ec-action=id]`); gases by site
+`[data-ec-gas=pre|post|pt|fem] [data-ec-cell]`; the round `[data-ec-round-panel=id]`, `[data-ec-targets="n/m"]`,
+`[data-ec-target]`, `[data-ec-fb=n]` (every step when revealed), `[data-ec-hazard]`, `[data-ec-broken]`,
+`[data-ec-solved=n|revealed]`, `[data-ec-pending=n]`, `[data-ec-order=key]`, `[data-ec-send]`, `[data-ec-undo]`,
+`[data-ec-rrestart] [data-ec-rreveal] [data-ec-rnext]`, the flowsheet `[data-ec-sheet-table=columns]
+td[data-ec-sheet=row]`. In rounds the dials write orders only; nothing is recomputed until the gases are sent.
+*Echo.* `echo.js`: `avOpen(t)` (mitral and tricuspid opening through the cycle; the leaflets had been inverted),
+`m.archBranches`, `m.paBranches`, the closure under the chest wall in `classify` and `fields`, `render()` with the
+polish pass (`opts.polish === false` skips it), `fields()` also returns `decor` (tubes `{ id, name, kind, r, taper?,
+path }`: coronaries, arch vessels, branch PAs, pulmonary veins, appendages), `valves3d(m, t)` (leaflet grids `mv`,
+`tv`, `av0–2`). `ui_4k_echo.js`: the picture is `EH_W × EH_H` = 320 × 260; the atlas is a picker
+(`figure[data-echoatlas]`, `[data-eh-pick=id][data-eh-3d=id]`, one `article.eh-card[data-eh-view]`, `[data-eh-text]`,
+`details.eh-more[data-eh-more]` holding the real loop and the own-image slot, `[data-eh-prev] [data-eh-open]
+[data-eh-next]`; state `EHS.atlasView`, `EHS.atlasMore`); the lab is `.eh-toolbar`, `.eh-main` (screen | 3-D),
+`.eh-deck`. `ui_4o_heart3d.js` (same API): quality `lite` when the WebGL renderer is software (SwiftShader,
+llvmpipe), else `full` (`window.__h3Quality = 'full'` forces it); a time-budgeted build, rendering on demand, sRGB and
+ACES; `inst.valves`, `inst.decor`, `inst.chest`; options `cut image screen chest beating labels spin`
+(`[data-h3-opt]`); `inst.matchEl` makes the panel take a neighbour's height; with the cut off the whole heart is
+opaque and the picture shows through it.
+Tests: `tests/v87.test.js` (129: every gas round unsolved on arrival and solved by its expert without hazards, pace,
+actions, the FdO2 model, the terms, the echo additions), `tests/e2e10.js` (81: the home grid, hover definitions,
+clamps, the ECMO layout and the gas rounds end to end, the atlas picker painting all eleven views, the echo lab, the
+3-D parts, phone width, dark theme); `e2e7.js` and `e2e8.js` follow the new DOM.

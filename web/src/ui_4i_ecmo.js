@@ -3,14 +3,23 @@
    its dials, the console, the gas panels and the alarms) and the troubleshooting scenarios. */
 const EC = window.PFT_ECMO;
 /* the lab's state: the patient, the circuit, the preset note */
-const ECS = { p: null, s: null, out: null, note: '', title: '', answers: {}, open: '', guide: { id: '', step: 0, chosen: [], snap: null, done: false, results: {} } };
+const ECS = { p: null, s: null, out: null, note: '', title: '', answers: {}, open: '', guide: { id: '', step: 0, chosen: [], snap: null, done: false, results: {} },
+  rounds: { id: '', hist: [], fb: [], results: {}, revealed: false } };
 function ecGuideClear() { ECS.guide = Object.assign({}, ECS.guide, { id: '', step: 0, chosen: [], snap: null, done: false }); }
+function ecRoundClear() { ECS.rounds = { id: '', hist: [], fb: [], results: ECS.rounds.results, revealed: false }; }
 function ecInit(mode) {
   const pr = EC.preset(mode === 'va' ? 'va_shock' : 'vv_run');
-  ECS.p = pr.p; ECS.s = pr.s; ECS.note = pr.note; ECS.title = pr.title; ecGuideClear();
+  ECS.p = pr.p; ECS.s = pr.s; ECS.note = pr.note; ECS.title = pr.title; ecGuideClear(); ecRoundClear();
 }
-function ecLoad(id) { const pr = EC.preset(id); if (!pr) return; ECS.p = pr.p; ECS.s = pr.s; ECS.note = pr.note; ECS.title = pr.title; ecGuideClear(); }
-function ecCompute() { if (!ECS.s) ecInit('vv'); ECS.p.vco2 = Math.round(ECS.p.vo2 * 0.82); ECS.out = EC.run(ECS.p, ECS.s); return ECS.out; }
+function ecLoad(id) { const pr = EC.preset(id); if (!pr) return; ECS.p = pr.p; ECS.s = pr.s; ECS.note = pr.note; ECS.title = pr.title; ecGuideClear(); ecRoundClear(); }
+/* in gas rounds the lab shows the last set of gases; the dials hold the orders not yet sent */
+function ecShown() { const R = ECS.rounds; return R.id && R.hist.length ? R.hist[R.hist.length - 1] : { p: ECS.p, s: ECS.s, out: ECS.out }; }
+function ecCompute() {
+  if (!ECS.s) ecInit('vv');
+  ECS.p.vco2 = Math.round(ECS.p.vo2 * 0.82);
+  if (ECS.rounds.id && ECS.rounds.hist.length) { ECS.out = ECS.rounds.hist[ECS.rounds.hist.length - 1].out; return ECS.out; }
+  ECS.out = EC.run(ECS.p, ECS.s); return ECS.out;
+}
 
 /* ---- colours: blood by its saturation, from venous purple to arterial red ---- */
 function ecBlood(sat) {
@@ -201,7 +210,7 @@ const EC_SLIDERS = {
     ['co', 'Cardiac output', 2, 12, 0.25, 'L/min', 'VV: what the heart pumps; the circuit sees only a fraction of it.'],
     ['contr', 'LV contractility', 0, 1, 0.05, '', 'VA: 1 is a normal ventricle (5 L/min unloaded), 0 is none.'],
     ['shunt', 'Native lung shunt', 0, 0.9, 0.05, '', 'Blood through the native lung that gets no oxygen.'],
-    ['fio2', 'Ventilator FiO2', 0.21, 1, 0.05, '', 'What the native lung’s open alveoli breathe.'],
+    ['fio2', 'Ventilator FiO2', 0.21, 1, 0.01, '', 'What the native lung’s open alveoli breathe.'],
     ['va', 'Native alveolar ventilation', 0, 6, 0.25, 'L/min', 'Lung-rest settings give 1–2 L/min; a weaning ventilator 4–5.'],
     ['cvp', 'Venous filling (CVP)', 1, 20, 1, 'mm Hg', 'The drainage’s reservoir: empty veins collapse around the cannula.'],
     ['hco3', 'Bicarbonate', 10, 40, 1, 'mmol/L', 'The metabolic side of the pH.'],
@@ -213,7 +222,7 @@ const EC_SLIDERS = {
 function ecDripSlider(D) {
   const s = ECS.s, id = uid('ecd'); if (!s.drugs) s.drugs = {};
   const val = h('span', { class: 'odc-val', text: (s.drugs[D.id] || 0) ? ecDoseFmt(D, s.drugs[D.id]) : 'off' });
-  return h('label', { class: 'odc-sl ec-drip' + ((s.drugs[D.id] || 0) > 0 ? ' on' : ''), for: id, title: D.rec, 'data-ec-drip': D.id }, [h('span', { class: 'nod-l', text: D.name + ' (' + D.unit + ')' }), h('input', { type: 'range', id: id, min: 0, max: D.max, step: D.step, value: s.drugs[D.id] || 0, 'data-ec-dose': D.id, oninput: (e) => { s.drugs[D.id] = +e.target.value; val.textContent = s.drugs[D.id] > 0 ? ecDoseFmt(D, s.drugs[D.id]) : 'off'; e.target.closest('label').classList.toggle('on', s.drugs[D.id] > 0); ecRefresh(); } }), val]);
+  return tip(h('label', { class: 'odc-sl ec-drip' + ((s.drugs[D.id] || 0) > 0 ? ' on' : ''), for: id, 'data-ec-drip': D.id }, [h('span', { class: 'nod-l', text: D.name }), val, h('input', { type: 'range', id: id, min: 0, max: D.max, step: D.step, value: s.drugs[D.id] || 0, 'data-ec-dose': D.id, oninput: (e) => { s.drugs[D.id] = +e.target.value; val.textContent = s.drugs[D.id] > 0 ? ecDoseFmt(D, s.drugs[D.id]) : 'off'; e.target.closest('label').classList.toggle('on', s.drugs[D.id] > 0); ecRefresh(); } })]), D.rec + ' · ' + D.unit + ', up to ' + D.max, D.name);
 }
 function ecDoseFmt(D, v) { return (D.step < 0.1 ? (+v).toFixed(D.step < 0.02 ? 3 : 2) : String(+(+v).toFixed(2))).replace(/\.?0+$/, ''); }
 function ecDripReadout() {
@@ -224,31 +233,65 @@ function ecDripReadout() {
     h('b', { text: 'What the drips do: ' }), 'SVR ' + f2(fx.svr) + ' · contractility ' + f2(fx.contr) + ' · heart rate ' + (fx.hr >= 0 ? '+' : '') + Math.round(fx.hr) + ' → ' + o.hr + '/min · venous tone ' + (fx.cvp >= 0 ? '+' : '') + fx.cvp.toFixed(1) + ' mm Hg · PVR ' + f2(fx.pvr) + (vv ? ' · native output ' + o.co.toFixed(1) + ' L/min (set ' + o.coSet + ')' : ' · native ejection ' + o.qn.toFixed(1) + ' L/min') + ' · MAP ' + o.map + ' · norepinephrine-equivalent ' + fx.nee.toFixed(2) + ' mcg/kg/min' + (fx.lactate > 0.3 ? ' · β-lactate' : '') + (fx.arr > 0.5 ? ' · arrhythmia risk' : '')
   ]);
 }
+const EC_SHORT = { rpm: 'Pump speed', sweep: 'Sweep gas', fdo2: 'FdO2', oxy: 'Membrane condition', recirc: 'Recirculation', hb: 'Haemoglobin', vo2: 'VO2', co: 'Cardiac output', contr: 'LV contractility', shunt: 'Lung shunt', fio2: 'Ventilator FiO2', va: 'Alveolar ventilation', cvp: 'CVP (volume)', hco3: 'Bicarbonate', svr: 'SVR', hr: 'Heart rate', pvr: 'PVR' };
+const EC_ORDER_SHORT = { hb: 'Transfuse to Hb', vo2: 'Lower VO2', fio2: 'Ventilator FiO2', va: 'Ventilator V̇A', cvp: 'Volume (CVP)' };
+const EC_UNIT = { rpm: ' rpm', sweep: ' L/min', hb: ' g/dL', vo2: ' mL/min', co: ' L/min', va: ' L/min', cvp: ' mm Hg', hr: '/min', pvr: '×' };
 function ecFmt(k, v) {
   if (k === 'fdo2' || k === 'fio2') return (+v).toFixed(2);
   if (k === 'recirc' || k === 'shunt' || k === 'oxy' || k === 'contr') return Math.round(v * 100) + '%';
   if (k === 'sweep' || k === 'co' || k === 'va' || k === 'pvr') return (+v).toFixed(2).replace(/\.?0+$/, '');
   return String(v);
 }
+const EC_ORDER_KEYS = EC.R_ORDERS.map(r => r[0]);
 function ecSlider(group, sl) {
-  const isS = group === 'circuit', src = isS ? ECS.s : ECS.p, id = uid('ec');
-  const val = h('span', { class: 'odc-val', text: ecFmt(sl[0], src[sl[0]]) });
-  return h('label', { class: 'odc-sl', for: id, title: sl[6], 'data-ec-row': sl[0] }, [h('span', { class: 'nod-l', text: sl[1] + (sl[5] ? ' (' + sl[5] + ')' : '') }), h('input', { type: 'range', id: id, min: sl[2], max: sl[3], step: sl[4], value: src[sl[0]], 'data-ec': sl[0], oninput: (e) => { src[sl[0]] = +e.target.value; val.textContent = ecFmt(sl[0], src[sl[0]]); ecRefresh(); } }), val]);
+  const isS = group === 'circuit', src = isS ? ECS.s : ECS.p, id = uid('ec'), R = ECS.rounds, rounds = !!R.id;
+  if (rounds && EC_ORDER_KEYS.indexOf(sl[0]) < 0) return null;   // in gas rounds only what a team can order is on the deck
+  let min = sl[2], max = sl[3];
+  if (rounds) { const a0 = R.hist[0].p; if (sl[0] === 'hb') min = Math.min(a0.hb, src.hb); if (sl[0] === 'vo2') { max = a0.vo2; min = Math.round(a0.vo2 * 0.75 / 10) * 10; } }
+  const fmt = (v) => ecFmt(sl[0], v) + (EC_UNIT[sl[0]] || '');
+  const val = h('span', { class: 'odc-val', text: fmt(src[sl[0]]) });
+  const order = rounds ? EC.R_ORDERS.filter(r => r[0] === sl[0])[0] : null;
+  const name = (rounds && EC_ORDER_SHORT[sl[0]]) || EC_SHORT[sl[0]] || sl[1];
+  const lab = h('label', { class: 'odc-sl', for: id, 'data-ec-row': sl[0] }, [h('span', { class: 'nod-l', text: name }), val, h('input', { type: 'range', id: id, min: min, max: max, step: sl[4], value: src[sl[0]], 'data-ec': sl[0], oninput: (e) => { src[sl[0]] = +e.target.value; val.textContent = fmt(src[sl[0]]); ecRefresh(); } })]);
+  return tip(lab, order ? order[3] : sl[6], (order ? order[1] : sl[1]) + (sl[5] ? ' (' + sl[5] + ')' : ''));
 }
-function ecControls() {
-  const s = ECS.s, vv = s.mode === 'vv';
+/* the bar above the lab: VV or VA, and one list for everything the lab can load — gas rounds, next-best-step cases, presets */
+function ecToolbar() {
+  const s = ECS.s, g = ECS.guide, R = ECS.rounds;
   const modeSeg = h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Mode' }, [['vv', 'VV'], ['va', 'VA']].map(m => h('button', { type: 'button', class: 'ch', role: 'radio', 'data-ec-mode': m[0], 'aria-checked': String(s.mode === m[0]), text: m[1], onclick: () => { ecInit(m[0]); render(); } })));
+  const selId = uid('ec'), md = (x) => (x.mode === 'vv' ? 'VV · ' : 'VA · ');
+  const cur = R.id || g.id || ((EC.PRESETS.filter(pr => pr.title === ECS.title)[0] || {}).id || '');
+  const sel = h('select', { id: selId, 'data-ec-scenario': '1', 'data-ec-preset': '1', 'data-ec-guide': '1', 'data-ec-round': '1', onchange: (e) => {
+    const v = e.target.value;
+    if (!v) { ecGuideClear(); ecRoundClear(); }
+    else if (EC.round(v)) ecRoundLoad(v);
+    else if (EC.LABCASES.some(x => x.id === v)) { ecRoundClear(); ecGuideLoad(v); }
+    else ecLoad(v);
+    render();
+  } }, [
+    h('option', { value: '', selected: !cur, text: '— free play: turn the dials yourself —' }),
+    h('optgroup', { label: 'Gas rounds — read the gases, write the orders, send them again' }, EC.ROUNDS.map(x => h('option', { value: x.id, selected: x.id === cur, text: (R.results[x.id] && R.results[x.id].solved ? '✓ ' : '') + md(x) + x.title }))),
+    h('optgroup', { label: 'Next best step — choose the move, the lab turns the dials' }, EC.LABCASES.map(x => h('option', { value: x.id, selected: x.id === cur, text: (g.results[x.id] ? (g.results[x.id] === 'best' ? '✓ ' : '• ') : '') + md(x) + x.title }))),
+    h('optgroup', { label: 'Presets — load a situation' }, EC.PRESETS.map(pr => h('option', { value: pr.id, selected: pr.id === cur, text: pr.title })))
+  ]);
+  const solved = Object.keys(R.results).filter(k => R.results[k].solved).length, done = Object.keys(g.results).length, best = Object.keys(g.results).filter(k => g.results[k] === 'best').length;
+  const hint = !R.id && !g.id ? h('p', { class: 'ec-score', 'data-ec-guide-panel': 'free', 'data-ec-gscore': best + '/' + done, 'data-ec-rscore': String(solved), text: 'Gas rounds ' + solved + '/' + EC.ROUNDS.length + ' solved · next best step ' + done + '/' + EC.LABCASES.length + ' worked' + (done ? ', ' + best + ' all best' : '') }) : null;
+  return h('div', { class: 'ec-bar' }, [modeSeg, h('label', { class: 'nod-f ec-scen', for: selId }, [h('span', { class: 'nod-l', text: 'Scenario' }), sel]), hint,
+    h('button', { type: 'button', class: 'lnk', 'data-ec-reset': '1', text: 'Reset', onclick: () => { ecInit(s.mode); render(); } }),
+    tipI('Blood is coloured by its saturation; the dashes move with the flow and the impeller with the speed; a shaking drainage line is chatter; clots appear in the membrane as it fails; on VA the mixing zone is marked on the aorta and the ventricle swells with its filling pressure. Pressures and gases in mm Hg.', 'Reading the drawing')]);
+}
+/* the dials, in three even columns under the picture: the circuit, the patient, the drips */
+function ecDeck() {
+  const s = ECS.s, vv = s.mode === 'vv', R = ECS.rounds, rounds = !!R.id;
   const cfgId = uid('ec');
-  const cfgSel = h('label', { class: 'nod-f', for: cfgId }, [h('span', { class: 'nod-l', text: 'Configuration' }), h('select', { id: cfgId, 'data-ec-config': '1', onchange: (e) => { s.config = e.target.value; if (!vv) s.ret = s.config === 'pf' ? 17 : 21; if (vv && s.config === 'dl') s.recirc = Math.min(s.recirc, 0.1); render(); } }, EC.CONFIGS[s.mode].map(c => h('option', { value: c[0], selected: c[0] === s.config, text: c[1] })))]);
-  const cfgNote = h('p', { class: 'fine', text: (EC.CONFIGS[s.mode].filter(c => c[0] === s.config)[0] || [])[2] || '' });
-  const presetId = uid('ec');
-  const presetSel = h('label', { class: 'nod-f', for: presetId }, [h('span', { class: 'nod-l', text: 'Preset' }), h('select', { id: presetId, 'data-ec-preset': '1', onchange: (e) => { if (e.target.value) { ecLoad(e.target.value); render(); } } }, [h('option', { value: '', text: '— load a situation —' })].concat(EC.PRESETS.map(pr => h('option', { value: pr.id, selected: ECS.title === pr.title, text: pr.title }))))]);
+  const cfgNote = (EC.CONFIGS[s.mode].filter(c => c[0] === s.config)[0] || [])[2] || '';
+  const cfgSel = rounds ? null : tip(h('label', { class: 'nod-f', for: cfgId }, [h('span', { class: 'nod-l', text: 'Configuration' }), h('select', { id: cfgId, 'data-ec-config': '1', onchange: (e) => { s.config = e.target.value; if (!vv) s.ret = s.config === 'pf' ? 17 : 21; if (vv && s.config === 'dl') s.recirc = Math.min(s.recirc, 0.1); render(); } }, EC.CONFIGS[s.mode].map(c => h('option', { value: c[0], selected: c[0] === s.config, text: c[1] })))]), cfgNote, 'Configuration');
   const drainId = uid('ec'), retId = uid('ec');
-  const drainSel = h('label', { class: 'nod-f', for: drainId }, [h('span', { class: 'nod-l', text: 'Drainage cannula' }), h('select', { id: drainId, 'data-ec-drain': '1', onchange: (e) => { s.drain = +e.target.value; ecRefresh(); } }, Object.keys(EC.DRAIN).map(k => h('option', { value: k, selected: +k === s.drain, text: k + ' Fr (≈ ' + EC.DRAIN[k] + ' L/min)' })))]);
+  const drainSel = tip(h('label', { class: 'nod-f', for: drainId }, [h('span', { class: 'nod-l', text: 'Drainage cannula' }), h('select', { id: drainId, 'data-ec-drain': '1', onchange: (e) => { s.drain = +e.target.value; ecRefresh(); } }, Object.keys(EC.DRAIN).map(k => h('option', { value: k, selected: +k === s.drain, text: k + ' Fr (≈ ' + EC.DRAIN[k] + ' L/min)' })))]), 'The drainage cannula sets the most the circuit can flow: resistance falls with the fourth power of the radius.', 'Drainage cannula');
   const retSizes = vv ? [19, 21, 23] : [15, 17, 19, 21];
   const retSel = h('label', { class: 'nod-f', for: retId }, [h('span', { class: 'nod-l', text: (vv ? 'Return' : 'Arterial') + ' cannula' }), h('select', { id: retId, 'data-ec-ret': '1', onchange: (e) => { s.ret = +e.target.value; ecRefresh(); } }, retSizes.map(k => h('option', { value: k, selected: k === s.ret, text: k + ' Fr' })))]);
   const kinkId = uid('ec');
-  const kink = h('label', { class: 'chk-inline', for: kinkId }, [h('input', { type: 'checkbox', id: kinkId, checked: !!s.kink, 'data-ec-kink': '1', onchange: (e) => { s.kink = e.target.checked; ecRefresh(); } }), 'Drainage kinked or tip malpositioned']);
+  const kink = rounds ? null : h('label', { class: 'chk-inline', for: kinkId }, [h('input', { type: 'checkbox', id: kinkId, checked: !!s.kink, 'data-ec-kink': '1', onchange: (e) => { s.kink = e.target.checked; ecRefresh(); } }), 'Drainage kinked or tip malpositioned']);
   const circuitSliders = EC_SLIDERS.circuit.filter(sl => vv || sl[0] !== 'recirc').map(sl => ecSlider('circuit', sl));
   const patientSliders = EC_SLIDERS.patient.filter(sl => (vv ? sl[0] !== 'contr' : sl[0] !== 'co' && sl[0] !== 'pvr')).map(sl => ecSlider('patient', sl));
   const dripSliders = EC.DRIPS.map(ecDripSlider);
@@ -259,48 +302,55 @@ function ecControls() {
     const dpcId = uid('ec');
     vaExtras.push(h('label', { class: 'chk-inline', for: dpcId }, [h('input', { type: 'checkbox', id: dpcId, checked: !!s.dpc, 'data-ec-dpc': '1', onchange: (e) => { s.dpc = e.target.checked; ecRefresh(); } }), 'Distal perfusion catheter']));
   }
-  return h('div', { class: 'ec-controls' }, [
-    h('div', { class: 'ec-ctl-head' }, [modeSeg, presetSel]),
-    h('p', { class: 'fine ec-note', 'data-ec-note': '1', text: ECS.note }),
-    h('h5', { text: 'The circuit' }), h('div', { class: 'odc-ctrls' }, [cfgSel, cfgNote].concat(circuitSliders, [h('div', { class: 'nod-grid' }, [drainSel, retSel]), kink], vaExtras)),
-    h('h5', { text: 'The patient' }), h('div', { class: 'odc-ctrls' }, patientSliders),
-    h('h5', { text: 'Vasoactive drips' }), h('div', { class: 'odc-ctrls ec-drips', 'data-ec-drips': '1' }, dripSliders.concat([h('div', { 'data-ec-dripslot': '1' }, [ecDripReadout()]), h('button', { type: 'button', class: 'lnk', 'data-ec-dripsoff': '1', text: 'All drips off', onclick: () => { s.drugs = {}; render(); } })])),
-    h('button', { type: 'button', class: 'lnk', 'data-ec-reset': '1', text: 'Reset to the default ' + (vv ? 'VV' : 'VA') + ' run', onclick: () => { ecInit(s.mode); render(); } })
+  const actions = rounds ? h('div', { class: 'ec-actions', 'data-ec-actions': '1' }, EC.R_ACTIONS.filter(a => a.modes.indexOf(s.mode) >= 0).map(a => tip(h('button', { type: 'button', class: 'btn sm', 'data-ec-action': a.id, text: a.label, onclick: () => { if (a.applies(ECS.p, ECS.s)) { a.apply(ECS.p, ECS.s); render(); } else toast(a.nothing); } }), a.tip, a.label))) : null;
+  return h('div', { class: 'ec-deck deck' + (rounds ? ' orders' : ''), 'data-ec-deck': '1' }, [
+    h('section', { class: 'ec-col' }, [h('h5', { text: rounds ? 'Orders: the circuit' : 'The circuit' }), h('div', { class: 'odc-ctrls' }, circuitSliders.concat(rounds ? [] : [cfgSel, drainSel, retSel, kink], vaExtras, [actions]))]),
+    h('section', { class: 'ec-col' }, [h('h5', { text: rounds ? 'Orders: the patient and the ventilator' : 'The patient' }), h('div', { class: 'odc-ctrls' }, patientSliders.concat(rounds ? [h('p', { class: 'fine ec-locked-note', text: 'The disease itself — the shunt, the ventricle, the resistances — is not an order: it is what the orders work around.' })] : []))]),
+    h('section', { class: 'ec-col' }, [h('h5', {}, [rounds ? 'Orders: vasoactive drips' : 'Vasoactive drips', h('button', { type: 'button', class: 'lnk', 'data-ec-dripsoff': '1', text: 'all off', onclick: () => { s.drugs = {}; render(); } })]), h('div', { class: 'odc-ctrls ec-drips', 'data-ec-drips': '1' }, dripSliders.concat([h('div', { 'data-ec-dripslot': '1' }, [ecDripReadout()])]))])
   ]);
 }
 function ecCell(label, value, unit, cls) { return h('div', { class: 'vs-cell' + (cls ? ' ' + cls : ''), 'data-ec-cell': label }, [h('span', { class: 'lbl', text: label }), h('b', { text: value }), unit ? h('span', { class: 'ec-unit', text: unit }) : null]); }
 function ecConsole() {
-  const o = ECS.out, s = ECS.s, pm = o.pump;
+  const sh = ecShown(), o = sh.out, s = sh.s, pm = o.pump;
   const f0 = (x) => x.toFixed(0), f1 = (x) => x.toFixed(1);
   const al = EC.alarms(o, s);
   const tiles = [['Flow', f1(o.flow), 'L/min', pm.chatter ? 'alarm' : ''], ['Speed', f0(s.rpm), 'rpm', ''], ['Sweep', ecFmt('sweep', s.sweep), 'L/min', ''], ['FdO2', s.fdo2.toFixed(2), '', ''],
     ['P drain', f0(pm.pDrain), 'mm Hg', pm.pDrain < -100 ? 'alarm' : ''], ['P pre', f0(pm.pPre), 'mm Hg', pm.pPre > 300 ? 'alarm' : ''], ['P post', f0(pm.pPost), 'mm Hg', pm.pPost > 300 ? 'alarm' : ''], ['ΔP', f0(pm.dP), 'mm Hg', pm.dP > 60 ? 'alarm' : ''],
-    ['SvO2 (drainage)', f0(o.preSat * 100), '%', o.mode === 'vv' && o.preSat > 0.75 && s.recirc > 0.2 ? 'alarm' : ''], ['O2 transfer', f0(o.transfer), 'mL/min', s.sweep > 0 && o.transfer < 100 ? 'alarm' : ''], ['MAP', f0(o.map), 'mm Hg', o.map < 60 ? 'alarm' : ''], ['HR', f0(o.hr), '/min', o.hr > 130 ? 'alarm' : ''], [o.mode === 'vv' ? 'Qeff / CO' : 'Native output', o.mode === 'vv' ? f0(o.flowRatio * 100) + '%' : f1(o.qn) + ' L/min', '', o.mode === 'vv' && o.flowRatio < 0.55 ? 'alarm' : (o.mode === 'va' && o.distension ? 'alarm' : '')]];
+    ['SvO2 (drainage)', f0(o.preSat * 100), '%', o.mode === 'vv' && o.preSat > 0.75 && s.recirc > 0.2 ? 'alarm' : ''], ['O2 transfer', f0(o.transfer), 'mL/min', s.sweep > 0 && o.transfer < 100 ? 'alarm' : ''], ['MAP', f0(o.map), 'mm Hg', o.map < 60 ? 'alarm' : ''], [o.mode === 'vv' ? 'Qeff / CO' : 'Native output', o.mode === 'vv' ? f0(o.flowRatio * 100) + '%' : f1(o.qn) + ' L/min', '', o.mode === 'vv' && o.flowRatio < 0.55 ? 'alarm' : (o.mode === 'va' && o.distension ? 'alarm' : '')]];
   return h('div', { class: 'vent-screen ec-console', 'data-ec-console': '1' }, [
     h('div', { class: 'vsc-head' }, [h('span', { class: 'vsc-mode', text: (o.mode === 'vv' ? 'V-V ' : 'V-A ') + (EC.CONFIGS[s.mode].filter(c => c[0] === s.config)[0] || [])[1] }), h('span', { class: 'vsc-brand', text: 'ECMO console' })]),
     h('div', { class: 'vsc-alarms' + (al.length ? ' on' : ''), 'data-ec-alarms': al.length }, [h('span', { text: al.length ? '⚠ ' + al.map(a => a.t).join(' · ') : 'No alarms' })]),
     h('div', { class: 'vsc-grid ec-grid' }, tiles.map(t => h('div', { class: 'vsc-tile' + (t[3] ? ' ' + t[3] : ''), 'data-tile': t[0] }, [h('span', { class: 'vsc-k', text: t[0] }), h('b', { class: 'vsc-v', text: t[1] }), h('span', { class: 'vsc-u', text: t[2] })])))
   ]);
 }
+/* the gases: one column per sampling site, the same rows in each, then what the patient is doing with them */
 function ecGases() {
-  const o = ECS.out, p = ECS.p, s = ECS.s, vv = o.mode === 'vv';
+  const sh = ecShown(), o = sh.out, p = sh.p, s = sh.s, vv = o.mode === 'vv';
   const f0 = (x) => x.toFixed(0), pc = (x) => Math.round(x * 100) + '%';
-  const pre = h('div', { class: 'vs-gas ec-gas', 'data-ec-gas': 'pre' }, [h('h5', { text: 'Drainage (pre-membrane)' }), h('div', { class: 'vs-gasgrid' }, [ecCell('PO2', f0(o.preO2), 'mm Hg'), ecCell('SO2', pc(o.preSat)), ecCell('PCO2', f0(o.preCO2), 'mm Hg')])]);
-  const post = h('div', { class: 'vs-gas ec-gas', 'data-ec-gas': 'post' }, [h('h5', { text: 'Post-membrane' }), h('div', { class: 'vs-gasgrid' }, [ecCell('PO2', f0(o.postO2), 'mm Hg', s.sweep > 0 && s.fdo2 > 0.9 && o.postO2 < 200 ? 'bad' : ''), ecCell('SO2', pc(o.postSat)), ecCell('PCO2', f0(o.postCO2), 'mm Hg'), ecCell('O2 transfer', f0(o.transfer), 'mL/min'), ecCell('CO2 removed', f0(o.vco2Membrane || (o.pump ? (o.preCO2 - o.postCO2) * o.flow * 4.5 : 0)), 'mL/min')])]);
-  let pt;
-  if (vv) pt = h('div', { class: 'vs-gas ec-gas', 'data-ec-gas': 'pt' }, [h('h5', { text: 'Patient — arterial' }), h('div', { class: 'vs-gasgrid' }, [ecCell('PaO2', f0(o.pao2), 'mm Hg', o.pao2 < 55 ? 'bad' : ''), ecCell('SaO2', o.spo2 + '%', '', o.spo2 < 85 ? 'bad' : ''), ecCell('PaCO2', f0(o.paco2), 'mm Hg'), ecCell('pH', o.ph.toFixed(2), '', o.ph < 7.25 || o.ph > 7.55 ? 'bad' : ''), ecCell('SvO2', pc(o.svo2)), ecCell('DO2', f0(o.do2), 'mL/min'), ecCell('DO2 : VO2', o.do2vo2.toFixed(1), '', o.do2vo2 < 2.5 ? 'bad' : ''), ecCell('Lactate', o.lactate), ecCell('MAP', f0(o.map), 'mm Hg', o.map < 60 ? 'bad' : ''), ecCell('Heart rate', f0(o.hr), '/min', o.hr > 130 ? 'bad' : ''), ecCell('Cardiac output', o.co.toFixed(1), 'L/min', o.co < 3.5 ? 'bad' : ''), ecCell('CVP', f0(o.cvp !== undefined ? o.cvp : p.cvp), 'mm Hg')]),
-    h('p', { class: 'fine', text: 'Effective flow ' + o.qeff.toFixed(1) + ' L/min = ' + Math.round(o.flowRatio * 100) + '% of a cardiac output of ' + o.co.toFixed(1) + (Math.abs(o.co - p.co) > 0.15 ? ' (set ' + p.co + ', changed by the drips and the right ventricle’s load)' : '') + ' (recirculation ' + Math.round(o.recirc * 100) + '%). The membrane removes ' + f0(o.vco2Membrane) + ' mL/min of CO2 and the native lung ' + f0(o.vco2Lung) + ' of the ' + p.vco2 + ' produced.' })]);
-  else pt = h('div', { class: 'vs-gas ec-gas', 'data-ec-gas': 'pt' }, [h('h5', { text: 'Patient — where the blood came from' }), h('div', { class: 'vs-gasgrid' }, [
-    ecCell('Right radial PaO2', f0(o.rrO2), 'mm Hg', o.rrO2 < 60 ? 'bad' : (o.rrO2 > 300 ? 'warn' : '')), ecCell('Right radial SaO2', pc(o.rrSat), '', o.rrSat < 0.88 ? 'bad' : ''), ecCell('Right radial PaCO2', f0(o.paco2RR), 'mm Hg'), ecCell('Right radial pH', o.phRR.toFixed(2)),
-    ecCell('Femoral PaO2', f0(o.femO2), 'mm Hg', o.femO2 > 300 ? 'warn' : ''), ecCell('Femoral PaCO2', f0(o.paco2Fem), 'mm Hg'), ecCell('Coronary PO2', f0(o.corO2), 'mm Hg', o.corO2 < 60 ? 'bad' : ''), ecCell('SvO2', pc(o.svo2)),
-    ecCell('MAP', f0(o.map), 'mm Hg', o.map < 60 ? 'bad' : ''), ecCell('Pulse pressure', f0(o.pp), 'mm Hg', o.pp < 10 ? 'bad' : ''), ecCell('Native output', o.qn.toFixed(1) + (o.qnTot > o.qn + 0.1 ? ' + ' + (o.qnTot - o.qn).toFixed(1) + ' device' : ''), 'L/min'), ecCell('Total flow', o.qt.toFixed(1), 'L/min'),
-    ecCell('LVEDP', f0(o.lvedp), 'mm Hg', o.distension ? 'bad' : (o.lvedp > 18 ? 'warn' : '')), ecCell('Aortic valve', o.avOpens ? 'opens' : 'closed', '', o.avOpens ? '' : 'bad'), ecCell('DO2 : VO2', o.do2vo2.toFixed(1), '', o.do2vo2 < 2.5 ? 'bad' : ''), ecCell('Lactate', o.lactate)]),
-    h('p', { class: 'fine', text: (o.central ? 'Antegrade return: the branches share one mixture. ' : 'The mixing zone sits ' + (o.mixing < 1 ? 'at the aortic root: the whole aorta is circuit blood. ' : (o.mixing < 2 ? 'at the innominate: the coronaries get native blood, the right arm a mixture. ' : (o.mixing < 4 ? 'in the arch: head and arms native, the descending aorta circuit blood. ' : 'low in the descending aorta: nearly everything native. ')))) + (o.harlequin ? 'Differential hypoxaemia. ' : '') + (o.distension ? 'The ventricle is distended behind a closed valve' + (o.oedema ? ' and the lung is flooding' : '') + '. ' : (o.oedema ? 'Pulmonary oedema from a high left-sided filling pressure. ' : '')) + 'Limb risk ' + o.limbRisk + '.' })]);
-  return h('div', { class: 'ec-gases' }, [pre, post, pt]);
+  const cell = (key, label, value, unit, cls, tipText) => { const c = h('div', { class: 'vs-cell' + (cls ? ' ' + cls : ''), 'data-ec-cell': key }, [h('span', { class: 'lbl', text: label }), h('b', { text: value }), unit ? h('span', { class: 'ec-unit', text: unit }) : null]); return tipText ? tip(c, tipText, key) : c; };
+  const site = (id, title, tipText, cells) => h('div', { class: 'ec-site', 'data-ec-gas': id }, [tip(h('h5', { text: title }), tipText, title)].concat(cells));
+  const pre = site('pre', 'Pre-membrane', 'Blood entering the membrane: the patient’s venous blood' + (vv ? ', plus whatever recirculates.' : '.'), [cell('PO2', 'PO2', f0(o.preO2), 'mm Hg'), cell('PCO2', 'PCO2', f0(o.preCO2), 'mm Hg'), cell('SO2', 'SO2', pc(o.preSat), '', vv && o.preSat > 0.755 && o.recirc > 0.2 ? 'warn' : '')]);
+  const post = site('post', 'Post-membrane', 'Blood leaving the membrane. On an FdO2 of 1.0 a healthy membrane gives a PO2 of 300–500 mm Hg.', [cell('PO2', 'PO2', f0(o.postO2), 'mm Hg', s.sweep > 0 && s.fdo2 > 0.9 && o.postO2 < 200 ? 'bad' : ''), cell('PCO2', 'PCO2', f0(o.postCO2), 'mm Hg'), cell('SO2', 'SO2', pc(o.postSat))]);
+  let sites, status, note;
+  if (vv) {
+    sites = [pre, post, site('pt', 'Arterial', 'The patient’s arterial blood: circuit blood mixed with the venous return the circuit did not capture, then through the native lung.', [cell('PaO2', 'PO2', f0(o.pao2), 'mm Hg', o.pao2 < 55 ? 'bad' : ''), cell('PaCO2', 'PCO2', f0(o.paco2), 'mm Hg'), cell('SaO2', 'SO2', o.spo2 + '%', '', o.spo2 < 85 ? 'bad' : ''), cell('pH', 'pH', o.ph.toFixed(2), '', o.ph < 7.25 || o.ph > 7.55 ? 'bad' : '')])];
+    status = [cell('SvO2', 'SvO2', pc(o.svo2)), cell('DO2', 'DO2', f0(o.do2), 'mL/min'), cell('DO2 : VO2', 'DO2 : VO2', o.do2vo2.toFixed(1), '', o.do2vo2 < 2.5 ? 'bad' : ''), cell('Lactate', 'Lactate', o.lactate), cell('MAP', 'MAP', f0(o.map), 'mm Hg', o.map < 60 ? 'bad' : ''), cell('Heart rate', 'Heart rate', f0(o.hr), '/min', o.hr > 130 ? 'bad' : ''), cell('Cardiac output', 'Output', o.co.toFixed(1), 'L/min', o.co < 3.5 ? 'bad' : ''), cell('CVP', 'CVP', f0(o.cvp !== undefined ? o.cvp : p.cvp), 'mm Hg'),
+      cell('O2 transfer', 'O2 transfer', f0(o.transfer), 'mL/min'), cell('CO2 removed', 'CO2 removed', f0(o.vco2Membrane || 0), 'mL/min')];
+    note = 'Effective flow ' + o.qeff.toFixed(1) + ' L/min = ' + Math.round(o.flowRatio * 100) + '% of a cardiac output of ' + o.co.toFixed(1) + (Math.abs(o.co - p.co) > 0.15 ? ' (set ' + p.co + ', changed by the drips and the right ventricle’s load)' : '') + ' (recirculation ' + Math.round(o.recirc * 100) + '%). The membrane removes ' + f0(o.vco2Membrane) + ' mL/min of CO2 and the native lung ' + f0(o.vco2Lung) + ' of the ' + p.vco2 + ' produced.';
+  } else {
+    sites = [pre, post,
+      site('pt', 'Right radial', 'The site furthest from a femoral return cannula: what the brain and the coronaries are getting.', [cell('Right radial PaO2', 'PO2', f0(o.rrO2), 'mm Hg', o.rrO2 < 60 ? 'bad' : (o.rrO2 > 300 ? 'warn' : '')), cell('Right radial PaCO2', 'PCO2', f0(o.paco2RR), 'mm Hg'), cell('Right radial SaO2', 'SO2', pc(o.rrSat), '', o.rrSat < 0.88 ? 'bad' : ''), cell('Right radial pH', 'pH', o.phRR.toFixed(2))]),
+      site('fem', 'Femoral', 'Circuit blood, straight from the return cannula.', [cell('Femoral PaO2', 'PO2', f0(o.femO2), 'mm Hg', o.femO2 > 300 ? 'warn' : ''), cell('Femoral PaCO2', 'PCO2', f0(o.paco2Fem), 'mm Hg'), cell('Coronary PO2', 'Coronary PO2', f0(o.corO2), 'mm Hg', o.corO2 < 60 ? 'bad' : '')])];
+    status = [cell('MAP', 'MAP', f0(o.map), 'mm Hg', o.map < 60 ? 'bad' : ''), cell('Pulse pressure', 'Pulse pressure', f0(o.pp), 'mm Hg', o.pp < 10 ? 'bad' : ''), cell('LVEDP', 'LVEDP', f0(o.lvedp), 'mm Hg', o.distension ? 'bad' : (o.lvedp > 18 ? 'warn' : '')), cell('Aortic valve', 'Aortic valve', o.avOpens ? 'opens' : 'closed', '', o.avOpens ? '' : 'bad'),
+      cell('Native output', 'Native output', o.qn.toFixed(1) + (o.qnTot > o.qn + 0.1 ? ' + ' + (o.qnTot - o.qn).toFixed(1) + ' device' : ''), 'L/min'), cell('Total flow', 'Total flow', o.qt.toFixed(1), 'L/min'), cell('SvO2', 'SvO2', pc(o.svo2)), cell('DO2 : VO2', 'DO2 : VO2', o.do2vo2.toFixed(1), '', o.do2vo2 < 2.5 ? 'bad' : ''), cell('Lactate', 'Lactate', o.lactate), cell('Heart rate', 'Heart rate', f0(o.hr), '/min', o.hr > 130 ? 'bad' : '')];
+    note = (o.central ? 'Antegrade return: the branches share one mixture. ' : 'The mixing zone sits ' + (o.mixing < 1 ? 'at the aortic root: the whole aorta is circuit blood. ' : (o.mixing < 2 ? 'at the innominate: the coronaries get native blood, the right arm a mixture. ' : (o.mixing < 4 ? 'in the arch: head and arms native, the descending aorta circuit blood. ' : 'low in the descending aorta: nearly everything native. ')))) + (o.harlequin ? 'Differential hypoxaemia. ' : '') + (o.distension ? 'The ventricle is distended behind a closed valve' + (o.oedema ? ' and the lung is flooding' : '') + '. ' : (o.oedema ? 'Pulmonary oedema from a high left-sided filling pressure. ' : '')) + 'Limb risk ' + o.limbRisk + '.';
+  }
+  return h('div', { class: 'ec-gases' }, [h('div', { class: 'ec-sites n' + sites.length }, sites), h('div', { class: 'ec-status' }, status), h('p', { class: 'fine ec-gasnote', text: note })]);
 }
 function ecRefresh() {
   ecCompute();
   const fig = document.querySelector('[data-ecmolab]'); if (!fig) return;
+  if (ECS.rounds.id) { const slot = fig.querySelector('[data-ec-pendslot]'); if (slot) { slot.textContent = ''; slot.appendChild(ecRoundPending()); } return; }
   const draw = fig.querySelector('[data-ec-draw]'); if (draw) { draw.textContent = ''; draw.appendChild(ecSvg(ECS.out, ECS.s, ECS.p)); }
   const con = fig.querySelector('[data-ec-conslot]'); if (con) { con.textContent = ''; con.appendChild(ecConsole()); }
   const gas = fig.querySelector('[data-ec-gasslot]'); if (gas) { gas.textContent = ''; gas.appendChild(ecGases()); }
@@ -309,6 +359,7 @@ function ecRefresh() {
 /* ---- the guided scenarios inside the lab: a presentation, the gases the model makes, the next best step — and the chosen move turns the dials ---- */
 function ecGuideCase() { return EC.LABCASES.filter(c => c.id === ECS.guide.id)[0] || null; }
 function ecGuideLoad(id) {
+  ecRoundClear();
   const c = EC.LABCASES.filter(x => x.id === id)[0];
   ECS.guide = { id: id, step: 0, chosen: [], snap: null, done: false, results: ECS.guide.results || {} };
   if (!c) return;
@@ -326,15 +377,12 @@ function ecGuideApply(c, step, op) {
 }
 function ecGuide() {
   const g = ECS.guide, c = ecGuideCase();
-  const selId = uid('ec');
-  const sel = h('label', { class: 'nod-f', for: selId }, [h('span', { class: 'nod-l', text: 'Guided scenario' }), h('select', { id: selId, 'data-ec-guide': '1', onchange: (e) => { if (e.target.value) { ecGuideLoad(e.target.value); } else { ecGuideClear(); } render(); } },
-    [h('option', { value: '', text: '— free play: turn the dials yourself —' })].concat(EC.LABCASES.map(x => h('option', { value: x.id, selected: x.id === g.id, text: (g.results[x.id] ? (g.results[x.id] === 'best' ? '✓ ' : '• ') : '') + (x.mode === 'vv' ? 'VV · ' : 'VA · ') + x.title }))))]);
   const done = Object.keys(g.results).length, best = Object.keys(g.results).filter(k => g.results[k] === 'best').length;
-  const score = h('p', { class: 'ec-score', 'data-ec-gscore': best + '/' + done, text: done ? done + ' of ' + EC.LABCASES.length + ' worked, ' + best + ' with every move best' : EC.LABCASES.length + ' guided scenarios: a patient, the gases the lab computes, and the next best step — your choice turns the dials' });
-  if (!c) return h('div', { class: 'ec-guide', 'data-ec-guide-panel': 'free' }, [h('div', { class: 'ec-guide-head' }, [sel, score])]);
+  if (!c) return null;
+  const score = h('p', { class: 'ec-score', 'data-ec-gscore': best + '/' + done, text: 'Next best step · ' + done + ' of ' + EC.LABCASES.length + ' worked, ' + best + ' with every move best' });
   const VERD = { best: 'Best', reasonable: 'Reasonable', poor: 'Poor', wrong: 'Wrong' };
   const vv = c.mode === 'vv';
-  const kids = [h('div', { class: 'ec-guide-head' }, [sel, score]),
+  const kids = [score,
     h('p', { class: 'ec-who' }, [h('b', { text: c.title + '. ' }), c.who]),
     h('p', { class: 'ec-look' }, [h('b', { text: 'Read the lab: ' }), c.look])];
   // the steps already taken
@@ -383,18 +431,105 @@ function ecGuide() {
   }
   return h('div', { class: 'ec-guide', 'data-ec-guide-panel': c.id }, kids);
 }
+/* ---- gas rounds: the gases arrive, the orders are written on the dials, the gases are sent again ---- */
+function ecRoundLoad(id) {
+  const st = EC.roundStart(id); if (!st) return;
+  ecGuideClear();
+  ECS.p = st.p; ECS.s = st.s; ECS.title = st.c.title; ECS.note = '';
+  ECS.rounds = { id: id, hist: [EC.roundDraw(st.p, st.s)], fb: [null], results: ECS.rounds.results, revealed: false };
+  ECS.out = ECS.rounds.hist[0].out;
+}
+function ecRoundCase() { return EC.round(ECS.rounds.id); }
+function ecRoundSolved() { const c = ecRoundCase(); return !!c && EC.roundCheck(c, ECS.rounds.hist).every(t => t.ok); }
+function ecRoundSend() {
+  const R = ECS.rounds, c = ecRoundCase(), prev = R.hist[R.hist.length - 1], cur = EC.roundDraw(ECS.p, ECS.s), orders = EC.roundOrders(prev, cur);
+  if (!orders.length) { toast('No orders written yet: change a dial or choose an action first.'); return; }
+  R.hist.push(cur); R.fb.push({ orders: orders, hazards: EC.roundHazards(c, prev, cur) });
+  if (ecRoundSolved() && !R.revealed) { const was = R.results[c.id]; R.results[c.id] = { solved: true, draws: was && was.solved ? Math.min(was.draws, R.hist.length - 1) : R.hist.length - 1, par: c.par }; }
+  render();
+}
+function ecRoundUndo() { const last = ECS.rounds.hist[ECS.rounds.hist.length - 1]; ECS.p = Object.assign({}, last.p); ECS.s = Object.assign({}, last.s, { drugs: Object.assign({}, last.s.drugs) }); render(); }
+function ecRoundReveal() {
+  const R = ECS.rounds, c = ecRoundCase(), hist = EC.roundExpert(c.id);
+  R.hist = hist; R.fb = hist.map((hh, i) => i === 0 ? null : { orders: EC.roundOrders(hist[i - 1], hh), hazards: EC.roundHazards(c, hist[i - 1], hh), say: c.expert[i - 1][0], why: c.expert[i - 1][2] }); R.revealed = true;
+  const last = hist[hist.length - 1]; ECS.p = Object.assign({}, last.p); ECS.s = Object.assign({}, last.s, { drugs: Object.assign({}, last.s.drugs) });
+  render();
+}
+/* the orders written since the last gases, and the button that sends them */
+function ecRoundPending() {
+  const R = ECS.rounds, prev = R.hist[R.hist.length - 1], orders = EC.roundOrders(prev, EC.roundDraw(ECS.p, ECS.s)), solved = ecRoundSolved();
+  return h('div', { class: 'ec-pending' + (orders.length ? ' has' : ''), 'data-ec-pending': String(orders.length) }, [
+    h('span', { class: 'lbl', text: orders.length ? 'Orders: ' : (solved ? 'Targets met. ' : 'No orders yet — ') }),
+    orders.length ? h('span', { class: 'ec-orders' }, orders.map(o => h('span', { class: 'ec-order', 'data-ec-order': o.k, text: o.label + ' ' + o.from + ' → ' + o.to + (o.unit ? ' ' + o.unit : '') }))) : h('span', { class: 'fine', text: solved ? 'Keep titrating if you like, or take the next case.' : 'write them on the dials below, then send the gases.' }),
+    h('span', { class: 'ec-pend-btns' }, [
+      orders.length ? h('button', { type: 'button', class: 'lnk', 'data-ec-undo': '1', text: 'Undo', onclick: ecRoundUndo }) : null,
+      h('button', { type: 'button', class: 'btn sm primary', 'data-ec-send': '1', disabled: !orders.length, text: 'Send the gases again (30 min) →', onclick: ecRoundSend })])
+  ]);
+}
+/* the flowsheet: one column per set of gases, the orders that preceded it on top; out-of-range values flagged, changes marked */
+function ecRoundSheet() {
+  const R = ECS.rounds, c = ecRoundCase(), rows = EC.roundRows(c.mode), hist = R.hist;
+  const head = h('tr', {}, [h('th', { text: '' })].concat(hist.map((hh, i) => h('th', { scope: 'col', text: i === 0 ? 'On arrival' : 'Gases ' + i }))));
+  const ord = h('tr', { class: 'ec-sheet-orders' }, [h('th', { scope: 'row', text: 'Orders' })].concat(hist.map((hh, i) => h('td', {}, i === 0 ? [h('span', { class: 'fine', text: '—' })] : R.fb[i].orders.map(o => h('span', { class: 'ec-order', text: o.label + ' ' + o.to + (o.unit ? ' ' + o.unit : '') }))))));
+  const body = rows.map(r => {
+    if (!r[1]) return h('tr', { class: 'ec-sheet-sec' }, [h('th', { colspan: String(hist.length + 1), scope: 'colgroup', text: r[0] })]);
+    return h('tr', {}, [h('th', { scope: 'row', text: r[0] })].concat(hist.map((hh, i) => {
+      const v = r[1](hh), was = i > 0 ? r[1](hist[i - 1]) : v, a = parseFloat(v), b0 = parseFloat(was);
+      const arrow = i > 0 && v !== was && isFinite(a) && isFinite(b0) ? (a > b0 ? ' ↑' : ' ↓') : '';
+      return h('td', { class: (r[2](hh) ? 'bad' : '') + (i > 0 && v !== was ? ' hm-moved' : ''), 'data-ec-sheet': r[0], text: v + arrow });
+    })));
+  });
+  return h('div', { class: 'tbl-wrap ec-sheet-wrap' }, [h('table', { class: 'edu-tbl ec-sheet', 'data-ec-sheet-table': String(hist.length) }, [h('thead', {}, [head]), h('tbody', {}, [ord].concat(body))])]);
+}
+/* the case: who, the targets against the latest gases, what the last orders did */
+function ecRoundPanel() {
+  const R = ECS.rounds, c = ecRoundCase(); if (!c) return null;
+  const checks = EC.roundCheck(c, R.hist), solved = checks.every(t => t.ok), n = R.hist.length - 1, fb = R.fb[R.fb.length - 1];
+  const solvedN = Object.keys(R.results).filter(k => R.results[k].solved).length;
+  const kids = [
+    h('div', { class: 'ec-round-head' }, [h('p', { class: 'ec-score', 'data-ec-rscore': String(solvedN), text: 'Gas rounds · ' + (c.mode === 'vv' ? 'VV' : 'VA') + ' · ' + '●'.repeat(c.level) + '○'.repeat(4 - c.level) + ' · ' + solvedN + ' of ' + EC.ROUNDS.length + ' solved' }),
+      h('span', { class: 'ec-round-btns' }, [
+        h('button', { type: 'button', class: 'lnk', 'data-ec-rrestart': '1', text: 'Start again', onclick: () => { ecRoundLoad(c.id); render(); } }),
+        !R.revealed ? h('button', { type: 'button', class: 'lnk', 'data-ec-rreveal': '1', text: 'Show an expert’s orders', onclick: ecRoundReveal }) : null,
+        h('button', { type: 'button', class: 'lnk', 'data-ec-rnext': '1', text: 'Next case →', onclick: () => { const i = EC.ROUNDS.indexOf(c); ecRoundLoad(EC.ROUNDS[(i + 1) % EC.ROUNDS.length].id); render(); } })])]),
+    h('p', { class: 'ec-who' }, [h('b', { text: c.title + '. ' }), c.who]),
+    h('div', { class: 'ec-targets', 'data-ec-targets': checks.filter(t => t.ok).length + '/' + checks.length }, [h('span', { class: 'lbl', text: 'Targets' })].concat(checks.map(t => h('span', { class: 'ec-target ' + (t.ok ? 'ok' : 'no'), 'data-ec-target': t.ok ? 'ok' : 'no', text: (t.ok ? '✓ ' : '✗ ') + t.label + ' · now ' + t.now }))))
+  ];
+  const broken = checks.filter(t => !t.ok && /never/.test(t.label)).length > 0 && n > 0;
+  if (broken) kids.push(h('p', { class: 'ec-hazard', 'data-ec-broken': '1', text: 'A pace target was broken in this run and cannot be mended by later orders — start again and take it in steps.' }));
+  /* your own run: what the last orders did. The expert's run: every step, each with its reason */
+  (R.revealed ? R.fb.map((f, i) => [f, i]).filter(x => x[0]) : (fb ? [[fb, n]] : [])).forEach(x => {
+    const f = x[0], i = x[1], items = [];
+    if (f.say) items.push(h('p', { class: 'ec-fb-say' }, [h('b', { text: f.say + '. ' }), f.why]));
+    else f.orders.forEach(o => items.push(h('p', {}, [h('b', { text: o.label + ' ' + o.from + ' → ' + o.to + (o.unit ? ' ' + o.unit : '') + '. ' }), o.why])));
+    f.hazards.forEach(z => items.push(h('p', { class: 'ec-hazard', 'data-ec-hazard': '1', text: '⚠ ' + z })));
+    kids.push(h('div', { class: 'ec-fb', 'data-ec-fb': String(i) }, [h('span', { class: 'lbl', text: f.say ? 'Expert · step ' + i : 'What gases ' + i + ' show' })].concat(items)));
+  });
+  if (solved) {
+    const res = R.results[c.id];
+    kids.push(h('div', { class: 'vs-verdict best ec-solved', 'data-ec-solved': R.revealed ? 'revealed' : String(n) }, [
+      h('b', { text: R.revealed ? 'The expert’s sequence meets every target in ' + n + (n === 1 ? ' set' : ' sets') + ' of gases. ' : (n === 0 ? '' : 'Solved in ' + n + (n === 1 ? ' set' : ' sets') + ' of gases' + (n <= c.par ? ' — at or under par (' + c.par + '). ' : ' (par ' + c.par + '). ')) }),
+      h('ul', { class: 'edu-ul' }, c.teach.map(x => h('li', { text: x }))),
+      !R.revealed && res ? h('p', { class: 'fine', text: 'Compare with an expert’s orders, or take the next case.' }) : null]));
+  }
+  return h('div', { class: 'ec-round', 'data-ec-round-panel': c.id }, kids);
+}
 function ecmoLabFig() {
   ecCompute();
-  const fig = h('figure', { class: 'an-fig ec-fig ec-lab', 'data-ecmolab': '1' }, [
-    ecGuide(),
-    h('div', { class: 'ec-lab-grid' }, [
-      ecControls(),
-      h('div', { class: 'ec-draw', 'data-ec-draw': '1' }, [ecSvg(ECS.out, ECS.s, ECS.p)]),
+  const sh = ecShown(), rounds = !!ECS.rounds.id, guide = ecGuide();
+  const note = !rounds && !ECS.guide.id && ECS.note ? h('p', { class: 'fine ec-note', 'data-ec-note': '1', text: ECS.note }) : (ECS.guide.id ? h('p', { class: 'fine ec-note', 'data-ec-note': '1', hidden: true, text: ECS.note }) : null);
+  return h('figure', { class: 'an-fig ec-fig ec-lab' + (rounds ? ' rounds' : ''), 'data-ecmolab': '1' }, [
+    ecToolbar(), note, guide, rounds ? ecRoundPanel() : null,
+    rounds ? h('div', { class: 'ec-main' }, [
+      h('div', { class: 'ec-right' }, [h('div', { 'data-ec-conslot': '1' }, [ecConsole()]), h('div', { class: 'ec-draw', 'data-ec-draw': '1' }, [ecSvg(sh.out, sh.s, sh.p)])]),
+      h('div', { class: 'ec-right' }, [ecRoundSheet()])
+    ]) : h('div', { class: 'ec-main' }, [
+      h('div', { class: 'ec-draw', 'data-ec-draw': '1' }, [ecSvg(sh.out, sh.s, sh.p)]),
       h('div', { class: 'ec-right' }, [h('div', { 'data-ec-conslot': '1' }, [ecConsole()]), h('div', { 'data-ec-gasslot': '1' }, [ecGases()])])
     ]),
-    h('figcaption', { text: 'Blood coloured by saturation; dashes move with the flow; the impeller with the speed; a shaking drainage line is chatter; clots appear in the membrane as it fails; on VA the mixing zone is marked on the aorta and the ventricle swells with its filling pressure. Pressures in mm Hg; gases in mm Hg.' })
+    rounds ? h('div', { 'data-ec-pendslot': '1' }, [ecRoundPending()]) : null,
+    ecDeck()
   ]);
-  return fig;
 }
 
 /* ---- the scenarios ---- */

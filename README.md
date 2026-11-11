@@ -81,7 +81,7 @@ and the single-file browser version (`PulmCritDaddy_standalone.html`) always wor
 - Code signing is optional and not set up. For Windows add a signing certificate to the build; for Mac add an Apple Developer ID and notarization.
   Until then the first-launch steps above are needed.
 
-## How the reading is built (version 8.6)
+## How the reading is built (version 8.7)
 
 The rules layer computes every measurement state before any wording is chosen (ERS/ATS 2022 z-scores and the LLN;
 a reviewed adult phrase catalog anchored to the ERS/ATS 2022, ATS/ERS 2019, ERS/ATS 2023, ERS/ATS 2017, ERS 2019 and
@@ -421,6 +421,30 @@ responder, a patient on the plateau and an afterload-sensitive right ventricle),
 raisers, and the 2023 framework's two right triangles (unlimited, cardiac-limited, venous-limited and dual-limited
 regimes, with a prone toggle) and the 2025 letter's right-atrial-pressure-against-Pms curve. Each topic cites the
 chapter and links the author's lectures at heart-lung.org/lectures. The older compact heart–lung lab stays in the
-physiology area. `extras/` holds a reworked Anki deck
+physiology area. Version 8.7 is a pass over the whole site rather than a new area. The home page is one even grid:
+twelve tiles of one size, each with a two-line summary and up to four direct links, then the record (case bank, echo
+logbook, boards) and the labs. Words carry their definitions: 122 terms (FdO2, sweep, recirculation, wedge, SVR,
+TAPSE, transpulmonary pressure and the rest) are marked at their first mention in each ICU topic and define
+themselves on hover, on keyboard focus and on a tap, with a way to the topic that teaches them; every dial, button
+and tile summary explains itself the same way, and long captions and leading paragraphs are held to a line or two
+until asked for. The labs share one layout — a bar, the picture beside its numbers, the dials in even columns
+beneath — which brings the ECMO lab from about four screens to one and the echo atlas from eleven cards down the
+page to a picker with one view on show. The ECMO lab gains gas rounds: ten cases (seven VV, three VA) in which the
+gases arrive, you write orders on the dials (pump speed, sweep, FdO2, transfusion, sedation and cooling, the
+ventilator, volume, the drips) or choose a bedside action (reposition the cannulas, change the membrane lung, walk
+the circuit for a kink), send the gases again, and read a flowsheet in which each set of gases is a column, what
+moved is marked and what is out of range is flagged. Targets are checked after every set; pace and safety hazards
+are called (a PaCO2 that falls more than 20 mm Hg between two gases, an alkalosis made by the sweep, hyperoxia on
+VA, a sweep turned off on VA, suction beyond −100 mm Hg, speed against a chattering line, transfusion past 10 g/dL);
+and an expert's orders can be played out step by step with the reason for each. The echo pictures were reviewed
+view by view: the simulated B-mode now has speckle that follows the beam, brighter interfaces, lateral drop-out and
+an edge fade; the model heart gained the arch vessels and the branch pulmonary arteries and is closed under the
+chest wall; and the 3-D heart has leaflets that open and close with the cycle, coronary arteries in their grooves,
+the appendages, the pulmonary veins, a glass chest with sternum, ribs and clavicles, a transducer, and — on a real
+GPU — physically based tissue with a fibre direction, a lining and a studio environment (software renderers get a
+lighter material so it still runs). The real-volume lab follows the same layout, its 3-D heart the same size as the
+picture. Two corrections came out of the review: the mitral and tricuspid leaflets had been drawn open in systole
+and shut in diastole (they now follow the E wave, diastasis and the A wave), and the membrane lung's post-membrane
+PO2 fell too far at a low FdO2. `extras/` holds a reworked Anki deck
 (`ECMO_Anki_Deck_v2.apkg`, 103 notes / 237 cards, cloze and basic, tagged by topic, built by `build_ecmo_anki.py` with no
 dependencies) and a bedside reference PDF generated from the same content (`build_ecmo_reference.js`).

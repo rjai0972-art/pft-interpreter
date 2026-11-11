@@ -47,7 +47,7 @@
     let postO2 = s.sweep <= 0 ? preO2 : preO2 + eff * (target - preO2);
     let cPre = content(p.hb, preO2), cPost = content(p.hb, postO2);
     const grad = Math.pow(clamp((1 - satOf(preO2)) / 0.35, 0.5, 2.2), 0.7);     // a more desaturated inlet gives the membrane a bigger gradient to work with
-    const cap = (65 * Math.min(Q, rated)) * grad * (0.25 + 0.75 * fn) * (0.3 + 0.7 * fd);   // mL O2/min the membrane can hand over (adult PMP: ~450 at 7 L/min, inlet 65%)
+    const cap = (65 * Math.min(Q, rated)) * grad * (0.25 + 0.75 * fn) * (0.8 + 0.2 * fd);   // mL O2/min the membrane can hand over (adult PMP: ~450 at 7 L/min, inlet 65%); the FdO2 acts mainly through the PO2 it can reach
     let transfer = Q * 10 * (cPost - cPre);
     if (transfer > cap) { transfer = cap; cPost = cPre + cap / (10 * Q); postO2 = po2FromContent(p.hb, cPost); }
     // CO2 follows the sweep-to-blood-flow ratio; a clotted membrane clears less
@@ -937,6 +937,156 @@
       ], done: 'The sweep-off trial: the circuit stays, its gas exchange stops, the lung shows what it can do. Then the cannulas come out.' }
   ];
 
-  root.PFT_ECMO = { topics: T, groups: GROUPS, CONFIGS: CONFIGS, DRAIN: DRAIN, RETURN: RETURN, PATIENT: PATIENT, SETTINGS: SETTINGS, PRESETS: PRESETS, preset: preset, DRIPS: DRIPS, vasoactive: vasoactive, applyDrugs: applyDrugs, SCENARIOS: SCENARIOS, LABCASES: LABCASES, run: run, runVV: runVV, runVA: runVA, pump: pump, membrane: membrane, alarms: alarms, satOf: satOf, po2Of: po2Of, content: content, po2FromContent: po2FromContent, BRANCH: BRANCH };
+  /* ================================================================== gas rounds (v8.7) ==================================================================
+     The third way to use the lab: a patient and a set of gases arrive; the reader writes orders on the dials that can be ordered
+     (the circuit's speed, sweep and FdO2; the ventilator; a transfusion, volume, sedation; the drips; a device or a procedure),
+     sends the gases again and reads what the orders did, until the targets are met. Each case carries its targets, the pace it must
+     respect, and an expert's sequence with the reasons. */
+  const R_ORDERS = [
+    ['rpm', 'Pump speed', 'rpm', 'Speed buys flow only while the drainage can supply it: watch the drainage pressure. On VV more flow means a larger share of the venous return is oxygenated; on VA it means more support and more afterload for the ventricle.'],
+    ['sweep', 'Sweep gas', 'L/min', 'CO2 leaves across the membrane in proportion to the sweep: it moves the PaCO2 and the pH and almost nothing else.'],
+    ['fdo2', 'FdO2', '', 'The FdO2 sets the PO2 of the blood leaving the membrane. Once that blood is saturated, more FdO2 adds dissolved oxygen only: the patient’s saturation follows the flow and the haemoglobin, not the blender.'],
+    ['hb', 'Haemoglobin (transfuse)', 'g/dL', 'Each gram of haemoglobin carries 1.34 mL of oxygen per decilitre through the membrane: the same flow delivers more.'],
+    ['vo2', 'Oxygen demand (sedate, cool, paralyse)', 'mL/min', 'A lower consumption raises the venous saturation, and on VV a brighter venous admixture raises the arterial saturation.'],
+    ['fio2', 'Ventilator FiO2', '', 'Ventilator oxygen reaches only the blood that passes ventilated alveoli: it helps in proportion to the lung that is left.'],
+    ['va', 'Ventilator: alveolar ventilation', 'L/min', 'Native alveolar ventilation shares the CO2 load with the membrane: it must be able to carry all of it before the sweep can come off.'],
+    ['cvp', 'Volume (CVP)', 'mm Hg', 'Volume refills the veins the drainage cannula sits in: the drainage pressure rises toward zero and the line stops chattering. Diuresis does the reverse.']
+  ];
+  const R_ACTIONS = [
+    { id: 'reposition', modes: ['vv'], label: 'Reposition the cannulas', tip: 'Under echo or fluoroscopy, pull the tips apart (or turn a dual-lumen cannula so its return port faces the tricuspid valve).', why: 'With the tips apart the drainage takes venous blood instead of the blood just returned: the pre-membrane saturation falls and the patient’s rises.', nothing: 'Imaged: the tips are already well apart — recirculation is not the problem here.', applies: (p, s) => s.recirc > 0.12, apply: (p, s) => { s.recirc = Math.min(s.recirc, 0.1); if (s.config === 'ff') s.config = 'fj'; } },
+    { id: 'membrane', modes: ['vv', 'va'], label: 'Change the membrane lung', tip: 'A planned exchange with a primed circuit and the team at the bedside: a minute off support.', why: 'A new membrane restores the transfer: post-membrane PO2 back above 400 on an FdO2 of 1.0, ΔP back to baseline.', nothing: 'The membrane is transferring well (post-membrane PO2 high on pure oxygen, ΔP at baseline): an exchange would add risk for nothing.', applies: (p, s) => s.oxy < 0.95, apply: (p, s) => { s.oxy = 1; } },
+    { id: 'kink', modes: ['vv', 'va'], label: 'Check and free the drainage line', tip: 'Walk the circuit from the cannula to the pump: a kink under the patient, a clamp left on, a tip against the vein wall.', why: 'An unobstructed line lets the same speed pull the flow without the suction.', nothing: 'Walked the circuit: the line is free from the cannula to the pump.', applies: (p, s) => !!s.kink, apply: (p, s) => { s.kink = false; } }
+  ];
+  const inR = (x, a, b) => x >= a && x <= b;
+  const pct = (x) => Math.round(x * 100);
+  const ROUNDS = [
+    { id: 'r_alk', mode: 'vv', level: 1, title: 'Over-swept', who: 'Day 2 of VV ECMO for influenza ARDS, 70 kg. The night team turned the sweep up for a PaCO2 of 52. He is now sedated, ventilated at rest settings, flow 4.6 L/min — and these are the morning gases.',
+      p: {}, s: { sweep: 5 }, par: 1,
+      targets: [['pH 7.35–7.45', (o) => inR(o.ph, 7.345, 7.455), (o) => o.ph.toFixed(2)], ['PaCO2 35–45', (o) => inR(o.paco2, 34.5, 45.5), (o) => o.paco2.toFixed(0)], ['SaO2 ≥ 88%', (o) => o.spo2 >= 88, (o) => o.spo2 + '%']],
+      expert: [['Sweep down from 5 to 2.5 L/min', (p, s) => { s.sweep = 2.5; }, 'A respiratory alkalosis made by the circuit: the only dial that needs to move is the sweep. An alkalosis this deep shifts the dissociation curve left, lowers ionised calcium and constricts the cerebral vessels.']],
+      teach: ['The sweep is the CO2 dial; blood flow and FdO2 are the oxygen dials.', 'Halving the sweep roughly doubles the PaCO2 when the native lung is at rest and contributes little.'] },
+    { id: 'r_co2', mode: 'vv', level: 2, title: 'Hypercapnia, and how fast to correct it', who: 'Just cannulated for status asthmaticus with a pH of 7.05 on the ventilator. Flow 4.6 L/min; the perfusionist started the sweep at 1 L/min. Bicarbonate 30 (two days of retention). First gases on the circuit:',
+      p: { hco3: 30, va: 1.0 }, s: { sweep: 1 }, par: 2, pace: 20,
+      targets: [['pH 7.35–7.45', (o) => inR(o.ph, 7.345, 7.455), (o) => o.ph.toFixed(2)], ['PaCO2 never falling more than 20 mm Hg between gases', (o, p, s, hist) => hist.every((h, i) => i === 0 || hist[i - 1].out.paco2 - h.out.paco2 <= 20.5), (o, p, s, hist) => hist.length > 1 ? 'largest fall ' + Math.max.apply(null, hist.map((h, i) => i === 0 ? 0 : hist[i - 1].out.paco2 - h.out.paco2)).toFixed(0) : '—'], ['SaO2 ≥ 88%', (o) => o.spo2 >= 88, (o) => o.spo2 + '%']],
+      expert: [['Sweep from 1 to 1.5 L/min; gases in 30 minutes', (p, s) => { s.sweep = 1.5; }, 'A PaCO2 of 79 is brought down in steps. A fall of more than about half in the first day — and large falls within hours — is associated with intracranial haemorrhage and other neurological injury: the cerebral vessels constrict as fast as the CO2 leaves.'],
+        ['Sweep to 2 L/min', (p, s) => { s.sweep = 2; }, 'With a bicarbonate of 30 the pH is normal at a PaCO2 near 50: titrate to the pH, not to 40. The kidney will give the bicarbonate back over days.']],
+      teach: ['Titrate the sweep to the pH, in steps, with a gas after each.', 'A chronically retained bicarbonate means the target PaCO2 is not 40.'] },
+    { id: 'r_fdo2', mode: 'va', level: 2, title: 'Fresh on VA: too much of everything', who: 'Peripheral VA ECMO two hours ago for cardiogenic shock after an anterior infarct. Flow 4.4 L/min, MAP 84, sweep 5 L/min and FdO2 1.0 as set at cannulation. Right radial and post-membrane gases:',
+      p: { contr: 0.2, shunt: 0.25, cvp: 12 }, s: { sweep: 5, fdo2: 1 }, par: 1,
+      targets: [['Right radial pH 7.35–7.45', (o) => inR(o.phRR, 7.345, 7.465), (o) => o.phRR.toFixed(2)], ['No arterial PaO2 above 300', (o) => Math.max(o.femO2, o.rrO2) <= 300, (o) => Math.max(o.femO2, o.rrO2).toFixed(0)], ['Right radial SaO2 ≥ 92%', (o) => o.rrSat >= 0.915, (o) => pct(o.rrSat) + '%'], ['MAP ≥ 65', (o) => o.map >= 65, (o) => String(o.map)]],
+      expert: [['FdO2 from 1.0 to 0.6 and sweep from 5 to 2 L/min', (p, s) => { s.fdo2 = 0.6; s.sweep = 2; }, 'Blood leaving a new membrane on pure oxygen has a PO2 near 500, and on femoral VA it perfuses the lower body, and often the brain, directly. Hyperoxia after cardiac arrest and in shock is associated with worse outcomes; hypocapnia constricts the cerebral circulation. Blend the FdO2 down to a post-membrane PO2 under 300 and bring the sweep to a normal PaCO2.']],
+      teach: ['On VA the FdO2 is titrated like a ventilator’s: to an arterial PaO2, not left at 1.0.', 'The sweep is never turned off on VA: unoxygenated blood would be pumped into the aorta.'] },
+    { id: 'r_demand', mode: 'vv', level: 3, title: 'The saturation falls and the circuit has not changed', who: 'Day 6 of VV ECMO, pneumococcal ARDS. Overnight: temperature 39.4 °C, heart rate 128, new chest-tube bleeding with a haemoglobin of 7.5. Cardiac output by echo about 9.5 L/min. Circuit flow 4.2 L/min at 3,200 rpm, FdO2 1.0, membrane two days old.',
+      p: { co: 9.5, vo2: 380, hb: 7.5 }, s: { rpm: 3200 }, par: 2,
+      targets: [['SaO2 ≥ 88%', (o) => o.spo2 >= 88, (o) => o.spo2 + '%'], ['DO2 : VO2 ≥ 3', (o) => o.do2vo2 >= 2.95, (o) => o.do2vo2.toFixed(1)], ['Drainage pressure above −100', (o) => o.pump.pDrain > -100 && !o.pump.chatter, (o) => o.pump.pDrain.toFixed(0)]],
+      expert: [['Lower the demand (antipyretic, deeper sedation: VO2 to 300) and transfuse to a haemoglobin of 9.5', (p, s) => { p.vo2 = 300; p.hb = 9.5; }, 'The membrane works: post-membrane PO2 485. The circuit processes 4.2 of a 9.5 L/min venous return, so more than half the blood reaches the aorta unoxygenated — and that blood is darker than yesterday because the consumption is up and the haemoglobin down. Treat the demand and the carrying capacity first.'],
+        ['Then pump speed to 3,700 rpm', (p, s) => { s.rpm = 3700; }, 'More flow raises the share of the venous return the membrane sees. It is worth having only while the drainage pressure stays above −100 mm Hg.']],
+      teach: ['On VV the arterial saturation is set by the ratio of circuit flow to cardiac output, the haemoglobin and the consumption — when the membrane is healthy.', 'The sweep and the FdO2 cannot fix this: the blood leaving the membrane is already saturated.'] },
+    { id: 'r_recirc', mode: 'vv', level: 3, title: 'Bright drainage, dark patient', who: 'Femoro-femoral VV ECMO placed in the emergency department six hours ago. Flow 4.6 L/min, FdO2 1.0. The SpO2 has drifted from 94% to 86% since he was turned; the drainage limb looks nearly as red as the return.',
+      p: {}, s: { config: 'ff', recirc: 0.45 }, par: 1,
+      targets: [['SaO2 ≥ 90%', (o) => o.spo2 >= 90, (o) => o.spo2 + '%'], ['Pre-membrane saturation ≤ 75%', (o) => o.preSat <= 0.755, (o) => pct(o.preSat) + '%'], ['Drainage pressure above −100', (o) => o.pump.pDrain > -100, (o) => o.pump.pDrain.toFixed(0)]],
+      expert: [['Reposition the cannulas (image the tips, pull them apart)', (p, s) => { s.recirc = 0.1; s.config = 'fj'; }, 'A pre-membrane saturation of 79% with a patient at 86% is recirculation: the drainage is taking back the blood just returned. More speed raises the recirculated fraction with the flow; the fix is the distance between the tips.']],
+      teach: ['Recirculation: the pre-membrane saturation rises while the patient’s falls.', 'Suspect it after a turn, a cough, a change in volume status or a change in flow.'] },
+    { id: 'r_membrane', mode: 'vv', level: 3, title: 'Day 14: the gases drift', who: 'Day 14 on the same circuit. Over two days the sweep has gone from 2.5 to 4 L/min for the same PaCO2, the ΔP from 30 to 90 mm Hg at an unchanged flow, the D-dimer has tripled. This morning the sweep is back at 2.5 after a nursing change and the gases are:',
+      p: {}, s: { oxy: 0.45 }, par: 2,
+      targets: [['Post-membrane PO2 > 300 on FdO2 1.0', (o, p, s) => o.postO2 > 300 || s.fdo2 < 0.95 && o.postSat > 0.99, (o) => o.postO2.toFixed(0)], ['SaO2 ≥ 88%', (o) => o.spo2 >= 88, (o) => o.spo2 + '%'], ['pH 7.35–7.45', (o) => inR(o.ph, 7.345, 7.455), (o) => o.ph.toFixed(2)]],
+      expert: [['Bridge: sweep to 5 L/min and ventilator FiO2 to 0.8 while the new circuit is primed', (p, s) => { s.sweep = 5; p.fio2 = 0.8; }, 'A post-membrane PO2 of 61 on pure oxygen with a rising ΔP is a failing membrane. CO2 still crosses with more sweep, and the native lung can lend some oxygen for the hour it takes to prepare the exchange.'],
+        ['Change the membrane lung; sweep back to 2.5, FiO2 to 0.4', (p, s) => { s.oxy = 1; s.sweep = 2.5; p.fio2 = 0.4; }, 'The new membrane transfers again: the post-membrane PO2 is back near 485 and the same sweep clears the CO2.']],
+      teach: ['Judge a membrane by its post-membrane PO2 on an FdO2 of 1.0, its ΔP at a given flow, and the sweep it needs.', 'Plan the exchange in daylight.'] },
+    { id: 'r_chatter', mode: 'vv', level: 2, title: 'The line shakes', who: 'Day 4. Net 3 litres negative since yesterday with furosemide; an hour ago the pump speed was raised from 3,400 to 3,800 rpm for an SpO2 of 88%. The drainage line is now swinging against the bed rail and the flow reads 2.8 L/min.',
+      p: { cvp: 3 }, s: { rpm: 3800 }, par: 2,
+      targets: [['A quiet line: no chatter', (o) => !o.pump.chatter, (o) => o.pump.chatter ? 'chatter' : 'quiet'], ['Flow ≥ 4 L/min', (o) => o.flow >= 3.95, (o) => o.flow.toFixed(1)], ['SaO2 ≥ 88%', (o) => o.spo2 >= 88, (o) => o.spo2 + '%']],
+      expert: [['Pump speed down to 3,000 rpm', (p, s) => { s.rpm = 3000; }, 'The pump is asking for more than the emptied vena cava can give: the vein collapses on the cannula and reopens. More speed makes it worse and haemolyses; turning down stops the suction, and the flow often rises.'],
+        ['Volume (CVP back to 8) and speed back to 3,400 rpm', (p, s) => { p.cvp = 8; s.rpm = 3400; }, 'With the veins refilled the same speed gives 4.6 L/min at a drainage pressure near −55. Then ask why the patient emptied.']],
+      teach: ['Chatter is a drainage problem: turn the speed down first, then give back what is missing.', 'Flow that falls as the speed rises is suction, not support.'] },
+    { id: 'r_wean', mode: 'vv', level: 4, title: 'Ready for the sweep-off trial?', who: 'Day 11. The chest film has cleared, compliance is 38 mL/cm H2O, he triggers the ventilator comfortably. Circuit flow 4.6 L/min, sweep 2, FdO2 0.6; the ventilator is still on rest settings (FiO2 0.4, alveolar ventilation about 1.5 L/min).',
+      p: { shunt: 0.15, va: 1.5, fio2: 0.4, vo2: 250 }, s: { sweep: 2, fdo2: 0.6 }, par: 2,
+      targets: [['Sweep gas off', (o, p, s) => s.sweep === 0, (o, p, s) => s.sweep + ' L/min'], ['pH 7.35–7.45', (o) => inR(o.ph, 7.345, 7.455), (o) => o.ph.toFixed(2)], ['SaO2 ≥ 92%', (o) => o.spo2 >= 92, (o) => o.spo2 + '%'], ['Ventilator FiO2 ≤ 0.5', (o, p) => p.fio2 <= 0.505, (o, p) => p.fio2.toFixed(2)]],
+      expert: [['Ventilator to trial settings: alveolar ventilation 4.5 L/min, FiO2 0.5; sweep down to 0.5', (p, s) => { p.va = 4.5; p.fio2 = 0.5; s.sweep = 0.5; }, 'Before the gas comes off, the lung has to be given the work: settings a patient could be extubated from within a few days (plateau under 25–28, rate under 25–30, FiO2 0.5 or less).'],
+        ['Sweep off; blood flow unchanged', (p, s) => { s.sweep = 0; }, 'With no sweep the membrane exchanges nothing: the blood leaves it as it entered, and the arterial gas is the native lung’s own. Hours of stable gases and work of breathing mean the cannulas can come out.']],
+      teach: ['The VV trial takes the gas away and keeps the blood flow: nothing to clot, nothing to reverse.', 'Turn the sweep off only when the ventilator is already carrying the CO2.'] },
+    { id: 'r_harlequin', mode: 'va', level: 4, title: 'A blue right hand', who: 'Day 5 of femoral VA ECMO for myocarditis with pulmonary oedema. The ventricle is recovering (pulse pressure 34 on dobutamine 5); the lungs are not. FdO2 0.6, ventilator FiO2 0.5. The saturation probe on the right hand reads 83%; the left foot reads 100%.',
+      p: { contr: 0.6, shunt: 0.55, fio2: 0.5 }, s: { fdo2: 0.6, drugs: { dobu: 5 } }, par: 2,
+      targets: [['Right radial SaO2 ≥ 90%', (o) => o.rrSat >= 0.895, (o) => pct(o.rrSat) + '%'], ['MAP ≥ 65', (o) => o.map >= 65, (o) => String(o.map)], ['No arterial PaO2 above 300', (o) => Math.max(o.femO2, o.rrO2) <= 300, (o) => Math.max(o.femO2, o.rrO2).toFixed(0)]],
+      expert: [['Ventilator FiO2 to 1.0 (with PEEP and recruitment)', (p, s) => { p.fio2 = 1; }, 'The blood in the right arm, the coronaries and the brain is the heart’s own, and it passed through lungs that did not oxygenate it. Treat the lung first: it is the only oxygenator that blood will see.'],
+        ['Pump speed to 4,000 rpm', (p, s) => { s.rpm = 4000; }, 'More circuit flow pushes the mixing zone back toward the arch and raises the venous saturation the native lung starts from. If the right hand stays blue: a return limb to the jugular vein (V-AV), or a change to VV if the heart has recovered.']],
+      teach: ['Differential hypoxaemia needs three things: femoral VA, a recovering heart and failing lungs.', 'Sample and monitor on the right arm: it is the furthest from the circuit.'] },
+    { id: 'r_distension', mode: 'va', level: 4, title: 'No pulse on the arterial line', who: 'Six hours after VA cannulation at 3,700 rpm for a massive anterior infarct. MAP 87 with a flat arterial trace, pink froth in the endotracheal tube, the echo shows a dilated left ventricle full of smoke and an aortic valve that does not open.',
+      p: { contr: 0.08, cvp: 12, shunt: 0.3 }, s: { rpm: 3700, fdo2: 0.6 }, par: 1,
+      targets: [['LVEDP ≤ 18 mm Hg', (o) => o.lvedp <= 18, (o) => String(o.lvedp)], ['Ventricle not distended', (o) => !o.distension, (o) => o.distension ? 'distended' : 'decompressed'], ['MAP ≥ 65', (o) => o.map >= 65, (o) => String(o.map)]],
+      expert: [['Unload the ventricle: Impella (ECPELLA); pump speed down to 3,300 rpm', (p, s) => { s.unload = 'impella'; s.rpm = 3300; }, 'Retrograde flow is afterload a ventricle this weak cannot overcome: it fills from the bronchial and Thebesian return, cannot empty, and the pressure backs into the lung. A microaxial pump empties it across the valve; an inotrope and a lower circuit flow help a ventricle that is nearly opening its valve, a septostomy or surgical vent one that is not.']],
+      teach: ['A pulse pressure under 10 mm Hg on VA: look at the valve and the ventricle today.', 'More circuit flow and more vasopressor both raise the afterload that caused it.'] }
+  ];
+  function round(id) { return ROUNDS.filter(c => c.id === id)[0] || null; }
+  /* the patient and the circuit a case starts from */
+  function roundStart(id) {
+    const c = round(id); if (!c) return null;
+    const p = Object.assign({}, PATIENT, c.mode === 'vv' ? VV_PATIENT : {}, c.p), s = Object.assign({}, SETTINGS[c.mode], c.s, { drugs: Object.assign({}, c.s.drugs || {}) });
+    p.vco2 = Math.round(p.vo2 * 0.82);
+    return { c: c, p: p, s: s };
+  }
+  /* one set of gases: the state it was drawn in and what the model returns */
+  function roundDraw(p, s) { const pp = Object.assign({}, p, { vco2: Math.round(p.vo2 * 0.82) }), ss = Object.assign({}, s, { drugs: Object.assign({}, s.drugs || {}) }); return { p: pp, s: ss, out: run(pp, ss) }; }
+  /* targets against the latest gases (hist = every draw so far, oldest first) */
+  function roundCheck(c, hist) {
+    const h = hist[hist.length - 1];
+    return c.targets.map(t => ({ label: t[0], ok: !!t[1](h.out, h.p, h.s, hist), now: t[2](h.out, h.p, h.s, hist) }));
+  }
+  /* what the orders between two draws were */
+  function roundOrders(a, b) {
+    const out = [], f = (k, v) => k === 'fdo2' || k === 'fio2' ? (+v).toFixed(2) : String(+(+v).toFixed(2));
+    R_ORDERS.forEach(r => { const src = (x) => (r[0] === 'rpm' || r[0] === 'sweep' || r[0] === 'fdo2') ? x.s[r[0]] : x.p[r[0]]; if (src(a) !== src(b)) out.push({ k: r[0], label: r[1].split(' (')[0], from: f(r[0], src(a)), to: f(r[0], src(b)), unit: r[2], why: r[3] }); });
+    DRIPS.forEach(D => { const x = (a.s.drugs || {})[D.id] || 0, y = (b.s.drugs || {})[D.id] || 0; if (x !== y) out.push({ k: 'drip', label: D.name, from: x ? String(x) : 'off', to: y ? String(y) : 'off', unit: D.unit, why: 'Vasoactive drugs change the heart and the vessels, not the membrane: on VV a higher output makes the circuit a smaller share of it; on VA more ejection moves the mixing zone and opens the valve, more resistance closes it.' }); });
+    if (a.s.unload !== b.s.unload) out.push({ k: 'unload', label: 'LV unloading', from: a.s.unload, to: b.s.unload, unit: '', why: 'Unloading empties the left ventricle: the end-diastolic pressure falls and the lung dries.' });
+    if (!!a.s.dpc !== !!b.s.dpc) out.push({ k: 'dpc', label: 'Distal perfusion catheter', from: a.s.dpc ? 'in' : 'none', to: b.s.dpc ? 'in' : 'none', unit: '', why: 'The leg below a femoral arterial cannula needs its own antegrade flow.' });
+    if (a.s.recirc - b.s.recirc > 0.05) out.push({ k: 'reposition', label: 'Cannulas repositioned', from: pct(a.s.recirc) + '% recirculation', to: pct(b.s.recirc) + '%', unit: '', why: R_ACTIONS[0].why });
+    if (b.s.oxy - a.s.oxy > 0.05) out.push({ k: 'membrane', label: 'Membrane lung changed', from: 'failing', to: 'new', unit: '', why: R_ACTIONS[1].why });
+    if (a.s.kink && !b.s.kink) out.push({ k: 'kink', label: 'Drainage line freed', from: 'kinked', to: 'free', unit: '', why: R_ACTIONS[2].why });
+    return out;
+  }
+  /* what a draw should make the reader stop at: the pace of the CO2, an alkalosis, suction, hyperoxia, a sweep turned off on VA */
+  function roundHazards(c, prev, cur) {
+    const o = cur.out, a = [], vv = o.mode === 'vv', pa = vv ? o.paco2 : o.paco2RR, ph = vv ? o.ph : o.phRR;
+    if (prev) { const p0 = prev.out.mode === 'vv' ? prev.out.paco2 : prev.out.paco2RR; if (p0 - pa > 20.5 && p0 > 50) a.push('PaCO2 fell ' + (p0 - pa).toFixed(0) + ' mm Hg between two gases (' + p0.toFixed(0) + ' → ' + pa.toFixed(0) + '). Rapid correction of hypercapnia on ECMO is associated with intracranial bleeding and neurological injury: step the sweep, with a gas after each step.'); }
+    if (ph > 7.5) a.push('pH ' + ph.toFixed(2) + ': a respiratory alkalosis made by the sweep. Turn it down.');
+    if (ph < 7.2) a.push('pH ' + ph.toFixed(2) + ': the CO2 is not being cleared — by the membrane or by the lung.');
+    if (!vv && cur.s.sweep <= 0) a.push('The sweep is off on VA ECMO: the pump is now sending venous blood into the aorta. Never zero on VA — wean the flow instead.');
+    if (o.pump.pDrain < -100) a.push('Drainage pressure ' + o.pump.pDrain.toFixed(0) + ' mm Hg: suction beyond −100 haemolyses and cavitates. The speed is asking for more than the drainage can give.');
+    else if (o.pump.chatter && prev && cur.s.rpm > prev.s.rpm) a.push('More speed against a collapsing vein: the line still chatters and the flow has not risen.');
+    if (!vv && Math.max(o.femO2, o.rrO2) > 300) a.push('Arterial PaO2 ' + Math.max(o.femO2, o.rrO2).toFixed(0) + ' mm Hg: hyperoxia. Blend the FdO2 down.');
+    if (vv && o.spo2 < 80) a.push('SaO2 ' + o.spo2 + '%: below what the tissues will tolerate for long — look at the DO2 : VO2 and the lactate.');
+    if (!vv && o.rrSat < 0.8) a.push('Right radial saturation ' + pct(o.rrSat) + '%: the brain and the coronaries are receiving this blood.');
+    if (o.map < 55) a.push('MAP ' + o.map + ' mm Hg.');
+    if (prev && cur.p.hb > 10.05 && cur.p.hb > prev.p.hb) a.push('Haemoglobin ' + cur.p.hb + ' g/dL: transfusion beyond about 10 buys little delivery for its risks.');
+    return a;
+  }
+  /* the flowsheet: what a set of gases shows, row by row; flag = out of range */
+  function roundRows(mode) {
+    const f0 = (x) => x.toFixed(0), f1 = (x) => x.toFixed(1), f2 = (x) => x.toFixed(2);
+    return mode === 'vv' ? [
+      ['Arterial', null],
+      ['pH', (h) => f2(h.out.ph), (h) => h.out.ph < 7.345 || h.out.ph > 7.455], ['PaCO2', (h) => f0(h.out.paco2), (h) => h.out.paco2 < 34.5 || h.out.paco2 > 50.5], ['PaO2', (h) => f0(h.out.pao2), (h) => h.out.pao2 < 55], ['SaO2', (h) => h.out.spo2 + '%', (h) => h.out.spo2 < 88],
+      ['Circuit', null],
+      ['Pre-membrane SO2', (h) => pct(h.out.preSat) + '%', (h) => h.out.preSat > 0.755 && h.out.recirc > 0.2], ['Post-membrane PO2', (h) => f0(h.out.postO2), (h) => h.s.sweep > 0 && h.s.fdo2 >= 0.9 && h.out.postO2 < 200], ['Flow, L/min', (h) => f1(h.out.flow), (h) => h.out.pump.chatter], ['Drainage pressure', (h) => f0(h.out.pump.pDrain), (h) => h.out.pump.pDrain < -100], ['ΔP membrane', (h) => f0(h.out.pump.dP), (h) => h.out.pump.dP > 60],
+      ['Delivery', null],
+      ['SvO2', (h) => pct(h.out.svo2) + '%', (h) => h.out.svo2 < 0.55], ['DO2 : VO2', (h) => f1(h.out.do2vo2), (h) => h.out.do2vo2 < 2.5], ['Lactate', (h) => h.out.lactate, (h) => h.out.lactate === 'rising'], ['MAP', (h) => String(h.out.map), (h) => h.out.map < 60]
+    ] : [
+      ['Right radial', null],
+      ['pH', (h) => f2(h.out.phRR), (h) => h.out.phRR < 7.345 || h.out.phRR > 7.465], ['PaCO2', (h) => f0(h.out.paco2RR), (h) => h.out.paco2RR < 34.5 || h.out.paco2RR > 50.5], ['PaO2', (h) => f0(h.out.rrO2), (h) => h.out.rrO2 < 60 || h.out.rrO2 > 300], ['SaO2', (h) => pct(h.out.rrSat) + '%', (h) => h.out.rrSat < 0.895],
+      ['Circuit', null],
+      ['Femoral PaO2', (h) => f0(h.out.femO2), (h) => h.out.femO2 > 300], ['Post-membrane PO2', (h) => f0(h.out.postO2), (h) => h.s.sweep > 0 && h.s.fdo2 >= 0.9 && h.out.postO2 < 200], ['Flow, L/min', (h) => f1(h.out.flow), (h) => h.out.pump.chatter], ['Drainage pressure', (h) => f0(h.out.pump.pDrain), (h) => h.out.pump.pDrain < -100],
+      ['Heart and delivery', null],
+      ['MAP', (h) => String(h.out.map), (h) => h.out.map < 60], ['Pulse pressure', (h) => String(h.out.pp), (h) => h.out.pp < 10], ['LVEDP', (h) => String(h.out.lvedp), (h) => h.out.lvedp > 18], ['Aortic valve', (h) => h.out.avOpens ? 'opens' : 'closed', (h) => !h.out.avOpens], ['SvO2', (h) => pct(h.out.svo2) + '%', (h) => h.out.svo2 < 0.55], ['Lactate', (h) => h.out.lactate, (h) => h.out.lactate === 'rising']
+    ];
+  }
+  /* an expert's whole sequence, as draws (for the reveal and for the tests) */
+  function roundExpert(id) {
+    const st = roundStart(id); if (!st) return [];
+    const hist = [roundDraw(st.p, st.s)];
+    st.c.expert.forEach(e => { const last = hist[hist.length - 1], p = Object.assign({}, last.p), s = Object.assign({}, last.s, { drugs: Object.assign({}, last.s.drugs) }); e[1](p, s); hist.push(roundDraw(p, s)); });
+    return hist;
+  }
+
+  root.PFT_ECMO = { topics: T, groups: GROUPS, CONFIGS: CONFIGS, DRAIN: DRAIN, RETURN: RETURN, PATIENT: PATIENT, SETTINGS: SETTINGS, PRESETS: PRESETS, preset: preset, DRIPS: DRIPS, vasoactive: vasoactive, applyDrugs: applyDrugs, SCENARIOS: SCENARIOS, LABCASES: LABCASES, run: run, runVV: runVV, runVA: runVA, pump: pump, membrane: membrane, alarms: alarms, ROUNDS: ROUNDS, R_ORDERS: R_ORDERS, R_ACTIONS: R_ACTIONS, round: round, roundStart: roundStart, roundDraw: roundDraw, roundCheck: roundCheck, roundOrders: roundOrders, roundHazards: roundHazards, roundRows: roundRows, roundExpert: roundExpert, satOf: satOf, po2Of: po2Of, content: content, po2FromContent: po2FromContent, BRANCH: BRANCH };
   if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_ECMO;
 })(typeof window !== 'undefined' ? window : globalThis);
