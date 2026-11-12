@@ -17,7 +17,7 @@ const tr = [0, 0.1, 0.2, 0.3, 0.5, 0.74].map(t => M.artTrue(t, p));
 ok(Math.abs(tr[0] - 70) < 0.5 && tr[1] > 110 && tr[5] < 80 && Math.max.apply(null, tr) <= 120.01, 'the true waveform runs from the diastolic to the systolic pressure');
 const stats = (k) => { const f = M.ART_FAULTS[k]; const sig = M.artMeasured(Object.assign({}, p, { zeta: f.zeta, fn: f.fn }), { dur: 4 }); return M.artStats(sig, 1.5, 3.75); };
 const ideal = stats('stiffshort'), bubble = stats('bubble'), whip = stats('whip'), tube = stats('longtube');
-ok(Math.abs(ideal.sbp - 120) < 1.5 && Math.abs(ideal.dbp - 70) < 1 && Math.abs(ideal.map - 91.5) < 1.5, 'an optimal line reproduces 120/70 (' + ideal.sbp.toFixed(0) + '/' + ideal.dbp.toFixed(0) + ')');
+ok(Math.abs(ideal.sbp - 120) < 1.5 && Math.abs(ideal.dbp - 70) < 1 && Math.abs(ideal.map - 88.5) < 2.5, 'an optimal line reproduces 120/70 with a mean a little over a third of the way up (' + ideal.sbp.toFixed(0) + '/' + ideal.dbp.toFixed(0) + ')');
 ok(bubble.sbp < 112 && bubble.dbp > 72 && Math.abs(bubble.map - ideal.map) < 1.5, 'an air bubble lowers the systolic, raises the diastolic and spares the mean');
 ok(whip.sbp > 132 && tube.sbp > 130 && Math.abs(whip.map - ideal.map) < 1.5, 'an underdamped line overshoots the systolic and spares the mean');
 ok(M.artVerdict(0.62, 28) === 'optimal' && M.artVerdict(1.6, 4.5) === 'overdamped' && M.artVerdict(0.18, 11) === 'underdamped' && M.artVerdict(0.6, 10) === 'overdamped', 'the verdict follows damping first, then the natural frequency');

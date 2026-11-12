@@ -415,3 +415,51 @@ Tests: `tests/v87.test.js` (129: every gas round unsolved on arrival and solved 
 actions, the FdO2 model, the terms, the echo additions), `tests/e2e10.js` (81: the home grid, hover definitions,
 clamps, the ECMO layout and the gas rounds end to end, the atlas picker painting all eleven views, the echo lab, the
 3-D parts, phone width, dark theme); `e2e7.js` and `e2e8.js` follow the new DOM.
+
+v8.8, lines and waveforms (the waveform engine, real recordings, the galleries, the troubleshooting lab, ultrasound and the insertion
+protocols).
+*The engine.* `src/waves.js` (`PFT_WAVES`, node-testable, build placeholder `/*WAVES*/` before hemo.js and monitor.js): `timing(hr)` (T,
+pep 90 ms, lvet = 413 − 1.7·HR ms, rvet, qt, pr), `SITES` (aorta, axillary, femoral, radial, dp: delay, upstroke, pulse-pressure ratio,
+notch lag and height, dicrotic wave), `SHAPES` (normal, stiff, vasodilated, lowsv, as, ar, hocm: systolic control points as fractions of
+foot→notch, notch and run-off factors), `artCtx(cfg)` / `artBeat(c, tau, amp, foot0)` (a monotone cubic through the systolic points, then an
+exponential run-off towards an asymptote with a Gaussian notch; a beat starts where the last one ended), `siteNumbers(cfg)` (one mean, the
+pulse pressure scaled by site), `beats(cfg, dur)` (sinus, af, pvc, bigeminy, chb, junctional; pulse size from the preceding interval,
+post-ectopic potentiation, `brock`, `alternans`), `respAt(t, rr)`, `CVP` (12) and `WEDGE` (5) pattern tables (`base, a, c, x, v, y`, a
+negative `x` is a systolic regurgitant wave), `atrial(B, tm, t, pattern, lag)` (a P wave whose atrial systole falls between the R wave and
+the end of ejection is a cannon wave), `rvBeat`, `paCtx`, `series(cfg, dur, fs)` → `{ t, ecg, art, cvp, rv, pa, paop, resp, beats, tm,
+marks, nums }` (cfg: `hr, rhythm, pr, sbp, dbp, site, refSite, shape, rr, vent, ppv, paradox, alternans, cvp, wedge, pas, pad, rvedp,
+iabp: { ratio, inflate, deflate, aug }, swing, paV`), `artAt(t, cfg)` (regular rhythm, point by point), `measure(x, fs, { fn, zeta, offset,
+flushAt, flushDur, kink, kinkMean })` (the tubing as a second-order system), `stats`, `flushRead(fn, zeta)`, `verdict`, `zetaFromRatio`,
+`features(y, fs)` / `featureSummary` (foot, upstroke, notch time and height, form factor per beat — used on the model and on the real
+strips alike), `ecgAt`. `monitor.js`: `artTrue` and the CVP screen (`cvpStrip(shape, vent)`) draw from it; `ART_FAULTS.whip` and
+`.longtube` have lower natural frequencies so that the smoother, real-shaped beat still overshoots. `hemo.js`: `trace(o, pos, phase)` is
+rebuilt on it (`traceCtx`), the atrial and wedge traces re-centred on the reported means.
+*Real data.* `src/wave_real.js` (`PFT_WAVEREAL.strip(id)`: `flush, radial, zero, pa, finger`; int16 base64 at 125 Hz) from the sample
+records of the WFDB Python package (MIT licence; MIMIC Database record 041, MIMIC-III matched subset s00001/3975656, PRCP 12726).
+`src/us_real.js` (`PFT_USREAL`: five 520-pixel JPEG frames of a neck artery with `marks: [x, y, label]`) from the sample data of
+github.com/kostelansky17/carotids (MIT licence), cropped to the image area. The export scripts are not in the repository; the modules
+are checked in as generated.
+*Content and cases.* `src/lines.js` (`PFT_LINES`; joins `PFT_MONITOR.topics` and inserts two groups): `ART` (16 patterns: `cfg`, `look,
+means, act`, optional `sites`, `sys`, `variants`, `alt`), `CVPTXT`, `WEDGETXT`, `ACTIONS` ([id, label, how]), `CASES` (9: `ch` art | cvp |
+pa, `truth`, `fault`, `central?`, `cuff`, `fix: [action ids, all needed]`, `acts: { id: finding }`, `teach`; the stories' numbers are
+tested against what the model displays), `SCENES` (femoral, axillary, neck, radial: `build(s, opt)` → `{ st: [layer | fascia | band |
+vessel | nerve | tendon | gland | bone | air | pleura], zone, ok }`), `needleOOP({ angle, entry, adv, depth, r })` → `{ state: short | tip
+| shaft, crossY, tipX, tipY, say }`, and the topics `ln_art_patterns, ln_cvp_patterns, ln_pa_patterns, ln_real, ln_fix, ln_us,
+ln_artline, ln_cvc`.
+*Interface.* `src/ui_4u_lines.js`: `lnStrip(canvas, lanes, { dur, spans, notes, vlines, rTimes })` (a still strip on a monitor ground with
+a reading cursor: `canvas.lnRead(t)`, `data-ln-read`), widgets `ln_art` (`[data-ln-art=id]`, `[data-ln-artsel]`, `[data-ln-var]`,
+`[data-ln-alt]`, `[data-ln-sites]`, tiles `[data-ln-tile=name]`), `ln_cvp` (`[data-ln-cvpsel]`, `[data-ln-vent]`), `ln_pa`
+(`[data-ln-pos]`, `[data-ln-wedgesel]`), `ln_real` (`[data-ln-realsel]`, `[data-ln-cmp]`, `[data-ln-cmptable]`, `[data-ln-beatcv]`),
+`ln_fix` (`[data-ln-fix=id]`, `[data-ln-fixsel]`, `[data-ln-act=id]`, `[data-ln-found=id]`, `[data-ln-solved]`, `[data-ln-fixscore]`,
+`[data-ln-fixnext]`, `[data-ln-fixrestart]`), `ln_usreal` (`[data-ln-uspick]`, `[data-ln-usimg]`, `[data-ln-uslabels]`), `ln_ussim`
+(`[data-ln-scene]`, `[data-ln-sim=s|c]`, `[data-ln-simcolour] [data-ln-simlabels] [data-ln-simopt]`, `[data-ln-simcv][data-ln-ok]`,
+`[data-ln-zone]`, `[data-ln-own=scene]` reusing the echo atlas's own-image slot under the key `line_<scene>`), `ln_needle`
+(`[data-ln-nd=adv|probe|angle]`, `[data-ln-ndcv][data-ln-ndstate]`, `[data-ln-ndsay]`, `[data-ln-ndwalk]`). The scanner paints a 300 × 250
+B-mode (speckle, layers, vessels with walls, enhancement and edge shadows, bone and air shadows, pleura, nerves, colour) and scales it
+onto a 600 × 500 canvas under its labels.
+Tests: `tests/waves.test.js` (87: timing; the model's radial and pulmonary artery beats against the real ones; the delays after the R
+wave; sites; shapes; rhythms; the breath; every venous pattern against the ECG; RV, PA and wedge; the tubing; the balloon pump; the cases'
+stories against the model; the scenes; the needle; the images), `tests/e2e11.js` (the galleries, the cursor, the real strips, the nine
+cases, the real frames, the scanner, the needle, the protocols, the older labs, phone width, dark theme); `hemo.test.js` and
+`monitor.test.js` follow the corrected shapes.
+

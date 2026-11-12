@@ -153,46 +153,36 @@
   }
 
   /* ---------- the waveforms: pressure at a phase of the cardiac cycle (0 at the R wave), per position ---------- */
+  /* v8.8: drawn by the waveform engine (waves.js), in which every landmark has a time in milliseconds after the R wave: the pulmonary artery
+     and arterial beats no longer fall to the diastolic pressure at the end of systole, the right ventricle fills from near zero, and the atrial
+     waves keep their distance from the ECG at any heart rate (the wedge 140 ms later than the right atrium). */
+  const WV = root.PFT_WAVES || (typeof require === 'function' ? require('./waves.js') : null);
   const bump = (t, c, w) => Math.exp(-Math.pow((t - c) / w, 2));
+  const trc = { key: null, c: null };
+  function traceCtx(o) {
+    const p = o.p, hr = Math.round(clamp(p.hr || 75, 30, 180)), tam = p.pperi > 8, con = p.constrict > 0, trg = p.tr || 0, mrg = p.mr || 0;
+    const key = [hr, o.rap, o.paop, o.pas, o.pad, o.rvsys, o.rvedp, o.sbp, o.dbp, o.mpap, trg, mrg, p.rvStiff, p.lvStiff, tam, con, p.iabp].map(x => typeof x === 'number' ? x.toFixed(2) : String(x)).join('|');
+    if (trc.key === key) return trc.c;
+    const tm = WV.timing(hr), B = WV.beats({ hr: hr, rhythm: 'sinus' }, 4 * tm.T + 2), R0 = B.v.filter(b => b.tR >= tm.T)[0].tR;
+    const ra = { a: 2.2 + 1.6 * ((p.rvStiff || 1) - 1) + 0.08 * Math.max(0, o.mpap - 20), c: 1.2, x: trg > 0.5 ? -1.6 * trg : 1.8 + (con ? 2.2 : 0) + (tam ? 1.6 : 0), v: 2 + 4 * trg + (tam ? -1 : 0) + (con ? 1 : 0), y: tam ? 0.3 : (con ? 6 : 2.2 + 3 * trg), plateau: con ? 1 : 0 };
+    const wd = { a: 1.6 + 1.8 * Math.max(0, (p.lvStiff || 1) - 1), c: 0, x: mrg > 0.4 ? -1.2 * mrg : 1.5, v: 2 + 6 * mrg, y: 1.6 + 5 * mrg };
+    const mean = (sh, lag) => { let m = 0; for (let i = 0; i < 160; i++) m += WV.atrial(B, tm, R0 + i / 160 * tm.T, sh, lag); return m / 160; };
+    const art = { hr: hr, sbp: o.sbp, dbp: o.dbp, site: 'radial' };
+    trc.key = key; trc.c = { tm: tm, B: B, R0: R0, ra: ra, wd: wd, raOff: o.rap - mean(ra, 0), wdOff: o.paop - mean(wd, 0.14), pc: WV.paCtx(tm, tm.T, {}), art: art, ac: WV.artCtx(art), con: con };
+    return trc.c;
+  }
   function trace(o, pos, t) {
-    const p = o.p;
-    t = ((t % 1) + 1) % 1;
-    const tam = p.pperi > 8, con = p.constrict > 0;
-    if (pos === 'ecg') { return 1.2 * bump(t, 0.84, 0.03) + 10 * bump(t, 0.0, 0.012) - 2.5 * bump(t, 0.985, 0.008) - 2 * bump(t, 0.025, 0.008) + 2.2 * bump(t, 0.33, 0.045); }
-    if (pos === 'ra') {
-      const a = 2.2 + 1.6 * (p.rvStiff - 1) + 0.08 * Math.max(0, o.mpap - 20), v = 2 + 4 * p.tr + (tam ? 1 : 0);
-      const base = o.rap - 1;
-      const xDesc = -(1.8 + (con ? 1.5 : 0)) * bump(t, 0.18, 0.07) * (tam ? 1 : 1), yDesc = -(tam ? 0.3 : (con ? 4.5 : 2.2)) * bump(t, 0.56, 0.06);
-      return base + a * bump(t, 0.9, 0.06) + 1.2 * bump(t, 0.06, 0.03) + v * bump(t, 0.42, 0.07) + xDesc + yDesc + (con ? 1.5 * bump(t, 0.7, 0.08) : 0);
-    }
-    if (pos === 'rv') {
-      const sys = t > 0.03 && t < 0.37, edp = o.rvedp, peak = o.rvsys;
-      if (sys) { const u = (t - 0.03) / 0.34; return 2 + (peak - 2) * Math.sin(Math.PI * Math.pow(u, 0.9)); }
-      const u = t < 0.03 ? 1 : (t - 0.37) / 0.63;
-      if (con) return u < 0.15 ? 2 + (edp - 2) * (u / 0.15) : edp + 0.5 * Math.sin(u * 6);   // dip and plateau
-      return Math.max(0, 1.5 + (edp - 1.5) * Math.pow(u, 0.6) + (tam ? 0 : 0.6 * bump(t, 0.9, 0.05)));
-    }
-    if (pos === 'pa') {
-      const sys = t > 0.05 && t < 0.39;
-      if (sys) { const u = (t - 0.05) / 0.34; return o.pad + (o.pas - o.pad) * Math.sin(Math.PI * Math.pow(u, 0.8)); }
-      const u = t < 0.05 ? 1 - (0.05 - t) / 0.05 * 0.0 : (t - 0.39) / 0.61;
-      const notch = 1.5 * bump(t, 0.43, 0.02);
-      const start = o.pad + (o.pas - o.pad) * 0.35;
-      return t < 0.05 ? o.pad + (start - o.pad) * 0 + (o.pad - o.pad) : o.pad + (start - o.pad) * Math.exp(-3.2 * u) + notch;
-    }
-    if (pos === 'paop') {
-      const a = 1.6 + 1.8 * Math.max(0, p.lvStiff - 1), v = 2 + 6 * p.mr;
-      const base = o.paop - 1;
-      return base + a * bump(t, 0.98, 0.06) + 0.8 * bump(t, 0.12, 0.03) + v * bump(t, 0.5, 0.08) - 1.5 * bump(t, 0.26, 0.07) - 1.6 * bump(t, 0.68, 0.07);
-    }
+    const p = o.p; t = ((t % 1) + 1) % 1;
+    const c = traceCtx(o), T = c.tm.T, d = t * T;
+    if (pos === 'ecg') return 10 * WV.ecgAt(c.B, c.tm, c.R0 + d, { rhythm: 'sinus' });
+    if (pos === 'ra') return Math.max(-2, c.raOff + WV.atrial(c.B, c.tm, c.R0 + d, c.ra, 0));
+    if (pos === 'rv') return WV.rvBeat(d, T, c.tm, { rvedp: o.rvedp, pas: o.rvsys, pad: Math.min(o.pad, o.rvsys - 2), plateau: c.con });
+    if (pos === 'pa') { let tau = d - (c.tm.pep - 0.005); if (tau < 0) tau += T; return o.pad + (o.pas - o.pad) * WV.artBeat(c.pc, tau, 1, 0); }
+    if (pos === 'paop') return Math.max(-2, c.wdOff + WV.atrial(c.B, c.tm, c.R0 + d, c.wd, 0.14));
     if (pos === 'art') {
-      const sys = t > 0.08 && t < 0.4;
-      if (sys) { const u = (t - 0.08) / 0.32; return o.dbp + (o.sbp - o.dbp) * Math.sin(Math.PI * Math.pow(u, 0.75)); }
-      const u = t < 0.08 ? 1 : (t - 0.4) / 0.6;
-      const notch = 2 * bump(t, 0.45, 0.02);
-      const start = o.dbp + (o.sbp - o.dbp) * 0.3;
-      const aug = p.iabp ? (o.sbp - o.dbp) * 0.9 * bump(t, 0.6, 0.12) : 0;
-      return t < 0.08 ? o.dbp + aug : o.dbp + (start - o.dbp) * Math.exp(-3 * u) + notch + aug;
+      let tau = d - c.tm.pep - c.ac.delay; if (tau < 0) tau += T;
+      const aug = p.iabp ? (o.sbp - o.dbp) * 0.95 * bump(tau, c.ac.tn + 0.13, 0.085) * (tau > c.ac.tn - 0.02 ? 1 : 0) : 0;
+      return o.dbp + (o.sbp - o.dbp) * WV.artBeat(c.ac, tau, 1, 0) + aug;
     }
     return 0;
   }

@@ -1,7 +1,7 @@
 {
   "name": "pft-interpreter",
   "productName": "PulmCrit Daddy",
-  "version": "8.7.0",
+  "version": "8.8.0",
   "description": "PulmCrit Daddy: PFT interpretation (ERS/ATS 2022, z-score / LLN), a Learn section (anatomy, physiology, bronchoscopy, ventilation, ECMO, haemodynamics, ECG, nodules) with interactive labs and scenarios, and a local case bank. Formerly PFT Interpreter.",
   "author": "PulmCrit Daddy",
   "license": "UNLICENSED",

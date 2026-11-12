@@ -81,7 +81,7 @@ and the single-file browser version (`PulmCritDaddy_standalone.html`) always wor
 - Code signing is optional and not set up. For Windows add a signing certificate to the build; for Mac add an Apple Developer ID and notarization.
   Until then the first-launch steps above are needed.
 
-## How the reading is built (version 8.7)
+## How the reading is built (version 8.8)
 
 The rules layer computes every measurement state before any wording is chosen (ERS/ATS 2022 z-scores and the LLN;
 a reviewed adult phrase catalog anchored to the ERS/ATS 2022, ATS/ERS 2019, ERS/ATS 2023, ERS/ATS 2017, ERS 2019 and
@@ -445,6 +445,33 @@ GPU — physically based tissue with a fibre direction, a lining and a studio en
 lighter material so it still runs). The real-volume lab follows the same layout, its 3-D heart the same size as the
 picture. Two corrections came out of the review: the mitral and tricuspid leaflets had been drawn open in systole
 and shut in diastole (they now follow the E wave, diastasis and the A wave), and the membrane lung's post-membrane
-PO2 fell too far at a low FdO2. `extras/` holds a reworked Anki deck
+PO2 fell too far at a low FdO2. Version 8.8 goes back into invasive monitoring: reading the waveforms, finding and
+fixing what is wrong with a line, and putting the lines in. One waveform engine now draws every pressure trace in
+the app — arterial, central venous, right ventricular, pulmonary artery, wedge — with each landmark placed in
+milliseconds from the R wave (pre-ejection 90 ms, ejection time from Weissler's regression, the pulse 45 ms later at
+the femoral artery, 85 ms at the radial and 150 ms at the foot, the a wave 100 ms after the P wave, the wedge 140 ms
+behind the right atrium), so systole keeps its length when the rate changes. It was held against real recordings
+from open intensive-care databases — a radial trace, a pulmonary artery trace with its systemic artery and ECG — and
+three things in the earlier drawings were corrected because of it: an upstroke twice as fast as any real pulse, a
+notch tied to a fraction of the cycle, and Swan–Ganz traces that fell to the diastolic pressure at the end of systole
+and jumped back. The real strips are in the app with the model's beat laid over them, beside a real line being
+zeroed and fast-flushed, a trace falling to zero while the ECG carries on, and a finger-cuff pressure calibrating
+itself. Sixteen arterial patterns (the five sites from aortic root to foot, stiff and vasodilated vessels, low
+stroke volume, aortic stenosis and regurgitation, spike-and-dome, alternans, paradoxus, respiratory variation,
+fibrillation, ectopics, the balloon pump with its four timing errors, under- and overdamping), twelve venous
+patterns (cannon waves from a P wave that really lands in systole, tricuspid regurgitation, tamponade, constriction
+with Kussmaul's sign) and the insertion strip of a pulmonary artery catheter with five wedge patterns each carry
+what to look for, why, and what to do; a cursor on every strip reads the time after the R wave. A troubleshooting
+lab gives nine monitors that do not fit their patients — a bubble, a resonant line, a transducer left low, a lost
+zero, a soft pressure bag, a kinking wrist, a faithful radial line under-reading on high-dose norepinephrine, a
+venous pressure read off a forced expiration, a balloon left wedged — to be worked from the patient outwards. Two
+protocols cover an arterial line (radial, femoral, axillary) and a central line (internal jugular,
+subclavian–axillary, femoral) step by step, with site choice, landmarks, the wire check before dilating, depth, tip
+position, what to do when it goes wrong, and removal. For ultrasound there are five real scans of a neck artery
+(short axis, long axis, colour) with numbered labels, a drawn scanner for the groin, the chest wall below the
+clavicle, the neck and the wrist (slide along the vessel, press, colour, change the limb's position, and read what
+the level means for the needle), and a needle demonstration of why the dot on the screen may be the shaft. No
+openly licensed scans of the femoral or axillary vessels could be fetched into the build, so those sites are drawn,
+each with a slot for a scan of your own. `extras/` holds a reworked Anki deck
 (`ECMO_Anki_Deck_v2.apkg`, 103 notes / 237 cards, cloze and basic, tagged by topic, built by `build_ecmo_anki.py` with no
 dependencies) and a bedside reference PDF generated from the same content (`build_ecmo_reference.js`).

@@ -19,12 +19,16 @@ const frag = tpl
   .replace('/*HEARTLUNG*/', () => safe(rd('src/heartlung.js')))
   .replace('/*VENT*/', () => safe(rd('src/vent.js')))
   .replace('/*ECMO*/', () => safe(rd('src/ecmo.js')))
+  .replace('/*WAVES*/', () => safe(rd('src/waves.js')))
   .replace('/*HEMO*/', () => safe(rd('src/hemo.js')))
   .replace('/*DRIPS*/', () => safe(rd('src/drips.js')))
   .replace('/*ECHO*/', () => safe(rd('src/echo.js')))
   .replace('/*CTREAL*/', () => safe(rd('src/ct_real.js')))
   .replace('/*ECHOREAL*/', () => safe(rd('src/echo_real.js')))
   .replace('/*MONITOR*/', () => safe(rd('src/monitor.js')))
+  .replace('/*LINES*/', () => safe(rd('src/lines.js')))
+  .replace('/*WAVEREAL*/', () => safe(rd('src/wave_real.js')))
+  .replace('/*USREAL*/', () => safe(rd('src/us_real.js')))
   .replace('/*CONDUCTION*/', () => safe(rd('src/conduction.js')))
   .replace('/*LEADS*/', () => safe(rd('src/leads.js')))
   .replace('/*NODREAL*/', () => safe(rd('src/nod_real.js')))
@@ -41,4 +45,8 @@ const headPart = frag.slice(0, i), bodyPart = frag.slice(i);
 const doc = '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n<meta name="color-scheme" content="light dark">\n' +
   headPart + '\n</head>\n<body>\n' + bodyPart + '\n</body>\n</html>\n';
 fs.writeFileSync(path.join(__dirname, 'dist/PulmCritDaddy_standalone.html'), doc);
+// The published page (claude.ai artifact): the same document, with the root padded by the phone's safe-area insets, which the page's
+// viewport-fit=cover asks for (the publishing tool used to add this in its own skeleton; it now takes a whole document).
+const SAFE = '<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>\n';
+fs.writeFileSync(path.join(__dirname, 'dist/pft_interpreter.artifact.html'), doc.replace('<meta name="color-scheme" content="light dark">\n', '<meta name="color-scheme" content="light dark">\n' + SAFE));
 console.log('fragment', frag.length, 'standalone', doc.length);

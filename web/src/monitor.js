@@ -346,7 +346,10 @@
     if (ph < 0.54) { const x = (ph - 0.46) / 0.08; return 0.45 + 0.05 * Math.sin(Math.PI * x); }       // the dicrotic wave
     const x = (ph - 0.54) / 0.46, e = Math.exp(-2.5); return 0.45 * (Math.exp(-2.5 * x) - e) / (1 - e);   // the diastolic run-off
   }
+  const WV = root.PFT_WAVES || (typeof require === 'function' ? require('./waves.js') : null);
+  /* v8.8: the shape comes from the waveform engine (waves.js), with the foot of the beat at t = 0 as before */
   function artTrue(t, p) {
+    if (WV) return WV.artAt(t + 0.175, { hr: p.hr || 80, sbp: p.sbp, dbp: p.dbp, ppv: p.ppv, rr: p.rr || 16, site: 'radial' });
     const hr = p.hr || 80, T0 = 60 / hr; let ph = (t / T0) % 1; if (ph < 0) ph += 1;
     const resp = p.ppv ? 1 + (p.ppv / 200) * Math.sin(2 * Math.PI * t * (p.rr || 16) / 60) : 1;   // the respiratory modulation of the pulse pressure
     const pp = (p.sbp - p.dbp) * resp;
@@ -376,10 +379,10 @@
     bubble: { label: 'An air bubble in the tubing', zeta: 1.6, fn: 4.5 },
     clot: { label: 'A partial clot or a kink', zeta: 1.3, fn: 6 },
     softbag: { label: 'The pressure bag is soft (no flush)', zeta: 0.9, fn: 9 },
-    longtube: { label: 'Long tubing with three extra stopcocks', zeta: 0.18, fn: 11 },
+    longtube: { label: 'Long tubing with three extra stopcocks', zeta: 0.18, fn: 6.5 },
     loose: { label: 'A loose connection (a small leak)', zeta: 1.1, fn: 7 },
     stiffshort: { label: 'Short stiff tubing, no bubbles (ideal)', zeta: 0.62, fn: 28 },
-    whip: { label: 'Catheter whip with a hyperdynamic circulation', zeta: 0.1, fn: 12 }
+    whip: { label: 'Catheter whip with a hyperdynamic circulation', zeta: 0.1, fn: 5.5 }
   };
   function artVerdict(zeta, fn) {
     if (zeta < 0.4) return 'underdamped';
@@ -463,6 +466,15 @@
     const resp = Math.sin(2 * Math.PI * t * rr / 60);
     const swing = s.kussmaul ? (vent ? 1.5 : -2) * resp : (vent ? 1.5 : 1.5) * resp * (vent ? 1 : -1);
     return cvpBeat(ph, s, k) + swing;
+  }
+  /* v8.8: the CVP screen draws its ECG and its venous trace from the waveform engine: a 24 s strip per shape, looped */
+  const CVP_NEW = { normal: 'normal', af: 'af', tr: 'tr', cannon: 'chb', tamp: 'tamponade', constr: 'constriction', pht: 'gianta' }, cvpStrips = {};
+  function cvpStrip(key, vent) {
+    if (!WV || !CVP_NEW[key]) return null; const id = key + (vent ? 'v' : 's'); if (cvpStrips[id]) return cvpStrips[id];
+    const pat = Object.assign({}, WV.CVP[CVP_NEW[key]], { base: CVP_SHAPES[key].base - 1.5 }), dur = 24, fs = 125;
+    const s = WV.series({ hr: pat.hr || 75, cvp: pat, rhythm: pat.rhythm || 'sinus', vent: vent ? 'ppv' : 'spont', rr: 12.5, swing: 1.8, seed: 5 }, dur, fs);
+    const at = (a) => (t) => { const x = ((t % dur) + dur) % dur * fs, i = Math.floor(x), f = x - i; return a[i] * (1 - f) + a[(i + 1) % a.length] * f; };
+    return (cvpStrips[id] = { ecg: at(s.ecg), cvp: at(s.cvp), hr: pat.hr || 75 });
   }
   /* the ECG for the same phase, a simple PQRST */
   function ecgAt(ph) {
@@ -549,7 +561,7 @@
     return probs;
   }
 
-  root.PFT_MONITOR = { topics: T, groups: GROUPS, artTrue: artTrue, artMeasured: artMeasured, artStats: artStats, ART_FAULTS: ART_FAULTS, artVerdict: artVerdict, flushAnalysis: flushAnalysis,
+  root.PFT_MONITOR = { topics: T, groups: GROUPS, cvpStrip: cvpStrip, artTrue: artTrue, artMeasured: artMeasured, artStats: artStats, ART_FAULTS: ART_FAULTS, artVerdict: artVerdict, flushAnalysis: flushAnalysis,
     CAPNO_SHAPES: CAPNO_SHAPES, capno: capno, CVP_SHAPES: CVP_SHAPES, cvp: cvp, ecgAt: ecgAt, ICP_SHAPES: ICP_SHAPES, icp: icp, icpTrend: icpTrend, PC_SCENARIOS: PC_SCENARIOS, pcModel: pcModel, pcTest: pcTest, pcValidity: pcValidity };
   if (typeof module !== 'undefined' && module.exports) module.exports = root.PFT_MONITOR;
 })(typeof window !== 'undefined' ? window : globalThis);

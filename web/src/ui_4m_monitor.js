@@ -127,7 +127,8 @@ function monCvpFig() {
   const st = MNS.cvp, s = MON.CVP_SHAPES[st.shape];
   const cv = h('canvas', { class: 'vsc-canvas mon-cv', width: 720, height: 260, 'aria-label': 'ECG and central venous pressure' });
   const hr = 75, T0 = 60 / hr;
-  requestAnimationFrame(() => { if (cv.isConnected) monTrace(cv, [
+  const strip = MON.cvpStrip ? MON.cvpStrip(st.shape, st.vent) : null;
+  requestAnimationFrame(() => { if (cv.isConnected) monTrace(cv, strip ? [{ fn: (t) => strip.ecg(t), range: [-0.6, 1.4], color: '#5fd08a', label: 'ECG' }, { fn: (t) => strip.cvp(t), range: [-2, 26], color: '#59a9ff', label: 'CVP mmHg', ticks: [0, 10, 20] }] : [
     { fn: (t) => { const k = Math.floor(t / T0); let ph = t / T0 - k; if (s.irregular) { const j = ((Math.sin(k * 12.9898) * 43758.5453) % 1 + 1) % 1; const T1 = T0 * (0.7 + 0.6 * j); ph = ((t - k * T0) / T1) % 1; } return s.irregular && ph < 0.06 ? 0 : MON.ecgAt(ph); }, range: [-0.5, 1.3], color: '#7bd389', label: 'ECG', width: 1.3 },
     { fn: (t) => MON.cvp(t, s, { hr: hr, vent: st.vent }), range: [-2, 26], color: '#59a9ff', label: 'CVP mmHg', ticks: [0, 10, 20] }], { window: 5 }); });
   const screen = h('div', { class: 'vent-screen mon-screen' }, [h('div', { class: 'vsc-head' }, [h('span', { class: 'vsc-mode', text: 'Central venous pressure · ' + (st.vent ? 'positive-pressure ventilation' : 'spontaneous breathing') }), h('span', { class: 'vsc-brand', text: 'PulmCrit Daddy monitor' })]), cv,

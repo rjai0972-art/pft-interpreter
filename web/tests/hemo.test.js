@@ -72,7 +72,11 @@ const mx = (v) => Math.max.apply(null, v), mn = (v) => Math.min.apply(null, v);
 ok(near(mx(tr(n, 'rv')), n.rvsys, 1.5) && mn(tr(n, 'rv')) < 4 && near(mx(tr(n, 'pa')), n.pas, 1.5) && near(mn(tr(n, 'pa')), n.pad, 1.5) && near(mx(tr(n, 'art')), n.sbp, 1.5) && near(mn(tr(n, 'art')), n.dbp, 1.5), 'RV, PA and arterial traces peak and trough at the reported numbers');
 ok(near(tr(n, 'ra').reduce((a, b) => a + b, 0) / 100, n.rap, 1.5) && near(tr(n, 'paop').reduce((a, b) => a + b, 0) / 100, n.paop, 1.5), 'the RA and wedge traces average to their means');
 ok(mx(tr(mr, 'paop')) > mr.paop + 12 && mx(tr(run('normal', { tr: 3 }), 'ra')) > n.rap + 8, 'big v waves on the wedge in MR and on the RA in TR');
-ok(mn(tr(tm, 'ra').slice(50, 62)) > mn(tr(n, 'ra').slice(50, 62)) - 0.5 + (tm.rap - n.rap) - 2 && mn(tr(run('constrict'), 'ra').slice(50, 62)) < run('constrict').rap - 3, 'no y descent in tamponade, a deep one in constriction');
+const WVt = require('../src/waves.js');
+const yDepth = (o) => { const v = tr(o, 'ra'), tmg = WVt.timing(Math.round(o.p.hr)), iV = Math.round((tmg.pep + tmg.lvet + 0.05) / tmg.T * 100), n2 = Math.round(0.2 / tmg.T * 100); let lo = 1e9; for (let i = iV; i <= iV + n2; i++) lo = Math.min(lo, v[i % 100]); return v[iV % 100] - lo; };
+ok(yDepth(tm) < 1.2 && yDepth(run('constrict')) > 6 && yDepth(n) > 1.5 && yDepth(n) < 6 && yDepth(run('constrict')) > yDepth(n) + 3, 'no y descent in tamponade (' + yDepth(tm).toFixed(1) + '), a deep one in constriction (' + yDepth(run('constrict')).toFixed(1) + '), an ordinary one normally (' + yDepth(n).toFixed(1) + ')');
+{ const pa = tr(n, 'pa'), rv = tr(n, 'rv'), art = tr(n, 'art'), iPk = pa.indexOf(mx(pa)), iMn = pa.indexOf(mn(pa)); let jump = 0; for (let i = 1; i < 100; i++) jump = Math.max(jump, Math.abs(pa[i] - pa[i - 1]), Math.abs(art[i] - art[i - 1]) / 4);
+  ok(jump < (n.pas - n.pad) * 0.3 && pa[(iPk + 30) % 100] > n.pad + 0.25 * (n.pas - n.pad) && rv[70] < rv[95] && pa[70] > pa[95], 'v8.8: the pulmonary artery beat has no cliff at the end of systole; its diastole falls while the right ventricle’s rises'); }
 ok(mx(tr(n, 'ecg')) > 8 && mx(tr(n, 'ecg').slice(80, 90)) > 0.5 && mx(tr(n, 'ecg').slice(80, 90)) < 3, 'the ECG has a QRS and a P wave');
 ok(mx(tr(run('normal', { iabp: 1 }), 'art').slice(50, 75)) > n.sbp - 5, 'the balloon pump augments diastole');
 ok(H.breath(n.p, 0.25) < 0 && H.breath(Object.assign({}, n.p, { vent: 'ppv', peep: 5 }), 0.25) > 0, 'a spontaneous breath pulls the baseline down, a ventilator pushes it up');

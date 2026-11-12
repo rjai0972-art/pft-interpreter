@@ -792,7 +792,7 @@ const near = (a, b, t) => Math.abs(a - b) <= t;
 
   // ---- v8.2: bedside monitoring
   await page.evaluate(() => window.__pft.setMode('learn', { topic: 'mon_art' })); await page.waitForSelector('[data-monart]');
-  ok(await page.locator('#learn-cat').inputValue() === 'monitor' && await page.locator('.ln-btn[data-topic]').count() === 13 && await page.locator('[data-ma-fault]').count() === 7, 'the monitoring area: thirteen topics; the arterial lab offers seven states of the line');
+  ok(await page.locator('#learn-cat').inputValue() === 'monitor' && await page.locator('.ln-btn[data-topic]').count() === 21 && await page.locator('[data-ma-fault]').count() === 7, 'the monitoring area: twenty-one topics; the arterial lab offers seven states of the line');
   ok(await page.locator('[data-ma-verdict="optimal"]').count() === 1 && await txt('[data-ms-tile="ABP"] .vsc-v') === '120/70', 'the ideal line shows 120/70');
   await page.locator('[data-ma-fault="bubble"]').click(); await page.waitForSelector('[data-ma-verdict="overdamped"]');
   const abp = await txt('[data-ms-tile="ABP"] .vsc-v');
