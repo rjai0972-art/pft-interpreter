@@ -81,7 +81,7 @@ and the single-file browser version (`PulmCritDaddy_standalone.html`) always wor
 - Code signing is optional and not set up. For Windows add a signing certificate to the build; for Mac add an Apple Developer ID and notarization.
   Until then the first-launch steps above are needed.
 
-## How the reading is built (version 8.8)
+## How the reading is built (version 8.9)
 
 The rules layer computes every measurement state before any wording is chosen (ERS/ATS 2022 z-scores and the LLN;
 a reviewed adult phrase catalog anchored to the ERS/ATS 2022, ATS/ERS 2019, ERS/ATS 2023, ERS/ATS 2017, ERS 2019 and
@@ -472,6 +472,32 @@ position, what to do when it goes wrong, and removal. For ultrasound there are f
 clavicle, the neck and the wrist (slide along the vessel, press, colour, change the limb's position, and read what
 the level means for the needle), and a needle demonstration of why the dot on the screen may be the shaft. No
 openly licensed scans of the femoral or axillary vessels could be fetched into the build, so those sites are drawn,
-each with a slot for a scan of your own. `extras/` holds a reworked Anki deck
+each with a slot for a scan of your own. Version 8.9 adds a hemos calculator to the haemodynamics area, built
+around a unit's own chart. The chart's ten inputs go in, in the chart's order (weight, height, haemoglobin, arterial
+and venous saturation, CVP, MAP, PA systolic and diastolic, wedge), and its seven results come out by its own
+formulas, so the sheet and the page agree: an estimated Fick output on 3.5 mL/kg/min, Mosteller's body surface
+area, the index, SVR × 80, PAPi, cardiac power as MAP × CO / 451, and PVR in Wood units from (systolic + 2 ×
+diastolic) / 3. Nineteen further numbers follow from the same inputs and a few optional ones (heart rate, a blood
+pressure, a measured mean PA pressure, a PaO2, a measured VO2, a thermodilution output): the Fick's ingredients,
+stroke volume and the work indices, the gradients across the lung, PA compliance, the right-to-left ratio, the
+power index and the form with right atrial pressure subtracted, proportional pulse pressure and the aortic
+pulsatility index. Every number has a bar against its normal range, one line on what it cannot tell you, and,
+opened, its arithmetic with the patient's numbers, the full list of limits, and what those limits mean for the
+numbers just typed: how far the answer moves if the assumed oxygen consumption is 25% out (a band on every
+flow-based result), if the central venous saturation runs 5 points above the mixed venous one, if the wedge is 3
+or the CVP 2 mm Hg out, or what the dissolved oxygen left out of the formula is worth at this PaO2. Entries are
+checked before anything is divided: haemoglobin in g/L, a height in metres or inches, a fraction typed for a
+percentage, a weight and height that do not fit each other; a venous saturation at or above the arterial, a CVP of
+zero under a PAPi and a wedge above the mean PA pressure are named for what they are instead of producing an
+error or a negative resistance. The oxygen consumption can be taken four ways (per kilogram, per square metre,
+LaFarge, or measured, which makes the Fick direct), the venous sample marked as central or mixed, and eight
+circumstances ticked (vasoactive drugs, PEEP, a high FiO2, an irregular rhythm, severe tricuspid regurgitation, a
+shunt, an Impella or LVAD, VA ECMO), each adding what it does to the numbers it affects. A reading states the
+quadrant, the side of the congestion and the pulmonary hypertension class, and says so when the estimate cannot
+place the index on either side of 2.2. An earlier set can be held to show what moved, a line copied for the note,
+and ten example patients loaded from the Swan–Ganz lab, where the model knows the true output: the sedated,
+paralysed patient whose sheet reads 45% high and warm when the truth is cold, the central-line sample, the
+129-kg patient, the febrile patient whose sheet under-reads. A reading page gathers the limits of all twenty-six
+numbers in one place. Nothing typed on the sheet is stored, and there is nowhere on it to type a name. `extras/` holds a reworked Anki deck
 (`ECMO_Anki_Deck_v2.apkg`, 103 notes / 237 cards, cloze and basic, tagged by topic, built by `build_ecmo_anki.py` with no
 dependencies) and a bedside reference PDF generated from the same content (`build_ecmo_reference.js`).

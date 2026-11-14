@@ -242,7 +242,8 @@ function hemoLabFig() {
   const fig = h('figure', { class: 'an-fig ec-fig ec-lab hm-lab', 'data-hemolab': '1' }, [
     h('div', { class: 'ec-lab-grid hm-grid' }, [
       hmControls(),
-      h('div', { class: 'hm-centre' }, [heart, h('div', { 'data-hm-monslot': '1' }, [hmMonitor()]), h('p', { class: 'fine', text: 'Click a chamber, a pressure tag or a port button to move the catheter; the monitor plays that port with the ECG for timing and the breath moving the baseline — read at end-expiration.' })]),
+      h('div', { class: 'hm-centre' }, [heart, h('div', { 'data-hm-monslot': '1' }, [hmMonitor()]), h('p', { class: 'fine', text: 'Click a chamber, a pressure tag or a port button to move the catheter; the monitor plays that port with the ECG for timing and the breath moving the baseline — read at end-expiration.' }),
+        h('div', { class: 'ec-labbtns' }, [tip(h('button', { type: 'button', class: 'btn sm', 'data-hm-tocalc': '1', text: 'Work these numbers through the hemos sheet →', onclick: () => { hcFromLab(); setMode('learn', { topic: 'hemo_calc' }); } }), 'Copies this patient’s pressures and saturations onto the calculator, and shows how far the sheet’s estimated Fick lands from the output the model really has.', 'The hemos sheet')])]),
       h('div', { class: 'ec-right', 'data-hm-numslot': '1' }, [hmNumbers()])
     ]),
     h('figcaption', { text: 'Pressures in mm Hg; flows in L/min; resistances in dyn·s/cm⁵ and Wood units. Red cells cross a threshold from the numbers page. The chambers scale with their end-diastolic volumes; a leaking valve and a shut aortic valve are marked; the pericardium thickens with its pressure.' })
@@ -325,5 +326,6 @@ function hemoWidget(kind) {
   if (kind === 'hemoswan') return hemoSwanFig();
   if (kind === 'hemolab') return hemoLabFig();
   if (kind === 'hemocases') return hemoCasesFig();
+  if (kind === 'hemocalc') return hemoCalcFig();
   return null;
 }

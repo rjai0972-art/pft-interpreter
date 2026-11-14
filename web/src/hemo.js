@@ -381,13 +381,14 @@
 
   T.hemo_numbers = { title: 'The derived numbers', kicker: 'SVR, PVR, TPG, DPG, PAPi, CPO, the ratios — formulas, thresholds, what each one is for', blocks: [
     { p: 'Every derived number is a pressure, a flow and a resistance rearranged. Know what it isolates: the resistance of a bed (SVR, PVR), the gradient across the lung (TPG, DPG), the right ventricle’s performance (PAPi, RA:PAOP), the left ventricle’s power (CPO), the match of delivery and demand (SvO2, DO2). The lab computes all of them from the same state and flags the thresholds.' },
+    { go: [['hemo_calc', 'The hemos calculator', 'your chart’s inputs, these numbers worked out'], ['hemo_limits', 'What each number cannot tell you', 'the limits of every calculation']] },
     { h: 'Flow and resistance', table: { head: ['Number', 'Formula', 'Normal', 'Threshold and meaning'], rows: [
       ['Cardiac index (CI)', 'CO / BSA', '2.5–4 L/min/m²', '< 2.2 with hypoperfusion = shock; < 1.8 without support = severe'],
-      ['Stroke volume index (SVI)', 'CI / HR × 1000', '35–55 mL/m²', 'Separates a low index from tachycardia; < 25 after cardiac surgery predicts RV failure'],
+      ['Stroke volume index (SVI)', 'CI / HR × 1000', '33–47 mL/m²', 'Separates a low index from tachycardia; < 25 after cardiac surgery predicts RV failure'],
       ['SVR', '(MAP − RAP) / CO × 80', '800–1,200 dyn·s/cm⁵ (10–15 WU)', '< 700–800 vasoplegia; > 1,600 constricted (compensated cardiogenic or hypovolaemic)'],
       ['PVR', '(mPAP − PAOP) / CO × 80', '20–130 dyn (0.25–1.6 WU)', '> 2 WU (160 dyn) abnormal (ESC/ERS 2022); > 3 contraindicates heart transplant without reversibility testing; > 5 for CTEPH surgery risk'],
       ['Cardiac power output (CPO)', 'MAP × CO / 451 (W)', '≥ 1 W', '< 0.6 W: the strongest haemodynamic predictor of death in cardiogenic shock (SHOCK trial); a pump’s power is pressure × flow'],
-      ['Fick CO', 'VO2 / [13.4 × Hb × (SaO2 − SvO2)]', '', 'VO2 assumed 125 mL/min/m² (3.5 mL/kg/min) or measured; thermodilution fails in TR and shunts'],
+      ['Fick CO', 'VO2 / [13.4 × Hb × (SaO2 − SvO2)]', '', 'VO2 assumed (125 mL/min/m² or 3.5 mL/kg/min) or measured. The assumption is commonly 25% out; thermodilution fails in TR and shunts'],
       ['DO2 / VO2', 'CO × CaO2 × 10; CO × (CaO2 − CvO2) × 10', 'DO2 ~ 1,000; VO2 ~ 250 mL/min; ratio 4–5', 'Ratio < 2–2.5: supply-dependent, lactate rises']] } },
     { h: 'The gradients across the lung', table: { head: ['Number', 'Formula', 'Normal', 'Threshold and meaning'], rows: [
       ['Transpulmonary gradient (TPG)', 'mPAP − PAOP', '≤ 12 mm Hg', '> 12: a pre-capillary component (in a patient with a high wedge: combined post- and pre-capillary); it rises with flow and with a high wedge even without disease, hence the DPG'],
@@ -398,7 +399,7 @@
     { h: 'The right ventricle’s numbers', table: { head: ['Number', 'Formula', 'Normal', 'Threshold and meaning'], rows: [
       ['PAPi (pulmonary artery pulsatility index)', '(PAs − PAd) / RAP', '> 2 (usually 3–8)', '< 0.9 predicts RV failure and death in RV infarction (Korabathina); < 1.85 predicts RV failure after LVAD (Morine); the RV’s pulse against its own filling pressure'],
       ['RA : PAOP', 'RAP / PAOP', '< 0.5–0.6', '> 0.63 (post-LVAD) or > 0.86 (SCAI shock): RV-dominant failure — the right side is as congested as the left or more'],
-      ['RV stroke work index', 'SVI × (mPAP − RAP) × 0.0136 g·m/m²', '8–12', '< 300 mm Hg·mL/m² (≈ 4 g·m/m²) predicts RV failure after LVAD'],
+      ['RV stroke work index', 'SVI × (mPAP − RAP) × 0.0136 g·m/m²', '5–10', '< 300 mm Hg·mL/m² (≈ 4 g·m/m²) predicts RV failure after LVAD'],
       ['TAPSE', 'Tricuspid annular plane systolic excursion (M-mode)', '≥ 17 mm (≥ 20 well)', '< 17 abnormal; < 16 in PE and ARDS predicts death; load-dependent, falls with afterload'],
       ['TAPSE / PASP', 'mm per mm Hg', '≥ 0.31 (normal ~ 0.6–1)', '< 0.31: RV–PA uncoupling (a non-invasive Ees/Ea); prognostic in HF, PH, COVID ARDS'],
       ['RV S′', 'Tissue-Doppler systolic velocity of the lateral annulus', '≥ 9.5 cm/s', '< 9.5 abnormal'],

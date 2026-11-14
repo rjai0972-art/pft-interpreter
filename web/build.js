@@ -21,6 +21,7 @@ const frag = tpl
   .replace('/*ECMO*/', () => safe(rd('src/ecmo.js')))
   .replace('/*WAVES*/', () => safe(rd('src/waves.js')))
   .replace('/*HEMO*/', () => safe(rd('src/hemo.js')))
+  .replace('/*HEMOCALC*/', () => safe(rd('src/hemocalc.js')))
   .replace('/*DRIPS*/', () => safe(rd('src/drips.js')))
   .replace('/*ECHO*/', () => safe(rd('src/echo.js')))
   .replace('/*CTREAL*/', () => safe(rd('src/ct_real.js')))

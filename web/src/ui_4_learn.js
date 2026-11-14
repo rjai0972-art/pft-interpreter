@@ -108,6 +108,7 @@ function eduBlocks(id, topic) {
     if (b.note) out.push(h('p', { class: 'fine', text: b.note }));
     if (b.fig) { const f = eduFig(b.fig); if (f) out.push(f); }
     if (b.widget) { const w = anatWidget(b.widget) || ecgWidget(b.widget) || nodWidget(b.widget) || ctWidget(b.widget) || physWidget(b.widget) || ventWidget(b.widget) || ecmoWidget(b.widget) || hemoWidget(b.widget) || dripWidget(b.widget, b) || echoWidget(b.widget) || monWidget(b.widget) || condWidget(b.widget) || leadsWidget(b.widget) || nodRealWidget(b.widget) || hkWidget(b.widget) || lnWidget(b.widget); if (w) out.push(w); }
+    if (b.go) out.push(h('div', { class: 'edu-go' }, b.go.map(l => h('span', { class: 'edu-go-i' }, [h('button', { type: 'button', class: 'btn sm', 'data-go-topic': l[0], text: l[1] + ' →', onclick: () => setMode('learn', { topic: l[0] }) }), l[2] ? h('span', { class: 'fine', text: l[2] }) : null]))));
     if (b.links) out.push(h('ul', { class: 'edu-links' }, b.links.map(l => h('li', {}, [h('a', { href: l[1], target: '_blank', rel: 'noopener noreferrer', text: l[0] }), l[2] ? h('span', { class: 'fine', text: ' — ' + l[2] }) : null]))));
   });
   return out;

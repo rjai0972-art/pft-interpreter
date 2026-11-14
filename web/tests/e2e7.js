@@ -550,7 +550,7 @@ const near = (a, b, t) => Math.abs(a - b) <= t;
 
   // ---- haemodynamics: the catheterised heart, the monitor, the lab, the scenarios
   await page.evaluate(() => window.__pft.setMode('learn', { topic: 'hemo_intro' })); await page.waitForSelector('.learn-body[data-topic="hemo_intro"]');
-  ok(await page.locator('#learn-cat').inputValue() === 'hemo' && await page.locator('.ln-btn[data-topic]').count() === 10 && /Guyton/.test(await txt('.learn-body')), 'the haemodynamics area: ten topics, venous return on the first page');
+  ok(await page.locator('#learn-cat').inputValue() === 'hemo' && await page.locator('.ln-btn[data-topic]').count() === 12 && /Guyton/.test(await txt('.learn-body')), 'the haemodynamics area: twelve topics, venous return on the first page');
   await page.evaluate(() => window.__pft.setMode('learn', { topic: 'hemo_swan' })); await page.waitForSelector('[data-hemoswan]');
   ok(await page.locator('[data-hemoswan] .hm-heart').count() === 1 && await page.locator('[data-hemoswan] .hm-cath').count() === 1 && await page.locator('[data-hemoswan] .hm-tag').count() === 7 && await page.locator('[data-hemoswan] .hm-trace').count() === 4 && await page.locator('[data-hemoswan] .hm-wave').count() >= 12, 'the catheter page: the heart with the catheter, seven pressure tags, four traces with their waves labelled');
   ok(/PA 23\/10 \(14\)/.test(await txt('[data-hemoswan] .hm-tag[data-tag="pa"]')) && /PAOP 8/.test(await txt('[data-hemoswan] .hm-tag[data-tag="paop"]')), 'normal numbers on the tags');

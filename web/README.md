@@ -463,3 +463,46 @@ stories against the model; the scenes; the needle; the images), `tests/e2e11.js`
 cases, the real frames, the scanner, the needle, the protocols, the older labs, phone width, dark theme); `hemo.test.js` and
 `monitor.test.js` follow the corrected shapes.
 
+v8.9, the hemos calculator (a unit's chart as a page: its ten inputs, its seven results, the fuller set, and the limits of each).
+*The engine.* `src/hemocalc.js` (`PFT_HEMOCALC`, node-testable, build placeholder `/*HEMOCALC*/` after hemo.js; adds the topics
+`hemo_calc` and `hemo_limits` to `PFT_HEMO.topics` beside `hemo_numbers`): `FIELDS` (ten `set: 'chart'` in the chart's order — `wt, ht,
+hb, sao2, svo2, cvp, map, pas, pad, pcwp` — and eight `set: 'more'` — `hr, sbp, dbp, mpapm, pao2, age, vo2m, tdco`; each with `hard`
+(rejected outside) and `soft` (queried outside) spans, `eg`, `unlocks`), `check(k, raw)` → `{ state: empty | ok | warn | bad, v, msg }`
+with `hint` (g/L for g/dL, metres or inches for centimetres, a fraction for a percentage, pounds), `DEF` (26 numbers: `group, name,
+abbr, unit, dp, formula, normal, gauge: [axis from, normal from, normal to, axis to], read(value as displayed, x) → [state, severity,
+words]`), `LIM` (per number: `head`, the one line shown under the result, and `list`), `GROUPS` (chart, fick, beat, lung, balance),
+`ORDER`, `ON_CO` (numbers that contain the output: +1 rises with it, −1 falls), `VO2_METHODS` (kg, bsa, lafarge, measured), `CONTEXT`
+(pressor, ppv, hifio2, af, tr, shunt, mcs, ecmo), `normalFull(id)` (the range with its unit), `compute(raw, { vo2, sex, venous: cv | mv,
+co: fick | td, ctx })` → `{ fields, x, checks: [{ level: bad | warn | note, k, fields, t }], rows, by, read: { perf, cong, forrester, ph,
+lines: [{ k, sev, t }], method, complete, filled }, vo2s, coFick, useTd, assumed, mapCalc, bmi }`; a row is `{ id, value | null, text,
+st: ok | low | high | na | info | none, sev, say, need: [labels], err, hint, formula, worked, sub, normal, normalFull, gauge, range: { lo,
+hi, text, basis } | null, here: [what the limits mean for these numbers], alts: [{ label, text }], limit, limits }`. The first seven rows
+are the chart's formulas unchanged: `CO = 3.5·wt / (1.34·Hb·10·(SaO2 − SvO2)/100)`, `BSA = √(ht·wt/3600)`, `CI = CO/BSA`, `SVR = (MAP −
+CVP)/CO·80`, `PAPi = (PAs − PAd)/CVP`, `CPO = MAP·CO/451`, `PVR = ((PAs + 2·PAd)/3 − PCWP)/CO`. Cross-checks (`checks[].k`): `pa-order,
+bp-order, map-cvp, map-pcwp, no-gap, narrow-gap, mpap-order, bmi, bmi-high, bmi-low, map-fit, map-calc, co-range, co-edge, fick-td,
+mpap-fit, wedge-high, dpg-neg, cvp-mpap`, and `entry-<field>`. Thresholds are read from the value as displayed, so a result shown as 2.2 is never called below
+2.2. `note(res)` (the line for the note, in the chart's order, with the method), `diff(prev, now)` (per row `{ from, to, pct, noise,
+same }`; a change under 15% in a number that contains the output is marked as noise), `fromLab(o)` (a Swan–Ganz lab state as the sheet
+would be filled in, with `truth: { co, vo2, pump }`), `EXAMPLES` (10) and `example(id)` (lab presets, some with the VO2, the body size or
+the venous sample changed so that the sheet's assumptions do not hold), `po2At(sat)` (Severinghaus, for the dissolved oxygen on the
+venous side), `SOURCES`.
+*Interface.* `src/ui_4j2_hemocalc.js` (widget `hemocalc`, dispatched from `hemoWidget`): state `HCS` (in memory only: `raw, opt, prev,
+open, all, more, ex`); `[data-hemocalc][data-hc-filled=n]`; the bar (`[data-hc-example]`, `[data-hc-copy]`, `[data-hc-keep]`,
+`[data-hc-drop]`, `[data-hc-all]`, `[data-hc-clear]`); the inputs (`[data-hc-in]`, `[data-hc-f=k][data-state]`, `[data-hc=k]` — text
+inputs with `inputmode=decimal` so a decimal comma and a non-number can be reported — `[data-hc-msg=k]`, `[data-hc-venous]`,
+`[data-hc-vo2]`, `[data-hc-more]`, `[data-hc-sex]`, `[data-hc-co]`, `[data-hc-ctx=id]`); the results (`[data-hc-out]`, redrawn on every
+keystroke by `hcRefresh()` while the inputs and the caret are left alone): `[data-hc-top]` (`[data-hc-truth=id]` with
+`[data-hc-off=percent]`, `[data-hc-empty]`, `[data-hc-checks]` / `[data-hc-check=k]`), `[data-hc-group=id]`, `[data-hc-row=id][data-st]
+[data-sev]` with `[data-hc-toggle=id]`, `[data-hc-v=id]`, `[data-hc-chip=id]`, `[data-hc-sub=id]`, `[data-hc-range=id]`,
+`[data-hc-gauge=id]` (`.hc-band` normal, `.hc-rng` / `[data-hc-rng=id]` the VO2 band, `.hc-mark`, `.hc-tick`), `[data-hc-was=id]`,
+`[data-hc-need=id]`, `[data-hc-err=id]`, `[data-hc-hint=id]`, `[data-hc-limit=id]`, and when open `[data-hc-detail=id]`
+(`[data-hc-worked]`, `[data-hc-here]`, `[data-hc-alts]`, `[data-hc-always]`); `[data-hc-read]` (`[data-hc-line=k]`, `[data-hc-method]`)
+sits after the chart's seven. `hcFromLab()` and the lab's `[data-hm-tocalc]` button send the lab's current patient to the sheet. A new
+block kind in the Learn renderer, `go: [[topic, label, note]]` (`[data-go-topic]`), links pages to each other. The derived-numbers page
+quotes the same normal ranges as the calculator (SVI 33–47, RVSWI 5–10).
+Tests: `tests/hemocalc.test.js` (106: the seven chart formulas against independent arithmetic over 6,000 values; entries and hints; the
+guards; 1,500 random and junk-filled sheets with no NaN, Infinity, negative output or resistance; progressive filling; the four VO2
+methods; the bands and the per-patient limits; circumstances; thermodilution; thresholds; the reading; the limits and pages; the note;
+two sets; the examples against the model's truth), `tests/e2e12.js` (99: the sheet in the browser end to end, the caret, bars, rows,
+options, the note, an earlier set, nothing in storage, the examples, the lab's way in, the reading pages, phone width, dark theme);
+`e2e7.js` counts twelve topics in the area.
