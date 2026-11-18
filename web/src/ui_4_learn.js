@@ -89,6 +89,13 @@ function eduLead(id, text) {
   const btn = h('button', { type: 'button', class: 'lnk lead-more', 'data-lead-more': '1', 'aria-expanded': String(!!LEAD_OPEN[id]), 'aria-controls': 'lead-' + id, text: LEAD_OPEN[id] ? 'Less' : 'More about this', onclick: () => { LEAD_OPEN[id] = !LEAD_OPEN[id]; p.classList.toggle('open', LEAD_OPEN[id]); btn.textContent = LEAD_OPEN[id] ? 'Less' : 'More about this'; btn.setAttribute('aria-expanded', String(LEAD_OPEN[id])); } });
   return h('div', { class: 'lead-wrap' }, [p, btn]);
 }
+/* v8.10: a fold keeps detail on the page without putting it in the way; it remembers whether it was opened */
+const FOLD_OPEN = {};
+function eduFold(key, title, kids, defOpen) {
+  const d = h('details', { class: 'edu-fold', 'data-fold': key, ontoggle: (e) => { FOLD_OPEN[key] = e.target.open; } }, [h('summary', {}, [h('span', { text: title })]), h('div', { class: 'edu-fold-body' }, kids)]);
+  if (FOLD_OPEN[key] === undefined ? defOpen : FOLD_OPEN[key]) d.setAttribute('open', '');
+  return d;
+}
 function eduBlocks(id, topic) {
   const out = [];
   const firstW = topic.blocks.findIndex(b => b.widget);
@@ -99,6 +106,7 @@ function eduBlocks(id, topic) {
     if (b.examples) { out.push(h('div', { class: 'ex-list' }, X.EXAMPLES.map(e => h('button', { type: 'button', class: 'ex', 'data-example': e.name,
       onclick: () => { const st = X.buildExample(P, e); if (!st.ctx.date) st.ctx.date = todayISO(); loadState(st, 'report', 'Loaded example: ' + e.name); } },
       [h('b', { text: e.name }), h('span', { text: e.desc })])))); return; }
+    if (b.fold) { out.push(eduFold(id + '-' + bi, b.fold, eduBlocks(id + '-' + bi, { blocks: b.blocks || [] }))); return; }
     if (b.src) { out.push(h('h3', { text: 'Sources' })); out.push(h('ul', { class: 'srcs' }, b.src.map(x => h('li', { text: x })))); return; }
     if (b.h) out.push(h('h3', { text: b.h }));
     if (b.p) out.push(h('p', { text: b.p }));

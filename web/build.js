@@ -26,6 +26,7 @@ const frag = tpl
   .replace('/*ECHO*/', () => safe(rd('src/echo.js')))
   .replace('/*CTREAL*/', () => safe(rd('src/ct_real.js')))
   .replace('/*ECHOREAL*/', () => safe(rd('src/echo_real.js')))
+  .replace('/*ECHOVALS*/', () => safe(rd('src/echovals.js')))
   .replace('/*MONITOR*/', () => safe(rd('src/monitor.js')))
   .replace('/*LINES*/', () => safe(rd('src/lines.js')))
   .replace('/*WAVEREAL*/', () => safe(rd('src/wave_real.js')))

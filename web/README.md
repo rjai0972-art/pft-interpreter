@@ -506,3 +506,45 @@ methods; the bands and the per-patient limits; circumstances; thermodilution; th
 two sets; the examples against the model's truth), `tests/e2e12.js` (99: the sheet in the browser end to end, the caret, bars, rows,
 options, the note, an earlier set, nothing in storage, the examples, the lab's way in, the reading pages, phone width, dark theme);
 `e2e7.js` counts twelve topics in the area.
+
+v8.10, the echo introduction made short and the full study by the numbers.
+*The engine.* `src/echovals.js` (`PFT_ECHOVALS`, node-testable, build placeholder `/*ECHOVALS*/` after echo_real.js; registers the topics
+`echo_values`, `echo_diastology`, `echo_valves` and `echo_veins` into `PFT_ECHO.topics` and inserts the group "The full study" after the
+one holding `echo_assess`, so `echo.test.js`, which loads echo.js alone, keeps its counts). Chambers: `GRADED[id] = { m, f: [normalLo,
+normalHi, mildHi, modHi], dp }` (LV diameters and their indexed forms, wall thickness, LV mass and index, LA volume index, LA area),
+`RANGES` (LA diameter, RA area, the RV dimensions and areas), `MEANSD` (aortic root, RA); `grade(id, sex, v)`, `inRange`, `zOf`,
+`lvMass` (0.8 × 1.04 × [(LVIDd + IVSd + PWd)³ − LVIDd³] + 0.6), `geometry(rwt, lvmi, sex)` (0.42; 95 or 115 g/m²), and
+`chambers(raw, sex)` → `{ rows, checks, bad, bsa, mass, lvmi, rwt, fs, geometry }`. Values are graded as displayed (rounded to the
+table's precision). Diastology: `diast(raw, { mode: 'sinus' | 'af' | 'mac', age })` → `{ vars, sec, lap: 'normal' | 'increased' |
+'indeterminate' | null, grade, label, via, depends: { low, high } | null, need, path, notes }`; sinus rhythm follows the 2025 ASE
+algorithm (e′ reduced at septal ≤ 6, lateral ≤ 7 or average ≤ 6.5 cm/s, or the age table `E_PRIME_AGE`; E/e′ increased at septal ≥ 15,
+lateral ≥ 13 or average ≥ 14; TR ≥ 2.8 m/s or PASP ≥ 35; second tier PV S/D ≤ 0.67, LARS ≤ 18%, LAVi > 34, IVRT ≤ 70), computing both
+branches when the TR velocity is missing; AF uses E ≥ 100, septal E/e′ > 11, TR > 2.8, DT ≤ 160 and then LARS < 18%, S/D < 1, BMI > 30;
+MAC uses E/A (0.8, 1.8) and the IVRT at 80 ms. Valves: `VALVES[id] = { title, short, table, fields, mild?, severe?, mech?, wilkins?,
+caveats }` for `as, ar, ms, mr, tr, pr`; `valve(id, raw, { mild, severe, wilkins })` → `{ out: [{ k, name, value, text, unit, grade?,
+word?, worked?, hit? }], steps, notes, verdict, sev, need, vals, checks, bad, cls?, split?, wilkins?, ts? }`. For AR and MR the overall
+grade is the one two of three measures agree on; with no majority, or a spread of two grades, the verdict reports the span (`split`).
+Mitral stenosis is graded from the first available area (half-time, continuity, PISA) with a note when the methods disagree. Veins:
+`PV` (6) and `HV` (7) patterns and `veinSeries(kind, id, { hr, dur })` → `{ t, v (toward the heart positive), ecg, resp, marks, beats,
+peaks: { S, D, A, sd, sff, sReversed, sRev, dRev, drRatio }, hasResp, af }`, timed with `PFT_WAVES.timing`. `START` and `MOVES` hold the
+introduction's six cards and four movements; `SOURCES` the eleven references.
+*Interface.* `src/ui_4k2_echovals.js` (after `ui_4k_echo.js`; widgets `echostart`, `echochambers`, `echodiast`, `echovalves`, `echoveins`
+dispatched from `echoWidget`). State `EVS` (in memory only). Entries are `[data-ev=key]` inside `[data-ev-f]` (with `data-state` and
+`[data-ev-msg]`); typing redraws only the results (`evFill` into `[data-ev-chout]`, `[data-ev-dout]`, `[data-ev-vout]`) and `evSync`
+updates the field states, so the caret stays. Hooks: `[data-ev-start]`, `[data-ev-q]`, `[data-ev-move]`; `[data-ev-chambers=sex]`,
+`[data-ev-sex]`, `[data-ev-row=id][data-grade]`, `[data-ev-geo]`, `[data-ev-geo-c]`, `[data-ev-facts]`, `[data-ev-empty]`;
+`[data-ev-diast=mode]`, `[data-ev-mode]`, `[data-ev-age]`, `[data-ev-verdict]`, `[data-ev-var=k][data-abn]`, `[data-ev-sec]`,
+`[data-ev-path]`; `[data-ev-valves=id]`, `[data-ev-valve]`, `[data-ev-vtitle]`, `[data-ev-out=k]`, `[data-ev-steps]`, `[data-ev-notes]`,
+`[data-ev-ticks]`, `[data-ev-tick]`, `[data-ev-wil]`; `[data-ev-veins=kind:id]`, `[data-ev-vein]`, `[data-ev-pat]`,
+`canvas[data-ev-veincv]`, `[data-ev-tile]`; `[data-ev-ex]`, `[data-ev-clear]`, `[data-ev-checks]`. The vein strip is sized from its
+container when drawn (3.6 s on a narrow screen, 6 s otherwise, at the device pixel ratio); hepatic vein flow is plotted with forward
+flow below the baseline. A new block kind in the Learn renderer, `fold: 'title', blocks: [...]` (`details.edu-fold[data-fold]`,
+`eduFold(key, title, kids, defOpen)`, open state kept in `FOLD_OPEN` for the session), holds detail without showing it.
+`T.echo_intro` in echo.js is now a lead, the `echostart` widget, three `go` buttons, two folds and the sources; `echo_anatomy` quotes the
+2015 LV diameters; `echo_assess` links on to the valves, diastology and chamber pages. The home tile links The views, Scanning lab,
+Valves and Diastology, and the four tools are among the lab chips.
+Tests: `tests/echovals.test.js` (99: every partition and boundary, graded as displayed; LV mass and geometry; each diastolic branch,
+cut-off and route; each valve's calculators, tables, criteria and stepwise reading, including measures that disagree; 400 junk-filled
+sheets per tool with no NaN; every venous pattern; the pages and the introduction), `tests/e2e13.js` (101: the home links, the
+introduction at rest and its folds, the four tools end to end, nothing stored beyond the last page opened, phone width, dark theme);
+`e2e7.js` counts thirteen topics in the echo area.

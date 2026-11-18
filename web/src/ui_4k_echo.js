@@ -724,5 +724,10 @@ function echoWidget(kind) {
   if (kind === 'echoquiz') return echoQuizFig();
   if (kind === 'echoreal') return echoRealLabFig();
   if (kind === 'echolog') return typeof echoLogFig === 'function' ? echoLogFig() : null;
+  if (kind === 'echostart') return echoStartFig();
+  if (kind === 'echochambers') return echoChamberFig();
+  if (kind === 'echodiast') return echoDiastFig();
+  if (kind === 'echovalves') return echoValveFig();
+  if (kind === 'echoveins') return echoVeinFig();
   return null;
 }

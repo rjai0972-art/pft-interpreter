@@ -623,7 +623,7 @@ const near = (a, b, t) => Math.abs(a - b) <= t;
   // ---- echo & POCUS
   await page.evaluate(() => window.__pft.setMode('learn', { topic: 'echo_views' })); await page.waitForSelector('[data-echoatlas="11"]');
   await page.waitForTimeout(800);
-  ok(await page.locator('#learn-cat').inputValue() === 'echo' && await page.locator('.ln-btn[data-topic]').count() === 9 && await page.locator('[data-eh-pick]').count() === 11 && await page.locator('[data-eh-view] canvas.eh-atlascv').count() === 1 && await page.locator('[data-eh-file]').count() === 1, 'the echo area: nine topics; eleven view cards, each rendered with a slot for your own image');
+  ok(await page.locator('#learn-cat').inputValue() === 'echo' && await page.locator('.ln-btn[data-topic]').count() === 13 && await page.locator('[data-eh-pick]').count() === 11 && await page.locator('[data-eh-view] canvas.eh-atlascv').count() === 1 && await page.locator('[data-eh-file]').count() === 1, 'the echo area: thirteen topics; eleven view cards, each rendered with a slot for your own image');
   ok(await page.evaluate(() => { const c = document.querySelector('[data-eh-view="plax"] canvas'); const ctx = c.getContext('2d'); const d = ctx.getImageData(0, 0, c.width, c.height).data; let bright = 0; for (let i = 0; i < d.length; i += 16) if (d[i] > 150) bright++; return bright > 200; }), 'the PLAX card is painted (bright walls on a black sector)');
   await page.locator('[data-eh-pick="a4c"]').click(); await page.waitForSelector('[data-eh-view="a4c"]');
   await page.locator('[data-eh-open="a4c"]').click(); await page.waitForSelector('[data-echolab]');

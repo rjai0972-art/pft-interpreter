@@ -81,7 +81,7 @@ and the single-file browser version (`PulmCritDaddy_standalone.html`) always wor
 - Code signing is optional and not set up. For Windows add a signing certificate to the build; for Mac add an Apple Developer ID and notarization.
   Until then the first-launch steps above are needed.
 
-## How the reading is built (version 8.9)
+## How the reading is built (version 8.10)
 
 The rules layer computes every measurement state before any wording is chosen (ERS/ATS 2022 z-scores and the LLN;
 a reviewed adult phrase catalog anchored to the ERS/ATS 2022, ATS/ERS 2019, ERS/ATS 2023, ERS/ATS 2017, ERS 2019 and
@@ -498,6 +498,31 @@ place the index on either side of 2.2. An earlier set can be held to show what m
 and ten example patients loaded from the Swan–Ganz lab, where the model knows the true output: the sedated,
 paralysed patient whose sheet reads 45% high and warm when the truth is cold, the central-line sample, the
 129-kg patient, the febrile patient whose sheet under-reads. A reading page gathers the limits of all twenty-six
-numbers in one place. Nothing typed on the sheet is stored, and there is nowhere on it to type a name. `extras/` holds a reworked Anki deck
+numbers in one place. Nothing typed on the sheet is stored, and there is nowhere on it to type a name. Version 8.10 shortens the echo
+introduction and adds the full study to the echo area. The introduction is now six question cards (is the LV
+failing, is the RV dilated, is there an effusion, full or empty, is the stroke volume adequate, wet or dry lungs),
+each with its views, the eyeball sign and the number that backs it, and four drawn probe movements; the set-up and
+the Doppler modes are folded underneath. At rest it shows under 300 words where it had nearly 700, and no table.
+Four pages follow under "The full study", built from a fellow's reference workbook of guideline tables and
+re-expressed as the app's own tables, calculators and drawings. Chamber sizes: fourteen measurements are placed
+against the 2015 ASE ranges for the patient's sex as they are typed (normal, mildly, moderately or severely
+abnormal for the left ventricle and left atrium; a normal range for the right heart; mean and two standard
+deviations for the aortic root), with the LV mass by the linear formula shown with its arithmetic, the relative
+wall thickness, and the ventricle placed in the four-cell geometry grid. Diastolic function: the 2025 ASE
+algorithm from e′, E/e′ and the TR velocity, its second tier (pulmonary vein S/D, LA reservoir strain, LA volume
+index, IVRT), the age-specific lower limits of e′, and the separate routes for atrial fibrillation and mitral
+annular calcification; the sheet shows each step it took, gives both answers when a missing TR velocity would
+change the result, and says when the pressure cannot be determined. The valves: for aortic stenosis, aortic,
+mitral, tricuspid and pulmonary regurgitation, and mitral and tricuspid stenosis, the grading table, the
+specific criteria that settle mild or severe, and the calculators (continuity, PISA, regurgitant volume and
+fraction, 220 ÷ half-time, the energy-loss area, the Wilkins score, the PR index), each with its arithmetic, a
+step-by-step reading (the low-gradient aortic stenosis pathway to the dobutamine echo or the CT calcium score
+among them) and the cautions that go with the number. When the three regurgitation measures land in different
+grades the sheet says so and does not let the worst one set the grade. Pulmonary and hepatic vein Doppler:
+thirteen patterns drawn as spectral strips under an ECG (normal, the young, impaired relaxation, a raised atrial
+pressure, severe mitral or tricuspid regurgitation, atrial fibrillation, constriction and restriction with the
+breath drawn above them, a stiff right ventricle), each with its S, D, S/D, systolic fraction and atrial reversal.
+Entries outside a plausible span (a diameter in millimetres where centimetres are asked for) are queried, not
+graded. Nothing typed is stored and no page asks who the patient is. `extras/` holds a reworked Anki deck
 (`ECMO_Anki_Deck_v2.apkg`, 103 notes / 237 cards, cloze and basic, tagged by topic, built by `build_ecmo_anki.py` with no
 dependencies) and a bedside reference PDF generated from the same content (`build_ecmo_reference.js`).
